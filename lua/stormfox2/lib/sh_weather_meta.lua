@@ -15,6 +15,14 @@ local w_meta = {}
 w_meta.__index = w_meta
 w_meta.__tostring = function(self) return "SF_WeatherType[" .. (self.ID or "Unknwon") .. "]" end
 
+function w_meta:SetInit(fFunc)
+	self.Init = fFunc
+end
+
+function w_meta:SetOnChange(fFunc)
+	self.OnChange = fFunc
+end
+
 function StormFox.Weather.Add( sName, sInherit )
 	local t = {}
 	t.Name = sName
@@ -25,6 +33,8 @@ function StormFox.Weather.Add( sName, sInherit )
 	Weathers[sName] = t
 	t.Function = {}
 	t.Static = {}
+	t.Dynamic = {}
+	t.SunStamp = {}
 	return t
 end
 
@@ -32,25 +42,42 @@ function StormFox.Weather.Get( sName )
 	return Weathers[sName]
 end
 
-function w_meta:Set(sKey,zVariable)
+local keys = {}
+local l_e,l_c, c_c = 0,0
+function w_meta:Set(sKey,zVariable, bStatic)
+	keys[sKey] = true
+	l_c = CurTime()
 	if type(zVariable) == "function" then
 		self.Function[sKey] = zVariable
-	else
+	elseif bStatic then
 		self.Static[sKey] = zVariable
+	else
+		self.Dynamic[sKey] = zVariable
 	end
+end
+
+function StormFox.Weather.GetKeys()
+	if l_c == l_e then
+		return c_c
+	end
+	l_e = l_c
+	c_c = table.GetKeys(keys)
+	return c_c
 end
 
 -- This function inserts a variable into a table. Using the STAMP as key.
 function w_meta:SetSunStamp(sKey, zVariable, STAMP)
-	if not self.Static[sKey] then self.Static[sKey] = {} end
-	self.Static[sKey][STAMP] = zVariable
+	keys[sKey] = true
+	l_c = CurTime()
+	if not self.SunStamp[sKey] then self.SunStamp[sKey] = {} end
+	self.SunStamp[sKey][STAMP] = zVariable
 end
 -- Returns a copy of all variables with the given sunstamp, to the given sunstamp.
 function w_meta:CopySunStamp( from_STAMP, to_STAMP )
-	for sKey,v in pairs(self.Static) do
+	for sKey,v in pairs(self.SunStamp) do
 		if type(v) ~= "table" then continue end
 		if not v[from_STAMP] then continue end
-		self.Static[key][to_STAMP] = v[from_STAMP] or nil
+		self.SunStamp[key][to_STAMP] = v[from_STAMP] or nil
 	end
 end
 
@@ -58,13 +85,18 @@ do
 	local in_list = {}
 	--[[
 		Returns a variable
-			- If the variable is a function. It will be called with the additional arguments.
+			- If the variable is a function. It will be called with the current stamp.
+			- Second argument will tell SF it is static and shouldn't be mixed
 	]]
-	function w_meta:Get(sKey, ... )
+	function w_meta:Get(sKey, SUNSTAMP )
 		if self.Function[sKey] then
-			return self.Function[sKey]( ... )
+			return self.Function[sKey]( SUNSTAMP )
+		elseif self.SunStamp[sKey] and self.SunStamp[sKey][SUNSTAMP] then
+			return self.SunStamp[sKey][SUNSTAMP]
 		elseif self.Static[sKey] then
-			return self.Static[sKey]
+			return self.Static[sKey], true
+		elseif self.Dynamic[sKey] then
+			return self.Dynamic[sKey]
 		end
 		if self.Name == "Clear" then return end
 		-- Check if we inherit
@@ -75,7 +107,7 @@ do
 			return
 		end
 		table.insert(in_list, self.Name)
-		local a,b,c,d,e = self.Weathers[self.Inherit]:Get(sKey, ...)
+		local a,b,c,d,e = self.Weathers[self.Inherit]:Get(sKey, SUNSTAMP)
 		in_list = {}
 		return a,b,c,d,e
 	end

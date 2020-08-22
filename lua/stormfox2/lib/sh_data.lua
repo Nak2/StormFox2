@@ -102,7 +102,7 @@ end
 
 -- Sets data. Will lerp if given delta.
 function StormFox.Data.Set( sKey, zVar, nDelta )
-	if not nDelta then
+	if not nDelta or nDelta <= 0 then
 		StormFox_AIMDATA[sKey] = nil
 		StormFox_DATA[sKey] = zVar
 		hook.Run("stormFox.data.change",sKey,zVar)

@@ -226,7 +226,7 @@ if SERVER then
 	net.Receive("stormfox.terrain", function(len, ply) -- OI, what terrain?
 		net.Start("stormfox.terrain")
 			net.WriteString( CURRENT_TERRAIN and CURRENT_TERRAIN.Name or "" )
-		net.Broadcast()
+		net.Send(ply)
 	end)
 else
 	net.Receive("stormfox.terrain", function(len)
