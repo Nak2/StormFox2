@@ -32,7 +32,7 @@ do
 		if t == "number" then
 			return Lerp(fraction, from, to)
 		elseif t == "string" then
-			return to
+			return fraction > .5 and to or from
 		elseif t == "table" and isColor(t) then
 			local r = Lerp(fraction, from.r, to.r)
 			local g = Lerp(fraction, from.g, to.g)
@@ -43,6 +43,12 @@ do
 			return LerpVector(fraction, from, to)
 		elseif t == "angle" then
 			return LerpAngle(fraction, from, to)
+		elseif t == "boolean" then
+			if fraction > .5 then
+				return to
+			else
+				return from
+			end
 		end
 	end
 	local function calcFraction(start_cur, end_cur)
@@ -72,7 +78,7 @@ do
 	end
 end
 
--- Sets data. Will lerp if given Delta.
+-- Sets data. Will lerp if given delta.
 function StormFox.Data.Set( sKey, zVar, nDelta )
 	if not nDelta then
 		StormFox_AIMDATA[sKey] = nil
