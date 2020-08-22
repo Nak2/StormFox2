@@ -1,8 +1,32 @@
 
+--[[
+	Terrain control. Changes the ground
+
+	Terrain.Create( sName )		Creates a new terrain type and stores it
+	Terrain.Get( sName )		Returns the terrain.
+	Terrain.Set( sName )		Sets the terrain. (This should only be done serverside)
+	Terrain.GetCurrent()		Returns the terrain obj or nil.
+	StormFox.Terrain.Reset()	Resets the terrain to default.
+	StormFox.Terrain.HasMaterialChanged( iMaterial )	Returns true if the terrain has changed the material.
+
+	Terrain Meta:
+		:LockUntil( fFunc )										Makes the terrian
+		:MakeFootprints( sndList, sndName )						Makes footprints. Allows to overwrite footstep sounds.
+		:AddTextureSwap( material, basetexture, basetextire2 )	Changes a materials textures.
+		:RenderWindow( width, height )							A function that renders a window-texure. (Weather will trump this)
+		:RenderWindowRefract( width, height )					A function that renders a window-texure. (Weather will trump this)
+		:RenderWindow64x64( width, height )						A function that renders a window-texure. (Weather will trump this)
+		:RenderWindowRefract64x64( width, height )				A function that renders a window-texure. (Weather will trump this)
+		:Apply													Applies the terrain (This won't reset old terrain)
+
+	Hooks:
+		stormFox.terrain.footstep 	Entity 	foot[0 = left,1 = right] 	sTexture 	bTerrainTexture
+]]
+
 local meta = {}
 local terrains = {}
 StormFox.Terrain = {}
--- Get and create
+-- Creates a new terrain type and stores it
 function StormFox.Terrain.Create( sName )
 	local t = {}
 	t.Name = sName
@@ -11,13 +35,16 @@ function StormFox.Terrain.Create( sName )
 	t.swap = {}
 	return t
 end
--- Default
-local CURRENT_TERRAIN = "Clear"
+-- Cur terrain
+local CURRENT_TERRAIN
+function StormFox.Terrain.GetCurrent()
+	return CURRENT_TERRAIN
+end
 -- Terrain is an object that changes the map e.g; Snow
 if SERVER then
 	util.AddNetworkString("stormfox.terrain")
 end
-
+-- Returns the terrain.
 function StormFox.Terrain.Get( sName )
 	if not sName then return end
 	return terrains[sName]
@@ -27,34 +54,36 @@ end
 function meta:LockUntil( fFunc )
 	self.lock = fFunc
 end
-
+-- Sets the ground texture. e.i; snow
 function meta:SetGroundTexture( iTexture )
 	self.ground = iTexture
 end
-
-function meta:AddTextureSwap( mMaterial, iTexture1, iTexture2 )
-	if not iTexture1 or not iTexture2 then return end
-	self.swap[mMaterial] = { iTexture1, iTexture2 }
+-- Adds a texture swap.
+function meta:AddTextureSwap( mMaterial, basetexture, basetextire2 )
+	if not basetexture or not basetextire2 then return end
+	self.swap[mMaterial] = { basetexture, basetextire2 }
 end
-
-function meta:MakeFootprints( sndList, sndName )
-	self.footprints = true
-	self.footprintSnds = sndList
+-- Makes footprints. Allows to overwrite footstep sounds.
+function meta:MakeFootprints( bool, sndList, sndName, OnPrint )
+	self.footprints = bool
+	self.footprintSnds = {sndList, sndName}
+	self.footstepFunc = OnPrint
+	self.footstepLisen = bool or sndList or sndName or OnPrint
 end
 
 -- A function that renders a window-texure. (Weather will trump this)
 function meta:RenderWindow( fFunc )
 	self.windRender = fFunc
 end
-
+-- A function that renders a window-texure. (Weather will trump this)
 function meta:RenderWindowRefract( fFunc )
 	self.windRenderRef = fFunc
 end
-
+-- A function that renders a window-texure. (Weather will trump this)
 function meta:RenderWindow64x64( fFunc )
 	self.windRender64 = fFunc
 end
-
+-- A function that renders a window-texure. (Weather will trump this)
 function meta:RenderWindowRefract64x64( fFunc )
 	self.windRenderRef64 = fFun
 end
@@ -62,6 +91,7 @@ end
 -- Texture handler
 _STORMFOX_TEXCHANGES = _STORMFOX_TEXCHANGES or {} -- List of changed materials.
 _STORMFOX_TEXORIGINAL = _STORMFOX_TEXORIGINAL or {} -- This is global, just in case.
+local footStepLisen = false		-- If set to true, will enable footprints.
 
 local function StringTex(iTex)
 	if not iTex then return end
@@ -73,6 +103,11 @@ local function HasChanged( self, materialTexture )
 	local mat = self:GetName() or "unknown"
 	local b = materialTexture == "basetexture2" and 2 or 1
 	return _STORMFOX_TEXCHANGES[mat] and _STORMFOX_TEXCHANGES[mat][b] or false
+end
+
+function StormFox.Terrain.HasMaterialChanged( iMaterial )
+	local mat = iMaterial:GetName() or iMaterial
+	return _STORMFOX_TEXCHANGES[mat] and _STORMFOX_TEXCHANGES[mat]
 end
 
 -- We're going to overwrite SetTexture. As some mods might change the default texture.
@@ -132,12 +167,12 @@ local function SetMat(self, tex1, tex2)
 	end
 end
 
--- Resets and clear materials
+-- Resets the terrain to default.
 function StormFox.Terrain.Reset( bNoUpdate )
-	CURRENT_TERRAIN = "Clear"
+	CURRENT_TERRAIN = nil
 	if SERVER and not bNoUpdate then
 		net.Start("stormfox.terrain")
-			net.WriteString( CURRENT_TERRAIN )
+			net.WriteString( "" )
 		net.Broadcast()
 	end
 	if next(_STORMFOX_TEXCHANGES) == nil then return end
@@ -150,7 +185,7 @@ function StormFox.Terrain.Reset( bNoUpdate )
 	_STORMFOX_TEXCHANGES = {}
 end
 
--- Sets the terrain
+-- Sets the terrain. (This should only be done serverside)
 function StormFox.Terrain.Set( sName )
 	-- Apply terrain.
 	local t = StormFox.Terrain.Get( sName )
@@ -162,12 +197,12 @@ function StormFox.Terrain.Set( sName )
 	t:Apply()
 end
 
--- Applies terrain
+-- Applies the terrain (This won't reset old terrain)
 function meta:Apply()
-	CURRENT_TERRAIN = self.Name
+	CURRENT_TERRAIN = self
 	if SERVER then
 		net.Start("stormfox.terrain")
-			net.WriteString( CURRENT_TERRAIN )
+			net.WriteString( CURRENT_TERRAIN.Name )
 		net.Broadcast()
 	end
 	-- Swap materials
@@ -183,13 +218,14 @@ function meta:Apply()
 			SetMat( mat, tab[1] and self.ground, tab[2] and self.ground )
 		end
 	end
+	footStepLisen = self.footprints or self.footprintSnds
 end
 
 -- NET
 if SERVER then
 	net.Receive("stormfox.terrain", function(len, ply) -- OI, what terrain?
 		net.Start("stormfox.terrain")
-			net.WriteString( CURRENT_TERRAIN )
+			net.WriteString( CURRENT_TERRAIN and CURRENT_TERRAIN.Name or "" )
 		net.Broadcast()
 	end)
 else

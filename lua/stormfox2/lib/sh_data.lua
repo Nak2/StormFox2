@@ -1,7 +1,16 @@
 
 --[[
 	Unlike SF1, this doesn't support networking.
-	Weather, weather%, temp and wind.
+	
+	Data.Set( sKey, zVar, nDelta )	Sets the data. Supports lerping if given delta.
+	Data.Get( sKey, zDefault )		Returns the data. Returns zDefault if nil.
+	Data.GetFinal( zKey, zDefault)	Returns the data without calculating the lerp.
+	Data.IsLerping( sKey )			Returns true if the data is currently lerping.
+
+	Hooks:
+		- stormFox.data.change		sKey	zVar		Called when data changed or started lerping.
+		- stormfox.data.lerpstart	sKey	zVar		Called when data started lerping
+		- stormfox.data.lerpend		sKey	zVar		Called when data stopped lerping (This will only be called if we check for the variable)
 ]]
 StormFox.Data = {}
 
@@ -57,6 +66,7 @@ do
 		local d = end_cur - start_cur
 		return (n - start_cur) / d
 	end
+	local lerpCache = {}
 	-- Returns data
 	function StormFox.Data.Get( sKey, zDefault )
 		if not StormFox_AIMDATA[sKey] then
@@ -66,9 +76,13 @@ do
 				return zDefault
 			end
 		end
+		-- Check cache and return
+		if lerpCache[sKey] ~= nil then return lerpCache[sKey] end
+		-- Calc
 		local fraction = calcFraction(StormFox_AIMDATA[sKey][2],StormFox_AIMDATA[sKey][3])
 		if fraction < 1 then
-			return LerpVar( fraction, StormFox_DATA[sKey], StormFox_AIMDATA[sKey][1] )
+			lerpCache[sKey] = LerpVar( fraction, StormFox_DATA[sKey], StormFox_AIMDATA[sKey][1] )
+			return lerpCache[sKey]
 		else -- Fraction end
 			StormFox_DATA[sKey] = StormFox.Data.GetFinal( sKey )
 			StormFox_AIMDATA[sKey] = nil
@@ -76,6 +90,14 @@ do
 			return StormFox_DATA[sKey]
 		end
 	end
+	local n = 0
+	-- Reset cache after 4 frames
+	hook.Add("Think", "stormfox.resetdatalerp", function()
+		n = n + 1
+		if n < 4 then return end
+		n = 0
+		lerpCache = {}
+	end)
 end
 
 -- Sets data. Will lerp if given delta.
@@ -91,5 +113,21 @@ function StormFox.Data.Set( sKey, zVar, nDelta )
 		StormFox_DATA[sKey] = StormFox.Data.Get( sKey )
 	end
 	StormFox_AIMDATA[sKey] = {zVar, CurTime(), CurTime() + nDelta}
+	hook.Run("stormFox.data.lerpstart",sKey,zVar, nDelta)
 	hook.Run("stormFox.data.change", sKey, zVar, nDelta)
+end
+
+function StormFox.Data.IsLerping( sKey )
+	if not StormFox_AIMDATA[sKey] then return false end
+	-- Check and see if we're done lerping
+	local fraction = calcFraction(StormFox_AIMDATA[sKey][2],StormFox_AIMDATA[sKey][3])
+	if fraction < 1 then
+		return true
+	end
+	-- We're done lerping.
+	StormFox_DATA[sKey] = StormFox.Data.GetFinal( sKey )
+	StormFox_AIMDATA[sKey] = nil
+	lerpCache[sKey] = nil
+	hook.Run("stormFox.data.lerpend",sKey,zVar)
+	return true
 end
