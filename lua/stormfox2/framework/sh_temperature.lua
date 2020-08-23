@@ -78,7 +78,7 @@ function StormFox.Temperature.Get(sType)
 	local n = StormFox.Data.Get( "Temp", 20 )
 	if not sType or sType == "celsius" then return n end
 	if not convert_to[sType] then
-		error("Invalid temperature type [" .. sType .. "].")
+		StormFox.Warning("Invalid temperature type [" .. tostring(sType) .. "].", true)
 	end
 	return convert_to[sType](n)
 end
