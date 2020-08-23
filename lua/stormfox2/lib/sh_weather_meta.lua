@@ -15,6 +15,11 @@ local w_meta = {}
 w_meta.__index = w_meta
 w_meta.__tostring = function(self) return "SF_WeatherType[" .. (self.Name or "Unknwon") .. "]" end
 
+-- function for the generator. Returns true to allow. Function will be called with (day_temperature, time_start, time_duration, percent) 
+function w_meta:SetRequire(fFunc)
+	self.Require = fFunc
+end
+
 function w_meta:SetInit(fFunc)
 	self.Init = fFunc
 end
@@ -41,6 +46,10 @@ end
 
 function StormFox.Weather.Get( sName )
 	return Weathers[sName]
+end
+
+function StormFox.Weather.GetAll()
+	return table.GetKeys( Weathers )
 end
 
 local keys = {}
