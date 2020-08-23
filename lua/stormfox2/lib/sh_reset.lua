@@ -1,7 +1,7 @@
 
 -- Allows to reset
 if _STORMFOX_POSTENTITY then
-	timer.Simple(0, function()
+	timer.Simple(1, function()
 		hook.Run("stormfox.InitPostEntity")
 	end)
 end
