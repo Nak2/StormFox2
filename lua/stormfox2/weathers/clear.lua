@@ -43,7 +43,7 @@ local clear = StormFox.Weather.Add( "Clear" )
 	clear:SetSunStamp("sunColor",Color(198, 170, 59),	SF_SKY_SUNRISE)
 	clear:SetSunStamp("starFade",30,					SF_SKY_SUNRISE)
 -- Cevil
-	clear:CopySunStamp( SF_SKY_NIGHT, SF_SKY_CEVIL )) -- Copy the night sky
+	clear:CopySunStamp( SF_SKY_NIGHT, SF_SKY_CEVIL ) -- Copy the night sky
 	clear:SetSunStamp("fadeBias",1,	SF_SKY_CEVIL)
 	clear:SetSunStamp("sunSize",0,	SF_SKY_CEVIL)
 
