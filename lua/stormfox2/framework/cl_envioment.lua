@@ -818,6 +818,7 @@ Renders glass-meshes.
 
 	-- Update material
 	hook.Add("Think", "StormFox.Environment.UpdateRTWIndow", function()
+		if not StormFox.Terrain then return end
 		local cT = StormFox.Terrain.GetCurrent()
 		if not cT then return end
 		-- Refract materials
@@ -847,13 +848,13 @@ Renders glass-meshes.
 	end
 
 	hook.Add("PreDrawTranslucentRenderables", "StormFox.Environment.RenderWindow", function(a,b)
-		if (b)  then return end
+		if (b or not  StormFox.Terrain) then return end
 		if puddle_mapmesh then
 			render.SetMaterial(puddle_mat)
 			--puddle_mapmesh:Draw()
 		end
 		local cT = StormFox.Terrain.GetCurrent()
-		if #glass_mapmesh < 4 then return end
+		if #glass_mapmesh < 4 or not cT then return end
 		-- Refract materials
 			if cT.ReWinMaterial then
 				render.SetMaterial(Win_Ref)

@@ -13,7 +13,7 @@ local Weathers = {}
 
 local w_meta = {}
 w_meta.__index = w_meta
-w_meta.__tostring = function(self) return "SF_WeatherType[" .. (self.ID or "Unknwon") .. "]" end
+w_meta.__tostring = function(self) return "SF_WeatherType[" .. (self.Name or "Unknwon") .. "]" end
 
 function w_meta:SetInit(fFunc)
 	self.Init = fFunc
@@ -35,6 +35,7 @@ function StormFox.Weather.Add( sName, sInherit )
 	t.Static = {}
 	t.Dynamic = {}
 	t.SunStamp = {}
+	StormFox.Msg("Weather added: " .. sName)
 	return t
 end
 
@@ -43,7 +44,8 @@ function StormFox.Weather.Get( sName )
 end
 
 local keys = {}
-local l_e,l_c, c_c = 0,0
+local l_e,l_c, c_c = -1,0
+
 function w_meta:Set(sKey,zVariable, bStatic)
 	keys[sKey] = true
 	l_c = CurTime()
@@ -56,9 +58,13 @@ function w_meta:Set(sKey,zVariable, bStatic)
 	end
 end
 
+local r_list = {"Terrain", "windRender", "windRenderRef", "windRender64", "windRenderRef64"}
 function StormFox.Weather.GetKeys()
 	if l_c == l_e then
 		return c_c
+	end
+	for k,v in ipairs(r_list) do
+		keys[v] = nil
 	end
 	l_e = l_c
 	c_c = table.GetKeys(keys)
@@ -77,7 +83,7 @@ function w_meta:CopySunStamp( from_STAMP, to_STAMP )
 	for sKey,v in pairs(self.SunStamp) do
 		if type(v) ~= "table" then continue end
 		if not v[from_STAMP] then continue end
-		self.SunStamp[key][to_STAMP] = v[from_STAMP] or nil
+		self.SunStamp[sKey][to_STAMP] = v[from_STAMP] or nil
 	end
 end
 
@@ -101,13 +107,13 @@ do
 		if self.Name == "Clear" then return end
 		-- Check if we inherit
 		if not self.Inherit then return nil end
-		if not self.Weathers[self.Inherit] return nil end -- Inherit is invalid
+		if not Weathers[self.Inherit] then return nil end -- Inherit is invalid
 		if table.HasValue(in_list, self.Inherit) then -- Loop detected
 			StormFox.Warning("WeatherData loop detected! [" .. table.concat(in_list, "]->[") .. "]->[" .. self.Inherit .. "]")
 			return
 		end
 		table.insert(in_list, self.Name)
-		local a,b,c,d,e = self.Weathers[self.Inherit]:Get(sKey, SUNSTAMP)
+		local a,b,c,d,e = Weathers[self.Inherit]:Get(sKey, SUNSTAMP)
 		in_list = {}
 		return a,b,c,d,e
 	end
@@ -133,4 +139,12 @@ end
 
 function w_meta:RenderWindowRefract64x64( fFunc )
 	self:Set( "windRenderRef64", fFunc )
+end
+
+-- Load weathers
+for _,fil in ipairs(file.Find("stormfox2/weathers/*.lua","LUA")) do
+	if SERVER then
+		AddCSLuaFile("stormfox2/weathers/" .. fil)
+	end
+	pcall(include,"stormfox2/weathers/" .. fil)
 end

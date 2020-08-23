@@ -87,6 +87,7 @@ local defaultSnowSnd = {
 	end
 -- Footstep overwrite and logic
 	hook.Add("EntityEmitSound", "stormFox.footstep", function(data)
+		if not StormFox.Terrain then return end
 		local cT = StormFox.Terrain.GetCurrent()
 		-- Only enable if we edit or need footsteps.
 			if not (bAlwaysFootstep or (cT and cT.footstepLisen)) then return end			

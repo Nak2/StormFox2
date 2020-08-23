@@ -24,6 +24,8 @@
 ]]
 
 local meta = {}
+meta.__index = meta
+meta.__tostring = function(self) return "SF_TerrainType[" .. (self.Name or "Unknwon") .. "]" end
 local terrains = {}
 StormFox.Terrain = {}
 -- Creates a new terrain type and stores it
@@ -207,7 +209,7 @@ function meta:Apply()
 	end
 	-- Swap materials
 	if self.swap then
-		for mat,tab in pairs( self.swap )
+		for mat,tab in pairs( self.swap ) do
 			SetMat( mat, tab[1], tab[2] )
 		end
 	end
