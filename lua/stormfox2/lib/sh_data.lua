@@ -30,6 +30,7 @@ end
 
 do
 	local function isColor(t)
+		if type(t) ~= "table" then return false end
 		return t.r and t.g and t.b and true or false
 	end
 	local function LerpVar(fraction, from, to)
@@ -42,7 +43,7 @@ do
 			return Lerp(fraction, from, to)
 		elseif t == "string" then
 			return fraction > .5 and to or from
-		elseif t == "table" and isColor(t) then
+		elseif isColor(t) then
 			local r = Lerp(fraction, from.r, to.r)
 			local g = Lerp(fraction, from.g, to.g)
 			local b = Lerp(fraction, from.b, to.b)
@@ -69,6 +70,7 @@ do
 	local lerpCache = {}
 	-- Returns data
 	function StormFox.Data.Get( sKey, zDefault )
+		-- Check if lerping
 		if not StormFox_AIMDATA[sKey] then
 			if StormFox_DATA[sKey] ~= nil then
 				return StormFox_DATA[sKey]
@@ -102,10 +104,15 @@ end
 
 -- Sets data. Will lerp if given delta.
 function StormFox.Data.Set( sKey, zVar, nDelta )
-	if not nDelta or nDelta <= 0 then
+	-- Check if vars are the same
+	if StormFox_DATA[sKey]~=nil then
+		if StormFox_DATA[sKey] == zVar then return end
+	end
+	-- If delta is 0 or below. (Or no prev data). Set it.
+	if not nDelta or nDelta <= 0 or not StormFox_DATA[sKey] then
 		StormFox_AIMDATA[sKey] = nil
 		StormFox_DATA[sKey] = zVar
-		hook.Run("stormFox.data.change",sKey,zVar)
+		hook.Run("stormfox.data.change",sKey,zVar)
 		return
 	end
 	-- Get the current lerping value and set that as a start
