@@ -38,6 +38,12 @@ local function Blender(nFraction, vFrom, vTo) -- Will it blend?
 	return vFrom
 end
 
+local function IsSame(sName, nPercentage)
+	if CurrentPercent ~= nPercentage then return false end
+	if not CurrentWeather then return false end
+	return CurrentWeather.Name == sName
+end
+
 local function ApplyWeather(sName, nPercentage, nDelta)
 	hook.Run("stormFox.weather.prechange", sName ,nPercentage )
 	if nDelta and nDelta <= 0 then
@@ -78,6 +84,10 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 	hook.Run("stormFox.weather.postchange", sName ,nPercentage )
 end
 
+hook.Add("StormFox.Sky.StampChange","StormFox.Weather.Stamp",function(_,nLerpTime)
+	ApplyWeather(CurrentWeather and CurrentWeather.Name or "Clear", CurrentPercent, nLerpTime)
+end)
+
 function StormFox.Weather.GetCurrent()
 	return CurrentWeather or StormFox.Weather.Get( "Clear" )
 end
@@ -89,6 +99,10 @@ end
 if SERVER then
 	util.AddNetworkString("stormfox.weather")
 	function StormFox.Weather.Set( sName, nPercentage, nDelta )
+		if IsSame(sName, nPercentage) then return false end
+		if not nDelta then
+			nDelta = 4
+		end
 		if not nPercentage then nPercentage = 1 end
 		if not StormFox.Weather.Get( sName ) then
 			StormFox.Warning("Unknown weather: " .. tostring(sName))
@@ -102,6 +116,7 @@ if SERVER then
 			net.WriteString(sName)
 		net.Broadcast()
 		ApplyWeather(sName, nPercentage, nDelta)
+		return true
 	end
 	net.Receive("stormfox.weather", function(len, ply) -- OI, what weather?
 		net.Start("stormfox.weather")
