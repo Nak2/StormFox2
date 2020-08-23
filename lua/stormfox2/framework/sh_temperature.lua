@@ -132,7 +132,7 @@ if SERVER then
 	Sets the temperature in ceilsius. Second argument is the smooth-time in seconds.
 	---------------------------------------------------------------------------]]
 	function StormFox.Temperature.Set(nCelsius,nLerpTime)
-		StormFox.Data.SetNetwork("Temp",nCelsius,nLerpTime)
+		StormFox.Network.Set("Temp",nCelsius,nLerpTime)
 	end
 else
 	local country = system.GetCountry() or "UK"
@@ -183,16 +183,14 @@ else
 		return default_temp
 	end
 	-- Load the temperature settings.
-	hook.Add("stormfox2.postlib", "StormFox.TemperatureSettings",function()
-		-- Setup setting
-		StormFox.Setting.AddCL("dispaly_temperature",default_temp,"Changes the temperature displayed.")
-		StormFox.Setting.Callback("dispaly_temperature",function(sType)
-			temp_type = convert_to[sType] and sType or "celsius"
-		end,"stormfox.temp.type")
-		-- Load setting
-		local sType = StormFox.Setting.Get("dispaly_temperature",default_temp)
+	-- Setup setting
+	StormFox.Setting.AddCL("dispaly_temperature",default_temp,"Changes the temperature displayed.")
+	StormFox.Setting.Callback("dispaly_temperature",function(sType)
 		temp_type = convert_to[sType] and sType or "celsius"
+	end,"stormfox.temp.type")
+	-- Load setting
+	local sType = StormFox.Setting.Get("dispaly_temperature",default_temp)
+	temp_type = convert_to[sType] and sType or "celsius"
 
-		hook.Remove("stormfox2.postlib", "StormFox.TemperatureSettings")
-	end)
+	hook.Remove("stormfox2.postlib", "StormFox.TemperatureSettings")
 end
