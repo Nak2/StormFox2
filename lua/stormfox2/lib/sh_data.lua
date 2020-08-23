@@ -43,7 +43,7 @@ do
 			return Lerp(fraction, from, to)
 		elseif t == "string" then
 			return fraction > .5 and to or from
-		elseif isColor(t) then
+		elseif isColor(from) then
 			local r = Lerp(fraction, from.r, to.r)
 			local g = Lerp(fraction, from.g, to.g)
 			local b = Lerp(fraction, from.b, to.b)
@@ -59,6 +59,8 @@ do
 			else
 				return from
 			end
+		else
+			print("UNKNOWN", t)
 		end
 	end
 	local function calcFraction(start_cur, end_cur)
@@ -71,7 +73,7 @@ do
 	-- Returns data
 	function StormFox.Data.Get( sKey, zDefault )
 		-- Check if lerping
-		if not StormFox_AIMDATA[sKey] then
+		if not StormFox_AIMDATA[sKey] or StormFox_DATA[sKey] == nil then
 			if StormFox_DATA[sKey] ~= nil then
 				return StormFox_DATA[sKey]
 			else
@@ -109,7 +111,7 @@ function StormFox.Data.Set( sKey, zVar, nDelta )
 		if StormFox_DATA[sKey] == zVar then return end
 	end
 	-- If delta is 0 or below. (Or no prev data). Set it.
-	if not nDelta or nDelta <= 0 or not StormFox_DATA[sKey] then
+	if not nDelta or nDelta <= 0 or StormFox_DATA[sKey] == nil then
 		StormFox_AIMDATA[sKey] = nil
 		StormFox_DATA[sKey] = zVar
 		hook.Run("stormfox.data.change",sKey,zVar)

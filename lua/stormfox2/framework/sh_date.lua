@@ -1,7 +1,7 @@
 --[[
 	Date
 
-	SV	StormFox.Data.SetYearDay( nDay )		Sets the yearday.
+	SV	StormFox.Date.SetYearDay( nDay )		Sets the yearday.
 	SH	StormFox.Date.GetYearDay()				Gets the yearday.
 	SH	StormFox.Date.GetWeekDay( bNumbers )	Returns the weekday. Returns a number if bNumbers is true.
 	SH	StormFox.Date.GetMonth( bNumbers )		Returns the month. Returns a number if bNumbers is true.
@@ -15,7 +15,7 @@ StormFox.Date = {}
 
 if SERVER then
 	-- Sets the yearday.
-	function StormFox.Data.SetYearDay( nDay )
+	function StormFox.Date.SetYearDay( nDay )
 		StormFox.Network.Set("day", nDay)
 	end
 end
@@ -89,7 +89,7 @@ end
 
 local country = system.GetCountry() or "UK"
 -- Wait, Sweden uses Month / Day?
-local crazy_countries = {"AS", "BT", "CN", "FM", "GU", "HU", "JP", "KP", "KR", "LT", "MH", "MN", "MP", "TW", "UM", "US", "VI"}
+local crazy_countries = {"AS", "BT", "CN", "FM", "GU", "HU", "JP", "KP", "KR", "LT", "MH", "MN", "MP", "TW", "UM", "US", "VI", "SE"}
 local default = table.HasValue(crazy_countries, country)
 if CLIENT then
 	StormFox.Setting.AddCL("use_monthday",default,"Display MM/DD instead of DD/MM.")

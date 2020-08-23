@@ -25,12 +25,12 @@ local function Blender(nFraction, vFrom, vTo) -- Will it blend?
 	elseif type(vTo) == "string" or type(vTo) == "IMaterial" or type(vTo) == "boolean" then -- String, material or bool. Return vTo.
 		return vTo
 	elseif type(vTo) == "number" then -- Number
-		return Lerp(nAmount, vFrom, vTo)
+		return Lerp(nFraction, vFrom, vTo)
 	elseif type(vTo) == "table" and isColor(vTo) then -- Color
-		local r = Lerp( nAmount, vFrom.r or 255, vTo.r )
-		local g = Lerp( nAmount, vFrom.g or 255, vTo.g )
-		local b = Lerp( nAmount, vFrom.b or 255, vTo.b )
-		local a = Lerp( nAmount, vFrom.a or 255, vTo.a )
+		local r = Lerp( nFraction, vFrom.r or 255, vTo.r )
+		local g = Lerp( nFraction, vFrom.g or 255, vTo.g )
+		local b = Lerp( nFraction, vFrom.b or 255, vTo.b )
+		local a = Lerp( nFraction, vFrom.a or 255, vTo.a )
 		return Color( r, g, b, a )
 	end
 	StormFox.Warning("ERROR: Unsupported mix value type[" .. type(vTo) .. "]. Returning original value")
@@ -53,9 +53,11 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 		CurrentWeather:OnChange( sName, nPercentage, nDelta )
 	end
 	local clear = StormFox.Weather.Get( "Clear" )
-	local stamp = StormFox.Sky.GetLastStamp()
-	CurrentWeather = StormFox.Weather.Get( sName ) or StormFox.Weather.Get( "Clear" )
+	CurrentWeather = StormFox.Weather.Get( sName )
 	CurrentPercent = nPercentage
+	local stamp = StormFox.Sky.GetLastStamp()
+	print(CurrentWeather)
+	
 	if sName == "Clear" then
 		nPercentage = 1
 	end
@@ -74,7 +76,16 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 				StormFox.Data.Set(key, var2, nDelta)
 			else
 				local var1 = clear:Get( key, stamp )
-				StormFox.Data.Set(key, Blender(nPercentage, var1, var2), nDelta)
+				if var2 and not var1 then -- This is not a default variable
+					if type(var2) == "number" then
+						var1 = 0
+					end
+				end
+				if not var1 and var2 then -- THis is not a default varable
+					StormFox.Data.Set(key, var2, nDelta)
+				elseif var1 and var2 then
+					StormFox.Data.Set(key, Blender(nPercentage, var1, var2), nDelta)
+				end
 			end
 		end
 	end

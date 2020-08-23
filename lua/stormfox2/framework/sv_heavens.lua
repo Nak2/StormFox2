@@ -42,7 +42,7 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 	Sets the time for sunrise.
 	---------------------------------------------------------------------------]]
 	function StormFox.Sun.SetSunRise(nTime)
-		StormFox.Data.SetNetwork("sun_sunrise",nTime)
+		StormFox.Network.Set("sun_sunrise",nTime)
 		SunDeltaUpdate()
 	end
 	StormFox.Setting.Callback("sunrise",StormFox.Sun.SetSunRise,"stormfox.heaven.sunrise")
@@ -50,7 +50,7 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 	Sets the tiem for sunsets.
 	---------------------------------------------------------------------------]]
 	function StormFox.Sun.SetSunSet(nTime)
-		StormFox.Data.SetNetwork("sun_sunset",nTime)
+		StormFox.Network.Set("sun_sunset",nTime)
 		SunDeltaUpdate()
 	end
 	StormFox.Setting.Callback("sunset",StormFox.Sun.SetSunSet,"stormfox.heaven.sunset")
@@ -72,7 +72,7 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 	Sets the sunyaw. This will also affect the moon.
 	---------------------------------------------------------------------------]]
 	function StormFox.Sun.SetYaw(nYaw)
-		StormFox.Data.SetNetwork("sun_yaw",nYaw)
+		StormFox.Network.Set("sun_yaw",nYaw)
 	end
 	StormFox.Setting.Callback("sunyaw",StormFox.Sun.SetYaw,"stormfox.heaven.sunyaw")
 	--[[-------------------------------------------------------------------------
@@ -91,7 +91,7 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 	Sets the sunsize. (Normal is 30)
 	---------------------------------------------------------------------------]]
 	function StormFox.Sun.SetSize(n)
-		StormFox.Data.SetNetwork("sun_size",n)
+		StormFox.Network.Set("sun_size",n)
 	end
 	--[[-------------------------------------------------------------------------
 	Returns the sunsize. (Normal is 30)
@@ -103,7 +103,7 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 	Sets the suncolor.
 	---------------------------------------------------------------------------]]
 	function StormFox.Sun.SetColor(cCol)
-		StormFox.Data.SetNetwork("sun_color",cCol)
+		StormFox.Network.Set("sun_color",cCol)
 	end
 	--[[-------------------------------------------------------------------------
 	Returns the suncolor.
@@ -223,12 +223,12 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 Sets the moon-offset it gains each day. (Default 12.2)
 ---------------------------------------------------------------------------]]
 function StormFox.Moon.SetDaysForFullCycle(nVar)
-	StormFox.Data.SetNetwork("moon_cycle",360 / nVar)
+	StormFox.Network.Set("moon_cycle",360 / nVar)
 end
 
 hook.Add("StormFox.Time.NextDay","StormFox.MoonPhase",function()
 	local d = StormFox.Data.Get("moon_magicnumber",0) + StormFox.Data.Get("moon_cycle",12.203)
-	StormFox.Data.SetNetwork("moon_magicnumber",d % 360)
+	StormFox.Network.Set("moon_magicnumber",d % 360)
 end)
 --[[-------------------------------------------------------------------------
 Returns the moon angles for the given or current time.
