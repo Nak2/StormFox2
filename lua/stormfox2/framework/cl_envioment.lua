@@ -798,6 +798,13 @@ Renders glass-meshes.
 	local RT_Win_Ref = GetRenderTarget( "SF_Win_R", TEX_SIZE, TEX_SIZE )
 	local RT_Win64_Ref = GetRenderTarget( "SF_Win_64_R", TEX_SIZE, TEX_SIZE )
 
+	-- Returns the current window-renders
+	local function GetRenderFunctions()
+		local cT = StormFox.Terrain.GetCurrent() or {}
+		local cW = StormFox.Weather.GetCurrent() or {}
+		return cW.windRender or cT.windRender, cW.windRenderRef or cT.windRenderRef, cW.windRender64 or cT.windRender64, cW.windRenderRef64 or cT.windRenderRef64
+	end
+
 	local close_window_ents = {} -- glass_dynamic
 
 	local Win,Win64,Win_Ref,Win64_Ref = Material("stormfox/effects/window/win"),Material("stormfox/effects/window/win_64"),Material("stormfox/effects/window/win_refract"),Material("stormfox/effects/window/win_refract_64")
@@ -819,25 +826,26 @@ Renders glass-meshes.
 	-- Update material
 	hook.Add("Think", "StormFox.Environment.UpdateRTWIndow", function()
 		if not StormFox.Terrain then return end
+		local windRender, windRenderRef, windRender64, windRender64Ref = GetRenderFunctions()
 		local cT = StormFox.Terrain.GetCurrent()
 		if not cT then return end
 		-- Refract materials
-			if cT.ReWinMaterial then
+			if windRenderRef then
 				Win_Ref:SetTexture( "$normalmap", RT_Win_Ref )
-				Mat_Update(RT_Win_Ref, cT.ReWinMaterial)
+				Mat_Update(RT_Win_Ref, windRenderRef)
 			end
-			if cT.ReWinMaterial_64 then
+			if windRender64Ref then
 				Win64_Ref:SetTexture( "$normalmap", RT_Win64_Ref )
-				Mat_Update(RT_Win64_Ref, cT.ReWinMaterial_64)
+				Mat_Update(RT_Win64_Ref, windRender64Ref)
 			end
 		-- Regular materials
-			if cT.WinMaterial then
+			if windRender then
 				Win:SetTexture( "$basetexture", RT_Win )
-				Mat_Update(RT_Win, cT.WinMaterial)
+				Mat_Update(RT_Win, windRender)
 			end
-			if cT.WinMaterial_64 then
+			if windRender64 then
 				Win64:SetTexture( "$basetexture", RT_Win64 )
-				Mat_Update(RT_Win64, cT.WinMaterial_64)
+				Mat_Update(RT_Win64, windRender64)
 			end
 	end)
 
@@ -853,26 +861,26 @@ Renders glass-meshes.
 			render.SetMaterial(puddle_mat)
 			--puddle_mapmesh:Draw()
 		end
-		local cT = StormFox.Terrain.GetCurrent()
-		if #glass_mapmesh < 4 or not cT then return end
+		if #glass_mapmesh < 4 then return end
+		local windRender, windRenderRef, windRender64, windRender64Ref = GetRenderFunctions()
 		-- Refract materials
-			if cT.ReWinMaterial then
+			if windRenderRef then
 				render.SetMaterial(Win_Ref)
 				glass_mapmesh[1]:Draw()
 				DrawCloseWindows()
 			end
-			if cT.ReWinMaterial_64 then
+			if windRender64Ref then
 				render.SetMaterial(Win64_Ref)
 				glass_mapmesh[2]:Draw()
 				DrawCloseWindows()
 			end
 		-- Regular materials
-			if cT.WinMaterial then
+			if windRender then
 				render.SetMaterial(Win)
 				glass_mapmesh[3]:Draw()
 				DrawCloseWindows()
 			end
-			if cT.WinMaterial_64 then
+			if windRender64 then
 				render.SetMaterial(Win64)
 				glass_mapmesh[4]:Draw()
 				DrawCloseWindows()
