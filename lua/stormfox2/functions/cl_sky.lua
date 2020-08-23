@@ -52,6 +52,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 -- Local functions
 	local min,max,abs,app = math.min,math.max,math.abs,math.Approach
 	local function ColVec(col,div)
+		if not col then return Vector(1,1,1) end
 		if not div then
 			return Vector(col.r,col.g,col.b)
 		end
@@ -71,7 +72,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 			g_SkyPaint:SetTopColor(ColVec(t_color,255))
 			g_SkyPaint:SetBottomColor(ColVec(StormFox.Data.Get("bottomColor") or Color(204, 255, 255),255))
 			g_SkyPaint:SetFadeBias(StormFox.Data.Get("fadeBias",0.2))
-			g_SkyPaint:SetDuskColor(ColVec(StormFox.Data.Get("duskColor",Color(255, 255, 255)),255))
+			g_SkyPaint:SetDuskColor(ColVec(StormFox.Data.Get("duskColor",color_white),255))
 			g_SkyPaint:SetDuskIntensity(StormFox.Data.Get("duskIntensity",1.94))
 			g_SkyPaint:SetDuskScale(StormFox.Data.Get("duskScale",0.29))
 
