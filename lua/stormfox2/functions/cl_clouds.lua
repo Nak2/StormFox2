@@ -3,10 +3,14 @@ Render clouds
 ---------------------------------------------------------------------------]]
 local cos,sin,rad = math.cos,math.sin,math.rad
 local max,min,clamp,ceil,abs = math.max,math.min,math.Clamp,math.ceil,math.abs
+local z_level = .8
+local eye_mult = -.0001
 
 -- Generate dome mesh
 	local Render_Dome = Mesh()
-	local sc = 10
+	local top_height = 20
+	local sc = 20
+
 	local stage = 0
 	local e_r = rad(45)
 	local t_s = 1
@@ -32,7 +36,7 @@ local max,min,clamp,ceil,abs = math.max,math.min,math.Clamp,math.ceil,math.abs
 			mesh.Color(255,255,255,255)
 			mesh.AdvanceVertex()
 			-- T
-			mesh.Position(Vector(0,0,0.1 * sc))
+			mesh.Position(Vector(0,0,0.1 * top_height))
 			mesh.TexCoord( stage, 0.5 * t_s,0.5 * t_s )
 			mesh.Color(255,255,255,255)
 			mesh.AdvanceVertex()
@@ -187,14 +191,14 @@ local max,min,clamp,ceil,abs = math.max,math.min,math.Clamp,math.ceil,math.abs
 	render.PopFilterMin()
 	end
 	local col = Color(255,0,0,175)
-	local function RenderCloud(mat_id,yaw,s_size,alpha)
+	local function RenderCloud(mat_id,yaw,s_size,alpha, pos)
 		local mat = side_clouds[mat_id]
 		if not mat then return end
 		render.SetMaterial(mat[1])
 		local pitch = 0.11 * s_size
 		local n = Angle(pitch,yaw,0):Forward()
 		col.a = math.max(175 * alpha, 255)
-		render.DrawQuadEasy( n * -200, n, s_size * mat[2] , s_size, col, 180 )
+		render.DrawQuadEasy( n * -200 + pos, n, s_size * mat[2] , s_size, col, 180 )
 	end
 -- Cloud movement
 	hook.Add("PreRender","StormFox.Client.CloudMove",function()
@@ -208,7 +212,7 @@ local max,min,clamp,ceil,abs = math.max,math.min,math.Clamp,math.ceil,math.abs
 		end
 	end)
 
-hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function()
+hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function(eye)
 	if not StormFox then return end
 	if not StormFox.Data then return end
 	local cl_amd = StormFox.Data.Get("clouds",0)
@@ -230,9 +234,9 @@ hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function()
 			local m_id = i % #side_clouds + 1
 			local y_start = (i % 3) * 120 + row * 33
 			local size = (3 + i % 5)  * 24
-			RenderCloud(m_id,y_start + i + SysTime() * cloud_speed, size, a )
+			RenderCloud(m_id,y_start + i + SysTime() * cloud_speed, size, a, eye * eye_mult )
 		end
-		-- Render top clouds first
+		-- Render top clouds
 			local up = Vector(0,0,1)
 			local n = max(0,min(math.ceil(layers * cl_amd),layers))
 			for i = 1,n do
@@ -240,7 +244,7 @@ hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function()
 				local cloud_amplifier = 1 + .4 * (1 -  (i / n))
 				UpdateCloudMaterial(i,255)
 				sky_mats[i]:SetVector("$color",Vector(min(c.r * cloud_amplifier,255),min(c.g * cloud_amplifier,255),min(c.b * cloud_amplifier,255)) / 255 )
-				RenderDome(up * (.9 + 0.4 * ri),sky_mats[i],255)
+				RenderDome(up * (z_level + 0.4 * ri) + eye * eye_mult,sky_mats[i],255)
 			end
 		
 
