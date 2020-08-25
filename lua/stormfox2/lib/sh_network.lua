@@ -26,6 +26,7 @@ if SERVER then
 			net.WriteBool(false)
 			net.WriteTable(StormFox_NETWORK)
 		net.Send(ply)
+		hook.Run("stormFox.data.initspawn", ply)
 	end)
 else
 	net.Receive("stormfox.network", function(len)
