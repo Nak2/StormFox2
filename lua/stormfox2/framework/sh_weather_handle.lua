@@ -45,7 +45,7 @@ local function IsSame(sName, nPercentage)
 end
 
 local function ApplyWeather(sName, nPercentage, nDelta)
-	hook.Run("stormFox.weather.prechange", sName ,nPercentage )
+	hook.Run("stormfox.weather.prechange", sName ,nPercentage )
 	if nDelta and nDelta <= 0 then
 		nDelta = nil
 	end
@@ -56,7 +56,6 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 	CurrentWeather = StormFox.Weather.Get( sName )
 	CurrentPercent = nPercentage
 	local stamp = StormFox.Sky.GetLastStamp()
-	print(CurrentWeather)
 	
 	if sName == "Clear" then
 		nPercentage = 1
@@ -92,7 +91,7 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 	if CurrentWeather.Init then
 		CurrentWeather.Init()
 	end
-	hook.Run("stormFox.weather.postchange", sName ,nPercentage )
+	hook.Run("stormfox.weather.postchange", sName ,nPercentage )
 end
 
 hook.Add("StormFox.Sky.StampChange","StormFox.Weather.Stamp",function(_,nLerpTime)
