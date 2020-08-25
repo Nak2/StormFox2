@@ -3,6 +3,7 @@ Use the map-data to set a minimum and maximum fogdistance
 ---------------------------------------------------------------------------]]
 StormFox.Setting.AddCL("enable_fog",true,"Enables fog.")
 
+-- Load the default fog from the map
 local fogstart, fogend, fogstartmin, fogendmin, fogdens
 hook.Add("stormfox.InitPostEntity", "StormFox.FogInit", function()
 	for _,t in ipairs(StormFox.Map.FindClass("env_fog_controller")) do
@@ -23,14 +24,19 @@ hook.Add("stormfox.InitPostEntity", "StormFox.FogInit", function()
 	end
 end)
 
+-- 	fogstart, 	fogend, 	fogstartmin, 	fogendmin, 	fogdens
+--	1			90000		1				90000		1
+
+--[[TODO: There are still problems with the fog looking strange.
+]]
+
 local curFogStart,curFogEnd
 local SkyFog = function(scale)
 	if not scale then scale = 1 end
 	if not fogstartmin or not fogendmin or not fogstart or not fogdens or not StormFox.Environment then return end
 	if not StormFox.Setting.GetCache("enable_fog",true) then return end
 	-- Apply color
-	local col = StormFox.Data.Get("fogColor") or StormFox.Data.Get("bottomColor",Color(255,255,255))
-	render.FogColor( col.r,col.g,col.b )
+	local col = StormFox.Data.Get("fogColor") or StormFox.Data.Get("bottomColor",color_white)
 
 	-- Check if the client is outside
 	local env = StormFox.Environment.Get()
@@ -59,8 +65,8 @@ local SkyFog = function(scale)
 	render.FogMode( 1 )
 	render.FogStart( curFogStart * scale )
 	render.FogEnd( curFogEnd * scale )
-	render.FogMaxDensity( math.max(1, fogdens, StormFox.Data.Get("fogDensity",0)))
-
+	render.FogMaxDensity( math.max(fogdens / 2, StormFox.Data.Get("fogDensity",0)))
+	render.FogColor( col.r,col.g,col.b )
 	return true
 end
 hook.Add("SetupSkyboxFog","StormFox.Sky.Fog",SkyFog)
