@@ -29,6 +29,7 @@ CreateConVar("sf_enable_mapsupport","1",{FCVAR_REPLICATED,FCVAR_ARCHIVE},"stormf
 		MsgC( "	", Color(255,255,255), str, s, Color(155,155,255), "Created", Color( 255, 255, 255), "\n" )
 		return {ent}
 	end
+	-- We need to use this function, as some entities spawn regardless of what the map has.
 	local function findEntities()
 		StormFox.Msg( "Scanning mapentities ..." )
 		local tSunlist = ents.FindByClass( "env_sun" )
@@ -47,14 +48,7 @@ CreateConVar("sf_enable_mapsupport","1",{FCVAR_REPLICATED,FCVAR_ARCHIVE},"stormf
 		hook.Run( "StormFox.PostEntityScan" )
 	end
 -- If this is first run, wait for InitPostEntity.
-	if _STORMFOX_FOUND then
-		timer.Simple(0,findEntities)
-	else
-		hook.Add("InitPostEntity","StormFox.Entities",function()
-			_STORMFOX_FOUND = true
-			findEntities()
-		end)
-	end
+	hook.Add("stormfox.InitPostEntity","StormFox.Entities",findEntities)
 -- Tell clients about explosions
 	util.AddNetworkString("stormfox.entity.explosion")
 	hook.Add("EntityRemoved","StormFox.Entitys.Explosion",function(ent)
