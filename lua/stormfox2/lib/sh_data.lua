@@ -17,6 +17,10 @@ StormFox.Data = {}
 StormFox_DATA = {}		-- Var
 StormFox_AIMDATA = {} 	-- Var, start, end
 
+--[[TODO: There are still problems with nil varables.
+
+]]
+
 -- Returns the final data. This will never lerp.
 function StormFox.Data.GetFinal( sKey, zDefault )
 	if StormFox_AIMDATA[sKey] then
@@ -28,6 +32,7 @@ function StormFox.Data.GetFinal( sKey, zDefault )
 	return zDefault
 end
 
+local lerpCache = {}
 do
 	local function isColor(t)
 		if type(t) ~= "table" then return false end
@@ -60,7 +65,7 @@ do
 				return from
 			end
 		else
-			print("UNKNOWN", t)
+			print("UNKNOWN", t,"TO",to)
 		end
 	end
 	local function calcFraction(start_cur, end_cur)
@@ -69,13 +74,14 @@ do
 		local d = end_cur - start_cur
 		return (n - start_cur) / d
 	end
-	local lerpCache = {}
+
 	-- Returns data
 	function StormFox.Data.Get( sKey, zDefault )
 		-- Check if lerping
-		if not StormFox_AIMDATA[sKey] or StormFox_DATA[sKey] == nil then
-			if StormFox_DATA[sKey] ~= nil then
-				return StormFox_DATA[sKey]
+		local var1 = StormFox_DATA[sKey]
+		if not StormFox_AIMDATA[sKey] then
+			if var1 ~= nil then
+				return var1
 			else
 				return zDefault
 			end
@@ -84,14 +90,17 @@ do
 		if lerpCache[sKey] ~= nil then return lerpCache[sKey] end
 		-- Calc
 		local fraction = calcFraction(StormFox_AIMDATA[sKey][2],StormFox_AIMDATA[sKey][3])
-		if fraction < 1 then
-			lerpCache[sKey] = LerpVar( fraction, StormFox_DATA[sKey], StormFox_AIMDATA[sKey][1] )
-			return lerpCache[sKey]
+		local var2 = StormFox_AIMDATA[sKey][1]
+		if fraction <= 0 then
+			return var1
+		elseif fraction < 1 then
+			lerpCache[sKey] = LerpVar( fraction, var1, var2 )
+			return lerpCache[sKey] or zDefault
 		else -- Fraction end
-			StormFox_DATA[sKey] = StormFox.Data.GetFinal( sKey )
+			StormFox_DATA[sKey] = var2
 			StormFox_AIMDATA[sKey] = nil
-			hook.Run("stormFox.data.lerpend",sKey,zVar)
-			return StormFox_DATA[sKey]
+			hook.Run("stormFox.data.lerpend",sKey,var2)
+			return var2 or zDefault
 		end
 	end
 	local n = 0
@@ -106,8 +115,15 @@ end
 
 -- Sets data. Will lerp if given delta.
 function StormFox.Data.Set( sKey, zVar, nDelta )
+	if not zVar then
+		StormFox_DATA[sKey] = nil
+		StormFox_AIMDATA[sKey] = nil
+		return
+	end
+	-- Delete old cache
+	lerpCache[sKey] = nil
 	-- Check if vars are the same
-	if StormFox_DATA[sKey]~=nil then
+	if StormFox_DATA[sKey] ~= nil then
 		if StormFox_DATA[sKey] == zVar then return end
 	end
 	-- If delta is 0 or below. (Or no prev data). Set it.
