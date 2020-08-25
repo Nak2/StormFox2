@@ -224,7 +224,7 @@ StormFox.Time = StormFox.Time or {}
 			hook.Run("StormFox.Time.Changed")
 		end
 		util.AddNetworkString( "StormFox.SetTimeData" )
-		hook.Add( "StormFox.Data.InitSpawn", "StormFox.SetTimeData",UpdateTime )
+		hook.Add( "stormFox.data.initspawn", "stormfox.settimedata",UpdateTime )
 		--[[<Server>-------------------------------------------------------------------------
 			Sets the time. Also supports a string "12:00" or "5:00 AM".
 		---------------------------------------------------------------------------]]
@@ -275,12 +275,10 @@ StormFox.Time = StormFox.Time or {}
 				StormFox.Time.Set(dt[1] * 60 + dt[2] + dt[3] / 60)
 			end
 		end)
+		-- Cookie save. 
+		hook.Add("ShutDown","StormFox.Time.Save",function()
+			StormFox.Msg("Saving time | " .. StormFox.Time.TimeToString())
+			cookie.Set("sf_lasttime",StormFox.Time.Get(true))
+		end)
+		cookie.Delete("sf_lasttime") -- Always delete this at launch.
 	end
-
--- Cookie save. 
-	hook.Add("ShutDown","StormFox.Time.Save",function()
-		StormFox.Msg("Saving time | " .. StormFox.Time.TimeToString())
-		cookie.Set("sf_lasttime",StormFox.Time.Get(true))
-	end)
--- Cookie delete
-	cookie.Delete("sf_lasttime") -- Always delete this at launch.
