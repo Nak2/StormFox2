@@ -237,15 +237,13 @@ hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function(eye)
 			RenderCloud(m_id,y_start + i + SysTime() * cloud_speed, size, a, eye * eye_mult )
 		end
 		-- Render top clouds
-			local up = Vector(0,0,1)
-			local n = max(0,min(math.ceil(layers * cl_amd),layers))
-			for i = 1,n do
-				local ri = n - i + 1
-				local cloud_amplifier = 1 + .4 * (1 -  (i / n))
-				UpdateCloudMaterial(i,255)
-				sky_mats[i]:SetVector("$color",Vector(min(c.r * cloud_amplifier,255),min(c.g * cloud_amplifier,255),min(c.b * cloud_amplifier,255)) / 255 )
-				RenderDome(up * (z_level + 0.4 * ri) + eye * eye_mult,sky_mats[i],255)
-			end
-		
-
+		local up = Vector(0,0,1)
+		local n = max(0,min(math.ceil(layers * cl_amd),layers))
+		for i = 1,n do
+			local ri = n - i + 1
+			local cloud_amplifier = 1 + .4 * (1 -  (i / n))
+			UpdateCloudMaterial(i,255)
+			sky_mats[i]:SetVector("$color",Vector(min(c.r * cloud_amplifier,255),min(c.g * cloud_amplifier,255),min(c.b * cloud_amplifier,255)) / 255 )
+			RenderDome(up * (z_level + 0.4 * ri) + eye * eye_mult,sky_mats[i],255)
+		end
 end)
