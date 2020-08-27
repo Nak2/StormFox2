@@ -5,6 +5,14 @@ StormFox.Setting.AddSV("maplight_smooth",game.SinglePlayer(),"Enables smooth lig
 StormFox.Setting.AddSV("maplight_updaterate",game.SinglePlayer() and 2 or 10,"The max-rate the map-light updates.")
 StormFox.Setting.AddSV("ekstra_lightsupport",-1,"Utilize engine.LightStyle to change the map-light. This can cause lag-spikes, but required on certain maps. -1 for automatic.")
 
+StormFox.Setting.AddSV("overwrite_ekstra_darkness",0,"Overwrites players setting: -1 = Force disable, 1 = Force enable")
+StormFox.Setting.AddSV("overwrite_ekstra_darkness_amount",-1,"Overwrites players setting: -1 = Use player setting, 0-1 = Force amount.")
+
+if CLIENT then
+	StormFox.Setting.AddCL("ekstra_darkness",render.SupportsPixelShaders_2_0(),"Adds a darkness-shader to make bright maps darker.")
+	StormFox.Setting.AddCL("ekstra_darkness_amount",1,"Scales the darkness-shader.")
+end
+
 if CLIENT then
 	ORIGINALREDOWNLOADMAP = ORIGINALREDOWNLOADMAP or render.RedownloadAllLightmaps
 	function render.RedownloadAllLightmaps( ... )
@@ -44,7 +52,7 @@ if SERVER then
 	end
 	local lastLight, lastUpdate
 	local nextUpdate,nextFull
-	function StormFox.Map.SetLight( nAmount, bFull )
+	local function SetLight( nAmount, bFull )
 		local nChar = convertTo( nAmount )
 		-- Only change if the light amount changes
 		if lastLight and nChar == lastLight then return end
@@ -85,6 +93,7 @@ if SERVER then
 			net.WriteUInt(nAmount, 7)
 		net.Broadcast()
 	end
+	StormFox.Map.SetLight = SetLight
 	timer.Create("stormfox.lightupdate", 1, 0, function()
 		if not nextUpdate or not lastUpdate then return end
 		-- Wait until we can update it again
@@ -95,11 +104,11 @@ if SERVER then
 		local n2 = nextFull
 		nextUpdate = nil
 		nextFull = nil
-		SetMapLight( n, n2 )
+		SetLight( n, n2 )
 	end)
 
 	hook.Add("stormfox.weather.postchange", "stormfox.weather.setlight", function( sName )
-		local night,day = StormFox.Data.Get("mapNightLight", 0), StormFox.Data.Get("mapDayLight",100)					-- Maplight
+		local night,day = StormFox.Data.GetFinal("mapNightLight", 0), StormFox.Data.GetFinal("mapDayLight",100)					-- Maplight
 		local minlight,maxlight = StormFox.Setting.GetCache("maplight_min",0),StormFox.Setting.GetCache("maplight_max",80) 	-- Settings
 		local smooth = StormFox.Setting.GetCache("maplight_smooth",game.SinglePlayer())
 
@@ -122,7 +131,7 @@ if SERVER then
 		end
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
-		StormFox.Map.SetLight(newLight)
+		SetLight(newLight)
 	end)
 
 	hook.Add("stormFox.data.initspawn", "stormfox.weather.lightinit", function(ply)
@@ -148,6 +157,72 @@ else
 			print("Redownload",nAmount, nFull)
 			Redownload(nAmount, nFull)
 		end)
+	end)
+	-- Fake darkness. Since some maps are bright
+	local mat_screen = Material( "stormfox2/shader/pp_dark" )
+	local mat_ColorMod = Material( "stormfox2/shader/color" )
+	mat_ColorMod:SetTexture( "$fbtexture", render.GetScreenEffectTexture() )
+	local texMM = GetRenderTargetEx( "_SF_DARK", -1, -1, RT_SIZE_FULL_FRAME_BUFFER, MATERIAL_RT_DEPTH_NONE, 0, 0, IMAGE_FORMAT_RGB888 )
+
+	-- Renders pp_dark
+	local function UpdateStencil( darkness )
+		if not render.SupportsPixelShaders_2_0() then return end -- How old is the GPU!?
+		render.UpdateScreenEffectTexture()
+		render.PushRenderTarget(texMM)
+			render.Clear( 255 * darkness, 255 * darkness, 255 * darkness, 255 * darkness )
+			render.ClearDepth()
+			render.OverrideBlend( true, BLEND_ONE_MINUS_SRC_COLOR, BLEND_ONE_MINUS_SRC_COLOR, 0, BLEND_ONE, BLEND_ZERO, BLENDFUNC_ADD )
+			render.SetMaterial(mat_ColorMod)
+			render.DrawScreenQuad()
+			render.OverrideBlend( false )
+		render.PopRenderTarget()
+		mat_screen:SetTexture( "$basetexture", texMM )
+	end
+	LightAmount = 0
+	local fade = 0
+	hook.Add("RenderScreenspaceEffects","StormFox.Light.MapMat",function()
+		-- How old is the GPU!?
+		if not render.SupportsPixelShaders_2_0() then return end
+		local a = 1 - (LightAmount / 40)
+		if a <= 0 then -- Too bright
+			fade = 0
+			return
+		end 
+		-- Check settings
+		if not StormFox.Setting.GetCache("allow_ekstra_darkness", true) then return end
+		if not StormFox.Setting.GetCache("ekstra_darkness",true) then return end -- Enabled?
+		local scale = StormFox.Setting.GetCache("ekstra_darkness_amount",1)
+		if scale <= 0 then return end
+		-- Calc the "fade" between outside and inside
+		local t = StormFox.Environment.Get()
+		if t.outside then
+			fade = math.min(2, fade + FrameTime())
+		elseif t.nearest_outside then
+			-- Calc dot
+			local view = StormFox.util.GetCalcView()
+			if not view then return end
+			if view.pos:DistToSqr(t.nearest_outside) > 40000 then -- Too far away
+				fade = math.max(0, fade - FrameTime())
+			else
+				local v1 = view.ang:Forward()
+				local v2 = (t.nearest_outside - view.pos):GetNormalized()
+				if v1:Dot(v2) < 0.6 then -- You're looking away
+					fade = math.max(0, fade - FrameTime())
+				else 	-- You're looking at it
+					fade = math.min(2, fade + FrameTime())
+				end
+			end
+		else
+			fade = math.max(0, fade - FrameTime())
+		end
+		if fade <= 0 then return end
+		-- Render		
+		UpdateStencil(a * scale * math.min(1, fade))
+		render.SetMaterial(mat_screen)
+		local w,h = ScrW(),ScrH()
+		render.OverrideBlend( true, 0, BLEND_ONE_MINUS_SRC_COLOR, 2, BLEND_ONE, BLEND_ZERO, BLENDFUNC_ADD )
+		render.DrawScreenQuadEx(0,0,w,h)
+		render.OverrideBlend( false )
 	end)
 end
 

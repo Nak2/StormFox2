@@ -1,0 +1,18 @@
+g_colourmodify
+{
+	$vertexcolor 1
+	$vertexalpha 1
+	$ignorez 1
+	$nofog 1
+
+	$fbtexture _rt_fullframefb
+	$pp_colour_addb 0
+	$pp_colour_addg 0
+	$pp_colour_addr 0
+	$pp_colour_brightness 0
+	$pp_colour_colour 0
+	$pp_colour_contrast 2
+	$pp_colour_mulb 0
+	$pp_colour_mulg 0
+	$pp_colour_mulr 0
+}
