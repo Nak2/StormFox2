@@ -3,7 +3,7 @@ Render clouds
 ---------------------------------------------------------------------------]]
 local cos,sin,rad = math.cos,math.sin,math.rad
 local max,min,clamp,ceil,abs = math.max,math.min,math.Clamp,math.ceil,math.abs
-local z_level = .8
+local z_level = -.8
 local eye_mult = -.0001
 
 -- Generate dome mesh
@@ -47,7 +47,7 @@ local eye_mult = -.0001
 			mesh.Color(255,255,255,255)
 			mesh.AdvanceVertex()
 
-			local R2 = {R[1] * 1.4,UVMulti(R[2],1.4),UVMulti(R[3],1.4)}
+			local R2 = {R[1] * 1.4 - Vector(0,0,4),UVMulti(R[2],1.4),UVMulti(R[3],1.4)}
 			mesh.Position(R2[1])
 			mesh.TexCoord( stage, R2[2],R2[3] )
 			mesh.Color(255,255,255,0)
@@ -64,7 +64,7 @@ local eye_mult = -.0001
 			mesh.Color(255,255,255,255)
 			mesh.AdvanceVertex()
 
-			mesh.Position(L[1] * 1.4)
+			mesh.Position(L[1] * 1.4 - Vector(0,0,4))
 			mesh.TexCoord( stage, UVMulti(L[2], 1.4), UVMulti(L[3],1.4))
 			mesh.Color(255,255,255,0)
 			mesh.AdvanceVertex()
@@ -140,7 +140,7 @@ local eye_mult = -.0001
 		table.insert(side_clouds,{png,png:GetInt("$realwidth") / png:GetInt("$realheight")})
 	end
 	-- Top clouds
-	local layers = 3
+	local layers = 4
 	local sky_mats = {}
 	local offset = {}
 	local params = {}
@@ -191,6 +191,7 @@ local eye_mult = -.0001
 	render.PopFilterMin()
 	end
 	local col = Color(255,0,0,175)
+	local v = Vector(0,0,-20)
 	local function RenderCloud(mat_id,yaw,s_size,alpha, pos)
 		local mat = side_clouds[mat_id]
 		if not mat then return end
@@ -198,7 +199,10 @@ local eye_mult = -.0001
 		local pitch = 0.11 * s_size
 		local n = Angle(pitch,yaw,0):Forward()
 		col.a = math.max(175 * alpha, 255)
-		render.DrawQuadEasy( n * -200 + pos, n, s_size * mat[2] , s_size, col, 180 )
+		render.DrawQuadEasy( n * -200 + pos + v, n, s_size * mat[2] , s_size, col, 180 )
+	end
+	local function LerpColor(f, col1, col2)
+		return Color( Lerp(f, col1.r, col2.r), Lerp(f, col1.g, col2.g), Lerp(f, col1.b, col2.b) )
 	end
 -- Cloud movement
 	hook.Add("PreRender","StormFox.Client.CloudMove",function()
@@ -234,13 +238,14 @@ hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function(eye)
 			local m_id = i % #side_clouds + 1
 			local y_start = (i % 3) * 120 + row * 33
 			local size = (3 + i % 5)  * 24
-			RenderCloud(m_id,y_start + i + SysTime() * cloud_speed, size, a, eye * eye_mult )
+			RenderCloud(m_id,y_start + i + SysTime() * cloud_speed, size, a, eye * eye_mult * 10 * i / 10 )
 		end
 		-- Render top clouds
 		local up = Vector(0,0,1)
 		local n = max(0,min(math.ceil(layers * cl_amd),layers))
+
 		for i = 1,n do
-			local ri = n - i + 1
+			local ri = n - i + layers
 			local cloud_amplifier = 1 + .4 * (1 -  (i / n))
 			UpdateCloudMaterial(i,255)
 			sky_mats[i]:SetVector("$color",Vector(min(c.r * cloud_amplifier,255),min(c.g * cloud_amplifier,255),min(c.b * cloud_amplifier,255)) / 255 )
