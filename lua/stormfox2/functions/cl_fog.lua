@@ -3,69 +3,83 @@ Use the map-data to set a minimum and maximum fogdistance
 ---------------------------------------------------------------------------]]
 StormFox.Setting.AddCL("enable_fog",true,"Enables fog.")
 
+--[[TODO: There are still problems with the fog looking strange.
+]]
+
 -- Load the default fog from the map
-local fogstart, fogend, fogstartmin, fogendmin, fogdens
+local fogstart, fogend, fogdens
 hook.Add("stormfox.InitPostEntity", "StormFox.FogInit", function()
 	for _,t in ipairs(StormFox.Map.FindClass("env_fog_controller")) do
 		if t.fogenable ~= 1 then continue end
 		if not fogstart then
 			fogstart 	= t.fogstart
 			fogend 		= t.fogend
-			fogstartmin = t.fogstart
-			fogendmin 	= t.fogend
 			fogdens 	= t.fogmaxdensity
 		else
-			fogstart 	= math.max(t.fogstart, fogstart)
-			fogend 		= math.max(t.fogend, fogend)
-			fogstartmin = math.min(t.fogstart, fogstart)
-			fogendmin 	= math.min(t.fogend, fogend)
-			fogdens 	= math.max(fogdens, t.fogmaxdensity)
+			fogstart 	= math.min(t.fogstart, fogstart)
+			fogend 		= math.min(t.fogend, fogend)
+			fogdens 	= math.min(fogdens, t.fogmaxdensity)
 		end
 	end
+	if fogstart then -- Filter maps
+		-- Some maps got some crazy fog
+		fogstart = math.max(1, fogstart)
+		fogend = math.max(10000, fogend)
+		fogdens = math.max(0.8, fogdens)
+		return
+	end
+	-- In case there aren't any default fog on the map ..
+	fogstart = 1
+	fogend = 90000
+	fogdens = 1
+	print("fogstart, fogend, fogdens")
+	print(fogstart, fogend, fogdens)
 end)
 
--- 	fogstart, 	fogend, 	fogstartmin, 	fogendmin, 	fogdens
---	1			90000		1				90000		1
-
---[[TODO: There are still problems with the fog looking strange.
-]]
-
-local curFogStart,curFogEnd
-local SkyFog = function(scale)
-	if not scale then scale = 1 end
-	if not fogstartmin or not fogendmin or not fogstart or not fogdens or not StormFox.Environment then return end
-	if not StormFox.Setting.GetCache("enable_fog",true) then return end
-	-- Apply color
-	local col = StormFox.Data.Get("fogColor") or StormFox.Data.Get("bottomColor",color_white)
-
-	-- Check if the client is outside
+local curFogStart,curFogEnd, curFogDens
+hook.Add("Think", "stormfox.fog.think", function()
+	if not StormFox.Setting.GetCache("enable_fog",true) or not fogstart then return end
+	-- Start with the default fog.
+	if not curFogStart then
+		curFogStart = fogstart
+		curFogEnd = fogend
+		curFogDens = fogdens
+	end
+	-- Are we outside?
 	local env = StormFox.Environment.Get()
 	local outside = env.outside or env.nearest_outside
-
-	-- Load the weather variable and use mapfog for min.
-	local w_fogend,w_fogstart = StormFox.Data.Get("fogEnd",10000), StormFox.Data.Get("fogStart",0)
-	if not outside then
-		w_fogend = math.min(fogendmin, w_fogend or fogendmin)
-		w_fogstart = math.min(fogstartmin, w_fogstart or fogstartmin)
+	-- Calc the aim
+	local aim_end,aim_start,aim_dense = StormFox.Data.Get("fogEnd",fogend), StormFox.Data.Get("fogStart",fogstart), StormFox.Data.Get("fogDensity",fogdens)
+	-- "Default" map fog should be the norm
+	if outside then
+		aim_start = math.min(aim_start, fogstart)
+		aim_end = math.min(aim_end, fogend)
+		aim_dense = math.min(aim_dense, fogdens)
 	else
-		w_fogend = math.min(fogend, w_fogend or fogend)
-		w_fogstart = math.min(fogstart, w_fogstart or fogstart)
+		aim_start = math.max(1000, math.min(aim_start, fogstart))
+		aim_end = math.max(10000, math.min(aim_end, fogend))
+		aim_dense = math.min(aim_dense, fogdens)
 	end
+	-- Smooth
+	local m_frame = FrameTime() * 300
+	curFogDens = math.Approach(curFogDens, aim_dense, FrameTime() * 10)
+	curFogStart = Lerp(m_frame,curFogStart, aim_start)
+	curFogEnd = Lerp(m_frame,curFogEnd, aim_end)
+end)
 
-	-- Fade
-	if not curFogStart or not curFogEnd then
-		curFogStart = w_fogstart
-		curFogEnd = w_fogend
-	else
-		curFogStart = math.Approach(curFogStart, w_fogstart, FrameTime() * 100)
-		curFogEnd = math.Approach(curFogEnd, w_fogend, FrameTime() * 100)
-	end
+function FOG()
+	return curFogStart,curFogEnd, curFogDens
+end
 
+local SkyFog = function(scale)
+	if not scale then scale = 1 end
+	if not StormFox.Setting.GetCache("enable_fog",true) or not curFogStart then return end
+	local col = StormFox.Data.Get("fogColor") or StormFox.Data.Get("bottomColor",color_white)
 	-- Apply fog
 	render.FogMode( 1 )
 	render.FogStart( curFogStart * scale )
 	render.FogEnd( curFogEnd * scale )
-	render.FogMaxDensity( math.max(fogdens / 2, StormFox.Data.Get("fogDensity",0)))
+	render.FogMaxDensity( curFogDens )
 	render.FogColor( col.r,col.g,col.b )
 	return true
 end
