@@ -6,6 +6,7 @@ Handle settings and convert convars.
 ---------------------------------------------------------------------------]]
 StormFox.Setting = {}
 local settings = {}
+local settings_env = {}
 local callback_func = {}
 local callBack = function(sName,oldvar,newvar)
 	local sName = string.match(sName,"sf_(.+)")
@@ -52,6 +53,7 @@ Note: This has to be called on the clients too.
 ---------------------------------------------------------------------------]]
 function StormFox.Setting.AddSV(sName,vDefaultVar,sDescription)
 	settings[sName] = type(vDefaultVar)
+	settings_env[sName] = true
 	if settings[sName] == "boolean" then
 		vDefaultVar = vDefaultVar and "1" or "0"
 	else
@@ -77,6 +79,7 @@ if CLIENT then
 	---------------------------------------------------------------------------]]
 	function StormFox.Setting.AddCL(sName,vDefaultVar,sDescription)
 		settings[sName] = type(vDefaultVar)
+		settings_env[sName] = false
 		if settings[sName] == "boolean" then
 			vDefaultVar = vDefaultVar and "1" or "0"
 		else
@@ -174,3 +177,26 @@ hook.Add("StormFox.PostLib", "StormFox.SettingPermission",function()
 	end)
 	hook.Remove("StormFox.PostLib", "StormFox.SettingPermission")
 end)
+
+--
+function StormFox.Setting.GetAll()
+	return table.GetKeys( settings )
+end
+function StormFox.Setting.GetAllServer()
+	local t = {}
+	for k,v in pairs(settings_env) do
+		if not v then continue end
+		table.insert(t, k)
+	end
+	return t
+end
+if CLIENT then
+	function StormFox.Setting.GetAllClient()
+		local t = {}
+		for k,v in pairs(settings_env) do
+			if v then continue end
+			table.insert(t, k)
+		end
+		return t
+	end
+end
