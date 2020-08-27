@@ -83,7 +83,7 @@ StormFox.Time = StormFox.Time or {}
 
 -- Make the BASETIME and TIME_SPEED
 	local BASETIME = CurTime() + start
-	local TIME_SPEED = StormFox.Setting.Get("time_speed",1)
+	local TIME_SPEED = StormFox.Setting.Get("time_speed",1) or 1
 
 -- Functions
 	--[[-------------------------------------------------------------------------
