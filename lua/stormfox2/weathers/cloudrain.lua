@@ -6,7 +6,7 @@ local rain = StormFox.Weather.Add( "Rain", "Cloud" )
 do
 	-- Day
 		cloudy:SetSunStamp("topColor",Color(3.0, 2.9, 3.5),		SF_SKY_DAY)
-		cloudy:SetSunStamp("bottomColor",Color(42.9,44.4,45.6),	SF_SKY_DAY)
+		cloudy:SetSunStamp("bottomColor",Color(42.9 * .5,44.4 * .5,45.6 * .5),	SF_SKY_DAY)
 		cloudy:SetSunStamp("duskColor",Color(3, 2.9, 3.5),		SF_SKY_DAY)
 		cloudy:SetSunStamp("duskScale",1,						SF_SKY_DAY)
 		cloudy:SetSunStamp("HDRScale",0.33,						SF_SKY_DAY)
@@ -33,10 +33,7 @@ do
 	rain:SetSunStamp("fogEnd",1500,SF_SKY_SUNRISE)
 	rain:SetSunStamp("fogEnd",2000,SF_SKY_NIGHT)
 	rain:SetSunStamp("fogEnd",2000,SF_SKY_BLUE_HOUR)
-	rain:SetSunStamp("fogDensity",1,SF_SKY_DAY)
-	rain:SetSunStamp("fogDensity",1,SF_SKY_SUNRISE)
-	rain:SetSunStamp("fogDensity",.8,SF_SKY_NIGHT)
-	rain:SetSunStamp("fogDensity",.8,SF_SKY_BLUE_HOUR)
+	rain:Set("fogDensity",1,SF_SKY_BLUE_HOUR)
 	rain:Set("fogStart",0)
 end
 -- Window render
