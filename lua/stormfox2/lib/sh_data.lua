@@ -18,13 +18,16 @@ StormFox_DATA = {}		-- Var
 StormFox_AIMDATA = {} 	-- Var, start, end
 
 --[[TODO: There are still problems with nil varables.
-
 ]]
 
 -- Returns the final data. This will never lerp.
 function StormFox.Data.GetFinal( sKey, zDefault )
 	if StormFox_AIMDATA[sKey] then
-		return StormFox_AIMDATA[sKey][1]
+		if StormFox_AIMDATA[sKey][1] ~= nil then
+			return StormFox_AIMDATA[sKey][1]
+		else
+			return zDefault
+		end
 	end
 	if StormFox_DATA[sKey] ~= nil then
 		return StormFox_DATA[sKey]
@@ -115,16 +118,17 @@ end
 
 -- Sets data. Will lerp if given delta.
 function StormFox.Data.Set( sKey, zVar, nDelta )
+	-- Check if vars are the same
+	if StormFox_DATA[sKey] ~= nil then
+		if StormFox_DATA[sKey] == zVar then return end
+	end
+	-- Delete old cache
+	lerpCache[sKey] = nil
+	-- Set to nil
 	if not zVar then
 		StormFox_DATA[sKey] = nil
 		StormFox_AIMDATA[sKey] = nil
 		return
-	end
-	-- Delete old cache
-	lerpCache[sKey] = nil
-	-- Check if vars are the same
-	if StormFox_DATA[sKey] ~= nil then
-		if StormFox_DATA[sKey] == zVar then return end
 	end
 	-- If delta is 0 or below. (Or no prev data). Set it.
 	if not nDelta or nDelta <= 0 or StormFox_DATA[sKey] == nil then
