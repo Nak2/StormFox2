@@ -61,7 +61,7 @@ local clear = StormFox.Weather.Add( "Clear" )
 	clear:Set("clouds",0)
 	clear:Set("HDRScale",0.7)
 	
-	clear:Set("fogEnd",10000)
+	clear:Set("fogEnd",90000)
 	clear:Set("fogStart",0)
 
 -- Static values
