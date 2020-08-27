@@ -201,7 +201,10 @@ else
 			-- Calc dot
 			local view = StormFox.util.GetCalcView()
 			if not view then return end
-			if view.pos:DistToSqr(t.nearest_outside) > 40000 then -- Too far away
+			local d = view.pos:DistToSqr(t.nearest_outside)
+			if d < 15000 then
+				fade = math.min(2, fade + FrameTime())
+			elseif d > 40000 then -- Too far away
 				fade = math.max(0, fade - FrameTime())
 			else
 				local v1 = view.ang:Forward()
