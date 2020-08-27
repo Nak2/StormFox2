@@ -976,7 +976,7 @@ local env_corotine = coroutine.wrap(function()
 		env_corotinefunction()
 	end
 end)
-hook.Add("StormFox.PostEntityScan", "stormfox.enviroment.start", function()
+hook.Add("stormfox.InitPostEntity", "stormfox.enviroment.start", function()
 	timer.Create("stormfox.enviroment.think", 0.25, 0, function()
 		env_corotine()
 		--print(coroutine.resume(env_corotine))
