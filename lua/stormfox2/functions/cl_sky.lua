@@ -52,7 +52,6 @@ We overwrite the sky variables. Its much better to handle it clientside.
 -- Local functions
 	local min,max,abs,app = math.min,math.max,math.abs,math.Approach
 	local function ColVec(col,div)
-		if not col then return Vector(1,1,1) end
 		if not div then
 			return Vector(col.r,col.g,col.b)
 		end
@@ -89,7 +88,8 @@ We overwrite the sky variables. Its much better to handle it clientside.
 				g_SkyPaint:SetStarTexture(StormFox.Data.Get("starTexture","skybox/starfield"))
 			end
 			-- SunSize
-				g_SkyPaint:SetSunSize(StormFox.Data.Get("sunSize",2) / 10)
+				local s_size = StormFox.Data.Get("sunSize",2) * StormFox.Data.Get("skyVisibility",1)
+				g_SkyPaint:SetSunSize(s_size / 10)
 
 			if StormFox.Sun and StormFox.Sun.GetAngle then
 				g_SkyPaint:SetSunNormal(StormFox.Sun.GetAngle():Forward())
