@@ -3,6 +3,9 @@ if StormFox and StormFox.Version < 2 then
 	error("StormFox 1 detected. StormFox 2 can't run.")
 end
 
+-- We need that skybox
+RunConsoleCommand("sv_skyname", "painted")
+
 --[[-------------------------------------------------------------------------
 StormFox 2.0
 ---------------------------------------------------------------------------]]
