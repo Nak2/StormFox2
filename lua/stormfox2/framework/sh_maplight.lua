@@ -3,14 +3,14 @@ StormFox.Setting.AddSV("maplight_max",80,"The maximum lightlevel.")
 StormFox.Setting.AddSV("maplight_smooth",game.SinglePlayer(),"Enables smooth light-transitions.")
 
 StormFox.Setting.AddSV("maplight_updaterate",game.SinglePlayer() and 2 or 10,"The max-rate the map-light updates.")
-StormFox.Setting.AddSV("ekstra_lightsupport",-1,"Utilize engine.LightStyle to change the map-light. This can cause lag-spikes, but required on certain maps. -1 for automatic.")
+StormFox.Setting.AddSV("extra_lightsupport",-1,"Utilize engine.LightStyle to change the map-light. This can cause lag-spikes, but required on certain maps. -1 for automatic.")
 
-StormFox.Setting.AddSV("overwrite_ekstra_darkness",0,"Overwrites players setting: -1 = Force disable, 1 = Force enable")
-StormFox.Setting.AddSV("overwrite_ekstra_darkness_amount",-1,"Overwrites players setting: -1 = Use player setting, 0-1 = Force amount.")
+StormFox.Setting.AddSV("overwrite_extra_darkness",0,"Overwrites players setting: -1 = Force disable, 1 = Force enable")
+StormFox.Setting.AddSV("overwrite_extra_darkness_amount",-1,"Overwrites players setting: -1 = Use player setting, 0-1 = Force amount.")
 
 if CLIENT then
-	StormFox.Setting.AddCL("ekstra_darkness",render.SupportsPixelShaders_2_0(),"Adds a darkness-shader to make bright maps darker.")
-	StormFox.Setting.AddCL("ekstra_darkness_amount",1,"Scales the darkness-shader.")
+	StormFox.Setting.AddCL("extra_darkness",render.SupportsPixelShaders_2_0(),"Adds a darkness-shader to make bright maps darker.")
+	StormFox.Setting.AddCL("extra_darkness_amount",1,"Scales the darkness-shader.")
 end
 
 if CLIENT then
@@ -25,7 +25,7 @@ local LightAmount = 80
 
 if SERVER then
 	util.AddNetworkString("stormfox.maplight")
-	local v = StormFox.Setting.Get("ekstra_lightsupport",-1)
+	local v = StormFox.Setting.Get("extra_lightsupport",-1)
 
 	-- A bit map logic
 	local should_enable_es = false
@@ -37,7 +37,7 @@ if SERVER then
 	else
 		should_enable_es = true
 		if v == 0 then
-			StormFox.Warning("Map doesn't have light_environment. It is required to have sf_ekstra_lightsupport on 1 for lightsupport.")
+			StormFox.Warning("Map doesn't have light_environment. It is required to have sf_extra_lightsupport on 1 for lightsupport.")
 		end
 	end
 
@@ -69,12 +69,12 @@ if SERVER then
 			nextFull = nFull
 			return
 		end
-		print("MapLight: ",nChar, nAmount)
+		hook.Run("stormfox.lightsystem.new", nAmount)
 		lastLight = nChar
 		lastUpdate = CurTime()
 		LightAmount = nAmount
 		-- Engine lightstyle
-		local n = StormFox.Setting.Get("ekstra_lightsupport",-1)
+		local n = StormFox.Setting.Get("extra_lightsupport",-1)
 		if n > 0 or (n < 0 and should_enable_es) then
 			engine.LightStyle(0,nChar)
 		end
@@ -189,9 +189,9 @@ else
 			return
 		end 
 		-- Check settings
-		if not StormFox.Setting.GetCache("allow_ekstra_darkness", true) then return end
-		if not StormFox.Setting.GetCache("ekstra_darkness",true) then return end -- Enabled?
-		local scale = StormFox.Setting.GetCache("ekstra_darkness_amount",1)
+		if not StormFox.Setting.GetCache("allow_extra_darkness", true) then return end
+		if not StormFox.Setting.GetCache("extra_darkness",true) then return end -- Enabled?
+		local scale = StormFox.Setting.GetCache("extra_darkness_amount",1)
 		if scale <= 0 then return end
 		-- Calc the "fade" between outside and inside
 		local t = StormFox.Environment.Get()
