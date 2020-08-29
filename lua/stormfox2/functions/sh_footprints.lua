@@ -82,7 +82,7 @@ local defaultSnowSnd = {
 		if mat:IsError() and (ent:IsNPC() or string.find(snd,"grass") or string.find(snd,"dirt")) then -- Used by maps
 			return true, sTexture
 		end
-		if StormFox.Terrain.HasMaterialChanged(sTexture) then return true, sTexture end
+		if StormFox.Terrain.HasMaterialChanged(mat) then return true, sTexture end
 		return false,sTexture
 	end
 -- Footstep overwrite and logic

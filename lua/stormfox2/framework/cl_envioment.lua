@@ -514,9 +514,9 @@ Generate meshes and env-points out from the map-data.
 	local puddle_mapmesh
 	local surfaceinfos = {}
 
-	local norm_mat = Material("stormfox/effects/window/win")
-	local refact_mat = Material("stormfox/effects/window/win_refract")
-	local puddle_mat = Material("stormfox/effects/rain_puddle")
+	local norm_mat = Material("stormfox2/effects/window/win")
+	local refact_mat = Material("stormfox2/effects/window/win_refract")
+	local puddle_mat = Material("stormfox2/effects/rain_puddle")
 
 	-- Scans for nearby window entities.
 	local function scan_dynamic()
@@ -801,13 +801,12 @@ Renders glass-meshes.
 	-- Returns the current window-renders
 	local function GetRenderFunctions()
 		local cT = StormFox.Terrain.GetCurrent() or {}
-		local cW = StormFox.Weather.GetCurrent() or {}
+		local cW = (StormFox.Weather.GetCurrent() or {}).Function or {}
 		return cW.windRender or cT.windRender, cW.windRenderRef or cT.windRenderRef, cW.windRender64 or cT.windRender64, cW.windRenderRef64 or cT.windRenderRef64
 	end
 
 	local close_window_ents = {} -- glass_dynamic
-
-	local Win,Win64,Win_Ref,Win64_Ref = Material("stormfox/effects/window/win"),Material("stormfox/effects/window/win_64"),Material("stormfox/effects/window/win_refract"),Material("stormfox/effects/window/win_refract_64")
+	local Win,Win64,Win_Ref,Win64_Ref = Material("stormfox2/effects/window/win"),Material("stormfox2/effects/window/win_64"),Material("stormfox2/effects/window/win_refract"),Material("stormfox2/effects/window/win_refract_64")
 	local function Mat_Update(rt_tex,func)
 		render.PushRenderTarget(rt_tex)
 		render.Clear( 0, 0, 0, 0 )
@@ -827,8 +826,6 @@ Renders glass-meshes.
 	hook.Add("Think", "StormFox.Environment.UpdateRTWIndow", function()
 		if not StormFox.Terrain then return end
 		local windRender, windRenderRef, windRender64, windRender64Ref = GetRenderFunctions()
-		local cT = StormFox.Terrain.GetCurrent()
-		if not cT then return end
 		-- Refract materials
 			if windRenderRef then
 				Win_Ref:SetTexture( "$normalmap", RT_Win_Ref )
@@ -858,7 +855,7 @@ Renders glass-meshes.
 	hook.Add("PreDrawTranslucentRenderables", "StormFox.Environment.RenderWindow", function(a,b)
 		if (b or not  StormFox.Terrain) then return end
 		if puddle_mapmesh then
-			render.SetMaterial(puddle_mat)
+			--render.SetMaterial(puddle_mat)
 			--puddle_mapmesh:Draw()
 		end
 		if #glass_mapmesh < 4 then return end

@@ -136,6 +136,25 @@ if SERVER then
 			net.WriteString(CurrentWeather and CurrentWeather.Name or "Clear")
 		net.Send(ply)
 	end)
+	-- Handles the terrain logic
+	timer.Create("stormfox.terrain.updater", 4, 0, function()
+		local cW = StormFox.Weather.GetCurrent()
+		local cT = StormFox.Terrain.GetCurrent()
+
+		if not cW then return end -- No weather!?
+		local terrain = cW:Get("Terrain")
+		if not cT and not terrain then return end -- No terrain detected
+		if cT and terrain and cT == terrain then return end -- Same terrain detected
+		if terrain then -- Switch terraintype out. This can't be the same as the other
+			StormFox.Terrain.Set(terrain.Name)
+		elseif not terrain and not cT.lock then -- This terrain doesn't have a lock. Reset terrain
+			StormFox.Terrain.Reset()
+		elseif not terrain and cT.lock then -- Check the lock of cT and see if we can reset
+			if cT:lock() then -- Lock tells us we can reset the terrain
+				StormFox.Terrain.Reset()
+			end
+		end
+	end)
 else
 	net.Receive("stormfox.weather", function(len)
 		local lastSet = net.ReadUInt(32)

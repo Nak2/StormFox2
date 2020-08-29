@@ -26,6 +26,11 @@
 local meta = {}
 meta.__index = meta
 meta.__tostring = function(self) return "SF_TerrainType[" .. (self.Name or "Unknwon") .. "]" end
+meta.__eq = function(self, other)
+	if type(other) ~= "table" then return false end
+	if not other.Name then return false end
+	return other.Name == self.Name
+end
 local terrains = {}
 StormFox.Terrain = {}
 -- Creates a new terrain type and stores it
