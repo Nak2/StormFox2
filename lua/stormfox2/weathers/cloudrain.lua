@@ -39,13 +39,14 @@ end
 -- Window render
 do
 	local raindrops = {}
-	local raindrops_mat = {(Material("stormfox/effects/window/raindrop_normal")),(Material("stormfox/effects/window/raindrop_normal2")),(Material("stormfox/effects/window/raindrop_normal3"))}
+	local raindrops_mat = {(Material("stormfox2/effects/window/raindrop_normal")),(Material("stormfox2/effects/window/raindrop_normal2")),(Material("stormfox2/effects/window/raindrop_normal3"))}
 	local s = 2
-	local function RenderRain()
+	local function RenderRain(w, h)
+		if StormFox.Temperature.Get() < -1 then return false end
 		local QT = StormFox.Client.GetQualityNumber()
 		local P = StormFox.Weather.GetProcent()
 		-- Base
-		surface.SetMaterial(Material("stormfox/effects/window/rain_normal"))
+		surface.SetMaterial(Material("stormfox2/effects/window/rain_normal"))
 		local c = (-SysTime() / 1000) % 1
 		surface.SetDrawColor(Color(255,255,255,255 * P))
 		surface.DrawTexturedRectUV(0,0, w, h, 0, c, s, c + s )
@@ -78,10 +79,7 @@ do
 			table.remove(raindrops, r[i])
 		end
 	end
-	rain:RenderWindowRefract64x64(function(w,h)
-		if StormFox.Temperature.Get() < -1 then return end
-		RenderRain()
-	end)
+	rain:RenderWindowRefract64x64(RenderRain)
 end
 -- Snow Terrain and footsteps
 do
@@ -97,15 +95,16 @@ do
 	end)
 
 	-- Snow window
-	local mat = Material("stormfox/effects/window/snow")
+	local mat = Material("stormfox2/effects/window/snow")
 	local function RenderSnow(w, h)
+		if StormFox.Temperature.Get() > -2 then return false end
 		local P = 1 - StormFox.Weather.GetProcent()
 		surface.SetMaterial(mat)
 		local lum = math.max(math.min(25 + StormFox.Weather.GetLuminance(), 255),70)
 		surface.SetDrawColor(Color(lum,lum,lum))
 		surface.DrawTexturedRect(0,h * 0.12 * P,w,h)
 	end
-	rain:RenderWindow( RenderSnow )
+	snow:RenderWindow( RenderSnow )
 	-- Footprints
 	snow:MakeFootprints({
 		"stormfox/footstep/footstep_snow0.ogg",
@@ -121,8 +120,8 @@ do
 	},"snow.step")
 
 	snow:SetGroundTexture("nature/snowfloor001a")
-	snow:AddTextureSwap("models/buggy/buggy001","stormfox/textures/buggy001-snow")
-	snow:AddTextureSwap("models/vehicle/musclecar_col","stormfox/textures/musclecar_col-snow")
+	snow:AddTextureSwap("models/buggy/buggy001","stormfox2/textures/buggy001-snow")
+	snow:AddTextureSwap("models/vehicle/musclecar_col","stormfox2/textures/musclecar_col-snow")
 
 	-- Other snow textures
 	-- DOD
