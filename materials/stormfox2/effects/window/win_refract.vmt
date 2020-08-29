@@ -1,0 +1,10 @@
+Refract
+{
+	$translucent 1
+	$dudvmap ""
+	$normalmap ""
+	$refracttint "[0.95 0.95 0.95]"
+	$refractamount .7
+	$vertexalpha 1
+	"$nocull"			1
+}

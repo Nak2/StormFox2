@@ -1,0 +1,7 @@
+UnlitGeneric
+{
+	"$basetexture" "stormfox2/effects/window/raindrop_normal2"
+	"$vertexcolor" 		1
+	"$vertexalpha" 		1
+
+}
