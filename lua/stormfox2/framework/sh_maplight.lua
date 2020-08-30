@@ -10,13 +10,12 @@ StormFox.Setting.AddSV("overwrite_extra_darkness_amount",-1,"Overwrites players 
 
 if CLIENT then
 	StormFox.Setting.AddCL("extra_darkness",render.SupportsPixelShaders_2_0(),"Adds a darkness-shader to make bright maps darker.")
-	StormFox.Setting.AddCL("extra_darkness_amount",1,"Scales the darkness-shader.")
+	StormFox.Setting.AddCL("extra_darkness_amount",0.85,"Scales the darkness-shader.")
 end
 
 if CLIENT then
 	ORIGINALREDOWNLOADMAP = ORIGINALREDOWNLOADMAP or render.RedownloadAllLightmaps
 	function render.RedownloadAllLightmaps( ... )
-		print(debug.Trace())
 		ORIGINALREDOWNLOADMAP( ... )
 	end
 end
@@ -159,6 +158,9 @@ else
 		end)
 	end)
 	-- Fake darkness. Since some maps are bright
+	local function exp(n)
+		return n * n
+	end
 	local mat_screen = Material( "stormfox2/shader/pp_dark" )
 	local mat_ColorMod = Material( "stormfox2/shader/color" )
 	mat_ColorMod:SetTexture( "$fbtexture", render.GetScreenEffectTexture() )
@@ -189,9 +191,13 @@ else
 			return
 		end 
 		-- Check settings
-		if not StormFox.Setting.GetCache("allow_extra_darkness", true) then return end
-		if not StormFox.Setting.GetCache("extra_darkness",true) then return end -- Enabled?
-		local scale = StormFox.Setting.GetCache("extra_darkness_amount",1)
+		local sv_setting = StormFox.Setting.GetCache("overwrite_extra_darkness",0)
+		if sv_setting <= -1 then return end
+		local cl_setting = StormFox.Setting.GetCache("extra_darkness",true)
+		if sv_setting == 0 and not cl_setting then return end
+
+		local sv_amount = StormFox.Setting.GetCache("overwrite_extra_darkness_amount",-1)
+		local scale = sv_amount >= 0 and sv_amount or StormFox.Setting.GetCache("extra_darkness_amount",1)
 		if scale <= 0 then return end
 		-- Calc the "fade" between outside and inside
 		local t = StormFox.Environment.Get()
@@ -220,7 +226,7 @@ else
 		end
 		if fade <= 0 then return end
 		-- Render		
-		UpdateStencil(a * scale * math.min(1, fade))
+		UpdateStencil(exp(a * scale * math.min(1, fade)))
 		render.SetMaterial(mat_screen)
 		local w,h = ScrW(),ScrH()
 		render.OverrideBlend( true, 0, BLEND_ONE_MINUS_SRC_COLOR, 2, BLEND_ONE, BLEND_ZERO, BLENDFUNC_ADD )
