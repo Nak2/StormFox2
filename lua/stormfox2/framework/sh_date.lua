@@ -16,7 +16,7 @@ StormFox.Date = {}
 if SERVER then
 	-- Sets the yearday.
 	function StormFox.Date.SetYearDay( nDay )
-		StormFox.Network.Set("day", nDay)
+		StormFox.Network.Set("day", nDay % 365)
 	end
 end
 
@@ -145,4 +145,9 @@ if SERVER then
 		if not switch then return end
 		StormFox.Network.Set("day", os.date("%j"))
 	end,"sf_convar_data")
+	-- Next day
+	hook.Add("StormFox.Time.NextDay", "StormFox.Data.NextDay", function(nDaysPast)
+		local nDay = StormFox.Date.GetYearDay() + nDaysPast
+		StormFox.Date.SetYearDay( nDay )
+	end) 
 end
