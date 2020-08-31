@@ -181,15 +181,15 @@ StormFox.Time = StormFox.Time or {}
 		return SF_NIGHT
 	end
 	local num = 0
-	timer.Create("StormFox.Time.StampCreator",0.4,0,function()
+	timer.Create("StormFox.Time.StampCreator",0.5,0,function()
 		local nTime = StormFox.Time.Get()
 		local lastStamp = currentStamp
 		currentStamp = timeToStamp(nTime)
-		if nTime <  num then
+		if nTime <  num or TIME_SPEED > 2880 then
 			--[[-------------------------------------------------------------------------
 			Gets called on a new day.
 			---------------------------------------------------------------------------]]
-			hook.Run("StormFox.Time.NextDay")
+			hook.Run("StormFox.Time.NextDay", 1 + math.floor(TIME_SPEED / 2880))
 			num = nTime
 		else
 			num = nTime
@@ -282,3 +282,22 @@ StormFox.Time = StormFox.Time or {}
 		end)
 		cookie.Delete("sf_lasttime") -- Always delete this at launch.
 	end
+
+-- Default Time Display
+if CLIENT then
+	-- 12h countries
+	local country = system.GetCountry() or "GB"
+	local h12_countries = {"GB","IE","US","CA","AU","NZ","IN","PK","BD","MY","MT","EG","MX","PH"}
+	--[[United Kingdom, Republic of Ireland, the United States, Canada (sorry Quebec), 
+	Australia, New Zealand, India, Pakistan, Bangladesh, Malaysia, Malta, Egypt, Mexico and the former American colony of the Philippines
+	]]
+	local default_12 = table.HasValue(h12_countries, country)
+	StormFox.Setting.AddCL("12h_display",default_12,"Changes how time is displayed.")
+	--[[-------------------------------------------------------------------------
+	Returns the time in a string, matching the players setting.
+	---------------------------------------------------------------------------]]
+	function StormFox.Time.Display(nTime)
+		local use_12 = StormFox.Setting.GetCache("12h_display",default_12)
+		return StormFox.Time.TimeToString(nTime,use_12)
+	end
+end
