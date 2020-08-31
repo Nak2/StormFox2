@@ -66,33 +66,33 @@ We overwrite the sky variables. Its much better to handle it clientside.
 			if StormFox.Thunder then
 				thunder = min(255,StormFox.Thunder.GetSkyLight() or 0)
 			end
-			local t_data = StormFox.Data.Get("topColor") or Color( 51, 127.5, 255 )
+			local t_data = StormFox.Mixer.Get("topColor") or Color( 51, 127.5, 255 )
 			local t_color = Color(max(thunder,t_data.r),max(thunder,t_data.g),max(thunder,t_data.b))
 			g_SkyPaint:SetTopColor(ColVec(t_color,255))
-			g_SkyPaint:SetBottomColor(ColVec(StormFox.Data.Get("bottomColor") or Color(204, 255, 255),255))
-			g_SkyPaint:SetFadeBias(StormFox.Data.Get("fadeBias",0.2))
-			g_SkyPaint:SetDuskColor(ColVec(StormFox.Data.Get("duskColor",color_white),255))
-			g_SkyPaint:SetDuskIntensity(StormFox.Data.Get("duskIntensity",1.94))
-			g_SkyPaint:SetDuskScale(StormFox.Data.Get("duskScale",0.29))
+			g_SkyPaint:SetBottomColor(ColVec(StormFox.Mixer.Get("bottomColor") or Color(204, 255, 255),255))
+			g_SkyPaint:SetFadeBias(StormFox.Mixer.Get("fadeBias",0.2))
+			g_SkyPaint:SetDuskColor(ColVec(StormFox.Mixer.Get("duskColor",color_white),255))
+			g_SkyPaint:SetDuskIntensity(StormFox.Mixer.Get("duskIntensity",1.94))
+			g_SkyPaint:SetDuskScale(StormFox.Mixer.Get("duskScale",0.29))
 
 			-- Stars
-			local n = StormFox.Data.Get("starFade",100) * 0.015
+			local n = StormFox.Mixer.Get("starFade",100) * 0.015
 			if n <= 0 then
 				g_SkyPaint:SetDrawStars(false)
 				g_SkyPaint:SetStarFade(0)
 			else
 				g_SkyPaint:SetDrawStars(true)
-				g_SkyPaint:SetStarSpeed((StormFox.Data.Get("starSpeed") or 0.001) * StormFox.Time.GetSpeed())
+				g_SkyPaint:SetStarSpeed((StormFox.Mixer.Get("starSpeed") or 0.001) * StormFox.Time.GetSpeed())
 				g_SkyPaint:SetStarFade(n)
-				g_SkyPaint:SetStarScale(StormFox.Data.Get("starScale") or 0.5)
-				g_SkyPaint:SetStarTexture(StormFox.Data.Get("starTexture","skybox/starfield"))
+				g_SkyPaint:SetStarScale(StormFox.Mixer.Get("starScale") or 0.5)
+				g_SkyPaint:SetStarTexture(StormFox.Mixer.Get("starTexture","skybox/starfield"))
 			end
 			-- SunSize
-				local s_size = StormFox.Data.Get("sunSize",2) * StormFox.Data.Get("skyVisibility",1)
+				local s_size = StormFox.Mixer.Get("sunSize",2) * (StormFox.Mixer.Get("skyVisibility",100) / 100)
 				g_SkyPaint:SetSunSize(s_size / 10)
 
 			if StormFox.Sun and StormFox.Sun.GetAngle then
 				g_SkyPaint:SetSunNormal(StormFox.Sun.GetAngle():Forward())
 			end
-			g_SkyPaint:SetHDRScale(StormFox.Data.Get("HDRScale",0.7))
+			g_SkyPaint:SetHDRScale(StormFox.Mixer.Get("HDRScale",0.7))
 	end)

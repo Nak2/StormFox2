@@ -218,11 +218,11 @@ local eye_mult = -.0001
 
 hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function(eye)
 	if not StormFox then return end
-	if not StormFox.Data then return end
-	local cl_amd = StormFox.Data.Get("clouds",0)
+	if not StormFox.Mixer then return end
+	local cl_amd = StormFox.Mixer.Get("clouds",0)
 	--if cl_amd <= 0 then return end
 		-- Update material-color
-		local c = StormFox.Data.Get("bottomColor") or Color(204, 255, 255)
+		local c = StormFox.Mixer.Get("bottomColor") or Color(204, 255, 255)
 		-- Render sideclouds
 		for _,v in ipairs(side_clouds) do
 			v[1]:SetVector("$color",Vector(c.r,c.g,c.b) / 255)

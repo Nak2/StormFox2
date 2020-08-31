@@ -32,8 +32,6 @@ hook.Add("stormfox.InitPostEntity", "StormFox.FogInit", function()
 	fogstart = 1
 	fogend = 90000
 	fogdens = 1
-	print("fogstart, fogend, fogdens")
-	print(fogstart, fogend, fogdens)
 end)
 
 local curFogStart,curFogEnd, curFogDens
@@ -49,7 +47,7 @@ hook.Add("Think", "stormfox.fog.think", function()
 	local env = StormFox.Environment.Get()
 	local outside = env.outside or env.nearest_outside
 	-- Calc the aim
-	local aim_end,aim_start,aim_dense = StormFox.Data.Get("fogEnd",fogend), StormFox.Data.Get("fogStart",fogstart), StormFox.Data.Get("fogDensity",fogdens)
+	local aim_end,aim_start,aim_dense = StormFox.Mixer.Get("fogEnd",fogend), StormFox.Mixer.Get("fogStart",fogstart), StormFox.Mixer.Get("fogDensity",fogdens)
 	-- "Default" map fog should be the norm
 	if outside then
 		aim_start = math.min(aim_start, fogstart)
@@ -61,8 +59,8 @@ hook.Add("Think", "stormfox.fog.think", function()
 		aim_dense = math.min(aim_dense, fogdens)
 	end
 	-- Smooth
-	local m_frame = FrameTime() * 300
-	curFogDens = math.Approach(curFogDens, aim_dense, FrameTime() * 10)
+	local m_frame = FrameTime() * 300 * StormFox.Time.GetSpeed()
+	curFogDens = math.Approach(curFogDens, aim_dense, m_frame / 30)
 	curFogStart = Lerp(m_frame,curFogStart, aim_start)
 	curFogEnd = Lerp(m_frame,curFogEnd, aim_end)
 end)
@@ -74,7 +72,7 @@ end
 local SkyFog = function(scale)
 	if not scale then scale = 1 end
 	if not StormFox.Setting.GetCache("enable_fog",true) or not curFogStart then return end
-	local col = StormFox.Data.Get("fogColor") or StormFox.Data.Get("bottomColor",color_white)
+	local col = StormFox.Mixer.Get("fogColor") or StormFox.Mixer.Get("bottomColor",color_white)
 	-- Apply fog
 	render.FogMode( 1 )
 	render.FogStart( curFogStart * scale )

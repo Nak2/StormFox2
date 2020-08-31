@@ -106,8 +106,24 @@ do
 	function w_meta:Get(sKey, SUNSTAMP )
 		if self.Function[sKey] then
 			return self.Function[sKey]( SUNSTAMP )
-		elseif self.SunStamp[sKey] and self.SunStamp[sKey][SUNSTAMP] then
-			return self.SunStamp[sKey][SUNSTAMP]
+		elseif self.SunStamp[sKey] then
+			if self.SunStamp[sKey][SUNSTAMP] ~= nil then
+				return self.SunStamp[sKey][SUNSTAMP]
+			end
+			-- This sunstamp isn't set, try and elevate stamp and check
+			if SUNSTAMP >= SF_SKY_CEVIL then
+				for i = SF_SKY_CEVIL + 1, SF_SKY_NIGHT do
+					if self.SunStamp[sKey][i] then
+						return self.SunStamp[sKey][i]
+					end
+				end
+			else
+				for i = SF_SKY_CEVIL - 1, SF_SKY_DAY, -1 do
+					if self.SunStamp[sKey][i] then
+						return self.SunStamp[sKey][i]
+					end
+				end
+			end
 		elseif self.Static[sKey] then
 			return self.Static[sKey], true
 		elseif self.Dynamic[sKey] then

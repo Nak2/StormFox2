@@ -133,9 +133,9 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 	-- 5 = astronomical
 	-- 6 = night
 	local stamp = {
-		[0] =   {SF_SKY_SUNRISE,6,"SunRise"}, -- 6
-		[6] =   {SF_SKY_DAY,168,"Day"}, -- 180 - 6
-		[174] = {SF_SKY_SUNSET,6,"SunSet"}, -- 174 + 6
+		[0] =   {SF_SKY_SUNRISE,6,"SunRise"}, -- 6					OK
+		[6] =   {SF_SKY_DAY,168,"Day"}, -- 180 - 6					OK
+		[174] = {SF_SKY_SUNSET,6,"SunSet"}, -- 174 + 6				
 		[180] = {SF_SKY_CEVIL,4,"Cevil"}, -- 4
 		[184] = {SF_SKY_BLUE_HOUR,2,"Blue Hour"}, -- 6
 		[186] = {SF_SKY_NAUTICAL,6,"Nautical"}, -- 12
