@@ -84,9 +84,10 @@ end
 -- Snow Terrain and footsteps
 do
 	local snow = StormFox.Terrain.Create("snow")
+	local rain_t = StormFox.Terrain.Create("rain")
 	-- Make the snow terrain apply, if temp is low
 	rain:SetTerrain( function() 
-		return StormFox.Temperature.Get() < -1 and snow
+		return StormFox.Temperature.Get() < -1 and snow or rain_t
 	end)
 
 	-- Make the snow stay, until temp is high.
