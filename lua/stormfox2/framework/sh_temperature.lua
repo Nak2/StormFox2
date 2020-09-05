@@ -10,6 +10,13 @@ Clients have to use these functions:
 	StormFox.Temperature.GetDisplaySymbol() 	-- Returns the temperature symbol for their setting.
 	StormFox.Temperature.GetDisplayDefault() 	-- Returns the default temperature setting for their country.
 	StormFox.Temperature.GetDisplayType() 		-- Returns the temperature setting clients have set to.
+
+Fun facts:
+	At -90C, we need specialized air or our brain "forgets" to breathe.
+	You'll be unconscious in an hour in 10C water. Dead in 3.
+	At -180C oxygen will liquidfy.
+	Coldest recorded temp on Earth is -90C
+
 ---------------------------------------------------------------------------]]
 StormFox.Temperature = {}
 local convert_from,convert_to = {},{}
@@ -132,6 +139,9 @@ if SERVER then
 	Sets the temperature in ceilsius. Second argument is the smooth-time in seconds.
 	---------------------------------------------------------------------------]]
 	function StormFox.Temperature.Set(nCelsius,nLerpTime)
+		if nCelsius < -273.15 then --  ( In space, there are 270.45 C )
+			nCelsius = -273.15
+		end
 		StormFox.Network.Set("Temp",nCelsius,nLerpTime)
 	end
 else
