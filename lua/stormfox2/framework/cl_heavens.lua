@@ -57,13 +57,13 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 		Returns the sun-size. (Normal 30)
 	---------------------------------------------------------------------------]]
 	function StormFox.Sun.GetSize()
-		return StormFox.Data.Get("sun_size",30)
+		return StormFox.Mixer.Get("sun_size",30)
 	end
 	--[[-------------------------------------------------------------------------
 		Returns the  sun-color.
 	---------------------------------------------------------------------------]]
 	function StormFox.Sun.GetColor()
-		return StormFox.Data.Get("sun_color",Color(255,255,255))
+		return StormFox.Mixer.Get("sun_color",Color(255,255,255))
 	end
 	local sunVisible = 0
 		--[[-------------------------------------------------------------------------
@@ -175,7 +175,7 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 		if not _STORMFOX_SUNPIX then -- Create pixel
 			_STORMFOX_SUNPIX = util.GetPixelVisibleHandle()
 		else
-			sunVisible = util.PixelVisible( LocalPlayer():GetPos() + StormFox.Sun.GetAngle():Forward() * 4096, StormFox.Data.Get("sun_size",30), _STORMFOX_SUNPIX )
+			sunVisible = util.PixelVisible( LocalPlayer():GetPos() + StormFox.Sun.GetAngle():Forward() * 4096, StormFox.Mixer.Get("sun_size",30), _STORMFOX_SUNPIX )
 		end
 	end)
 
@@ -211,7 +211,7 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 	---------------------------------------------------------------------------]]
 	function StormFox.Moon.IsUp()
 		local t = StormFox.Moon.GetAngle().p
-		local s = StormFox.Data.Get("moonSize",20) / 6.9
+		local s = StormFox.Mixer.Get("moonSize",20) / 6.9
 		return t > 180 - s or t < s
 	end
 	--[[-------------------------------------------------------------------------
@@ -383,7 +383,7 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 			CurrentMoonTexture:SetTexture("$basetexture",RTMoonTexture)
 		end
 	hook.Add("StormFox.2DSkybox.Moon","StormFox.RenderMoon",function(c_pos)
-		local moonScale = StormFox.Data.Get("moonSize",20)
+		local moonScale = StormFox.Mixer.Get("moonSize",20)
 		local moonAng = StormFox.Moon.GetAngle()
 		local N = moonAng:Forward()
 		local NN = -N
@@ -398,8 +398,8 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 				ang = v:AngleEx(C:Forward()):Forward()
 				local roll = math.deg(math.atan2(ang.z,ang.y))
 			RenderMoonPhase( -sa - roll + ((moonAng.p < 270 and moonAng.p > 90) and 180 or 0)   ,currentPhase)
-		local c = StormFox.Data.Get("moonColor",Color(205,205,205))
-		local a = StormFox.Data.Get("skyVisibility",100)
+		local c = StormFox.Mixer.Get("moonColor",Color(205,205,205))
+		local a = StormFox.Mixer.Get("skyVisibility",100)
 		if moonAng.p > 190 then
 			gda = clamp((moonAng.p - 190) / 10,0,1)
 		elseif moonAng.p < 350 then
