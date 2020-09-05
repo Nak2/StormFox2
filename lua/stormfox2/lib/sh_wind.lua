@@ -117,8 +117,8 @@ local function dataCheck(sKey,sVar)
 	if sKey ~= "Wind" and sKey ~= "WindAngle" then return end
 	calcfunc()
 end
-hook.Add("StormFox.Data.Change","StormFox.Wind.Calc",dataCheck)
-hook.Add("StormFox.Data.Finish", "StormFox.Wind.Calcfinish", dataCheck)
+hook.Add("stormfox.data.change","StormFox.Wind.Calc",dataCheck)
+hook.Add("stormfox.data.lerpend", "StormFox.Wind.Calcfinish", dataCheck)
 
 --[[-------------------------------------------------------------------------
 Returns the wind norm.
