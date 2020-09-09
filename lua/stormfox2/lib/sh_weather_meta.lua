@@ -14,6 +14,7 @@ local Weathers = {}
 local w_meta = {}
 w_meta.__index = w_meta
 w_meta.__tostring = function(self) return "SF_WeatherType[" .. (self.Name or "Unknwon") .. "]" end
+w_meta.MetaName = "SF-Weather"
 
 -- function for the generator. Returns true to allow. Function will be called with (day_temperature, time_start, time_duration, percent) 
 function w_meta:SetRequire(fFunc)
@@ -164,6 +165,16 @@ end
 
 function w_meta:RenderWindowRefract64x64( fFunc )
 	self:Set( "windRenderRef64", fFunc )
+end
+
+--[[<Shared>------------------------------------------------------------------
+	Adds a guage-type to the weather. Second argument can be used to determen when
+	to apply the downfall. You can also use it to change downfall type if you return
+	another downfall type in fApplyFunc.
+---------------------------------------------------------------------------]]
+function w_meta:SetDownFall( tDownFall, fApplyFunc )
+	self.downfall = tDownFall
+	self.downfallfunc = fApplyFunc
 end
 
 -- Load weathers

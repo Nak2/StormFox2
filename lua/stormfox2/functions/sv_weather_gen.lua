@@ -113,7 +113,6 @@ function StormFox.Weather.GetWeekData()
 	return weather_gen
 end
 
-
 hook.Add("ShutDown","StormFox.Temp.Save",function()
 	cookie.Set("sf_lasttemp",StormFox.Temperature.Get())
 	cookie.Set("sf_lastweather",StormFox.Weather.GetCurrent().Name)

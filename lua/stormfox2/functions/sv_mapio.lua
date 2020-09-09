@@ -10,10 +10,10 @@ logic_relays support and map lights.
 	weather_clear
 	weather_rain
 	weather_heavyrain
-	weather_clearrain
+	weather_clearrain	-- Called when rain stops
 	weather_snow
 	weather_snowstorm
-	weather_clearsnow
+	weather_clearsnow	-- Called when snow stops
 ---------------------------------------------------------------------------]]
 
 local night_lights = {{}, {}, {}, {}, {}, {}}

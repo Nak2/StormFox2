@@ -160,3 +160,140 @@ do
 		snow:AddTextureSwap("models/props_forest/train_stop","models/props_forest/train_stop_snow")
 	end
 end
+
+-- Rain particles
+local downfall_rain = StormFox.DownFall.Create("rain")
+local downfall_snow = StormFox.DownFall.Create("snow")
+do
+	
+	local rainsplash_w = Material("effects/splashwake3")
+	local rainsplash = Material("effects/splash4")
+	local ODPR = function( pos, normal, hit_type, CLuaEmitter, CLuaEmitter2D )
+		if math.random(3) > 1 then return end
+		if hit_type == 1 then -- Water
+			local p = CLuaEmitter:Add(rainsplash_w,pos)
+			p:SetAngles(normal:Angle())
+			p:SetStartSize(8)
+			p:SetEndSize(40)
+			p:SetDieTime(1)
+			p:SetEndAlpha(0)
+			p:SetStartAlpha(math.random(7,10))
+		else -- Ground / Glass
+			local p = CLuaEmitter:Add(rainsplash,pos)
+			p:SetAngles(normal:Angle())
+			p:SetStartSize(4)
+			p:SetEndSize(5)
+			p:SetDieTime(0.2)
+			p:SetEndAlpha(0)
+			p:SetStartAlpha(10)
+			if hit_type == 2 then
+				local p = CLuaEmitter:Add(rainsplash,pos)
+				p:SetAngles(-normal:Angle())
+				p:SetStartSize(8)
+				p:SetEndSize(10)
+				p:SetDieTime(0.2)
+				p:SetEndAlpha(0)
+				p:SetStartAlpha(10)
+			end
+		end
+	end
+	downfall_rain:SetParticlesPrGauge( 14 )
+
+	-- Close rain
+	local part = StormFox.DownFall.CreateParticle("rain")
+		part:SetAmountPrCykle(60)
+		part:SetMateiral(Material("stormfox/raindrop.png"))
+		part:SetWeight(1.22 * 100,1.56 * 100)
+		part:SetMaxDistance(700)
+		part:SetMinDistance(20)
+		part:SetWidth(1.22,1.56)
+		part:SetHeight(3.22,3.56)
+		part:SetAlpha(45, 15)
+		part:OnDeathParticle( ODPR )
+		local function ExpPart(vPos, vExpoison, nRange, nForce, CLuaemitter2D)
+			local a_dis = vPos:Distance(vExpoison)
+			local e_dis = nRange - a_dis
+			local e_ang = (vPos - vExpoison):Angle():Forward()
+			local boost = e_dis * 5
+			local p = CLuaemitter2D:Add("effects/splash1",vExpoison + e_ang * math.max(nRange / 2, a_dis))
+				p:SetStartSize(math.random(32, 20))
+				p:SetEndSize(5)
+				p:SetDieTime(2.5)
+				p:SetEndAlpha(0)
+				p:SetStartAlpha(6)
+				p:SetGravity( physenv.GetGravity() * 2 )
+				p:SetVelocity( e_ang * nForce *  boost)
+				p:SetAirResistance(3)
+				p:SetCollide(true)
+				p:SetRoll(math.random(360))
+				p:SetCollideCallback(function( part )
+					part:SetDieTime(0)
+				end)
+		end
+		part:OnExplosion(function(vPos, vExpoison, nRange, nForce, CLuaemitter, CLuaemitter2D)
+			ExpPart(vPos, vExpoison, nRange, nForce, CLuaemitter2D)
+			-- Make a few more
+			for i = 1,(2 + StormFox.Client.GetQualityNumber() / 3) do
+				local fPos = vExpoison
+					fPos[1] = fPos[1] + math.random(-nForce,nForce)
+					fPos[2] = fPos[2] + math.random(-nForce,nForce)
+					fPos[3] = fPos[3] + math.random(-nForce,nForce)
+				ExpPart(fPos, vExpoison, nRange, nForce, CLuaemitter2D)
+			end
+		end)
+	-- Distant rain
+	local part = StormFox.DownFall.CreateParticle("rain")
+		part:SetAmountPrCykle(16)
+		part:SetMateiral(Material("stormfox/raindrop-multi.png","noclamp smooth"))
+		part:SetWeight(1.22 * 100,1.56 * 100)
+		part:SetMaxDistance(400)
+		part:SetMinDistance(1200)
+		part:SetWidth(10,20)
+		part:SetHeight(10,20)
+		part:SetAlpha(75, 10)
+		part:OnDeathParticle( ODPR )
+	-- Cloudy rain
+	local part = StormFox.DownFall.CreateParticle("rain")
+		part:SetAmountPrCykle(1)
+		part:SetMaxAmount(10)
+		part:SetMateiral(Material("particle/smokesprites_0003"))
+		part:SetWeight(3.22 * 70,1.56 * 2)
+		part:SetMaxDistance(1000)
+		part:SetMinDistance(1200)
+		part:SetWidth(400,80)
+		part:SetHeight(100,40)
+		part:SetAlpha(5, 7)
+		part:SetNoBeam(true)
+		part:SetFadeOut(true)
+		part:SetRenderHeight(400)
+
+	-- Create snow particles
+	
+	for i = 1,1 do
+		local part = StormFox.DownFall.CreateParticle("snow")
+			part:SetAmountPrCykle(30)
+			part:SetMateiral(Material("stormfox/snowflake" .. i .. ".png"))
+			part:SetWeight(1.22 * 10,1.56 * 10)
+			part:SetMaxDistance(700)
+			part:SetMinDistance(20)
+			part:SetWidth(.62,.36)
+			part:SetHeight(.62,.36)
+			part:SetAlpha(45, 15)
+			part:SetNoBeam(true)
+	end
+	local part = StormFox.DownFall.CreateParticle("snow")
+		part:SetAmountPrCykle(5)
+		part:SetMateiral(Material("stormfox/snow-multi.png"))
+		part:SetWeight(1.22 * 40,1.56 * 10)
+		part:SetMaxDistance(600)
+		part:SetMinDistance(400)
+		part:SetWidth(150,10)
+		part:SetHeight(150,10)
+		part:SetAlpha(255)
+		part:SetFadeOut(true)
+		part:SetRenderHeight(200)
+end
+
+rain:SetDownFall(downfall_rain,function()
+	return StormFox.Data.Get( "Temp", 20 ) < math.random(0,4) and downfall_snow or downfall_rain
+end)

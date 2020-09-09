@@ -36,6 +36,12 @@ function StormFox.Data.GetFinal( sKey, zDefault )
 end
 
 local lerpCache = {}
+local function calcFraction(start_cur, end_cur)
+	local n = CurTime()
+	if n >= end_cur then return 1 end
+	local d = end_cur - start_cur
+	return (n - start_cur) / d
+end
 do
 	local function isColor(t)
 		if type(t) ~= "table" then return false end
@@ -70,12 +76,6 @@ do
 		else
 			print("UNKNOWN", t,"TO",to)
 		end
-	end
-	local function calcFraction(start_cur, end_cur)
-		local n = CurTime()
-		if n >= end_cur then return 1 end
-		local d = end_cur - start_cur
-		return (n - start_cur) / d
 	end
 
 	-- Returns data
