@@ -186,6 +186,6 @@ for _,fil in ipairs(file.Find("stormfox2/weathers/*.lua","LUA")) do
 end
 
 function StormFox.Weather.GetLuminance()
-	local Col = StormFox.Data.Get("bottomColor",Color(255,255,255))
+	local Col = StormFox.Mixer.Get("bottomColor") or Color(255,255,255)
 	return 0.2126 * Col.r + 0.7152 * Col.g + 0.0722 * Col.b
 end
