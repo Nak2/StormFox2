@@ -251,6 +251,7 @@ local RenderRain = function()
 	_STORMFOX_PEM2d:Draw()
 	local Gauge = StormFox.Mixer.Get("Gauge",0)
 	local lum = StormFox.Weather.GetLuminance()
+	lum = math.sqrt(lum) + 75
 	local sky_c = Color(lum,lum,lum)
 		sky_c = Color(max(sky_c.r,4),max(sky_c.g,35),max(sky_c.b,35),150)
 	for i,v in ipairs(cur_particles) do
