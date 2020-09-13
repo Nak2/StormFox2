@@ -20,7 +20,7 @@
 StormFox.Time = StormFox.Time or {}
 -- Settings
 	StormFox.Setting.AddSV("start_time",-1,"stormfox.time.starttime")
-	StormFox.Setting.AddSV("time_speed",1,"stormfox.time.speed")
+	StormFox.Setting.AddSV("time_speed",2,"stormfox.time.speed")
 	StormFox.Setting.AddSV("real_time",false,"stormfox.time.realtime")
 
 -- Time stamps
