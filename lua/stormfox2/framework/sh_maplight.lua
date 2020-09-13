@@ -10,7 +10,7 @@ StormFox.Setting.AddSV("overwrite_extra_darkness_amount",-1,"Overwrites players 
 
 if CLIENT then
 	StormFox.Setting.AddCL("extra_darkness",render.SupportsPixelShaders_2_0(),"Adds a darkness-shader to make bright maps darker.")
-	StormFox.Setting.AddCL("extra_darkness_amount",0.85,"Scales the darkness-shader.")
+	StormFox.Setting.AddCL("extra_darkness_amount",0.75,"Scales the darkness-shader.")
 end
 
 if CLIENT then
@@ -185,7 +185,7 @@ else
 	hook.Add("RenderScreenspaceEffects","StormFox.Light.MapMat",function()
 		-- How old is the GPU!?
 		if not render.SupportsPixelShaders_2_0() then return end
-		local a = 1 - (LightAmount / 40)
+		local a = 1 - LightAmount
 		if a <= 0 then -- Too bright
 			fade = 0
 			return
