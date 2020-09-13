@@ -89,6 +89,7 @@ local defaultSnowSnd = {
 	hook.Add("EntityEmitSound", "stormFox.footstep", function(data)
 		if not StormFox.Terrain then return end
 		local cT = StormFox.Terrain.GetCurrent()
+		if not cT then return end
 		-- Only enable if we edit or need footsteps.
 			if not (bAlwaysFootstep or (cT and cT.footstepLisen)) then return end			
 		-- Check if the server has disabled the footprint logic on their side.
