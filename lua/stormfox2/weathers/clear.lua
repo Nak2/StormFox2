@@ -3,6 +3,27 @@
 
 local clear = StormFox.Weather.Add( "Clear" )
 
+-- Icon
+local m1,m2,m3,m4 = (Material("stormfox2/hud/w_clear.png")),(Material("stormfox2/hud/w_clear_night.png")),(Material("stormfox2/hud/w_clear_windy.png")),(Material("stormfox2/hud/w_clear_cold.png"))
+function clear.GetSymbol( nTime ) -- What the menu should show
+	return m1
+end
+
+function clear.GetIcon( nTime, nTemp, nWind, bThunder, nFraction) -- What symbol the weather should show
+	local b_day = StormFox.Time.IsDay(nTime)
+	local b_cold = nTemp < -2
+	local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 3
+	if b_windy then
+		return m3
+	elseif b_cold then
+		return m4
+	elseif b_day then
+		return m1
+	else
+		return m2
+	end
+end
+
 -- Day
 	clear:SetSunStamp("topColor",Color(91, 127.5, 255),		SF_SKY_DAY)
 	clear:SetSunStamp("bottomColor",Color(204, 255, 255),	SF_SKY_DAY)

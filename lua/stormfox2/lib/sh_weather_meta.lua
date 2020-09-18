@@ -31,6 +31,7 @@ end
 
 function StormFox.Weather.Add( sName, sInherit )
 	local t = {}
+	t.ID = table.Count(Weathers) + 1
 	t.Name = sName
 	setmetatable(t, w_meta)
 	if sName ~= "Clear" then

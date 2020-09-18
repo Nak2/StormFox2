@@ -7,13 +7,10 @@ Requirements:
 logic_relays support and map lights.
 	dusk / night_events
 	dawn / day_events
-	weather_clear
-	weather_rain
-	weather_heavyrain
-	weather_clearrain	-- Called when rain stops
-	weather_snow
-	weather_snowstorm
-	weather_clearsnow	-- Called when snow stops
+	weather_<type>		Called when a weathertype gets applied
+	weather_onchange	Called when a weathertype changes
+	weather_<type>_off	Called when a weathertype gets removed
+
 ---------------------------------------------------------------------------]]
 
 local night_lights = {{}, {}, {}, {}, {}, {}}
@@ -62,4 +59,15 @@ hook.Add("stormfox.lightsystem.new", "stormfox.mapinteractions.light", function(
 		setLights( false )
 	end
 	switch = lights_on
+end)
+
+-- StormFox.Map.w_CallLogicRelay( name )
+
+hook.Add("stormfox.weather.postchange", "stormfox.mapinteractions" , function( sName ,nPercentage )
+	local c_weather = StormFox.Weather.GetCurrent()
+	local relay = c_weather.Name
+	if c_weather.LogicRelay then
+		relay = c_weather.LogicRelay() or relay
+	end
+	StormFox.Map.w_CallLogicRelay( string.lower(relay) )
 end)

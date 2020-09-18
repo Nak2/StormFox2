@@ -2,6 +2,69 @@
 local cloudy = StormFox.Weather.Add( "Cloud" )
 local rain = StormFox.Weather.Add( "Rain", "Cloud" )
 
+-- Cloud icon
+do
+	-- Icon
+	local m_def = Material("stormfox2/hud/w_cloudy.png")
+	local m_night = Material("stormfox2/hud/w_cloudy_night.png")
+	local m_windy = Material("stormfox2/hud/w_cloudy_windy.png")
+	local m_thunder = Material("stormfox2/hud/w_cloudy_thunder.png")
+	function cloudy.GetSymbol( nTime ) -- What the menu should show
+		return m_def
+	end
+	function cloudy.GetIcon( nTime, nTemp, nWind, bThunder, nFraction) -- What symbol the weather should show
+		local b_day = StormFox.Time.IsDay(nTime)
+		local b_cold = nTemp < -2
+		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 3
+		local b_H = nFraction > 0.5
+		if bThunder then
+			return m_thunder
+		elseif b_windy then
+			return m_windy
+		elseif b_H or b_day then
+			return m_def
+		else
+			return m_night
+		end
+	end
+end
+
+-- Rain icon
+do
+	-- Icon
+	local m_def = Material("stormfox2/hud/w_raining.png")
+	local m_thunder = Material("stormfox2/hud/w_raining_thunder.png")
+	local m_windy = Material("stormfox2/hud/w_raining_windy.png")
+	local m_snow = Material("stormfox2/hud/w_snowing.png")
+	local m_sleet = Material("stormfox2/hud/w_sleet.png")
+	function rain.GetSymbol( nTime, nTemp ) -- What the menu should show
+		if nTemp < -4 then
+			return m_snow
+		end
+		return m_def
+	end
+	function rain.GetIcon( _, nTemp, nWind, bThunder, nFraction) -- What symbol the weather should show
+		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 3
+		if bThunder then
+			return m_thunder
+		elseif b_windy and nTemp > -4 then
+			return m_windy
+		elseif nTemp > 0 then
+			return m_def
+		elseif nTemp <= -4 then
+			return m_snow
+		else
+			return m_sleet
+		end
+	end
+	function rain.LogicRelay()
+		if StormFox.Temperature.Get() < -1 then
+			return "snow"
+		end
+		return "rain"
+	end
+end
+
 -- Sky and default weather variables
 do
 	-- Day
@@ -87,6 +150,9 @@ do
 	local rain_t = StormFox.Terrain.Create("rain")
 	-- Make the snow terrain apply, if temp is low
 	rain:SetTerrain( function() 
+		if SERVER then
+			StormFox.Map.w_CallLogicRelay(self.LogicRelay())
+		end
 		return StormFox.Temperature.Get() < -1 and snow or rain_t
 	end)
 

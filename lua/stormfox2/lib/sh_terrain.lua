@@ -176,6 +176,9 @@ end
 
 -- Resets the terrain to default.
 function StormFox.Terrain.Reset( bNoUpdate )
+	if SERVER and not bNoUpdate then
+		StormFox.Map.CallLogicRelay("terrain_clear")
+	end
 	CURRENT_TERRAIN = nil
 	if SERVER and not bNoUpdate then
 		net.Start("stormfox.terrain")
@@ -202,6 +205,9 @@ function StormFox.Terrain.Set( sName )
 	end
 	StormFox.Terrain.Reset( true )
 	t:Apply()
+	if SERVER then
+		StormFox.Map.CallLogicRelay( "terrain_" .. string.lower(sName) )
+	end
 end
 
 -- Applies the terrain (This won't reset old terrain)

@@ -707,6 +707,20 @@ Locates an entity with the given hammer_id from the mapfile.
 				ent:Fire( "Trigger", "" );
 			end
 		end
+		local l_w
+		function StormFox.Map.w_CallLogicRelay( name )
+			name = string.lower( name )
+			if l_w then
+				if l_w == name then 
+					return
+				else -- Turn "off" the last logic relay
+					StormFox.Map.CallLogicRelay("weather_" .. l_w, false)
+				end
+			end
+			StormFox.Map.CallLogicRelay("weather_onchange")
+			l_w = name
+			StormFox.Map.CallLogicRelay("weather_" .. name, true)
+		end
 	end
 	function StormFox.Map.HasLogicRelay(sName,b)
 		if b ~= nil and b == false then

@@ -69,12 +69,10 @@ local function Init(self)
 	m_weather:Dock(TOP)
 	m_weather.Paint = function() end
 	self.weather = m_weather
-	local w_button = vgui.Create("DButton", m_weather)
+	local w_button = vgui.Create("DLabel", m_weather)
 	w_button:SetText("")
 	w_button:SetTall(28)
 	function w_button:Paint(w,h)
-		DrawButton(self,w,h)
-		
 		local t = "Set Weather"
 		surface.SetTextColor(color_white)
 		surface.SetFont("SF2.W_Button")
@@ -82,11 +80,47 @@ local function Init(self)
 		surface.SetTextPos(w / 2 - tw / 2, h / 2 - th / 2)
 		surface.DrawText(t)
 	end
+	local w_select = vgui.Create("DHorizontalScroller", m_weather)
+	w_select:SetOverlap( -4 )
+	w_select.num = 0
 	
 	function m_weather:PerformLayout(w, h)
 		w_button:SetWide(w * 0.7)
 		w_button:SetPos(w * 0.15,5)
+		-- Calc the wide
+		local wide = w_select.num * (32 - w_select.m_iOverlap)
+		-- If weathers won't fit, make it default size and pos
+		if wide >= w * 0.9 then
+			w_select:SetSize(w * 0.9,32)
+			w_select:SetPos(w * 0.05, 32)
+		else -- Calc calculate the middle
+			w_select:SetSize(wide,32)
+			w_select:SetPos(w * 0.05 + (w * 0.9 - wide) / 2 , 32)
+		end
 	end
+	local t = StormFox.Weather.GetAll()
+	table.Add(t,StormFox.Weather.GetAll())
+	for k,v in ipairs(t) do
+		local b = vgui.Create("DButton",w_select)
+		b:SetSize(32,32)
+		b:SetText("")
+		b:DockMargin(0,0,0,0)
+		w_select:AddPanel(b)
+		b.weather = v
+	--	print(b.weather.GetSymbol)
+		function b:Paint(w,h)
+			DrawButton(self,w,h)
+			local weather = StormFox.Weather.Get(b.weather)
+			local mat = weather.GetSymbol and weather.GetSymbol(_,StormFox.Temperature.Get())
+			if mat then
+				surface.SetDrawColor(255,255,255)
+				surface.SetMaterial(mat)
+				surface.DrawTexturedRect(5,5,w - 10,h - 10)
+			end
+		end
+		w_select.num = w_select.num + 1
+	end
+	
 	
 
 	-- Time
