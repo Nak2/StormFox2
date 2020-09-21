@@ -1,0 +1,52 @@
+- rain-framework
+- make moonparses solid
+- texture-swap is still broken
+- Make menu
+
+
+
+## Rain framework
+A) Make a particle system like currently.
+    Pro: Works for all weather types
+        Allows other creators to make their own effects without adding the complex calc
+
+    Con: High chance the community won't use it
+        It is a semi-complex system itself
+
+B) Make it pr' weather base
+    Pro: It is easy to copypasta for other weather types
+        Adding a binding for the weather, allows for other effects / code being added 
+
+    Con: Write everything from scratch every time.
+        It requires the sub-creators to make their calculations correct, or SF gets the blame
+        There still need to be some sort of system they can use.
+
+## Moonparses
+    Problems:  
+        Russian tosaters can't handle dynamic texture changes and RT. It could have been me not checking for pixelshader support but still.
+        People complain that the realistic system where wrong (Moon does curve in rotation)
+
+    Make it pr day based and render the parses. Maybe even just pre-make them.
+
+## Texture Swap
+    Problems:
+        Doesn't work atm. When calling the function it just refuses to update the map.
+        Also doesn't have a way for map-creators to work with.
+
+## Menu
+    - Make the menu the same as SF1, however update the design abit
+    - People got confused with the "Set Weather", instead have a list of weathers they can select and a slider for amount.
+
+## Soundsystem
+    - Make a system that caches sound-locations
+    - Snd objects on the side of the window / entity is required
+    - Outside can be defined by surfaces on the map?
+        Pro: Constant and doesn't have to re-calculated
+        Con: Surfaceinfos aren't on all the map
+        Idea: Make a circle system where from the avage point will be cener and range of the "outside" zone. This will increase the FPS and lower the need for traers.
+    
+
+## Other
+    - Mixer seems to glitch out now and then. Need to fix it somehow.
+    - Sunset/rise has a wider area irl
+
