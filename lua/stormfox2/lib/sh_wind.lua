@@ -89,7 +89,7 @@ end
 --[[-------------------------------------------------------------------------
 Calculate and update the wind direction
 ---------------------------------------------------------------------------]]
-local windNorm = Vector(0,0,1)
+local windNorm = Vector(0,0,-1)
 local windVec = Vector(0,0,0)
 local wind,windAng = 0,-1
 local function calcfunc()
