@@ -228,6 +228,32 @@ do
 end
 
 -- Rain particles
+--[[
+		local amo = StormFox.Weather.GetProcent()
+		local view = StormFox.util.GetCalcView()]]
+do
+	-- Turns out traces are exspensive. This cache function will *nearly* always return a valid position
+	local t_part = {}
+	local function RainAdd( )
+		local pos, hitType = StormFox.DownFall.SimpleDrop( math.random(10, 500), 4, 4 )
+		if not pos then return end -- No dice
+		
+		local snow = StormFox.Temperature.Get() <= math.random(-3, 0)
+	end
+	-- StormFox.DownFall.CheckDropCache
+	function rain.Think()
+		-- Add rain/snow
+		RainAdd()
+		
+	end
+	function rain.HUDPaint()
+		surface.SetDrawColor(color_white)
+		surface.DrawRect(40,40,100,100)
+	end
+end
+
+-- 		if LocalPlayer():WaterLevel() >= 3 then return end -- Don't render under wanter.
+--[[
 local downfall_rain = StormFox.DownFall.Create("rain")
 local downfall_snow = StormFox.DownFall.Create("snow")
 do
@@ -362,4 +388,4 @@ end
 
 rain:SetDownFall(downfall_rain,function()
 	return StormFox.Data.Get( "Temp", 20 ) < math.random(0,4) and downfall_snow or downfall_rain
-end)
+end)]]

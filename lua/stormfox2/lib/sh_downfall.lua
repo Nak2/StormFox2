@@ -1,191 +1,132 @@
 --[[-------------------------------------------------------------------------
-Downfall type
+	downfall_meta:GetNextParticle()
+
 ---------------------------------------------------------------------------]]
-StormFox.DownFall = StormFox.Downfall or {}
-local downfalls = {}
-local downfall_meta = {}
-	downfall_meta.__index = downfall_meta
-	downfall_meta.__tostring = function(self) return "SF_DownfallType[" .. (self.ID or "Unknwon") .. "]" end
-	function downfall_meta:IsValid() return true end
---[[-------------------------------------------------------------------------
-Returns the ID of the downfall effect.
----------------------------------------------------------------------------]]
-function downfall_meta:ID()
-	return self.ID
+-- Particle emitters
+if CLIENT then
+	_STORMFOX_PEM = _STORMFOX_PEM or ParticleEmitter(Vector(0,0,0),true)
+	_STORMFOX_PEM2d = _STORMFOX_PEM2d or ParticleEmitter(Vector(0,0,0))
+	_STORMFOX_PEM:SetNoDraw(true)
+	_STORMFOX_PEM2d:SetNoDraw(true)
 end
---[[-------------------------------------------------------------------------
-Recalculates the particles of the given downfall effect.
----------------------------------------------------------------------------]]
-function downfall_meta:ReCalculateParticle()
-	self.curparticle = {}
-	self.curparticle_n = 0
-	self.cyckleweight = 0
-	for _,v in ipairs(self.particles) do
-		for i = 1,v.apc do
-			table.insert(self.curparticle,math.random(#self.curparticle),v)
-			self.cyckleweight = self.cyckleweight + v.weight
+
+-- Downfall mask
+local mask = bit.bor( CONTENTS_SOLID, CONTENTS_MOVEABLE, CONTENTS_MONSTER, CONTENTS_WINDOW, CONTENTS_DEBRIS, CONTENTS_HITBOX, CONTENTS_WATER, CONTENTS_SLIME )
+local util_TraceHull,bit_band,Vector,IsValid = util.TraceHull,bit.band,Vector,IsValid
+
+StormFox.DownFall = {}
+
+-- Traces
+do
+	local t = {
+		start = Vector(0,0,0),
+		endpos = Vector(0,0,0),
+		maxs = Vector(1,1,4),
+		mins = Vector(-1,-1,0),
+		mask = mask
+	}
+	local function GetViewEntity()
+		if SERVER then return end
+		return LocalPlayer():GetViewEntity() or LocalPlayer()
+	end
+	-- Returns a raindrop pos from a sky position. #2 is hittype: -1 = no hit, 0 = ground, 1 = water, 2 = glass.
+	local function TraceDown(pos, norm, nRadius, filter)
+		nRadius = nRadius or 1
+		if not pos or not norm then return end
+		t.start = pos
+		t.endpos = pos + norm * 262144
+		t.maxs.x = nRadius
+		t.maxs.y = nRadius
+		t.mins.x = -nRadius
+		t.mins.y = -nRadius
+		t.filter = filter or GetViewEntity()
+		local tr = util_TraceHull(t)
+		if not tr or not tr.Hit then
+			return t.endpos, -1
+		elseif bit_band( tr.Contents , CONTENTS_WATER ) == CONTENTS_WATER then
+			return t.HitPos, 1
+		elseif bit_band( tr.Contents , CONTENTS_WINDOW ) == CONTENTS_WINDOW then
+			return t.HitPos, 2
+		elseif IsValid(tr.Entity) then
+			if string.find(tr.Entity:GetModel():lower(), "glass", 1, true) then
+				return tr.HitPos, 2
+			end
+		end
+		return tr.HitPos, 0
+	end
+	StormFox.DownFall.TraceDown = TraceDown
+
+	-- Returns the skypos. If it didn't find the sky it will return last position as #2
+	local function FindSky(vFrom, vNormal, nTries)
+		local last
+		for i = 1,nTries do
+			local t = util.TraceLine( {
+				start = vFrom,
+				endpos = vFrom + vNormal * 262144,
+				mask = MASK_SOLID_BRUSHONLY
+			} )
+			if t.HitSky then return t.HitPos end
+			if not t.Hit then return nil, last end
+			last = t.HitPos
+			vFrom = t.HitPos + vNormal
 		end
 	end
-	self.cyckleweight = self.cyckleweight / #self.curparticle
-end
---[[-------------------------------------------------------------------------
-Returns the next particle for the given downfall effect. Second arugmet gets called if the cykel starts from new.
----------------------------------------------------------------------------]]
-function downfall_meta:GetNextParticle()
-	if not self.curparticle then
-		self:ReCalculateParticle()
+	StormFox.DownFall.FindSky = FindSky
+	
+	-- Locates the skybox above vFrom and returns a raindrop pos. #2 is hittype: -2 No sky, -1 = no hit/invald, 0 = ground, 1 = water, 2 = glass
+	function StormFox.DownFall.CheckDrop(vFrom, vNorm, nRadius, filter)
+		local sky,_ = FindSky(vFrom, -vNorm, 7)
+		if not sky then return vFrom, -2 end -- Unable to find a skybox above this position
+		return TraceDown(sky + vNorm, vNorm * 262144, nRadius, filter)
 	end
-	self.curparticle_n = self.curparticle_n + 1
-	if not self.curparticle[self.curparticle_n] then
-		self.curparticle_n = 1
-		return self.curparticle[1],true
+
+	-- Does the same as StormFox.DownFall.CheckDrop, but will cache
+	local t_cache = {}
+	local t_cache_hit = {}
+	local c_i = 0
+	function StormFox.DownFall.CheckDropCache( ... )
+		local pos,n = StormFox.DownFall.CheckDrop( ... )
+		if pos and n > -1 then
+			c_i = (c_i % 10) + 1
+			t_cache[c_i] = pos
+			t_cache_hit[c_i] = pos
+			return pos,n
+		end
+		if #t_cache < 1 then return pos,n end
+		local n = math.random(1, #t_cache)
+		return t_cache[n],t_cache_hit[n]
 	end
-	return self.curparticle[self.curparticle_n]
-end
---[[-------------------------------------------------------------------------
-Sets the max-amount of particles pr Gauge
----------------------------------------------------------------------------]]
-function downfall_meta:SetParticlesPrGauge( nMaxParticles )
-	self.nMaxParticles = nMaxParticles
-end
---[[-------------------------------------------------------------------------
-Creates a new downfall effect.
----------------------------------------------------------------------------]]
-function StormFox.DownFall.Create( sID )
-	if downfalls[sID] then return downfalls[sID] end
-	local t = {}
-	t.ID = sID
-	t.curparticle_n = 0
-	t.particles = {}
-	setmetatable(t, downfall_meta)
-	downfalls[sID] = t
-	return downfalls[sID]
+
+	local cos,sin,rad = math.cos, math.sin, math.rad
+	-- Calculates and locates a downfall-drop infront of the client
+	function StormFox.DownFall.SimpleDrop( nDis, nSize, nTries )
+		for i = 1, nTries do
+			-- Get a random angle
+			local deg = 180 - math.sqrt(math.random(32400))
+			if math.random() > 0.5 then
+				deg = -deg
+			end
+			-- Calculate the offset
+			local view = StormFox.util.GetCalcView()
+			local yaw = rad(view.ang.y + deg)
+			local offset = view.pos + Vector(cos(yaw),sin(yaw)) * nDis
+			local pos, n = StormFox.DownFall.CheckDrop( offset, StormFox.Wind.GetNorm(), nSize)
+			if pos and n > -1 then return pos,n end
+		end
+	end
 end
 
-local particle_meta = {}
-	particle_meta.__index = particle_meta
-	particle_meta.__tostring = function(self) return "SF_DownfallParticle" end
-	function particle_meta:IsValid() return true end
-	function particle_meta:SetAmountPrCykle(nAmount) -- How many times it spawn pr group-cyckle.
-		self.apc = nAmount
-		self.owner.curparticle = nil
+if CLIENT then
+	function StormFox.DownFall.ParticleAdd( sMaterial, vPos, bUse3D )
+		if bUse3D then
+			return _STORMFOX_PEM:Add( sMaterial, vPos )
+		end
+		return _STORMFOX_PEM2d:Add( sMaterial, vPos )
 	end
-	function particle_meta:SetMaxAmount( nNum ) 	-- Max amount of particles (Uses some performance)
-		self.maxa = nNum
-	end
-	function particle_meta:SetNoBeam( bNoBeam ) 	-- If true turns the particle into a sprite.
-		self.bNoBeam = bNoBeam
-	end
-	function particle_meta:SetFadeOut( bFade ) 		-- If true will fade the particle in and out before dying.
-		self.bFade = bFade
-	end
-	function particle_meta:SetGroundOnly( bGround )	-- If true will force the particle to land on ground only.
-		self.bGround = bGround
-		self.bWater = not bGround
-	end
-	function particle_meta:SetWaterOnly( bWater )	-- If true will force the particle to land on water only.
-		self.bGround = not bWater
-		self.bWater = bWater
-	end
-	function particle_meta:SetRenderHeight( nDistance ) 	-- Overwrites the height-render.
-		self.renderH = nDistance
-	end
-	function particle_meta:SetMateiral( mMaterial ) 		-- Sets the material.
-		self.mat = mMaterial
-		self.mat_w = mMaterial:Width()
-		self.mat_h = mMaterial:Height()
-	end
-	function particle_meta:SetWidth( nWidth, nPrGauge ) 	-- Sets the width
-		self.nWidth = nWidth
-		self.nWidthpg = nPrGauge or 0
-	end
-	function particle_meta:SetHeight( nHeight, nPrGauge ) 	-- Sets the height
-		self.nHeight = nHeight
-		self.nHeightpg = nPrGauge or 0
-	end
-	function particle_meta:SetWeight( nWeight, nPrGauge ) -- The weight
-		self.weight = nWeight
-		self.weightpg = nPrGauge
-	end
-	function particle_meta:OnHit( fFunc ) -- Called when it hits anything. ( Pos, sTexture, bWater )
-		self.pemit = fFunc
-	end
-	function particle_meta:OnDeathParticle( fFunc ) -- Called when lifetime is up. (pos, normal, hit_type; -1 = air, 0 = ground, 1 = water, 2 = glass, CLuaemitter, CLuaemitter2D)
-		self.on_kill_part = fFunc
-	end
-	function particle_meta:OnExplosion( fFunc ) -- Called when it gets removed doe to an explosion. (vPos, vExpoison, nRange, nForce, CLuaemitter, CLuaemitter2D)
-		self.on_explosion = fFunc
-	end
-	function particle_meta:SetMinDistance( nDist ) 	-- Sets the minimum distance from player it can spawn
-		self.mindis = nDist
-	end
-	function particle_meta:SetMaxDistance( nDist ) 	-- Sets the maximum distance from player it can spawn
-		self.maxdis = nDist
-	end
-	function particle_meta:SetColor( cCol ) -- Sets the color of the particle. If no color is given it will choose from the sky.
-		self.col = cCol
-	end
-	function particle_meta:SetAlpha( nAlpha, nPrGauge ) -- Sets the color of the particle. If no color is given it will choose from the sky.
-		self.alp = nAlpha
-		self.alppg = nPrGauge
-	end
-	function particle_meta:GetAlpha()
-		if not self.alppg then return self.alp or 150 end
-		return self.alp + self.alppg * StormFox.Data.Get("gauge",0)
-	end
-	function particle_meta:GetOnDeathParticle()
-		return self.on_kill_part
-	end
-	function particle_meta:GetExplosionFunc()
-		return self.on_explosion
-	end
-	function particle_meta:GetWeight()
-		if not self.weightpg then return self.weight end
-		return self.weight + self.weightpg * StormFox.Data.Get("gauge",0)
-	end
-	function particle_meta:GetWidth()
-		if not self.nWidthpg then return self.nWidth end
-		return self.nWidth + self.nWidthpg * StormFox.Data.Get("gauge",0)
-	end
-	function particle_meta:GetHeight()
-		if not self.nHeightpg then return self.nHeight end
-		return self.nHeight + self.nHeightpg * StormFox.Data.Get("gauge",0)
-	end
-	function particle_meta:GetMaxAmount( )
-		return self.maxa
-	end
---[[-------------------------------------------------------------------------
-Creates a particle for the given downfall effect and returns the particle.
----------------------------------------------------------------------------]]
-function StormFox.DownFall.CreateParticle( sID )
-	local downfall = StormFox.DownFall.Get( sID )
-	if not downfall then StormFox.Warning("Unknown downfall type [" .. tostring(sID) .. "]") return end
-	local t = {}
-	setmetatable(t, particle_meta)
-	table.insert(downfall.particles,t)
-	t.owner = downfall
-	downfall.curparticle = nil
-	return t,#downfall.particles
+
+	hook.Add("PostDrawTranslucentRenderables", "StormFox.Downfall.Render", function(depth,sky)
+		if depth or sky then return end -- Don't render in skybox or depth.
+		_STORMFOX_PEM:Draw()
+		_STORMFOX_PEM2d:Draw()
+	end)
 end
---[[-------------------------------------------------------------------------
-Returns the downfall object.
----------------------------------------------------------------------------]]
-function StormFox.DownFall.Get( sID )
-	return downfalls[sID]
-end
---[[-------------------------------------------------------------------------
-Returns the particle from the given downfall.
----------------------------------------------------------------------------]]
-function StormFox.DownFall.GetParticle( sID, nNum )
-	if downfalls[sID] then StormFox.Warning("Unknown downfall type [" .. tostring(sID) .. "]") return end
-	return downfalls[sID].particles[nNum]
-end
---[[<Shared<--------------------------------------------------------------------
-Checks if an entity is out in the wind (or rain). Caches the result for 1 second unless second argument is true.
----------------------------------------------------------------------------]]
-
-
--- Smoke
-
-
--- 1.56 * Gauge + 1.22
