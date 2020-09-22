@@ -1,24 +1,17 @@
-- rain-framework
-- make moonparses solid
-- texture-swap is still broken
-- Make menu
-
-
-
 ## Rain framework
-A) Make a particle system like currently.
+A) Make a particle system.
     Pro: Works for all weather types
-        Allows other creators to make their own effects without adding the complex calc
+        Allows other creators to make their own effects without adding the complex calculations.
 
     Con: High chance the community won't use it
         It is a semi-complex system itself
 
-B) Make it pr' weather base
+B) Make the weather-type handle it with .Think and .Render hooks.
     Pro: It is easy to copypasta for other weather types
-        Adding a binding for the weather, allows for other effects / code being added 
+        Adding a binding for the weather, allows for other effects / code being added.
 
     Con: Write everything from scratch every time.
-        It requires the sub-creators to make their calculations correct, or SF gets the blame
+        It requires the sub-creators to make their calculations correct, or SF gets the blame.
         There still need to be some sort of system they can use.
 
 ## Moonparses
