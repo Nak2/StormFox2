@@ -171,3 +171,20 @@ else
 		net.SendToServer()
 	end)
 end
+
+hook.Add("Think", "stormfox.Weather.Think", function()
+	if not CurrentWeather then return end
+	if not CurrentWeather.Think then return end
+	CurrentWeather.Think()
+end)
+
+if CLIENT then
+	local c_tab = {"PostDrawTranslucentRenderables", "PreDrawTranslucentRenderables", "HUDPaint"}
+	for i,v in ipairs(c_tab) do
+		hook.Add(v, "stormfox.Weather." .. v, function(...)
+			if not CurrentWeather then return end
+			if not CurrentWeather[v] then return end
+			CurrentWeather[v](...)
+		end)
+	end
+end
