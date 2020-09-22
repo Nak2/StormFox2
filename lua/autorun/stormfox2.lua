@@ -26,8 +26,9 @@ StormFox.WorkShopVersion = false--game.IsDedicated()
 --[[<Shared>-----------------------------------------------------------------
 	Prints a warning in the console. Can also cause an error.
 ---------------------------------------------------------------------------]]
+	local red = Color(255,75,75)
 	function StormFox.Warning( sMessage, bError )
-		MsgC(Color(155,155,255),"[StormFox2]",env_color," [WARNING] ",c,sMessage,"\n")
+		MsgC(Color(155,155,255),"[StormFox2]",red," [WARNING] ",env_color,sMessage,"\n")
 		if bError then
 			error(sMessage)
 		end
@@ -39,6 +40,10 @@ StormFox.Msg("Version: V" .. StormFox.Version .. ".")
 		local path = str
 		if string.find(str,"/") then
 			path = string.GetFileFromFilename(str)
+		end
+		if string.sub(path,0,4) == "old_" then
+			StormFox.Warning("Exclude old file: " .. str)
+			return false
 		end
 		local _type = string.sub(path,0,3)
 		if SERVER then
