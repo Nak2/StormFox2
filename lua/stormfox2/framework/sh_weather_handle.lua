@@ -91,6 +91,9 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 	if CurrentWeather.Init then
 		CurrentWeather.Init()
 	end
+	if CurrentWeather.Tick10 then
+		CurrentWeather.Tick10()
+	end
 	hook.Run("stormfox.weather.postchange", sName ,nPercentage )
 end
 
@@ -176,6 +179,12 @@ hook.Add("Think", "stormfox.Weather.Think", function()
 	if not CurrentWeather then return end
 	if not CurrentWeather.Think then return end
 	CurrentWeather.Think()
+end)
+
+timer.Create("stormfox.Weather.tick10", 10, 0, function()
+	if not CurrentWeather then return end
+	if not CurrentWeather.Tick10 then return end
+	CurrentWeather.Tick10()
 end)
 
 if CLIENT then
