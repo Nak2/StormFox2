@@ -23,6 +23,18 @@ SF_DOWNFALL_HIT_GROUND = 0
 SF_DOWNFALL_HIT_WATER = 1
 SF_DOWNFALL_HIT_GLASS = 2
 
+local con = GetConVar("sv_gravity")
+-- Returns the gravity
+local function GLGravity()
+	if con then
+		return con:GetInt() / 600
+	else -- Err
+		return 1
+	end
+end
+
+--		game.GetTimeScale()
+
 -- Traces
 do
 	local t = {
@@ -49,17 +61,17 @@ do
 		t.filter = filter or GetViewEntity()
 		local tr = util_TraceHull(t)
 		if not tr or not tr.Hit then
-			return t.endpos, SF_DOWNFALL_HIT_NIL
+			return tr.HitPos, SF_DOWNFALL_HIT_NIL
 		elseif bit_band( tr.Contents , CONTENTS_WATER ) == CONTENTS_WATER then
-			return t.HitPos, SF_DOWNFALL_HIT_WATER
+			return tr.HitPos, SF_DOWNFALL_HIT_WATER
 		elseif bit_band( tr.Contents , CONTENTS_WINDOW ) == CONTENTS_WINDOW then
-			return t.HitPos, SF_DOWNFALL_HIT_GLASS
+			return tr.HitPos, SF_DOWNFALL_HIT_GLASS
 		elseif IsValid(tr.Entity) then
 			if string.find(tr.Entity:GetModel():lower(), "glass", 1, true) then
 				return tr.HitPos, SF_DOWNFALL_HIT_GLASS
 			end
 		end
-		return tr.HitPos, SF_DOWNFALL_HIT_GROUND
+		return tr.HitPos, SF_DOWNFALL_HIT_GROUND, tr.HitNormal
 	end
 	StormFox.DownFall.TraceDown = TraceDown
 
@@ -72,6 +84,7 @@ do
 				endpos = vFrom + vNormal * 262144,
 				mask = MASK_SOLID_BRUSHONLY
 			} )
+			if t.HitTexture == "TOOLS/TOOLSINVISIBLE" then return end
 			if t.HitSky then return t.HitPos end
 			if not t.Hit then return nil, last end
 			last = t.HitPos
@@ -80,11 +93,11 @@ do
 	end
 	StormFox.DownFall.FindSky = FindSky
 	
-	-- Locates the skybox above vFrom and returns a raindrop pos. #2 is hittype: -2 No sky, -1 = no hit/invald, 0 = ground, 1 = water, 2 = glass
+	-- Locates the skybox above vFrom and returns a raindrop pos. #2 is hittype: -2 No sky, -1 = no hit/invald, 0 = ground, 1 = water, 2 = glass, #3 is hitnormal
 	function StormFox.DownFall.CheckDrop(vFrom, vNorm, nRadius, filter)
 		local sky,_ = FindSky(vFrom, -vNorm, 7)
 		if not sky then return vFrom, -2 end -- Unable to find a skybox above this position
-		return TraceDown(sky + vNorm, vNorm * 262144, nRadius, filter)
+		return TraceDown(sky + vNorm * nRadius, vNorm * 262144, nRadius, filter)
 	end
 
 	-- Does the same as StormFox.DownFall.CheckDrop, but will cache
@@ -105,12 +118,15 @@ do
 	end
 
 	local cos,sin,rad = math.cos, math.sin, math.rad
-	-- Calculates and locates a downfall-drop infront of the client
+	-- Calculates and locates a downfall-drop infront/nearby of the client.
+	-- #1 = Hit Position, #2 hitType, #3 The offset from view, #4 hitNormal
 	function StormFox.DownFall.CalculateDrop( nDis, nSize, nTries, vNorm )
 		vNorm = vNorm or StormFox.Wind.GetNorm()
 		for i = 1, nTries do
 			-- Get a random angle
-			local deg = 180 - math.sqrt(math.random(32400))
+			local d = math.Rand(1,4)
+
+			local deg = math.random(d * 45)
 			if math.random() > 0.5 then
 				deg = -deg
 			end
@@ -118,133 +134,276 @@ do
 			local view = StormFox.util.GetCalcView()
 			local yaw = rad(view.ang.y + deg)
 			local offset = view.pos + Vector(cos(yaw),sin(yaw)) * nDis
-			local pos, n = StormFox.DownFall.CheckDrop( offset, vNorm, nSize)
-			if pos and n > -1 then return pos,n,offset end
+			local pos, n, hitNorm = StormFox.DownFall.CheckDrop( offset, vNorm, nSize)
+			if pos and n > -2 then 
+				return pos,n,offset, hitNorm
+			end
 		end
 	end
 end
 
 if CLIENT then
-	-- Adds a regular particle and returns it
+	-- Creats a regular particle and returns it
 	function StormFox.DownFall.AddParticle( sMaterial, vPos, bUse3D )
 		if bUse3D then
 			return _STORMFOX_PEM:Add( sMaterial, vPos )
 		end
 		return _STORMFOX_PEM2d:Add( sMaterial, vPos )
 	end
-	-- We make our own particle-system for easy use
-	local p_meta = {}
-	p_meta.__index = p_meta
-	function p_meta:SetMaterial( iMat )
-		self.iMat = iMat
+	
+	-- Particle Template. Particles "copy" these values when they spawn.
+	local pt_meta = {}
+	pt_meta.__index = pt_meta
+	pt_meta.MetaName = "ParticleTemplate"
+	pt_meta.g = 1
+	pt_meta.r_H = 400 -- Default render height
+	AccessorFunc(pt_meta, "iMat", "Material")
+	AccessorFunc(pt_meta, "w", "Width")
+	AccessorFunc(pt_meta, "h", "Height")
+	AccessorFunc(pt_meta, "c", "Color")
+	AccessorFunc(pt_meta, "g", "Speed")
+	AccessorFunc(pt_meta, "r_H", "RenderHeight")
+	AccessorFunc(pt_meta, "i_G", "IgnoreGravity")
+	-- Sets the alpha
+	function pt_meta:SetAlpha( nAlpha )
+		self.c.a = nAlpha
 	end
-	-- Sets the size
-	function p_meta:SetSize( nWidth, nHeight )
+	function pt_meta:GetAlpha()
+		return self.c.a
+	end
+	function pt_meta:SetSize( nWidth, nHeight )
 		self.w = nWidth
 		self.h = nHeight
 	end
-	-- Sets the color
-	function p_meta:SetColor( cCol )
-		self.c = cCol
-	end
-	-- Sets the alpha
-	function p_meta:SetAlpha( nAlpha )
-		self.c.a = nAlpha
-	end
 	-- On hit (Overwrite it)
-	function p_meta:OnHit( vPos, nHitType )
+	function pt_meta:OnHit( vPos, vNormal, nHitType )
 	end
-	-- Set gravity (Can be negative)
-	function p_meta:SetGravity( nNum )
-		self.g = nNum
+	function pt_meta:GetNorm()
+		return self.vNorm or StormFox.Wind.GetNorm() or Vector(0,0,-1)
 	end
-	function p_meta:SetRenderHeight( nNum )
-		self.r_H = nNum
+	function pt_meta:SetNorm( vNorm )
+		self.vNorm = vNorm
 	end
-	-- Creates a SF-Particle that can be added with StormFox.DownFall.AddSFParticle
-	function StormFox.DownFall.CreateSFParticle(sMaterial, bBeam)
+	function StormFox.DownFall.CreateTemplate(sMaterial, bBeam)
 		local t = {}
+		setmetatable(t,pt_meta)
+		t:SetMaterial(sMaterial)
 		t.c = Color(255,255,255)
-		t.iMat = sMaterial
 		t.bBeam = bBeam or false
 		t.w = 32
 		t.h = 32
 		t.g = 1
 		t.r_H = 400
-		setmetatable(t, p_meta)
+		t.i_G = false
 		return t
 	end
-
-	local t_sfp = {}
-	-- Adds a SF particle. Note that it is costly not to give zSort
-	function StormFox.DownFall.AddSFParticle( zSFParticle, nDistance, nSize, vNorm )
-		vNorm = vNorm or StormFox.Wind.GetNorm()
-		-- Find a location for the partice
-		local vEnd, nHitType, vCenter = StormFox.DownFall.CalculateDrop( nDistance, nSize, 5, vNorm )
-		if not vEnd then return false end -- Couldn't locate a position for the partice
-		-- Calc the start position and end position
-		-- local vStart = vCenter - vNorm * zSFParticle.r_H
-		local nLife = zSFParticle.r_H * 2
-		local vEnd2 = vCenter + vNorm * zSFParticle.r_H
-		if vEnd.z > vEnd2.z then -- The "end position" could be under the map. Take the higest position.
-			vEnd = vEnd2
-			nLife = nLife + (vEnd2.z - vEnd.z)
+	-- Particles
+	local p_meta = {}
+	p_meta.__index = function(self, key)
+		return p_meta[key] or self.data[key]
+	end
+	-- Creates a particle from the template
+	function pt_meta:CreateParticle( vEndPos, vNorm, hitType, hitNorm )
+		local z_view = StormFox.util.GetCalcView().pos.z
+		local t = {}
+		t.data = self
+		t.vNorm = vNorm
+		t.endpos = vEndPos
+		t.hitType = hitType or SF_DOWNFALL_HIT_NIL
+		t.hitNorm = hitNorm or Vector(0,0,-1)
+		setmetatable(t, p_meta)
+		local cG = self.g
+		if not t:GetIgnoreGravity() then
+			cG = self.g * GLGravity()
 		end
-		-- Modify ligfe with gravity
-		nLife = nLife * zSFParticle.g
-		-- Loop over the particles and insert it by distance
+		local dir_z = math.min(t:GetNorm().z,-0.1) -- Winddir should always be down
+		-- Calc the starting position.
+		if cG > 0 then -- Start from the sky and down
+			local l = z_view + (t.r_H or 200) - t.endpos.z
+			t.curlength = l * -dir_z
+		elseif cG < 0 then -- Start from ground and up
+			local l = math.max(0, z_view - (t.r_H or 200) - t.endpos.z) -- Ground or below renderheight
+			t.curlength = l * -dir_z
+		end
+		return t, (t.r_H or 200) * 2 / math.abs( cG ) -- Secondary is how long we thing it will take for the particle to die. We also want this to be steady.
+	end
+	-- Calculates the current position of the particle
+	function p_meta:CalcPos()
+		self.pos = self.endpos - self:GetNorm() * self.curlength
+		return self.pos
+	end
+	-- Returns the current position
+	function p_meta:GetPos()
+		if self.pos then return self.pos end
+		return self:CalcPos()
+	end
+	-- Sets the alpha of the particle, but won't overwrite template's color.
+	function p_meta:SetAlpha( nAlpha )
+		if not rawget(self, c) then -- Don't overwrite the template alpha. Create our own color and then modify it.
+			self.c = Color(self.c.r, self.c.g, self.c.b, nAlpha)
+		else
+			self.c.a = nAlpha
+		end
+	end
+	function p_meta:GetHitNormal()
+		return self.hitNorm or Vector(0,0,-1)
+	end
+	-- Renders the particles
+	function p_meta:Render()
+		local pos = self:GetPos()
+		render.SetMaterial(self.iMat)
+		if self.bBeam then
+			render.DrawBeam(pos - self:GetNorm() * self.h, pos, self.w, 0, 1, self.c)
+		else
+			render.DrawSprite(pos, self.w, self.h, part.c)
+		end
+	end
+	--[[
+		StormFox.DownFall.CreateTemplate(sMaterial, bBeam)
+		Creates a template. This particle-data is shared between all other particles that are made from this.
+		Do note that you can overwrite this data on each other individual particle as well.
+
+		template:CreateParticle( vPos, startlength )
+		Creates a particle from the template. This particle can also be modified using the template functions.
+	]]
+
+	-- Moves and kills the particles
+	local t_sfp = {}
+	local function ParticleTick()
+		if #t_sfp < 1 then return end
+		local z_view = StormFox.util.GetCalcView().pos.z
+		local fr = FrameTime() * 60 -- * game.GetTimeScale()
+		local die = {}
+		local gg = GLGravity() -- Global Gravity
+		for n,t in ipairs(t_sfp) do
+			local part = t[2]
+			-- The length it moves (Could also be negative)
+			local move = part.g
+			if not part:GetIgnoreGravity() then
+				move = part.g * gg 
+			end
+			part.curlength = part.curlength - move * fr * 10
+			-- Check if it dies
+			if move > 0 then
+				local zp = part:CalcPos().z
+				if zp < part.endpos.z then
+					-- Hit ground
+					table.insert(die, n)
+				elseif zp < z_view - part.r_H or zp > z_view + part.r_H then
+					-- Die in air
+					part.hitType = SF_DOWNFALL_HIT_NIL
+					table.insert(die, n)
+				end
+			elseif move < 0 then -- It moves up in the sky. Should allways be hittype SF_DOWNFALL_HIT_NIL
+				if part:CalcPos().z > z_view + part.r_H then
+					-- Die
+					table.insert(die, n)
+				end
+			end
+		end
+		-- Kill particles
+		for i = #die, 1, -1 do
+			local t = table.remove(t_sfp, die[i])
+			local part = t[2]
+			if part.hitType ~= SF_DOWNFALL_HIT_NIL and part.OnHit then
+				part:OnHit( part.endpos, part:GetHitNormal(), part.hitType )
+			end
+		end
+	end
+	-- Renders all particles. t_sfp should be in render-order
+	local function ParticleRender()
+		for _,t in ipairs(t_sfp) do
+		--	render.DrawLine(t[2]:GetPos(), t[2].endpos, color_white, true)
+			t[2]:Render()
+		end
+	end
+
+	-- Adds a particle.
+	function StormFox.DownFall.AddTemplateSimple( tTemplate, vEndPos, hitType, hitNorm, nDistance )
+		local part = tTemplate:CreateParticle( vEndPos, vNorm, hitType, hitNorm )
+		if not nDistance then
+			local p = StormFox.util.GetCalcView().pos
+			nDistance = Vector(p.x,p.y,vEndPos.z):Distance( vEndPos )
+		end
+		-- Add by distance
 		local n = #t_sfp
-		local t = {nDistance, zSFParticle, vEnd, vNorm, CurTime() + nLife, nHitType}
+		local t = {nDistance, part}
 		if n < 1 then
 			table.insert(t_sfp, t)
 		else
 			for i=1,n do
 				if nDistance > t_sfp[i][1] then
 					table.insert(t_sfp, i, t)
-					return
+					return part
 				end
 			end
 			table.insert(t_sfp, n, t)
 		end
+		return part
 	end
-	-- Calculates a set amount of SF particles scaling with FPS
-	function StormFox.DownFall.CalcSFParticleAmount( nScale )
-		local P = nScale or StormFox.Weather.GetProcent()
-		local QT = max(1, StormFox.Client.GetQualityNumber())
-		local max_particles = QT * 64 * P
-		return (max_particles - #t_sfp)
+
+	-- Tries to add a particle. Also has cache build in.
+	function StormFox.DownFall.AddTemplate( tTemplate, nDistance, traceSize, vNorm )
+		vNorm = vNorm or StormFox.Wind.GetNorm()
+		local vEnd, nHitType, vCenter, hitNorm = StormFox.DownFall.CalculateDrop( nDistance, traceSize, 1, vNorm )
+		-- pos,n,offset, hitNorm
+		if not vEnd then 
+			if tTemplate.m_cache then
+				local t = table.remove(tTemplate.m_cache, 1)
+				vEnd = t[1]
+				nHitType = t[2]
+				vCenter = t[3]
+				hitNorm = t[4]
+			else
+				return false 
+			end
+		end -- Couldn't locate a position for the partice
+		--debugoverlay.Cross(vEnd, 15, 1, Color(255,255,255), false)
+		if not tTemplate.m_cache then tTemplate.m_cache = {} end
+		if table.insert(tTemplate.m_cache, {vEnd,nHitType, vCenter, hitNorm}) > 10 then
+			table.remove(tTemplate.m_cache,1)
+		end
+		return StormFox.DownFall.AddTemplateSimple( tTemplate, vEnd, nHitType, hitNorm, nDistance )
 	end
-	local function RenderParticle(t)
-		local part = t[2]
-		local pos = t[3] + t[4] * (CurTime() - t[5])
-		render.SetMaterial(part.iMat)
-		if part.bBeam then
-			render.DrawBeam(pos, pos + t[4] * part.h, part.w, 0, 1, part.c)
-		else
-			render.DrawSprite(pos, part.w, part.h, part.c)
+
+	-- Returns the interval for the given template
+	function StormFox.DownFall.CalcTemplateTimer( tTemplate )
+		local P = 0.5 + StormFox.Weather.GetProcent() * 0.5
+		local QT = 6 + max(1, StormFox.Client.GetQualityNumber())
+		local totalL = QT * P * 10000
+		local mL = (tTemplate.r_H / math.abs( tTemplate.g )) / totalL
+		-- Safty. This slowly scales the amount of particles if it is 500 or above.
+		if #t_sfp >= 500 then
+			return mL * (1.90526 - 0.00178947 * #t_sfp)
+		end
+		return mL
+	end
+
+	-- Automaticlly spawns particles
+	function StormFox.DownFall.SmartTemplate( tTemplate, nDistance, traceSize, vNorm  )
+		local t = CurTime() - (tTemplate.s_timer or 0)
+		local n = StormFox.DownFall.CalcTemplateTimer( tTemplate )
+		if t > n then
+			local m = FrameTime() / n
+			tTemplate.s_timer = CurTime()
+			for i = 1, math.min(m,12) do
+				StormFox.DownFall.AddTemplate( tTemplate, nDistance, traceSize, vNorm )
+			end
 		end
 	end
-	local r = {}
+
+	hook.Add("Think","StormFox.Downfall.Tick", ParticleTick)
 	hook.Add("PostDrawTranslucentRenderables", "StormFox.Downfall.Render", function(depth,sky)
 		if depth or sky then return end -- Don't render in skybox or depth.
 		-- Render particles on the floor
 		_STORMFOX_PEM:Draw()
 		_STORMFOX_PEM2d:Draw()
 		if LocalPlayer():WaterLevel() >= 3 then return end -- Don't render SF particles under wanter.
-		local n = CurTime()
-		-- List old particles to remove
-		r = {}
-		for k,v in ipairs(t_sfp) do -- {zSort, zSFParticle, vEnd, vVel, life, nHitType}
-			if v[5] <= n then -- Dead
-				table.insert(r, k)
-			else -- Alive
-				RenderParticle(v)
-			end
-		end
-		-- Delete dead particles
-		if #r <= 0 then return end
-		for i=#r,1,-1 do
-			table.remove(t_sfp, r[i])
-		end
+		ParticleRender() -- Render sf particles
 	end)
+	function StormFox.DownFall.DebugList()
+		return t_sfp
+	end
 end
+
+
