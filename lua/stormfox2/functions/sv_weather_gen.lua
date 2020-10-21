@@ -34,11 +34,32 @@ else
 end
 StormFox.Temperature.Set( starting_temp )
 
+local function shuffle(array)
+	-- fisher-yates
+	local output = { }
+	local random = math.random
+	for index = 1, #array do
+		local offset = index - 1
+		local value = array[index]
+		local randomIndex = offset*random()
+		local flooredIndex = randomIndex - randomIndex%1
+ 
+		if flooredIndex == offset then
+			output[#output + 1] = value
+		else
+			output[#output + 1] = output[flooredIndex + 1]
+			output[flooredIndex + 1] = value
+		end
+	end
+	return output
+end
+
 -- Returns a weather matching the requirement
 local function GetWeather( max_temp, time_start, time_duration, percent, wind ) -- hum_decrease goes [0.2 - 1]
-	local w_list = StormFox.Weather.GetAll()
 	-- Randomize it
-	table.sort( w_list, function(a, b) return math.Rand(0,1) > .5 end )
+	local w_list = shuffle(StormFox.Weather.GetAll())
+	
+
 	for k,v in ipairs(w_list) do
 		if v == "Clear" then continue end
 		local w = StormFox.Weather.Get( v )
