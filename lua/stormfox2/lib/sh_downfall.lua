@@ -255,7 +255,7 @@ if CLIENT then
 		if self.bBeam then
 			render.DrawBeam(pos - self:GetNorm() * self.h, pos, self.w, 0, 1, self.c)
 		else
-			render.DrawSprite(pos, self.w, self.h, part.c)
+			render.DrawSprite(pos, self.w, self.h, self.c)
 		end
 	end
 	--[[
