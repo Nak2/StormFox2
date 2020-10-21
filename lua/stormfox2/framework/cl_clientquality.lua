@@ -31,5 +31,8 @@ Returns a number based on the clients FPS.
 7 is the max without the user enabling 'sf_quality_ultra', where it then goes up to 20.
 ---------------------------------------------------------------------------]]
 function StormFox.Client.GetQualityNumber()
+	if not system.HasFocus() then
+		return 1
+	end
 	return conDetect
 end
