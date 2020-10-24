@@ -800,6 +800,7 @@ Renders glass-meshes.
 
 	-- Returns the current window-renders
 	local function GetRenderFunctions()
+		if not StormFox.Weather or not StormFox.Terrain then return end
 		local cT = StormFox.Terrain.GetCurrent() or {}
 		local cW = (StormFox.Weather.GetCurrent() or {}).Function or {}
 		return cW.windRender or cT.windRender, cW.windRenderRef or cT.windRenderRef, cW.windRender64 or cT.windRender64, cW.windRenderRef64 or cT.windRenderRef64

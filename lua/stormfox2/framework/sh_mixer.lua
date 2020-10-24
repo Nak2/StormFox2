@@ -51,6 +51,7 @@ end
 
 function StormFox.Mixer.Get( sKey, zDefault )
 	if cache[sKey] ~= nil then return cache[sKey] end
+	if not StormFox.Weather then return zDefault end
 	local cW = StormFox.Weather.GetCurrent()
 	if not cW then return StormFox.Weather.Get( "Clear" ):Get(sKey, cStamp) or zDefault end
 	local cP = StormFox.Weather.GetProcent()

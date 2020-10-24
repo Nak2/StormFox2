@@ -293,7 +293,7 @@ StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
 	hook.Add("StormFox.2DSkybox.SunRender","StormFox.RenderSun",function(c_pos)
 		local SunN = -StormFox.Sun.GetAngle():Forward()
 		local s_size = StormFox.Sun.GetSize()
-		local c_c = StormFox.Sun.GetColor()
+		local c_c = StormFox.Sun.GetColor() or color_white
 		local c = Color(c_c.r,c_c.g,c_c.b,c_c.a)
 		render.SetMaterial(sunMat)
 		render.DrawQuadEasy( SunN * -200, SunN, s_size, s_size, c, 0 )

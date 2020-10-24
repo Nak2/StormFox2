@@ -15,7 +15,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 				return g_datacache[name]
 			end
 			g_SkyPaint_tab["Set" .. name] = function(self,var)
-				g_datacache[name] = var
+				g_datacache[name] = var or defaultdata
 			end
 			return g_SkyPaint_tab["Set" .. name]
 		end
@@ -61,6 +61,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 	hook.Add("Think","stormFox.sky.think",function()
 		if not IsValid(g_SkyPaint) then return end
 		if not StormFox.Time then return end
+		if not StormFox.Mixer then return end
 		-- Top color + Thunder
 			local thunder = 0
 			if StormFox.Thunder then
@@ -71,7 +72,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 			g_SkyPaint:SetTopColor(ColVec(t_color,255))
 			g_SkyPaint:SetBottomColor(ColVec(StormFox.Mixer.Get("bottomColor") or Color(204, 255, 255),255))
 			g_SkyPaint:SetFadeBias(StormFox.Mixer.Get("fadeBias",0.2))
-			g_SkyPaint:SetDuskColor(ColVec(StormFox.Mixer.Get("duskColor",color_white),255))
+			g_SkyPaint:SetDuskColor(ColVec(StormFox.Mixer.Get("duskColor",color_white) or color_white,255))
 			g_SkyPaint:SetDuskIntensity(StormFox.Mixer.Get("duskIntensity",1.94))
 			g_SkyPaint:SetDuskScale(StormFox.Mixer.Get("duskScale",0.29))
 
