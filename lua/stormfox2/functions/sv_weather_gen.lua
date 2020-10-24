@@ -110,9 +110,6 @@ local function GenerateDay( start_temp )
 	end
 end
 
--- Generates the first day
-table.insert(weather_gen, GenerateDay(starting_temp))
-
 -- Generates the next day
 local function GenerateNextDay()
 	if #weather_gen >= 7 then
@@ -124,6 +121,7 @@ local function GenerateNextDay()
 	return w
 end
 
+table.insert(weather_gen, GenerateDay(starting_temp))
 -- Generate the week
 for i = 1,6 do
 	GenerateNextDay()
