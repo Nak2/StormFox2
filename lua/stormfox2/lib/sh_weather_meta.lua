@@ -178,15 +178,20 @@ function w_meta:SetDownFall( tDownFall, fApplyFunc )
 	self.downfallfunc = fApplyFunc
 end
 
--- Load weathers
-for _,fil in ipairs(file.Find("stormfox2/weathers/*.lua","LUA")) do
-	if SERVER then
-		AddCSLuaFile("stormfox2/weathers/" .. fil)
-	end
-	pcall(include,"stormfox2/weathers/" .. fil)
-end
-
 function StormFox.Weather.GetLuminance()
 	local Col = StormFox.Mixer.Get("bottomColor") or Color(255,255,255)
 	return 0.2126 * Col.r + 0.7152 * Col.g + 0.0722 * Col.b
 end
+
+-- Load weathers
+hook.Add("stormfox2.postlib", "stormfox2.loadweathers", function()
+	for _,fil in ipairs(file.Find("stormfox2/weathers/*.lua","LUA")) do
+		if SERVER then
+			AddCSLuaFile("stormfox2/weathers/" .. fil)
+		end
+		pcall(include,"stormfox2/weathers/" .. fil)
+	end
+	if SERVER then
+		hook.Run("stormfox2.postloadweather")
+	end
+end)
