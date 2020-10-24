@@ -80,7 +80,7 @@ StormFox.Msg("Version: V" .. StormFox.Version .. ".")
 	hook.Run("stormfox2.postfunction") -- Gets called after functions is done.
 
 -- Finish up
-	HandleFolder("stormfox2")
+	HandleFolder("stormfox2") -- No idea what should be here.
 	timer.Simple(0,function()
 		--[[<Shared>-------------------------------------------------------------------------
 		Allows addons to initialize their functions before calling StormFox.PostInit.
