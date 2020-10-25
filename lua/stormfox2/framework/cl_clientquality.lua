@@ -9,7 +9,7 @@ local conDetect = 1
 -- Calculate the avageFPS for the client and make a value we can use.
 	local bi,buffer = 0,0
 	local avagefps = 1 / RealFrameTime()
-	timer.Create("StormFox.Client.PotatoSupport",0.5,0,function()
+	timer.Create("StormFox.Client.PotatoSupport",0.25,0,function()
 		if not system.HasFocus() then  -- The player tabbed out.
 			bi,buffer = 0,0
 			return
