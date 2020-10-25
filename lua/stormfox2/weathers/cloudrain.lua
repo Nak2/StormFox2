@@ -228,30 +228,47 @@ do
 end
 
 -- Rain particles
---[[
-		local amo = StormFox.Weather.GetProcent()
-		local view = StormFox.util.GetCalcView()]]
 if CLIENT then
-	-- Create rainparticle
-	local m_rain = Material("stormfox/raindrop.png") -- Material("vgui/3735626027.png") or 
+	-- Materials
+	local m_rain = Material("stormfox/raindrop.png")
 	local m_rain_multi = Material("stormfox/raindrop-multi.png","noclamp smooth")
 	local m_snow1 = Material("stormfox/effects/snowflake1.png")
 	local m_snow2 = Material("stormfox/effects/snowflake2.png")
 	local m_snow3 = Material("stormfox/effects/snowflake3.png")
 	local t_snow = {m_snow1, m_snow2, m_snow3}
 	local m_snowmulti = Material("stormfox/effects/snow-multi.png")
-
+	-- Make templates
 	local rain_template = StormFox.DownFall.CreateTemplate(m_rain, true)
 	local rain_template_multi = StormFox.DownFall.CreateTemplate(m_rain_multi, true)
 	local snow_template = StormFox.DownFall.CreateTemplate(m_snow1, false)
 	local snow_template_multi = StormFox.DownFall.CreateTemplate(m_rain_multi, true)
 	
+	function rain_template:OnExplosion( vExPos, nDisProcent, iRange, iMagnetide )
+		local e_ang = (self:GetPos() - vExPos):Angle():Forward()
+		local boost = nDisProcent * 5
+		local p = StormFox.DownFall.AddParticle( "effects/splash1", vExPos + e_ang * iRange *nDisProcent , false )
+			p:SetStartSize(math.random(32, 20))
+			p:SetEndSize(5)
+			p:SetDieTime(2.5)
+			p:SetEndAlpha(0)
+			p:SetStartAlpha(6)
+			p:SetGravity( physenv.GetGravity() * 2 )
+			p:SetVelocity( e_ang * iMagnetide *  boost)
+			p:SetAirResistance(3)
+			p:SetCollide(true)
+			p:SetRoll(math.random(360))
+			p:SetCollideCallback(function( part )
+				part:SetDieTime(0)
+			end)
+	end
+	rain_template_multi.OnExplosion = rain_template.OnExplosion
+
 	-- Rain splash
 	local rainsplash_w = Material("effects/splashwake3")
 	local rainsplash = Material("effects/splash4")
 	function rain_template:OnHit( vPos, vNormal, nHitType )
-		
 		if math.random(3) > 1 then return end -- 33% chance to spawn a splash
+		local L = StormFox.Weather.GetLuminance() - 10
 		if nHitType == SF_DOWNFALL_HIT_WATER then
 			local p = StormFox.DownFall.AddParticle( rainsplash_w, vPos, true )
 			p:SetAngles(vNormal:Angle())
@@ -259,7 +276,7 @@ if CLIENT then
 			p:SetEndSize(40)
 			p:SetDieTime(1)
 			p:SetEndAlpha(0)
-			p:SetStartAlpha(5 + math.random(7,10))
+			p:SetStartAlpha(math.min(255,5 + math.random(7,10) + L))
 		elseif nHitType == SF_DOWNFALL_HIT_GROUND then
 			local p = StormFox.DownFall.AddParticle( rainsplash, vPos, false )
 			p:SetAngles(vNormal:Angle())
@@ -267,7 +284,7 @@ if CLIENT then
 			p:SetEndSize(5)
 			p:SetDieTime(0.2)
 			p:SetEndAlpha(0)
-			p:SetStartAlpha(10)
+			p:SetStartAlpha(math.min(255, 10 + L))
 		elseif nHitType == SF_DOWNFALL_HIT_GLASS then
 			local p = StormFox.DownFall.AddParticle( rainsplash, vPos, false )
 			p:SetAngles(vNormal:Angle())
@@ -275,7 +292,7 @@ if CLIENT then
 			p:SetEndSize(5)
 			p:SetDieTime(0.2)
 			p:SetEndAlpha(0)
-			p:SetStartAlpha(10)
+			p:SetStartAlpha(math.min(255, 10 + L))
 		--	local p = StormFox.DownFall.AddParticle( rainsplash, vPos, false )
 		--	p:SetAngles(-vNormal:Angle())
 		--	p:SetStartSize(8)
@@ -290,30 +307,32 @@ if CLIENT then
 	-- Update the rain templates every 10th second
 	function rain.Tick10()
 		local P = StormFox.Weather.GetProcent()
-		-- local L = StormFox.Weather.GetLuminance() TODO: Fiddle with settings
+		local L = StormFox.Weather.GetLuminance() --TODO: Fiddle with settings
 		-- Update rain
 		local s = 1.22 + 1.56 * P
-		rain_template:SetSpeed( s * 0.8 ) 
+		local speed = 0.72 + 0.26 * P
+		rain_template:SetSpeed( speed ) 
 		rain_template:SetSize( s , 3.22 + 3.56 * P)
-		rain_template:SetAlpha(45 + 15 * P)
+		rain_template:SetAlpha(math.min(45 + 15 * P + L,255))
 		if P > 0.15 then
-			rain_template_multi:SetSpeed( s ) 
-			rain_template_multi:SetSize( 40 + 50 * P, 400 + 50 * P )
+			rain_template_multi:SetSpeed( speed ) 
+			rain_template_multi:SetSize( 40 + 50 * P, 600 + 50 * P )
 			rain_template_multi:SetAlpha(15 + 4 * P)
 		end
 	end
-
 	-- Gets called every tick to add rain.
 	function rain.Think()
 		local P = StormFox.Weather.GetProcent()
+		if StormFox.DownFall.GetGravity() < 0 then return end -- Rain can't come from the ground.
 		if true or StormFox.Temperature.Get() > math.random(-3, 0) then -- Spawn rain particles
 			-- Spawn rain particles
-			StormFox.DownFall.SmartTemplate( rain_template, math.random(10,500), 5, vNorm )
+			StormFox.DownFall.SmartTemplate( rain_template, math.random(10,500), 100 + P * 800, 5, vNorm )
 			-- Spawn distant rain
-			if P > 0.15 and math.random(1,4) > 3 then
-				local r_part_multi = StormFox.DownFall.SmartTemplate( rain_template_multi, math.random(500,700), 50, vNorm )
-				if r_part_multi then
-					r_part_multi:SetSize( 80 + 50 * P , 40 + 50 * P )
+			if P > 0.15 then
+				local r_w = math.Rand(1,2)
+				local r_part_multis = StormFox.DownFall.SmartTemplate( rain_template_multi, math.random(500,700), P * 100 , 50 * r_w, vNorm )
+				for i = 1, #r_part_multis do
+					r_part_multis[i]:SetSize( 80 + 50 * P * r_w , 40 + 50 * P )
 				end
 			end
 		else -- Spawn snow particles
@@ -328,6 +347,8 @@ if CLIENT then
 	end
 
 	function rain.HUDPaint()
+		local P = StormFox.Weather.GetProcent()
+		local tab, reached_max = StormFox.DownFall.DebugList()
 		surface.SetDrawColor(color_white)
 		surface.DrawRect(40,40,200,100)
 		surface.SetTextColor(0,0,0)
@@ -335,14 +356,16 @@ if CLIENT then
 		surface.SetFont("default")
 		surface.DrawText("Q: " .. StormFox.Client.GetQualityNumber())
 		surface.SetTextPos(50, 70)
-		surface.DrawText("Amount: " .. #StormFox.DownFall.DebugList())
-
-		local rT = StormFox.DownFall.CalcTemplateTimer( rain_template )
+		surface.DrawText("Amount: " .. #tab)
 		surface.SetTextPos(50, 90)
-		surface.DrawText("SpawnTime: " .. rT)
-		local rTM = StormFox.DownFall.CalcTemplateTimer( rain_template_multi )
-		surface.SetTextPos(50, 120)
-		surface.DrawText("SpawnTime(Dist): " .. rTM)
+		surface.DrawText("Reached Max: " .. (reached_max and "YES" or ""))
+
+	--	local rT = StormFox.DownFall.CalcTemplateTimer( rain_template, 100 + P * 90 )
+	--	surface.SetTextPos(50, 90)
+	--	surface.DrawText("SpawnTime: " .. rT)
+	--	local rTM = StormFox.DownFall.CalcTemplateTimer( rain_template_multi, P * 10 )
+	--	surface.SetTextPos(50, 120)
+	--	surface.DrawText("SpawnTime(Dist): " .. rTM)
 	end
 end
 
