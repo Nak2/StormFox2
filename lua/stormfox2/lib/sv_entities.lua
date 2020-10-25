@@ -59,4 +59,5 @@ CreateConVar("sf_enable_mapsupport","1",{FCVAR_REPLICATED,FCVAR_ARCHIVE},"stormf
 			net.WriteUInt(t.iRadiusOverride or t.iMagnitude, 16)
 			net.WriteUInt(t.iMagnitude, 16)
 		net.SendPVS(ent:GetPos())
+		hook.Run("StormFox.Entitys.OnExplosion", ent:GetPos(), t.iRadiusOverride, t.iMagnitude)
 	end)
