@@ -33,6 +33,8 @@ local function GLGravity()
 	end
 end
 
+-- This will return the gravity on the server.
+StormFox.DownFall.GetGravity = GLGravity
 --		game.GetTimeScale()
 
 -- Traces
@@ -178,6 +180,9 @@ if CLIENT then
 	-- On hit (Overwrite it)
 	function pt_meta:OnHit( vPos, vNormal, nHitType )
 	end
+	-- On Explosion
+	function pt_meta:OnExplosion( vExposionPos, nDistance, iRange, iMagnitude)
+	end
 	function pt_meta:GetNorm()
 		return self.vNorm or StormFox.Wind.GetNorm() or Vector(0,0,-1)
 	end
@@ -211,6 +216,7 @@ if CLIENT then
 		t.endpos = vEndPos
 		t.hitType = hitType or SF_DOWNFALL_HIT_NIL
 		t.hitNorm = hitNorm or Vector(0,0,-1)
+		--t.to = CurTime()
 		setmetatable(t, p_meta)
 		local cG = self.g
 		if not t:GetIgnoreGravity() then
@@ -219,12 +225,13 @@ if CLIENT then
 		local dir_z = math.min(t:GetNorm().z,-0.1) -- Winddir should always be down
 		-- Calc the starting position.
 		if cG > 0 then -- Start from the sky and down
-			local l = z_view + (t.r_H or 200) - t.endpos.z
+			local l = z_view + (t.r_H or 200) - t.endpos.z + math.Rand(0, t.h)
 			t.curlength = l * -dir_z
 		elseif cG < 0 then -- Start from ground and up
 			local l = math.max(0, z_view - (t.r_H or 200) - t.endpos.z) -- Ground or below renderheight
 			t.curlength = l * -dir_z
 		end
+		t:CalcPos()
 		return t, (t.r_H or 200) * 2 / math.abs( cG ) -- Secondary is how long we thing it will take for the particle to die. We also want this to be steady.
 	end
 	-- Calculates the current position of the particle
@@ -272,7 +279,7 @@ if CLIENT then
 	local function ParticleTick()
 		if #t_sfp < 1 then return end
 		local z_view = StormFox.util.GetCalcView().pos.z
-		local fr = FrameTime() * 60 -- * game.GetTimeScale()
+		local fr = FrameTime() * 600 -- * game.GetTimeScale()
 		local die = {}
 		local gg = GLGravity() -- Global Gravity
 		for n,t in ipairs(t_sfp) do
@@ -282,14 +289,14 @@ if CLIENT then
 			if not part:GetIgnoreGravity() then
 				move = part.g * gg 
 			end
-			part.curlength = part.curlength - move * fr * 10
+			part.curlength = part.curlength - move * fr
 			-- Check if it dies
 			if move > 0 then
 				local zp = part:CalcPos().z
 				if zp < part.endpos.z then
 					-- Hit ground
 					table.insert(die, n)
-				elseif zp < z_view - part.r_H or zp > z_view + part.r_H then
+				elseif zp < z_view - part.r_H or zp > z_view + part.r_H + part.h then
 					-- Die in air
 					part.hitType = SF_DOWNFALL_HIT_NIL
 					table.insert(die, n)
@@ -305,6 +312,7 @@ if CLIENT then
 		for i = #die, 1, -1 do
 			local t = table.remove(t_sfp, die[i])
 			local part = t[2]
+			--print("					Real Death: ", CurTime() - (part.to or 0))
 			if part.hitType ~= SF_DOWNFALL_HIT_NIL and part.OnHit then
 				part:OnHit( part.endpos, part:GetHitNormal(), part.hitType )
 			end
@@ -366,30 +374,54 @@ if CLIENT then
 		return StormFox.DownFall.AddTemplateSimple( tTemplate, vEnd, nHitType, hitNorm, nDistance )
 	end
 
-	-- Returns the interval for the given template
-	function StormFox.DownFall.CalcTemplateTimer( tTemplate )
-		local P = 0.5 + StormFox.Weather.GetProcent() * 0.5
-		local QT = 6 + max(1, StormFox.Client.GetQualityNumber())
-		local totalL = QT * P * 10000
-		local mL = (tTemplate.r_H / math.abs( tTemplate.g )) / totalL
-		-- Safty. This slowly scales the amount of particles if it is 500 or above.
-		if #t_sfp >= 500 then
-			return mL * (1.90526 - 0.00178947 * #t_sfp)
-		end
-		return mL
+	-- Max particles by quality setting.
+	local function max_particles()
+		local qt = StormFox.Client.GetQualityNumber()
+		local amount = ( math.max(3, qt) * 70 - #t_sfp ) / 200
+		if amount > 1 then return 1 end
+		if amount < -1 then return 0 end
+		return 1 + (amount / 2)
 	end
 
-	-- Automaticlly spawns particles
-	function StormFox.DownFall.SmartTemplate( tTemplate, nDistance, traceSize, vNorm  )
+	local reached_max = false
+	-- Returns the how many particles it should create pr tick
+	function StormFox.DownFall.CalcTemplateTimer( tTemplate, nAimAmount )
+		local speed = math.abs( tTemplate.g * GLGravity() ) * 600 * FrameTime()
+		--	print("FT",1 / FrameTime())
+		--	print("nAimAmount: " .. nAimAmount)
+		--	print("nAimAmountPrT: " .. nAimAmount * FrameTime())
+		--	print("SPEED", speed)
+		local alive_time = tTemplate.r_H / speed * FrameTime() -- How long would it be alive? (Only half the time, since players are usually are on the ground)
+		local prtick = nAimAmount * FrameTime() / alive_time
+		local m = max_particles()
+		reached_max = reached_max or m < 1
+		return prtick * m
+	end
+
+	-- Automaticlly spawns particles and returns a table of them.
+	local ex = 0
+	function StormFox.DownFall.SmartTemplate( tTemplate, nDistance, nAimAmount, traceSize, vNorm, fFunc )
 		local t = CurTime() - (tTemplate.s_timer or 0)
-		local n = StormFox.DownFall.CalcTemplateTimer( tTemplate )
-		if t > n then
-			local m = FrameTime() / n
+		local n = StormFox.DownFall.CalcTemplateTimer( tTemplate, nAimAmount ) -- How many times this need to run pr tick
+		if t >= 0 then
 			tTemplate.s_timer = CurTime()
-			for i = 1, math.min(m,12) do
-				StormFox.DownFall.AddTemplate( tTemplate, nDistance, traceSize, vNorm )
+			if n < 1 then
+				ex = ex + n
+				if ex < 1 then
+					return {}
+				else
+					ex = ex - 1
+				end
 			end
+			local t = {}
+			for i = 1, math.Clamp(n + ex, 1, 20) do
+				local p = StormFox.DownFall.AddTemplate( tTemplate, nDistance, traceSize or 5, vNorm )
+				if p then table.insert(t, p) end
+			end
+			ex = ex % 1
+			return t
 		end
+		return {}
 	end
 
 	hook.Add("Think","StormFox.Downfall.Tick", ParticleTick)
@@ -402,8 +434,22 @@ if CLIENT then
 		ParticleRender() -- Render sf particles
 	end)
 	function StormFox.DownFall.DebugList()
-		return t_sfp
+		local b = reached_max
+		reached_max = false
+		return t_sfp, b
 	end
+
+	hook.Add("StormFox.Entitys.OnExplosion", "StormFox.Downfall.Explosion", function(pos, iRadius, iMagnitude)
+		for i = #t_sfp, 1, -1 do
+			local part = t_sfp[i][2]
+			local dis = part:GetPos():Distance(pos)
+			if dis * 1.2 > iRadius then continue end -- Adding just a bit more
+			if part.OnExplosion then
+				part:OnExplosion(pos, math.Clamp(1 - (dis / iRadius), 0, 1),iRadius, iMagnitude)
+			end
+			table.remove(t_sfp, i)
+		end
+	end)
 end
 
 
