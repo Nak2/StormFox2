@@ -1,3 +1,4 @@
+
 ## Moonparses
     Problems:  
         Russian tosaters can't handle dynamic texture changes and RT. It could have been me not checking for pixelshader support but still.
@@ -14,15 +15,11 @@
     - Make the menu the same as SF1, however update the design abit
     - People got confused with the "Set Weather", instead have a list of weathers they can select and a slider for amount.
 
-## Soundsystem
-    - Make a system that caches sound-locations
-    - Snd objects on the side of the window / entity is required
-    - Outside can be defined by surfaces on the map?
-        Pro: Constant and doesn't have to re-calculated
-        Con: Surfaceinfos aren't on all the map
-        Idea: Make a circle system where from the avage point will be cener and range of the "outside" zone. This will increase the FPS and lower the need for traers.
-    
 ## Other
     - Mixer seems to glitch out now and then. Need to fix it somehow.
     - Sunset/rise has a wider area irl
 
+## Terrian
+	- Fix texture swap problems
+	- Fix texture swap-ground problems
+	- Fix footprints
