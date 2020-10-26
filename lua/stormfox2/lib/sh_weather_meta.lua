@@ -35,7 +35,7 @@ function StormFox.Weather.Add( sName, sInherit )
 	t.ID = table.Count(Weathers) + 1
 	t.Name = sName
 	setmetatable(t, w_meta)
-	if sName ~= "Clear" then
+	if sName ~= "Clear" then -- Clear shouldn't inherit itself
 		t.Inherit = sInherit or "Clear"
 	end
 	Weathers[sName] = t
@@ -170,29 +170,21 @@ function w_meta:RenderWindowRefract64x64( fFunc )
 end
 
 --[[<Shared>------------------------------------------------------------------
-	Adds a guage-type to the weather. Second argument can be used to determen when
-	to apply the downfall. You can also use it to change downfall type if you return
-	another downfall type in fApplyFunc.
+	Returns the "lightlevel" of the skybox in a range of 0-255.
 ---------------------------------------------------------------------------]]
-function w_meta:SetDownFall( tDownFall, fApplyFunc )
-	self.downfall = tDownFall
-	self.downfallfunc = fApplyFunc
-end
-
 function StormFox.Weather.GetLuminance()
 	local Col = StormFox.Mixer.Get("bottomColor") or Color(255,255,255)
 	return 0.2126 * Col.r + 0.7152 * Col.g + 0.0722 * Col.b
 end
 
--- Load weathers
+-- Load the weathers once lib is done.
 hook.Add("stormfox2.postlib", "stormfox2.loadweathers", function()
+	hook.Run("stormfox2.preloadweather", w_meta)
 	for _,fil in ipairs(file.Find("stormfox2/weathers/*.lua","LUA")) do
 		if SERVER then
 			AddCSLuaFile("stormfox2/weathers/" .. fil)
 		end
 		pcall(include,"stormfox2/weathers/" .. fil)
 	end
-	if SERVER then
-		hook.Run("stormfox2.postloadweather")
-	end
+	hook.Run("stormfox2.postloadweather")
 end)
