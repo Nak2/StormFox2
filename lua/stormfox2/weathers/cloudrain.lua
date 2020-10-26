@@ -227,8 +227,34 @@ do
 	end
 end
 
--- Rain particles
+-- Rain particles and sound
 if CLIENT then
+	-- Sound
+	local rain_light = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_light.ogg", SF_AMB_OUTSIDE, 1 )
+	local rain_window = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_glass.ogg", SF_AMB_WINDOW, 0.1 )
+	local rain_outside = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_outside.ogg", SF_AMB_NEAR_OUTSIDE, 0.1 )
+	--local rain_underwater = StormFox.Ambience.CreateAmbienceSnd( "", SF_AMB_UNDER_WATER, 0.1 ) Unused
+	local rain_watersurf = StormFox.Ambience.CreateAmbienceSnd( "ambient/water/water_run1.wav", SF_AMB_UNDER_WATER_Z, 0.1 )
+	local rain_roof_wood = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_roof.wav", SF_AMB_ROOF_WOOD, 0.1 )
+	local rain_roof_metal = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_roof_metal.ogg", SF_AMB_ROOF_METAL, 0.1 )
+	local rain_glass = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_glass.ogg", SF_AMB_ROOF_GLASS, 0.1 )
+	rain:AddAmbience( rain_light )
+	rain:AddAmbience( rain_window )
+	rain:AddAmbience( rain_outside )
+	rain:AddAmbience( rain_watersurf )
+	rain:AddAmbience( rain_roof_wood )
+	rain:AddAmbience( rain_roof_metal )
+	rain:AddAmbience( rain_glass )
+	-- Edit watersurf
+	rain_watersurf:SetFadeDistance(0,100)
+	rain_watersurf:SetVolume( 0.05 )
+	rain_watersurf:SetPlaybackRate(2)
+	-- Edit rain_glass
+	rain_roof_metal:SetFadeDistance(10,400)
+	rain_glass:SetFadeDistance(10, 400)
+	rain_window:SetFadeDistance(100, 200)
+	-- Edit rain_outside
+	rain_outside:SetFadeDistance(100, 200)
 	-- Materials
 	local m_rain = Material("stormfox/raindrop.png")
 	local m_rain_multi = Material("stormfox/raindrop-multi.png","noclamp smooth")
@@ -278,7 +304,7 @@ if CLIENT then
 			p:SetDieTime(1)
 			p:SetEndAlpha(0)
 			p:SetStartAlpha(math.min(255,5 + math.random(7,10) + L))
-		elseif nHitType == SF_DOWNFALL_HIT_GROUND then
+		elseif nHitType == SF_DOWNFALL_HIT_GLASS then
 			local p = StormFox.DownFall.AddParticle( rainsplash, vPos, false )
 			p:SetAngles(vNormal:Angle())
 			p:SetStartSize(4)
@@ -286,11 +312,11 @@ if CLIENT then
 			p:SetDieTime(0.2)
 			p:SetEndAlpha(0)
 			p:SetStartAlpha(math.min(255, 10 + L))
-		elseif nHitType == SF_DOWNFALL_HIT_GLASS then
+		else -- if nHitType == SF_DOWNFALL_HIT_GROUND then
 			local p = StormFox.DownFall.AddParticle( rainsplash, vPos, false )
 			p:SetAngles(vNormal:Angle())
 			p:SetStartSize(4)
-			p:SetEndSize(5)
+			p:SetEndSize(7)
 			p:SetDieTime(0.2)
 			p:SetEndAlpha(0)
 			p:SetStartAlpha(math.min(255, 10 + L))
@@ -309,25 +335,36 @@ if CLIENT then
 	function rain.Tick10()
 		local P = StormFox.Weather.GetProcent()
 		local L = StormFox.Weather.GetLuminance()
+
+		rain_outside:SetVolume( P * 1.2 )
+		rain_light:SetVolume( P )
+		rain_window:SetVolume( P * 0.3 )
+		rain_roof_wood:SetVolume( P * 0.3 )
+		rain_roof_metal:SetVolume( P * 1 )
+		rain_glass:SetVolume( P * 0.5 )
+
 		-- Update rain
 		local s = 1.22 + 1.56 * P
 		local speed = 0.72 + 0.26 * P
 		rain_template:SetSpeed( speed ) 
-		rain_template:SetSize( s , 3.22 + 3.56 * P)
+		rain_template:SetSize( s , 5.22 + 7.56 * P)
 		rain_template:SetAlpha(math.min(45 + 15 * P + L,255))
 		if P > 0.15 then
-			rain_template_multi:SetSpeed( speed ) 
-			rain_template_multi:SetSize( 40 + 50 * P, 600 + 50 * P )
+			rain_template_multi:SetSpeed( speed * 1.2 ) 
+			rain_template_multi:SetSize( 40 + 50 * P, 600 + 1200 * P )
 			rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255))
 		end
 	end
 	-- Gets called every tick to add rain.
 	function rain.Think()
 		local P = StormFox.Weather.GetProcent()
+
 		if StormFox.DownFall.GetGravity() < 0 then return end -- Rain can't come from the ground.
 		if true or StormFox.Temperature.Get() > math.random(-3, 0) then -- Spawn rain particles
 			-- Spawn rain particles
-			StormFox.DownFall.SmartTemplate( rain_template, math.random(10,500), 100 + P * 800, 5, vNorm )
+			for _,v in ipairs( StormFox.DownFall.SmartTemplate( rain_template, math.random(10,500), 100 + P * 800, 5, vNorm ) or {} ) do
+				v:SetSize(  1.22 + 1.56 * P * math.Rand(1,2), 5.22 + 7.56 * P )
+			end
 			-- Spawn distant rain
 			if P > 0.15 then
 				local r_w = math.Rand(1,2)
@@ -355,12 +392,19 @@ if CLIENT then
 		surface.SetTextColor(0,0,0)
 		surface.SetTextPos(50, 50)
 		surface.SetFont("default")
-		surface.DrawText("Q: " .. StormFox.Client.GetQualityNumber())
-		surface.SetTextPos(50, 70)
-		surface.DrawText("Amount: " .. #tab)
-		surface.SetTextPos(50, 90)
-		surface.DrawText("Reached Max: " .. (reached_max and "YES" or ""))
-
+		surface.DrawText("Quality: " .. StormFox.Client.GetQualityNumber())
+		surface.SetTextPos(50, 65)
+		surface.DrawText("Particles: " .. #tab)
+		surface.SetTextPos(50, 80)
+		surface.DrawText("Particle Limit: " .. (reached_max and "YES" or ""))
+		surface.SetTextPos(50, 95)
+		surface.DrawText("Sound List:")
+		local i = 1
+		for snd,tab in pairs(StormFox.Ambience.DebugList() or {}) do
+			surface.SetTextPos(65, 95 + i * 15)
+			surface.DrawText( string.GetFileFromFilename( snd ) .. ": " .. math.Round(tab[3], 2) )
+			i = i + 1
+		end
 	--	local rT = StormFox.DownFall.CalcTemplateTimer( rain_template, 100 + P * 90 )
 	--	surface.SetTextPos(50, 90)
 	--	surface.DrawText("SpawnTime: " .. rT)
