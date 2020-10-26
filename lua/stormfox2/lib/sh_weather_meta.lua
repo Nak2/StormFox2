@@ -30,6 +30,7 @@ function w_meta:SetOnChange(fFunc)
 end
 
 function StormFox.Weather.Add( sName, sInherit )
+	if Weathers[sName] then return Weathers[sName] end
 	local t = {}
 	t.ID = table.Count(Weathers) + 1
 	t.Name = sName
