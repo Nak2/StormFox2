@@ -56,6 +56,7 @@ if IsMounted("csgo") or IsMounted("l4d2") then
 	StormFox.Environment.AddWindowModel("models/props/de_house/window_54x44.mdl", Vector(-25,4.8,7), Vector(25,4.8,47))
 	StormFox.Environment.AddWindowModel("models/props/de_house/window_54x76.mdl", Vector(-25,4.8,7.9),Vector(25,4.8,80.1))
 	StormFox.Environment.AddWindowModel("models/props/de_inferno/windowbreakable_02.mdl")
+	StormFox.Environment.AddWindowModel("models/props/cs_militia/militiawindow02_breakable.mdl", Vector(-55, 0, -35.8), Vector(56, 0, 35.8))
 end
 
 --[[-------------------------------------------------------------------------
@@ -333,45 +334,56 @@ Generate meshes and env-points out from the map-data.
 			if norm and (to - from):Dot(norm) > 0 then return false end -- Check if the window "faces" away from the player
 			t.start = from
 			t.endpos = norm and to + norm * 10 or to
-			t.filter = filter or LocalPlayer()
-			return not util_TraceLine( t ).Hit
+			t.filter = filter or StormFox.util.ViewEntity()
+			local tr = util_TraceLine( t )
+			return not tr.Hit, tr
 		end
-		local function EasyTrace(from,to)
+		local function EasyTrace(from,to, mask)
 			t.start = from
 			t.endpos = to
-			t.filter = LocalPlayer()
+			t.filter = StormFox.util.ViewEntity()
+			t.mask = mask or MASK_SOLID_BRUSHONLY
 			return not util_TraceLine( t ).Hit
 		end
-		local function UnderSky(pos) 			-- Checks if a position is under the sky.
+		local function AdvTrace(from,to, mask)
+			t.start = from
+			t.endpos = to
+			t.filter = StormFox.util.ViewEntity()
+			t.mask = mask or MASK_SOLID_BRUSHONLY
+			return util_TraceLine( t )
+		end
+		local function UnderSky(pos, mask) 			-- Checks if a position is under the sky.
 			t.start = pos
 			t.endpos = pos + Vector(0,0,262144)
-			t.filter = LocalPlayer()
+			t.filter = StormFox.util.ViewEntity()
+			t.mask = mask
 			local r = util_TraceLine( t )
 			return r.HitSky and r.HitPos
 		end
 		local t2 = {["mask"] = MASK_SHOT}
-		local function SkyLine(pos,norm, n, nMaxDistance, filter) 	-- Shoots tracers out and returns a pos, if the sky is above.
+		local function SkyLine(pos,norm, n, nMaxDistance, filter, sky_mask) 	-- Shoots tracers out and returns a pos, if the sky is above.
 			t2.start = pos + norm
 			t2.endpos = pos + norm * (nMaxDistance or 262144)
-			t2.filter = filter or LocalPlayer()
+			t2.filter = filter or StormFox.util.ViewEntity()
+			t2.mask = MASK_SHOT
 			local r = util_TraceLine( t2 )
 			if r.HitSky then return r.HitPos end
 			local d = r.HitPos:Distance(pos)
 			if d < 50 then
-				return UnderSky(pos) and pos
+				return UnderSky(pos, sky_mask or MASK_SOLID_BRUSHONLY) and pos
 			end
 			-- Check from start to center
 				local i = math.min(d / 50, n) - 2
 				local dis = d / 2 / i
 				for i2 = 1,i do
 					local v = pos + norm * (dis * i2)
-					local p = UnderSky(v)
+					local p = UnderSky(v, sky_mask or MASK_SOLID_BRUSHONLY)
 					if p then return v end
 				end
 			-- Cehck center and hit
 				for i = 1,2 do
 					local v = pos + norm * (d / 2.1 * i)
-					local p = UnderSky(v)
+					local p = UnderSky(v, sky_mask or MASK_SOLID_BRUSHONLY)
 					if p then return v end
 				end
 		end
@@ -448,7 +460,6 @@ Generate meshes and env-points out from the map-data.
 					local tex = ((iM:GetTexture("$basetexture") or iM):GetName() or "error"):lower()
 				-- Check
 					if IsWindowMaterial(iM) and SurfaceInfo_FacingOutside( eEnt, SurfaceInfo ) then -- Glass
-						print(iM, IsWindowMaterial(iM))
 						if IsRoofAngle( SurfaceInfo:GetAngles() ) then -- Roof
 							return GLASS_ROOF_VERTS, nocull
 						else
@@ -787,6 +798,7 @@ Generate meshes and env-points out from the map-data.
 				StormFox.Msg("Meshes completed.")
 			end
 		end)
+		hook.Remove("stormfox.InitPostEntity", "StormFox_ENV_SCAN")
 	end
 	hook.Add("stormfox.InitPostEntity", "StormFox_ENV_SCAN", StartGenerating)
 --[[-------------------------------------------------------------------------
@@ -891,9 +903,9 @@ Will check if they're outside, in wind(downfall), near glass, near outside, indo
 -- Nearest stuff
 local nearest_window, nearest_outside
 -- Roof
-local roof_type, roof_height
+local roof_type, roof_pos -- Roof_type is hit_type enums from lib/sh_downfall.lua
 -- Bools
-local is_inside, is_inwind
+local is_inside, is_inwind, in_water
 
 local viewPos
 local function sort_func(a, b)
@@ -903,68 +915,93 @@ local update_windows_tick = 0
 local function env_corotinefunction()
 	local view = StormFox.util.GetCalcView()
 		viewPos = view.pos
+	-- If we're in water, locate the z_position
+		if bit.band( util.PointContents( viewPos ), CONTENTS_WATER ) == CONTENTS_WATER then
+			local t = AdvTrace(viewPos,viewPos + Vector(0,0,1000), MASK_WATER)
+			if t.FractionLeftSolid then
+				in_water = viewPos.z + 1000 * t.FractionLeftSolid
+			else
+				in_water = (viewPos + Vector(0,0,1000)).z
+			end
+		else
+			in_water = nil
+		end
 	-- Update close windows
 		update_windows_tick = update_windows_tick + 1
 		if update_windows_tick >= 10 then
 			scan_dynamic()
 			update_windows_tick = 0
 		end
-	-- Locate close windows
+	-- Update close windows
 		close_window_ents = {}
 		for _,v in ipairs(glass_dynamic) do -- ent,c
 			if not v:IsAlive() then continue end
 			if viewPos:Distance(v:GetCenter()) > 10000 then continue end
 			table.insert(close_window_ents, v)
 		end
+	-- is inside
 		is_inwind = StormFox.Wind.IsEntityInWind(LocalPlayer(),true)
 		is_inside = not (is_inwind or UnderSky2(viewPos))
-	if is_inside then
+	-- Locate nearest outside / window
+	if is_inside and not in_water then
 		-- Nearest window
-		if surfaceinfos[GLASS_VERTS] then
-			nearest_window = nil
-			-- Sort windows
-			table_sort(surfaceinfos[GLASS_VERTS],sort_func)
-			-- Check brushes
-			for i = 1,10 do
-				if not surfaceinfos[GLASS_VERTS][i] then break end
-				local surfinfo = surfaceinfos[GLASS_VERTS][i][1]
-				local winpos = surfaceinfos[GLASS_VERTS][i][2]
-				if MatchTrace(view.pos,winpos,surfinfo and surfinfo:GetNormal()) then -- Check window normal and trace
-					nearest_window = winpos
-					break
+			if surfaceinfos[GLASS_VERTS] then
+				nearest_window = nil
+				-- Sort windows
+				table_sort(surfaceinfos[GLASS_VERTS],sort_func)
+				-- Check brushes
+				for i = 1,10 do
+					if not surfaceinfos[GLASS_VERTS][i] then break end
+					local surfinfo = surfaceinfos[GLASS_VERTS][i][1]
+					local winpos = surfaceinfos[GLASS_VERTS][i][2]
+					local v, tr = MatchTrace(view.pos,winpos,surfinfo and surfinfo:GetNormal())
+					if v then -- Check window normal and trace
+						nearest_window = winpos
+						break
+					end
+				end
+				-- Check ents
+				local curDist = nearest_window and nearest_window:DistToSqr(view.pos)
+				for i = 1,#close_window_ents do
+					if not close_window_ents[i]:IsAlive() then continue end -- Check if it is alive
+					local dis = close_window_ents[i]:GetCenter():Distance(view.pos)
+					if curDist and dis > curDist then continue end
+					local win = close_window_ents[i]
+					local n = view.ang:Forward()
+					debugoverlay.Cross(win:GetCenter()- n * 15, 15, 1, Color(255,255,255))
+					local v, tr = MatchTrace(view.pos,win:GetCenter() - n * 15)
+					if not v then continue end
+					curDist = dis
+					nearest_window = win:GetCenter()
 				end
 			end
-			-- Check ents
-			local curDist = nearest_window and nearest_window:DistToSqr(view.pos)
-			for i = 1,#close_window_ents do
-				if not close_window_ents[i]:IsAlive() then continue end -- Check if it is alive
-				local dis = close_window_ents[i]:GetCenter():Distance(view.pos)
-				if curDist and dis > curDist then continue end
-				local win = close_window_ents[i]
-				local n = view.ang:Forward()
-				if not MatchTrace(view.pos,win:GetCenter() - n * 2) then continue end
-				curDist = dis
-				nearest_window = win:GetCenter()
-			end
-		end
 		coroutine.yield()
 		-- Nearest outside
 			local oldpos = nearest_outside
-			nearest_outside = SkyLine(view.pos,view.ang:Forward(), 7)
+			-- Scan forward the player, then the players view (IF they look down at an angle towards the outside)
+			-- SkyLine(pos,norm, n, nMaxDistance, filter, sky_mask)
+			nearest_outside = SkyLine(view.pos,Angle(0,view.ang.y,0):Forward(), 7, 500, nil, MASK_SHOT) or SkyLine(view.pos,view.ang:Forward(), 7, 500, nil, MASK_SHOT)
+			-- If we don't hit anything, scan around the player
 			if not nearest_outside then
 				local lines = math.min(StormFox.Client.GetQualityNumber() * 2,10)
 				local r = 360 / lines
 				for i = 1,lines do
-					nearest_outside = SkyLine(view.pos,Angle(0,r * i,0):Forward(), 5)
+					nearest_outside = SkyLine(view.pos,Angle(0,r * i,0):Forward(), 5, 600,nil, MASK_SHOT)
 					if nearest_outside then break end
 				end
 			end
-			if oldpos and EasyTrace(view.pos,oldpos) then
-				if not nearest_outside or oldpos:DistToSqr(view.pos) < nearest_outside:DistToSqr(view.pos) then
+			-- If the oldpos is still valid. Check to see if the currentpos is closer.
+			if oldpos and EasyTrace(view.pos,oldpos) then -- If old pos and we still see old pos
+				if nearest_outside then
+					nearest_outside = ( oldpos:DistToSqr(view.pos) < nearest_outside:DistToSqr(view.pos) ) and oldpos or nearest_outside
+				else
 					nearest_outside = oldpos
 				end
 			end
-		-- 
+		coroutine.yield()
+		-- Roof pos
+			roof_pos, roof_type = StormFox.DownFall.CheckDrop(viewPos, Vector(0,0,-1), 3, StormFox.util.ViewEntity())
+			debugoverlay.Cross(roof_pos, 15, 1, Color(255,255,255), true)
 	end
 	coroutine.yield()
 end
@@ -974,11 +1011,9 @@ local env_corotine = coroutine.wrap(function()
 		env_corotinefunction()
 	end
 end)
-hook.Add("stormfox.InitPostEntity", "stormfox.enviroment.start", function()
-	timer.Create("stormfox.enviroment.think", 0.25, 0, function()
-		env_corotine()
-		--print(coroutine.resume(env_corotine))
-	end)
+timer.Create("stormfox2.enviroment.think", 0.25, 0, function()
+	if not StormFox.Loaded or not _STORMFOX_POSTENTITY then return end
+	env_corotine()
 end)
 
 --[[-------------------------------------------------------------------------
@@ -987,8 +1022,15 @@ Returns the clients enviroment and locations.
 function StormFox.Environment.Get()
 	local t = {}
 	t.outside = not is_inside
-	t.nearest_window = is_inside and nearest_window
-	t.nearest_outside = is_inside and nearest_outside
+	t.in_water = in_water
+	if is_inside and not in_water then
+		t.nearest_window = is_inside and nearest_window
+		t.nearest_outside = is_inside and nearest_outside
+		if roof_pos then
+			t.roof_z = roof_pos.z
+			t.roof_type = roof_type
+		end
+	end
 	return t
 end
 
