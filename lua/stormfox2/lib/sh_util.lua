@@ -52,4 +52,10 @@ if CLIENT then
 	function StormFox.util.RenderPos()
 		return view.pos
 	end
+		--[[<Client>-----------------------------------------------------------------
+	Returns the current viewentity
+	---------------------------------------------------------------------------]]
+	function StormFox.util.ViewEntity()
+		return LocalPlayer():GetViewEntity() or LocalPlayer()
+	end
 end
