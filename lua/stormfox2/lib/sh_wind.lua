@@ -137,6 +137,7 @@ Checks if an entity is out in the wind (or rain). Caches the result for 1 second
 ---------------------------------------------------------------------------]]
 local max_dis = 32400
 function StormFox.Wind.IsEntityInWind(eEnt,bDont_cache)
+	if not IsValid(eEnt) then return end
 	if not bDont_cache then
 		if eEnt.sf_wind_var and (eEnt.sf_wind_var[2] or 0) > CurTime() then
 			return eEnt.sf_wind_var[1],windNorm
