@@ -25,7 +25,7 @@ hook.Add("stormfox.InitPostEntity", "StormFox.FogInit", function()
 		-- Some maps got some crazy fog
 		fogstart = math.max(1, fogstart)
 		fogend = math.max(10000, fogend)
-		fogdens = math.max(0.8, fogdens)
+		fogdens = math.max(0.8, fogdens or 1)
 		return
 	end
 	-- In case there aren't any default fog on the map ..
@@ -36,6 +36,7 @@ end)
 
 local curFogStart,curFogEnd, curFogDens
 hook.Add("Think", "stormfox.fog.think", function()
+	if not fogstart or not fogend or not fogdens then return end
 	if not StormFox.Setting.GetCache("enable_fog",true) or not fogstart then return end
 	-- Start with the default fog.
 	if not curFogStart then
