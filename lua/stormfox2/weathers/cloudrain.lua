@@ -238,11 +238,12 @@ if CLIENT then
 	local t_snow = {m_snow1, m_snow2, m_snow3}
 	local m_snowmulti = Material("stormfox/effects/snow-multi.png")
 	-- Make templates
-	local rain_template = StormFox.DownFall.CreateTemplate(m_rain, true)
-	local rain_template_multi = StormFox.DownFall.CreateTemplate(m_rain_multi, true)
-	local snow_template = StormFox.DownFall.CreateTemplate(m_snow1, false)
-	local snow_template_multi = StormFox.DownFall.CreateTemplate(m_rain_multi, true)
+	local rain_template = 		StormFox.DownFall.CreateTemplate(m_rain, 		true)
+	local rain_template_multi = StormFox.DownFall.CreateTemplate(m_rain_multi, 	true)
+	local snow_template = 		StormFox.DownFall.CreateTemplate(m_snow1, 		false)
+	local snow_template_multi = StormFox.DownFall.CreateTemplate(m_rain_multi, 	true)
 	
+	-- Make "rain" explosion at rain particles
 	function rain_template:OnExplosion( vExPos, nDisProcent, iRange, iMagnetide )
 		local e_ang = (self:GetPos() - vExPos):Angle():Forward()
 		local boost = nDisProcent * 5
@@ -307,7 +308,7 @@ if CLIENT then
 	-- Update the rain templates every 10th second
 	function rain.Tick10()
 		local P = StormFox.Weather.GetProcent()
-		local L = StormFox.Weather.GetLuminance() --TODO: Fiddle with settings
+		local L = StormFox.Weather.GetLuminance()
 		-- Update rain
 		local s = 1.22 + 1.56 * P
 		local speed = 0.72 + 0.26 * P
@@ -317,7 +318,7 @@ if CLIENT then
 		if P > 0.15 then
 			rain_template_multi:SetSpeed( speed ) 
 			rain_template_multi:SetSize( 40 + 50 * P, 600 + 50 * P )
-			rain_template_multi:SetAlpha(15 + 4 * P)
+			rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255))
 		end
 	end
 	-- Gets called every tick to add rain.
