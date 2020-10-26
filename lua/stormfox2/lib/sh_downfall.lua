@@ -22,6 +22,9 @@ SF_DOWNFALL_HIT_NIL = -1
 SF_DOWNFALL_HIT_GROUND = 0
 SF_DOWNFALL_HIT_WATER = 1
 SF_DOWNFALL_HIT_GLASS = 2
+SF_DOWNFALL_HIT_CONCRETE = 3
+SF_DOWNFALL_HIT_WOOD = 4
+SF_DOWNFALL_HIT_METAL = 5
 
 local con = GetConVar("sv_gravity")
 -- Returns the gravity
@@ -50,6 +53,121 @@ do
 		if SERVER then return end
 		return LocalPlayer():GetViewEntity() or LocalPlayer()
 	end
+	-- MaterialScanner
+	local c_t = {}
+	-- Errors
+		c_t["**displacement**"] = "default"
+		c_t["**studio**"] = "default"
+		c_t["default_silent"] = "default"
+		c_t["floatingstandable"] = "default"
+		c_t["item"] = "default"
+		c_t["ladder"] = "default"
+		c_t["no_decal"] = "default"
+		c_t["player"] = "default"
+		c_t["player_control_clip"] = "default"
+	-- Concrete / Rock / Ground
+		c_t["boulder"] = "concrete"
+		c_t["concrete_block"] = "concrete"
+		c_t["gravel"] = "concrete"
+		c_t["rock"] = "concrete"
+		c_t["brick"] = "concrete"
+		c_t["baserock"] = "concrete"
+		c_t["dirt"] = "concrete"
+		c_t["grass"] = "concrete"
+		c_t["gravel"] = "concrete"
+		c_t["mud"] = "concrete"
+		c_t["quicksand"] = "concrete"
+		c_t["slipperyslime"] = "concrete"
+		c_t["sand"] = "concrete"
+		c_t["antlionsand"] = "concrete"
+	-- Metal
+		c_t["canister"] = "metal"
+		c_t["chain"] = "metal"
+		c_t["chainlink"] = "metal"
+		c_t["paintcan"] = "metal"
+		c_t["popcan"] = "metal"
+		c_t["roller"] = "metal"
+	-- Wood
+		c_t["roller"] = "wood"
+		c_t["roller"] = "metal"
+		c_t["roller"] = "metal"
+		c_t["roller"] = "metal"
+		c_t["roller"] = "metal"
+
+	-- Convert surfaceprops
+	local function ConvertSurfaceProp( sp )
+		sp = sp:lower()
+		if c_t[sp] then 
+			return c_t[sp]
+		end
+		-- Guess
+		if string.find( sp, "window", 1, true) or string.find( sp, "glass", 1, true) then
+			return "glass"
+		end
+		if string.find( sp, "wood",1,true) then
+			return "wood"
+		end
+		if string.find( sp, "metal",1,true) then
+			return "metal"
+		end
+		if string.find( sp, "concrete",1,true) then
+			return "concrete"
+		end
+		if string.find( sp, "water",1,true) then
+			return "water"
+		end
+		return "default"
+	end
+	local m_t = {}
+	local function SurfacePropIDToHIT( id )
+		if not id then return end
+		if id < 0 then return SF_DOWNFALL_HIT_GROUND end
+		if m_t[ id ] then return m_t[ id ] end
+		-- ConvertSurfaceProp
+		local name = util.GetSurfacePropName( id )
+		name = ConvertSurfaceProp( name )
+		if name == "default" then
+			m_t[ id ] = SF_DOWNFALL_HIT_GROUND
+		elseif name == "metal" then
+			m_t[ id ] = SF_DOWNFALL_HIT_METAL
+		elseif name == "water" then
+			m_t[ id ] = SF_DOWNFALL_HIT_WATER
+		elseif name == "wood" then
+			m_t[ id ] = SF_DOWNFALL_HIT_WOOD
+		elseif name == "glass" then
+			m_t[ id ] = SF_DOWNFALL_HIT_GLASS
+		elseif name == "concrete" then
+			m_t[ id ] = SF_DOWNFALL_HIT_CONCRETE
+		else
+			m_t[ id ] = SF_DOWNFALL_HIT_GROUND
+		end
+		return m_t[ id ]
+	end
+	local function MaterialToHIT( str )
+		if m_t[ str ] then return m_t[ str ] end
+		local sp = Material( str ):GetKeyValues()["$surfaceprop"]
+		if sp and #sp > 0 then
+			sp = ConvertSurfaceProp( sp )
+		else
+			sp = ConvertSurfaceProp( str )
+		end
+		if sp == "default" then
+			m_t[ str ] = SF_DOWNFALL_HIT_GROUND
+		elseif sp == "metal" then
+			m_t[ str ] = SF_DOWNFALL_HIT_METAL
+		elseif sp == "water" then
+			m_t[ str ] = SF_DOWNFALL_HIT_WATER
+		elseif sp == "wood" then
+			m_t[ str ] = SF_DOWNFALL_HIT_WOOD
+		elseif sp == "glass" then
+			m_t[ str ] = SF_DOWNFALL_HIT_GLASS
+		elseif sp == "concrete" then
+			m_t[ str ] = SF_DOWNFALL_HIT_CONCRETE
+		else
+			m_t[ str ] = SF_DOWNFALL_HIT_GROUND
+		end
+		return m_t[ str ]
+	end
 	-- Returns a raindrop pos from a sky position. #2 is hittype: -1 = no hit, 0 = ground, 1 = water, 2 = glass.
 	local function TraceDown(pos, norm, nRadius, filter)
 		nRadius = nRadius or 1
@@ -64,14 +182,12 @@ do
 		local tr = util_TraceHull(t)
 		if not tr or not tr.Hit then
 			return tr.HitPos, SF_DOWNFALL_HIT_NIL
-		elseif bit_band( tr.Contents , CONTENTS_WATER ) == CONTENTS_WATER then
-			return tr.HitPos, SF_DOWNFALL_HIT_WATER
-		elseif bit_band( tr.Contents , CONTENTS_WINDOW ) == CONTENTS_WINDOW then
-			return tr.HitPos, SF_DOWNFALL_HIT_GLASS
-		elseif IsValid(tr.Entity) then
-			if string.find(tr.Entity:GetModel():lower(), "glass", 1, true) then
-				return tr.HitPos, SF_DOWNFALL_HIT_GLASS
-			end
+		elseif not IsValid(tr.Entity) then
+			return tr.HitPos, SurfacePropIDToHIT( tr.SurfaceProps or -1 ) or MaterialToHIT( tr.HitTexture ) or SF_DOWNFALL_HIT_GROUND
+		else
+			local mat = tr.Entity:GetMaterial():lower()
+			local mod = tr.Entity:GetModel():lower()
+			return tr.HitPos, MaterialToHIT( #mat > 0 and mat or mod )
 		end
 		return tr.HitPos, SF_DOWNFALL_HIT_GROUND, tr.HitNormal
 	end
@@ -97,9 +213,10 @@ do
 	
 	-- Locates the skybox above vFrom and returns a raindrop pos. #2 is hittype: -2 No sky, -1 = no hit/invald, 0 = ground, 1 = water, 2 = glass, #3 is hitnormal
 	function StormFox.DownFall.CheckDrop(vFrom, vNorm, nRadius, filter)
+		t.mask = mask
 		local sky,_ = FindSky(vFrom, -vNorm, 7)
 		if not sky then return vFrom, -2 end -- Unable to find a skybox above this position
-		return TraceDown(sky + vNorm * nRadius, vNorm * 262144, nRadius, filter)
+		return TraceDown(sky + vNorm * (nRadius + 1), vNorm * 262144, nRadius, filter)
 	end
 
 	-- Does the same as StormFox.DownFall.CheckDrop, but will cache
@@ -124,6 +241,8 @@ do
 	-- #1 = Hit Position, #2 hitType, #3 The offset from view, #4 hitNormal
 	function StormFox.DownFall.CalculateDrop( nDis, nSize, nTries, vNorm )
 		vNorm = vNorm or StormFox.Wind.GetNorm()
+		local view = StormFox.util.GetCalcView()
+		local v_pos = view.pos + StormFox.util.ViewEntity():GetVelocity() / 2
 		for i = 1, nTries do
 			-- Get a random angle
 			local d = math.Rand(1,4)
@@ -133,9 +252,8 @@ do
 				deg = -deg
 			end
 			-- Calculate the offset
-			local view = StormFox.util.GetCalcView()
 			local yaw = rad(view.ang.y + deg)
-			local offset = view.pos + Vector(cos(yaw),sin(yaw)) * nDis
+			local offset = v_pos + Vector(cos(yaw),sin(yaw)) * nDis
 			local pos, n, hitNorm = StormFox.DownFall.CheckDrop( offset, vNorm, nSize)
 			if pos and n > -2 then 
 				return pos,n,offset, hitNorm
