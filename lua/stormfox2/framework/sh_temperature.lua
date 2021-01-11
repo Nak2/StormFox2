@@ -166,7 +166,10 @@ else
 	---------------------------------------------------------------------------]]
 	function StormFox.Temperature.SetDisplayType(sType)
 		StormFox.Setting.Set("dispaly_temperature",convert_to[sType] and sType or "celsius")
-		return convert_to[sType] and true or false
+		if convert_to[sType] then
+			return true
+		end
+		return sType == "celsius"
 	end
 	--[[<Client>-----------------------------------------------------------------
 	Returns the display temperature type.
