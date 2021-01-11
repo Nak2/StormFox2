@@ -11,6 +11,7 @@ StormFox 2.0
 ---------------------------------------------------------------------------]]
 StormFox = {}
 StormFox.WorkShopVersion = false--game.IsDedicated()
+StormFox.WorkShopURL = nil -- ""
 --<Var> StormFox's Version number
 	StormFox.Version = 2
 	StormFox.Loaded = false
