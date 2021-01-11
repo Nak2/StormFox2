@@ -14,10 +14,12 @@ StormFox.Sky = {}
 	SF_SKY_ASTRONOMICAL = 6
 	SF_SKY_NIGHT = 7
 
-StormFox.Setting.AddSV("sunrise",360,"Sets the sunrise time (0 - 1440 where 720 is midday).")
-StormFox.Setting.AddSV("sunset",1080,"Sets the sunset time (0 - 1440 where 720 is midday).")
-StormFox.Setting.AddSV("sunyaw",90,"Sets yaw for the sun and moon.")
-StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.")
+	StormFox.Setting.AddSV("sunrise",360,"Sets the sunrise time (0 - 1440 where 720 is midday).", "Time", 0, 1440)
+	StormFox.Setting.SetType("sunrise", "Time")
+	StormFox.Setting.AddSV("sunset",1080,"Sets the sunset time (0 - 1440 where 720 is midday).", "Time", 0, 1440)
+	StormFox.Setting.SetType("sunset", "Time")
+	StormFox.Setting.AddSV("sunyaw",90,"Sets yaw for the sun and moon.", "Effects", 0, 360)
+	StormFox.Setting.AddSV("moonlock",false,"Locks the moon's position to the sun.","Effects", 0, 1)
 
 	-- The sun is up ½ of the day; 1440 / 2 = 720. 720 / 2 = 360 and 360 * 3 = 1080
 	local SunDelta = 180 / (StormFox.Data.Get("sun_sunset",1080) - StormFox.Data.Get("sun_sunrise",360))

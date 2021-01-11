@@ -19,9 +19,12 @@
 ---------------------------------------------------------------------------]]
 StormFox.Time = StormFox.Time or {}
 -- Settings
-	StormFox.Setting.AddSV("start_time",-1,"stormfox.time.starttime")
-	StormFox.Setting.AddSV("time_speed",2,"stormfox.time.speed")
-	StormFox.Setting.AddSV("real_time",false,"stormfox.time.realtime")
+	StormFox.Setting.AddSV("start_time",-1,"stormfox.time.starttime","Time")
+	StormFox.Setting.AddSV("time_speed",2,"stormfox.time.speed","Time")
+	StormFox.Setting.SetType( "time_speed", "Number")
+	StormFox.Setting.AddSV("real_time",false,"stormfox.time.realtime","Time")
+
+	StormFox.Setting.SetType( "start_time", "Time")
 
 -- Time stamps
 	SF_NIGHT = 0
@@ -37,7 +40,7 @@ StormFox.Time = StormFox.Time or {}
 
 -- Be able to load time
 	local function thinkingBox(sVar) -- Converts string to something useful
-		local h,m = string.match(sVar,"(%d?%d):?(%d%d)")
+		local h,m = string.match(sVar,"(%d?%d):?(%d?%d)")
 		local ampm = string.match(sVar,"[ampAMP]+") or ""
 		if not h or not m then return end
 		if #ampm > 0 then
@@ -72,13 +75,22 @@ StormFox.Time = StormFox.Time or {}
 
 -- Get the start time.
 	local start = StormFox.Setting.Get("start_time",-1)
-	if start < 0 then -- If there isn't a last time .. use mathrandom
-		start = cookie.GetNumber("sf_lasttime",math.random(1300))
-	end
-	if StormFox.Setting.Get("real_time",false) then
-		StormFox.Setting.Set("time_speed",1 / 60)
-		local dt = string.Explode(":",os.date("%H:%M:%S"))
-		start = dt[1] * 60 + dt[2] + dt[3] / 60
+	if SERVER then	
+		if start < 0 then -- If there isn't a last time .. use mathrandom
+			start = cookie.GetNumber("sf_lasttime",math.random(1300))
+		end
+		if StormFox.Setting.Get("real_time",false) then
+			StormFox.Setting.Set("time_speed",1 / 60)
+			local dt = string.Explode(":",os.date("%H:%M:%S"))
+			start = dt[1] * 60 + dt[2] + dt[3] / 60
+		end
+		StormFox.Setting.Callback("real_time",function(vVar,vOldVar,sName, sID)
+			if not vVar then return end
+			StormFox.Setting.Set("time_speed",1 / 60)
+			local dt = string.Explode(":",os.date("%H:%M:%S"))
+			local n = dt[1] * 60 + dt[2] + dt[3] / 60
+			StormFox.Time.Set(n)
+		end,"sf_rttrigger")
 	end
 
 -- Make the BASETIME and TIME_SPEED
@@ -292,7 +304,7 @@ if CLIENT then
 	Australia, New Zealand, India, Pakistan, Bangladesh, Malaysia, Malta, Egypt, Mexico and the former American colony of the Philippines
 	]]
 	local default_12 = table.HasValue(h12_countries, country)
-	StormFox.Setting.AddCL("12h_display",default_12,"Changes how time is displayed.")
+	StormFox.Setting.AddCL("12h_display",default_12,"Changes how time is displayed.","Time")
 	--[[-------------------------------------------------------------------------
 	Returns the time in a string, matching the players setting.
 	---------------------------------------------------------------------------]]

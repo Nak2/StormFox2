@@ -6,7 +6,10 @@ Handle settings and convert convars.
 ---------------------------------------------------------------------------]]
 StormFox.Setting = {}
 local settings = {}
+local settings_ov = {}
 local settings_env = {}
+local settings_group = {}
+local settings_desc = {}
 local callback_func = {}
 local callBack = function(sName,oldvar,newvar)
 	local sName = string.match(sName,"sf_(.+)")
@@ -38,7 +41,15 @@ local callBack = function(sName,oldvar,newvar)
 		end
 	-- Call
 	for sID,fFunc in pairs(callback_func[sName]) do
-		fFunc(vVar,vOldVar,sName)
+		if not isstring(sID) then
+			if IsValid(sID) then
+				fFunc(vVar,vOldVar,sName, sID)
+			else
+				callback_func[sName][sID] = nil
+			end
+		else
+			fFunc(vVar,vOldVar,sName, sID)
+		end
 	end
 end
 if SERVER then
@@ -51,15 +62,20 @@ vDefaultVar is the default setting, do note that the Get function will convert t
 
 Note: This has to be called on the clients too.
 ---------------------------------------------------------------------------]]
-function StormFox.Setting.AddSV(sName,vDefaultVar,sDescription)
+function StormFox.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nMax)
 	settings[sName] = type(vDefaultVar)
 	settings_env[sName] = true
-	if settings[sName] == "boolean" then
+	settings_group[sName] = sGroup and string.lower(sGroup)
+	settings_desc[sName] = sDescription
+
+	if settings[sName] == "boolean" then		
 		vDefaultVar = vDefaultVar and "1" or "0"
+		nMin = 0
+		nMax = 1
 	else
 		vDefaultVar = tostring(vDefaultVar)
 	end
-	CreateConVar("sf_" .. sName, vDefaultVar, {FCVAR_ARCHIVE + FCVAR_NOTIFY + FCVAR_REPLICATED})
+	CreateConVar("sf_" .. sName, vDefaultVar, {FCVAR_ARCHIVE + FCVAR_NOTIFY + FCVAR_REPLICATED}, sDescription, nMin, nMax)
 	-- FCVAR_REPLICATED Convars doesn't call callbacks on the client.
 	if SERVER then
 		cvars.RemoveChangeCallback( "sf_" .. sName,"sf_networkcall" )
@@ -77,15 +93,19 @@ if CLIENT then
 	Adds a client setting.
 	vDefaultVar is the default setting, do note that the Get function will convert to the type given.
 	---------------------------------------------------------------------------]]
-	function StormFox.Setting.AddCL(sName,vDefaultVar,sDescription)
+	function StormFox.Setting.AddCL(sName,vDefaultVar,sDescription, sGroup, nMin, nMax)
 		settings[sName] = type(vDefaultVar)
 		settings_env[sName] = false
+		settings_group[sName] = sGroup and string.lower(sGroup)
+		settings_desc[sName] = sDescription
 		if settings[sName] == "boolean" then
 			vDefaultVar = vDefaultVar and "1" or "0"
+			nMin = nMin or 0
+			nMax = nMax or 1
 		else
 			vDefaultVar = tostring(vDefaultVar)
 		end
-		CreateConVar("sf_" .. sName, vDefaultVar, {FCVAR_ARCHIVE})
+		CreateConVar("sf_" .. sName, vDefaultVar, {FCVAR_ARCHIVE}, sDescription, nMin, nMax)
 	end
 end
 --[[<Shared>-----------------------------------------------------------------
@@ -130,7 +150,7 @@ function StormFox.Setting.Set(sName,vVar)
 end
 --[[<Shared>-----------------------------------------------------------------
 Calls the function when the given setting changes.
-fFunc will be called with: vNewVariable, vOldVariable, ConVarName
+fFunc will be called with: vNewVariable, vOldVariable, ConVarName, sID
 
 Unlike convars, this will also be triggered on the clients too.
 Note: Variables get converted automatically 
@@ -139,8 +159,8 @@ function StormFox.Setting.Callback(sName,fFunc,sID)
 	if not sID then sID = "default" end
 	if not callback_func[sName] then callback_func[sName] = {} end
 	callback_func[sName][sID] = fFunc
-	cvars.RemoveChangeCallback( "sf_" .. sName,sID )
-	cvars.AddChangeCallback("sf_" .. sName,callBack,sID)
+	cvars.RemoveChangeCallback( "sf_" .. sName,"callback" )
+	cvars.AddChangeCallback("sf_" .. sName,callBack,"callback")
 end
 -- Fix clients not calling callbacks when servervars change.
 if CLIENT then
@@ -200,3 +220,36 @@ if CLIENT then
 		return t
 	end
 end
+
+-- Returns the valuetype of the setting
+function StormFox.Setting.GetType( sName )
+	return settings_ov[sName] or settings[sName], settings_group[sName]
+end
+--[[ Type:
+	- number
+	- string
+	- float
+	- boolean
+	- A table of options { [value] = "description" }
+	- special_float
+		Marks below 0 as "off"
+	- time
+	- temp / temperature
+
+]]
+function StormFox.Setting.SetType( sName, sType )
+	if type(sType) == "boolean" then
+		settings_ov[sName] = "boolean"
+	elseif type(sType) == "number" then
+		settings_ov[sName] = "number"
+	elseif type(sType) == "table" then -- A table is a list of options
+		settings_ov[sName] = sType
+	else
+		if sType == "bool" then
+			settings_ov[sName] = "boolean"
+		else
+			settings_ov[sName] = string.lower(sType)
+		end
+	end
+end
+
