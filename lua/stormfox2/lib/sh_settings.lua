@@ -235,7 +235,7 @@ end
 		Marks below 0 as "off"
 	- time
 	- temp / temperature
-
+	- Time_toggle
 ]]
 function StormFox.Setting.SetType( sName, sType )
 	if type(sType) == "boolean" then

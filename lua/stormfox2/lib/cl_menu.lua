@@ -47,7 +47,6 @@ local function switch(sName, tab)
 	end
 	cookie.Set("sf2_lastmenu", sName)
 end
-
 local function niceName(sName)
 	sName = string.Replace(sName, "_", " ")
 	local str = ""
@@ -56,348 +55,37 @@ local function niceName(sName)
 	end
 	return string.TrimRight(str, " ")
 end
-
-local function CreateSetting( sName, sType )
-	local p = vgui.Create("DPanel", board)
-	p:DockMargin(5,0,5,0)
-	p.Paint = empty
-	p:SetTall(42)
-
-	local con = GetConVar("sf_" .. sName)
-	local des = con:GetHelpText()
-	
-	local l = vgui.Create("DLabel", p)
-	l:SetText(niceName(sName))
-	l:SetColor(color_black)
-	l:SizeToContents()
-	l:Dock(TOP)
-
-	
-	if type(sType) == "table" then
-		local p2 = vgui.Create("DPanel", p)
-		p2:Dock(TOP)
-		p2:DockMargin(5,0,0,0)
-		p2.Paint = empty
-		local n = vgui.Create("DComboBox", p2)
-		n:SetSortItems(false)
-		local options = table.GetKeys(sType)
-		table.sort(options, function(a,b) return a>b end)
-		for k,v in ipairs(options) do
-			n:AddChoice( sType[v], v, con:GetInt() == v )
-		end
-		function n:OnSelect( index, text, data )
-			RunConsoleCommand("sf_" .. sName, data)
-		end
-		n:Dock(LEFT)
-		n:SetWide(80)
-		local l = vgui.Create("DLabel", p2)
-		l:Dock(LEFT)
-		l:DockMargin(5,0,0,0)
-		l:SetColor(color_black)
-		l:SetText(des)
-		l:SizeToContents()
-	elseif sType == "boolean" or sType == "bool" then
-		local b = vgui.Create("DCheckBoxLabel", p)
-		b:DockMargin(4,0,0,0)
-		b:Dock(TOP)
-		b:SetText(des)
-		b:SetConVar( "sf_" .. sName )
-		b:SetTextColor(color_black)
-	elseif sType == "number" then
-		local nMin, nMax = con:GetMin(), con:GetMax()
-		if nMin and nMax then
-			local n = vgui.Create("DNumSlider", p)
-			n:SetConVar( "sf_" .. sName )
-			n:Dock(TOP)
-			n:SetText(des)
-			n.Label:SetTextColor(color_black)
-			n:SetDecimals( 0 )
-			if nMax then n:SetMax( nMax ) end
-			if nMin then n:SetMin( nMin ) end
-			if nMin and nMax then
-				function n:OnValueChanged( str)
-					local n = tonumber(str) or 0
-					if n < nMin then
-						self:SetValue(nMin)
-						self:SetText(nMin)
-					elseif n > nMax then
-						self:SetValue(nMax)
-						self:SetText(nMax)
-					end
-				end
-			end
-
-			function n:OnLoseFocus()
-				self:UpdateConvarValue()
-				hook.Call( "OnTextEntryLoseFocus", nil, self )
-				local n = tonumber(self:GetText()) or 0
-				OnValChang()
-				RunConsoleCommand("sf_" .. sName, n)
-			end
-
-		else
-			local p2 = vgui.Create("DPanel", p)
-			p2:Dock(TOP)
-			p2:DockMargin(5,0,0,0)
-			p2.Paint = empty
-			local n = vgui.Create("DNumberWang", p2)
-			if nMax then 
-				n:SetMax( nMax ) 
-			else
-				n.m_numMax = nil
-			end
-			if nMin then 
-				n:SetMin( nMin )
-			else
-				n.m_numMin = nil
-			end
-			n:SetValue( con:GetInt() )
-			n:SetWide(80)
-			local l = vgui.Create("DLabel", p2)
-			l:SetPos(85,3)
-			l:DockMargin(5,0,0,0)
-			l:SetColor(color_black)
-			l:SetText(des)
-			l:SizeToContents()
-			function n:OnValueChanged( val )
-				RunConsoleCommand( "sf_" .. sName, val )
-			end
-		end
-	elseif sType == "float" then
-		local nMin, nMax = con:GetMin(), con:GetMax()
-		local n = vgui.Create("DNumSlider", p)
-		n:SetConVar( "sf_" .. sName )
-		n:Dock(TOP)
-		n:SetText(des)
-		n.Label:SetTextColor(color_black)
-		n:SetDecimals( 1 )
-		if nMax then n:SetMax( nMax ) end
-		if nMin then n:SetMin( nMin ) end
-	elseif sType == "special_float" then
-		local b = vgui.Create("DCheckBoxLabel", p)
-		local n = vgui.Create("DNumSlider", p)
-		b:DockMargin(4,0,0,0)
-		b:Dock(TOP)
-		b:SetText(des)
-		b:SetTextColor(color_black)
-		function b:Think()
-			local t = con:GetFloat() >= 0
-			self:SetChecked(t)
-			n:SetEnabled(t)
-			if t then
-				n:Show()
-			else
-				n:Hide()
-			end
-		end
-		b.Button.DoClick = function()
-			RunConsoleCommand("sf_" .. sName, con:GetFloat() >= 0 and -1 or 0.5)
-		end
-		local nMin, nMax = con:GetMin(), con:GetMax()
-		n:SetConVar( "sf_" .. sName )
-		n:SetWide(500)
-		n:Dock(RIGHT)
-		n:SetText("")
-		n.Label:SetTextColor(color_black)
-		n:SetDecimals( 1 )
-		if nMax then n:SetMax( nMax ) end
-		if nMin then n:SetMin( 0 ) end
-	elseif sType == "time" then
-		local p2 = vgui.Create("DPanel", p)
-		local use_12 = StormFox.Setting.GetCache("12h_display",default_12)
-		local time_str = StormFox.Time.TimeToString(con:GetFloat(), use_12)
-		p2:Dock(TOP)
-		p2.Paint = empty
-		local hour = vgui.Create("DNumberWang", p2)
-		hour:SetWide(40)
-		hour:Dock(LEFT)
-		hour:DockMargin(5,0,0,0)
-		hour:SetMin(0)
-		local dot = vgui.Create("DPanel", p2)
-		dot:Dock(LEFT)
-		dot:SetWide(15)
-		function dot:Paint(w,h)
-			draw.DrawText(":", "DermaLarge", w/2, -5, color_black, TEXT_ALIGN_CENTER)
-		end
-		local minute = vgui.Create("DNumberWang", p2)
-		minute:SetWide(40)
-		minute:Dock(LEFT)
-		minute:SetMin(0)
-		minute:SetMax(59)
-		local ampm
-		if use_12 then
-			hour:SetMax(12)
-			ampm = vgui.Create("DComboBox", p2)
-			ampm:Dock(LEFT)
-			ampm:DockMargin(15,0,0,0)
-			local am = string.find(time_str,"AM")
-			ampm:AddChoice( "AM", 0, am )
-			ampm:AddChoice( "PM", 1, not am )
-		else
-			hour:SetMax(23)
-		end
-		p2.trigger = true
-		local function OnValChang()
-			if not p2.trigger then return end
-			local h = tonumber(hour:GetText()) or 0
-			h = math.Clamp(h, 0, ampm and 12 or 23)
-			local m = tonumber(minute:GetText()) or 0
-			m = math.Clamp(m, 0, 59)
-			local t = h .. ":" .. m
-			if ampm then
-				t = t .. " " .. ampm:GetSelected()
-			end
-			local num = StormFox.Time.StringToTime(t)
-			if num then
-				RunConsoleCommand("sf_" .. sName, num)
-			end
-		end
-		function hour:OnValueChanged( str)
-			local n = tonumber(str) or 0
-			if n < 0 then
-				self:SetValue(0)
-				self:SetText("0")
-			elseif n > (self:GetMax() or 23) then
-				self:SetValue(self:GetMax() or 23)
-				self:SetText(self:GetMax() or 23)
-			end
-		end
-		function hour:OnLoseFocus()
-			self:UpdateConvarValue()
-			hook.Call( "OnTextEntryLoseFocus", nil, self )
-			local n = tonumber(self:GetText()) or 0
-			if n < 0 then
-				self:SetValue(0)
-			elseif n > (self:GetMax() or 23) then
-				self:SetValue(self:GetMax() or 59)
-			end
-			OnValChang()
-		end
-		function hour.Up.DoClick( button, mcode )
-			hour:SetValue( hour:GetValue() + hour:GetInterval() )
-			hour:OnLoseFocus()
-		end
-		function hour.Down.DoClick( button, mcode )
-			hour:SetValue( hour:GetValue() - hour:GetInterval() )
-			hour:OnLoseFocus()
-		end
-		function minute:OnValueChanged( str)
-			local n = tonumber(str) or 0
-			if n < 0 then
-				self:SetValue(0)
-				self:SetText("0")
-			elseif n > (59) then
-				self:SetValue(59)
-				self:SetText(59)
-			end
-		end
-		function minute:OnLoseFocus()
-			self:UpdateConvarValue()
-			hook.Call( "OnTextEntryLoseFocus", nil, self )
-			local n = tonumber(self:GetText()) or 0
-			if n < 0 then
-				self:SetValue(0)
-			elseif n > (self:GetMax() or 23) then
-				self:SetValue(self:GetMax() or 59)
-			end
-			OnValChang()
-		end
-		function minute.Up.DoClick( button, mcode )
-			local n = minute:GetValue() + minute:GetInterval()
-			if n > 59 then
-				minute:SetValue( 0 )
-				hour:SetValue( hour:GetValue() + hour:GetInterval() )
-			else
-				minute:SetValue( n )
-			end
-			minute:OnLoseFocus()
-		end
-		function minute.Down.DoClick( button, mcode )
-			local n = minute:GetValue() - minute:GetInterval()
-			if n < 0 then
-				minute:SetValue( 59 )
-				hour:SetValue( hour:GetValue() - hour:GetInterval() )
-			else
-				minute:SetValue( n )
-			end
-			minute:OnLoseFocus()
-		end
-		if ampm then
-			ampm.OnSelect = OnValChang
-		end
-
-		local l = vgui.Create("DLabel", p2)
-		l:Dock(LEFT)
-		l:SetText(des)
-		l:SetColor(color_black)
-		l:SizeToContents()
-		l:DockMargin(5,0,0,0)
-
-		local h,m,am = string.match(time_str, "(%d+):(%d+)%s?(A?M?)")
-		hour:SetValue(tonumber(h))
-		minute:SetValue(tonumber(m))
-		if ampm then
-			ampm:SetValue(am and "AM" or "PM")
-		end
-		p2.h = hour
-		p2.m = minute
-		p2.ampm = ampm
-		StormFox.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
-			pln.trigger = false
-			local time_str = StormFox.Time.Display(vVar)
-			local h,m,am = string.match(time_str, "(%d+):(%d+)%s?(A?M?)")
-			pln.h:SetValue(tonumber(h))
-			local n = tonumber(m)
-			pln.m:SetValue(n)
-			if pln.ampm then
-				pln.ampm:SetValue(am and "AM" or "PM")
-			end
-			pln.trigger = true
-			print(time_str)
-		end,p2)
-	elseif sType == "temp" or sType == "temperature" then
-		local p2 = vgui.Create("DPanel", p)
-			p2:Dock(TOP)
-			p2:DockMargin(5,0,0,0)
-			p2.Paint = empty
-			local n = vgui.Create("DNumberWang", p2)
-			if nMax then 
-				n:SetMax( nMax ) 
-			else
-				n.m_numMax = nil
-			end
-			if nMin then 
-				n:SetMin( nMin )
-			else
-				n.m_numMin = nil
-			end
-			local val = StormFox.Temperature.Convert(nil,StormFox.Temperature.GetDisplayType(),con:GetInt())
-			n:SetValue( val )
-			n:SetWide(60)
-			local s = vgui.Create("DLabel", p2)
-			s:SetText(StormFox.Temperature.GetDisplaySymbol())
-			s:SetPos(65,3)
-			s:SetColor(color_black)
-			s:SizeToContents()
-			local l = vgui.Create("DLabel", p2)
-			l:SetPos(85,3)
-			l:DockMargin(0,0,0,0)
-			l:SetColor(color_black)
-			l:SetText(des)
-			l:SizeToContents()
-			function n:OnLoseFocus( )
-				local num = tonumber(self:GetText()) or 0
-				num = StormFox.Temperature.Convert(StormFox.Temperature.GetDisplayType(),nil,num)
-				print(val, num)
-				RunConsoleCommand( "sf_" .. sName, num )
-			end
-			StormFox.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
-				local val = StormFox.Temperature.Convert(nil,StormFox.Temperature.GetDisplayType(),tonumber(vVar) or 0)
-				pln:SetValue(val)
-			end,n)
+local function addSetting(sName, pPanel, _type)
+	local setting
+	if type(_type) == "table" then
+		setting = vgui.Create("SFConVar_Enum", pPanel)
+	elseif _type == "boolean" then
+		setting = vgui.Create("SFConVar_Bool", pPanel)
+	elseif _type == "float" then
+		setting = vgui.Create("SFConVar_Float", pPanel)
+	elseif _type == "special_float" then
+		setting = vgui.Create("SFConVar_Float_Toggle", pPanel)
+	elseif _type == "number" then
+		setting = vgui.Create("SFConVar_Number", pPanel)
+	elseif _type == "time" then
+		setting = vgui.Create("SFConVar_Time", pPanel)
+	elseif _type == "time_toggle" then
+		setting = vgui.Create("SFConVar_Time_Toggle", pPanel)
+	elseif _type == "temp" or _type == "temperature" then
+		setting = vgui.Create("SFConVar_Temp", pPanel)
+	else
+		StormFox.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
+		return
 	end
-	return p
+	if not setting then
+		StormFox.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
+		return
+	end
+	--local setting = _type == "boolean" and vgui.Create("SFConVar_Bool", board) or  vgui.Create("SFConVar", board)
+	setting:SetConvar(sName, _type)
+	return setting
 end
+
 
 function StormFox.OpenMenu()
 	if _SFMENU and IsValid(_SFMENU) then
@@ -550,10 +238,15 @@ function StormFox.OpenMenu()
 		end
 
 		local board = p_right.sub[group]
-		local setting = CreateSetting(sName, _type)
+		local setting = addSetting(sName, board, _type)
+		if not setting then continue end
+		--local setting = _type == "boolean" and vgui.Create("SFConVar_Bool", board) or  vgui.Create("SFConVar", board)
+		setting:DockMargin(0,0,0,10)
+
 		setting:Dock(TOP)
 		board:AddItem(setting)
 	end
+	
 
 	-- Select the last selected page
 	local selected = cookie.GetString("sf2_lastmenu", "Start") or "Start"

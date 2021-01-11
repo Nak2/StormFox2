@@ -20,11 +20,11 @@
 StormFox.Time = StormFox.Time or {}
 -- Settings
 	StormFox.Setting.AddSV("start_time",-1,"stormfox.time.starttime","Time")
+	StormFox.Setting.SetType("start_time","Time_toggle")
 	StormFox.Setting.AddSV("time_speed",2,"stormfox.time.speed","Time")
 	StormFox.Setting.SetType( "time_speed", "Number")
 	StormFox.Setting.AddSV("real_time",false,"stormfox.time.realtime","Time")
 
-	StormFox.Setting.SetType( "start_time", "Time")
 
 -- Time stamps
 	SF_NIGHT = 0
