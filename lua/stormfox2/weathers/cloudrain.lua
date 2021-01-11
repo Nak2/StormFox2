@@ -335,32 +335,37 @@ if CLIENT then
 	function rain.Tick10()
 		local P = StormFox.Weather.GetProcent()
 		local L = StormFox.Weather.GetLuminance()
+		local T = StormFox.Temperature.Get() + 2
+		local TP = math.Clamp(T / 4,0,1)
 
-		rain_outside:SetVolume( P * 1.2 )
-		rain_light:SetVolume( P )
-		rain_window:SetVolume( P * 0.3 )
-		rain_roof_wood:SetVolume( P * 0.3 )
-		rain_roof_metal:SetVolume( P * 1 )
-		rain_glass:SetVolume( P * 0.5 )
+		rain_outside:SetVolume( P * 1.2 * TP )
+		rain_light:SetVolume( P * TP )
+		rain_window:SetVolume( P * 0.3 * TP )
+		rain_roof_wood:SetVolume( P * 0.3 * TP )
+		rain_roof_metal:SetVolume( P * 1 * TP )
+		rain_glass:SetVolume( P * 0.5 * TP )
 
-		-- Update rain
-		local s = 1.22 + 1.56 * P
-		local speed = 0.72 + 0.26 * P
-		rain_template:SetSpeed( speed ) 
-		rain_template:SetSize( s , 5.22 + 7.56 * P)
-		rain_template:SetAlpha(math.min(45 + 15 * P + L,255))
-		if P > 0.15 then
-			rain_template_multi:SetSpeed( speed * 1.2 ) 
-			rain_template_multi:SetSize( 40 + 50 * P, 600 + 1200 * P )
-			rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255))
+		-- Update rain (Only if it isn't snowing)
+		if T > -3 then
+			
+			local s = 1.22 + 1.56 * P
+			local speed = 0.72 + 0.26 * P
+			rain_template:SetSpeed( speed ) 
+			rain_template:SetSize( s , 5.22 + 7.56 * P)
+			rain_template:SetAlpha(math.min(45 + 15 * P + L,255))
+			if P > 0.15 then
+				rain_template_multi:SetSpeed( speed * 1.2 ) 
+				rain_template_multi:SetSize( 40 + 50 * P, 600 + 1200 * P )
+				rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255))
+			end
 		end
 	end
 	-- Gets called every tick to add rain.
 	function rain.Think()
 		local P = StormFox.Weather.GetProcent()
-
 		if StormFox.DownFall.GetGravity() < 0 then return end -- Rain can't come from the ground.
-		if true or StormFox.Temperature.Get() > math.random(-3, 0) then -- Spawn rain particles
+		local T = StormFox.Temperature.Get() + 2
+		if T > math.random(-3, 0) then -- Spawn rain particles
 			-- Spawn rain particles
 			for _,v in ipairs( StormFox.DownFall.SmartTemplate( rain_template, math.random(10,500), 100 + P * 800, 5, vNorm ) or {} ) do
 				v:SetSize(  1.22 + 1.56 * P * math.Rand(1,2), 5.22 + 7.56 * P )
@@ -373,13 +378,18 @@ if CLIENT then
 					r_part_multis[i]:SetSize( 80 + 50 * P * r_w , 40 + 50 * P )
 				end
 			end
-		else -- Spawn snow particles
-			if P > 0.15 and StormFox.DownFall.CanAddTemplate( snow_template_multi ) then
-				StormFox.DownFall.AddTemplate( snow_template_multi, math.random(600,800), 20, vNorm )
+		else
+			-- Spawn snow particles
+			for _,v in ipairs( StormFox.DownFall.SmartTemplate( snow_template, math.random(10,500), 100 + P * 800, 5, vNorm ) or {} ) do
+				v:SetSize(  1.22 + 1.56 * P * math.Rand(1,2), 5.22 + 7.56 * P )
 			end
-			if StormFox.DownFall.CanAddTemplate( snow_template ) then
-				local part = StormFox.DownFall.AddTemplate( snow_template, math.random(10,700), 5, vNorm )
-				part:SetMaterial( table.Random(t_snow) )
+			-- Spawn snow distant
+			if P > 0.15 then
+				local r_w = math.Rand(1,2)
+				local r_part_multis = StormFox.DownFall.SmartTemplate( snow_template_multi, math.random(500,700), P * 100 , 50 * r_w, vNorm )
+				for i = 1, #r_part_multis do
+					r_part_multis[i]:SetSize( 80 + 50 * P * r_w , 40 + 50 * P )
+				end
 			end
 		end
 	end

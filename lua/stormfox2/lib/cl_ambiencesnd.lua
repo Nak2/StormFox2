@@ -29,7 +29,7 @@ SF_AMB_ROOF_GLASS		= 6	-- Z-DISTANCE
 SF_AMB_ROOF_METAL		= 7	-- Z-DISTANCE
 SF_AMB_ROOF_WOOD		= 8 -- Z-DISTANCE
 SF_AMB_ROOF_CONCRETE	= 9	-- Z-DISTANCE
-SF_AMB_ROOF_GROUND		= 10-- Z-DISTANCE
+SF_AMB_ROOF_GROUND		= 10-- Z-DISTANCE (Default roof)
 SF_AMB_ROOF_WATER		= 11-- Z-DISTANCE
 
 -- Smooth the volume of SF_AMB_CHANNEL
@@ -103,7 +103,7 @@ function StormFox.Ambience.DebugList()
 end
 -- Sets the scale of the sound
 function snd_meta:SetVolume( num )
-	self.m_vol = num
+	self.m_vol = math.Clamp(num, 0, 2) -- Just in case
 end
 -- Doesn't work on sounds with SF_AMB_OUTSIDE or SF_AMB_UNDER_WATER
 function snd_meta:SetFadeDistance( min, max )

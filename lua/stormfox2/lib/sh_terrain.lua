@@ -108,7 +108,7 @@ end
 
 local function HasChanged( self, materialTexture )
 	local mat = self:GetName() or "unknown"
-	local b = materialTexture == "basetexture2" and 2 or 1
+	local b = materialTexture == "$basetexture2" and 2 or 1
 	return _STORMFOX_TEXCHANGES[mat] and _STORMFOX_TEXCHANGES[mat][b] or false
 end
 
@@ -122,13 +122,13 @@ local mat_meta = FindMetaTable("IMaterial")
 STORMFOX_TEX_APPLY = STORMFOX_TEX_APPLY or mat_meta.SetTexture
 function mat_meta:SetTexture(materialTexture, texture)
 	-- Check if it is basetexutre or basetexture2 we're changing.
-	if materialTexture ~= "basetexture" and materialTexture ~= "basetexture2" then
+	if materialTexture ~= "$basetexture" and materialTexture ~= "$basetexture2" then
 		return STORMFOX_TEX_APPLY( self, materialTexture, texture )
 	end
 	-- Overwrite the original texture list.
 	local mat = self:GetName() or "unknown"
 	if not _STORMFOX_TEXORIGINAL[mat] then _STORMFOX_TEXORIGINAL[mat] = {} end
-	if materialTexture == "basetexture" then
+	if materialTexture == "$basetexture" then
 		_STORMFOX_TEXORIGINAL[mat][1] = StringTex(texture)
 	else
 		_STORMFOX_TEXORIGINAL[mat][2] = StringTex(texture)
@@ -144,10 +144,10 @@ local function ResetMaterial( self )
 	local mat = self:GetName() or "unknown"
 	if not _STORMFOX_TEXCHANGES[mat] or not _STORMFOX_TEXORIGINAL[mat] then return false end
 	if _STORMFOX_TEXCHANGES[mat][1] and _STORMFOX_TEXORIGINAL[mat][1] then
-		STORMFOX_TEX_APPLY( self, "basetexture", _STORMFOX_TEXORIGINAL[mat][1] )
+		STORMFOX_TEX_APPLY( self, "$basetexture", _STORMFOX_TEXORIGINAL[mat][1] )
 	end
 	if _STORMFOX_TEXCHANGES[mat][2] and _STORMFOX_TEXORIGINAL[mat][2] then
-		STORMFOX_TEX_APPLY( self, "basetexture2", _STORMFOX_TEXORIGINAL[mat][2] )
+		STORMFOX_TEX_APPLY( self, "$basetexture2", _STORMFOX_TEXORIGINAL[mat][2] )
 	end
 	_STORMFOX_TEXCHANGES[mat] = nil
 	return true
@@ -157,6 +157,7 @@ end
 local function SetMat(self, tex1, tex2)
 	if not tex1 and not tex2 then return end
 	local mat = self:GetName() or "unknown"
+	print("SETM",self,tex1,tex2)
 	-- Save the default texture
 	if not _STORMFOX_TEXORIGINAL[mat] then _STORMFOX_TEXORIGINAL[mat] = {} end
 	if tex1 and not _STORMFOX_TEXORIGINAL[mat][1] then
@@ -167,15 +168,24 @@ local function SetMat(self, tex1, tex2)
 	end
 	-- Set texture
 	if tex1 then
-		STORMFOX_TEX_APPLY( self, "basetexture", tex1 )
+		if CLIENT then
+			STORMFOX_TEX_APPLY( self, "$basetexture", tex1 )
+		end
+		if not _STORMFOX_TEXCHANGES[ mat ] then _STORMFOX_TEXCHANGES[ mat ] = {} end
+		_STORMFOX_TEXCHANGES[ mat ][ 1 ] = true
 	end
 	if tex2 then
-		STORMFOX_TEX_APPLY( self, "basetexture2", tex2 )
+		if CLIENT then
+			STORMFOX_TEX_APPLY( self, "$basetexture2", tex2 )
+		end
+		if not _STORMFOX_TEXCHANGES[ mat ] then _STORMFOX_TEXCHANGES[ mat ] = {} end
+		_STORMFOX_TEXCHANGES[ mat ][ 2 ] = true
 	end
 end
 
 -- Resets the terrain to default.
 function StormFox.Terrain.Reset( bNoUpdate )
+	print("Reset")
 	if SERVER and not bNoUpdate then
 		StormFox.Map.CallLogicRelay("terrain_clear")
 	end
@@ -208,6 +218,7 @@ function StormFox.Terrain.Set( sName )
 	if SERVER then
 		StormFox.Map.CallLogicRelay( "terrain_" .. string.lower(sName) )
 	end
+	return true
 end
 
 -- Applies the terrain (This won't reset old terrain)
