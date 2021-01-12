@@ -65,7 +65,6 @@ do
 		table.sort(options, function(a,b) return a>b end)
 		for k,v in ipairs(options) do
 			self._b:AddChoice( sType[v], v, con:GetInt() == v )
-			print("OPTION",self)
 		end
 		function self._b:OnSelect( index, text, data )
 			RunConsoleCommand("sf_" .. sName, data)
@@ -168,6 +167,9 @@ do
 		local des_text = (con:GetHelpText() or "Unknown")
 		self._des = des_text
 		self._b:SetConVar( "sf_" .. sName )
+		self._b:SetMin(con:GetMin() or 0)
+		self._b:SetMax(con:GetMax() or 1)
+		
 		self:InvalidateLayout(true)
 	end
 	function PANEL:PerformLayout(w, h)
@@ -289,10 +291,8 @@ do
 			n:SetPos(5, self._l:GetTall() + 2)
 			n:SetValue( con:GetInt() )
 			n:SetWide(64)
+			n:SetConVar( "sf_" .. sName )
 			self._d:SetPos(74,self._l:GetTall() + 4)
-			function n:OnValueChanged( val )
-				RunConsoleCommand( "sf_" .. sName, val )
-			end
 			if nMin then n:SetMin(nMin) end
 		else
 			self._type = true
@@ -730,6 +730,14 @@ do
 		self._d = d
 		self._b = b
 		self._s = s
+		b.Up.DoClick = function( button, mcode ) 
+			b:SetValue( b:GetValue() + b:GetInterval() )
+			b:OnLoseFocus( )
+		end
+		b.Down.DoClick = function( button, mcode )
+			b:SetValue( b:GetValue() - b:GetInterval() ) 
+			b:OnLoseFocus( )
+		end
 	end
 	function PANEL:SetConvar( sName )
 		local con = GetConVar( "sf_" .. sName )
