@@ -21,8 +21,8 @@ StormFox.Time = StormFox.Time or {}
 -- Settings
 	StormFox.Setting.AddSV("start_time",-1,"stormfox.time.starttime","Time")
 	StormFox.Setting.SetType("start_time","Time_toggle")
-	StormFox.Setting.AddSV("time_speed",2,"stormfox.time.speed","Time")
-	StormFox.Setting.SetType( "time_speed", "Number")
+	StormFox.Setting.AddSV("time_speed",60,"stormfox.time.speed","Time",0, 3600)
+	StormFox.Setting.SetType( "time_speed", "Float")
 	StormFox.Setting.AddSV("real_time",false,"stormfox.time.realtime","Time")
 
 
@@ -73,30 +73,48 @@ StormFox.Time = StormFox.Time or {}
 		return ( h * 60 + m ) % 1440
 	end
 
+	function IO()
+		local dt = string.Explode(":",os.date("%H:%M:%S"))
+		return tonumber(dt[1]) * 60 + tonumber(dt[2]) + tonumber(dt[3]) / 60
+	end
 -- Get the start time.
 	local start = StormFox.Setting.Get("start_time",-1)
-	if SERVER then	
-		if start < 0 then -- If there isn't a last time .. use mathrandom
+	local TIME_SPEED = (StormFox.Setting.Get("time_speed",60) or 60) / 60
+	if SERVER then
+		-- Use server time
+		if StormFox.Setting.Get("real_time",false) then
+			StormFox.Setting.Set("time_speed",1)
+			TIME_SPEED = 1 / 60
+			local dt = string.Explode(":",os.date("%H:%M:%S"))
+			start = tonumber(dt[1]) * 60 + tonumber(dt[2]) + tonumber(dt[3]) / 60
+		elseif start < 0 then -- If there isn't a last time .. use mathrandom
 			start = cookie.GetNumber("sf_lasttime",math.random(1300))
 		end
-		if StormFox.Setting.Get("real_time",false) then
-			StormFox.Setting.Set("time_speed",1 / 60)
-			local dt = string.Explode(":",os.date("%H:%M:%S"))
-			start = dt[1] * 60 + dt[2] + dt[3] / 60
-		end
+
 		StormFox.Setting.Callback("real_time",function(vVar,vOldVar,sName, sID)
 			if not vVar then return end
-			StormFox.Setting.Set("time_speed",1 / 60)
+			StormFox.Setting.Set("time_speed",1)
+			TIME_SPEED = 1 / 60
+			StormFox.Setting.Set("start_time",-1)
 			local dt = string.Explode(":",os.date("%H:%M:%S"))
 			local n = dt[1] * 60 + dt[2] + dt[3] / 60
 			StormFox.Time.Set(n)
 		end,"sf_rttrigger")
+
+		StormFox.Setting.Callback("start_time",function(vVar,vOldVar,sName, sID)
+			if not vVar then return end
+			if vVar < 0 then return end
+			StormFox.Setting.Set("real_time",false)
+		end,"sf_sttrigger")
 	end
 
 -- Make the BASETIME and TIME_SPEED
-	local BASETIME = CurTime() + start
-	local TIME_SPEED = StormFox.Setting.Get("time_speed",1) or 1
-
+	local BASETIME
+	if TIME_SPEED <= 0 then
+		BASETIME = start
+	else
+		BASETIME = CurTime() - (start / TIME_SPEED)
+	end
 -- Functions
 	--[[-------------------------------------------------------------------------
 	A syncronised number used by the client to calculate the time. Use instead StormFox.Time.Get
@@ -256,7 +274,7 @@ StormFox.Time = StormFox.Time or {}
 		---------------------------------------------------------------------------]]
 		function StormFox.Time.SetSpeed(nSpeed)
 			local cur = StormFox.Time.Get()
-			TIME_SPEED = nSpeed
+			TIME_SPEED = nSpeed / 60
 			StormFox.Time.Set(cur)
 			hook.Run( "StormFox.Time.Set")
 		end
@@ -293,6 +311,13 @@ StormFox.Time = StormFox.Time or {}
 			cookie.Set("sf_lasttime",StormFox.Time.Get(true))
 		end)
 		cookie.Delete("sf_lasttime") -- Always delete this at launch.
+		-- Loading things sometimes desync
+		if StormFox.Setting.Get("real_time",false) then
+			timer.Simple(1, function()
+				local dt = string.Explode(":",os.date("%H:%M:%S"))
+				StormFox.Time.Set(tonumber(dt[1]) * 60 + tonumber(dt[2]) + tonumber(dt[3]) / 60)
+			end)
+		end
 	end
 
 -- Default Time Display
