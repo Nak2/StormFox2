@@ -140,7 +140,7 @@ function StormFox.Setting.Set(sName,vVar)
 	else
 		vVar = tostring(vVar)
 	end
-	con:SetString(vVar)
+	RunConsoleCommand( "sf_" .. sName, vVar)
 	--[[<Shared>------------------------------------------------------------------
 	Gets called when a StormFox setting changes.
 	Note that this hook will not run on clients, if the variable is changed serverside.
