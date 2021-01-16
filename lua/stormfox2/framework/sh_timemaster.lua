@@ -19,11 +19,13 @@
 ---------------------------------------------------------------------------]]
 StormFox.Time = StormFox.Time or {}
 -- Settings
-	StormFox.Setting.AddSV("start_time",-1,"stormfox.time.starttime","Time")
+	StormFox.Setting.AddSV("start_time",-1,nil,"Time")
 	StormFox.Setting.SetType("start_time","Time_toggle")
-	StormFox.Setting.AddSV("time_speed",60,"stormfox.time.speed","Time",0, 3600)
+
+	StormFox.Setting.AddSV("time_speed",60,nil,"Time",0, 3600)
 	StormFox.Setting.SetType( "time_speed", "Float")
-	StormFox.Setting.AddSV("real_time",false,"stormfox.time.realtime","Time")
+
+	StormFox.Setting.AddSV("real_time",false,nil,"Time")
 
 
 -- Time stamps
@@ -330,6 +332,10 @@ if CLIENT then
 	]]
 	local default_12 = table.HasValue(h12_countries, country)
 	StormFox.Setting.AddCL("12h_display",default_12,"Changes how time is displayed.","Time")
+	StormFox.Setting.SetType( "12h_display", {
+		[0] = "24h clock",
+		[1] = "12h clock"
+	} )
 	--[[-------------------------------------------------------------------------
 	Returns the time in a string, matching the players setting.
 	---------------------------------------------------------------------------]]

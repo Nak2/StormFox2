@@ -1,28 +1,28 @@
-StormFox.Setting.AddSV("maplight_min",0,"The minimum lightlevel.", "Effects", 0, 100)
-StormFox.Setting.AddSV("maplight_max",80,"The maximum lightlevel.", "Effects", 0, 100)
-StormFox.Setting.AddSV("maplight_smooth",game.SinglePlayer(),"Enables smooth light-transitions.", "Effects",0,1)
+StormFox.Setting.AddSV("maplight_min",0,mil, "Effects", 0, 100)
+StormFox.Setting.AddSV("maplight_max",80,nil, "Effects", 0, 100)
+StormFox.Setting.AddSV("maplight_smooth",game.SinglePlayer(),nil, "Effects",0,1)
 
-StormFox.Setting.AddSV("maplight_updaterate",game.SinglePlayer() and 2 or 10,"The max-rate the map-light updates.", "Effects")
-StormFox.Setting.AddSV("extra_lightsupport",-1,"Utilize engine.LightStyle to change the map-light. This can cause lag-spikes, but required on certain maps.", "Effects",-1,1)
+StormFox.Setting.AddSV("maplight_updaterate",game.SinglePlayer() and 2 or 10,nil, "Effects")
+StormFox.Setting.AddSV("extra_lightsupport",-1,nil, "Effects",-1,1)
 StormFox.Setting.SetType( "extra_lightsupport", {
-	[-1] = "Automatic",
-	[0] = "Off",
-	[1] = "On"
+	[-1] = "#sf_auto",
+	[0] = "#disable",
+	[1] = "#enable"
 } )
 
-StormFox.Setting.AddSV("overwrite_extra_darkness",0,"Overwrites players setting", "Effects", -1, 1)
+StormFox.Setting.AddSV("overwrite_extra_darkness",0,nil, "Effects", -1, 1)
 StormFox.Setting.SetType( "overwrite_extra_darkness", {
-	[-1] = "Force off",
-	[0] = "Off",
-	[1] = "Force on"
+	[-1] = "#turn_off",
+	[0] = "#disable",
+	[1] = "#turn_on"
 } )
 
-StormFox.Setting.AddSV("overwrite_extra_darkness_amount",-1,"Overwrites players setting: -1 = Use player setting, 0-1 = Force amount.", "Effects", -1, 1)
+StormFox.Setting.AddSV("overwrite_extra_darkness_amount",-1,nil, "Effects", -1, 1)
 StormFox.Setting.SetType( "overwrite_extra_darkness_amount", "special_float")
 
 if CLIENT then
-	StormFox.Setting.AddCL("extra_darkness",render.SupportsPixelShaders_2_0(),"Adds a darkness-shader to make bright maps darker.","Effects",0,1)
-	StormFox.Setting.AddCL("extra_darkness_amount",0.75,"Scales the darkness-shader.", "Effects",0,1)
+	StormFox.Setting.AddCL("extra_darkness",render.SupportsPixelShaders_2_0(),nil,"Effects",0,1)
+	StormFox.Setting.AddCL("extra_darkness_amount",0.75,nil, "Effects",0,1)
 end
 
 if CLIENT then

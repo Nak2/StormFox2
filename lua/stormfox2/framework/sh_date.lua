@@ -10,7 +10,7 @@
 	Sh	StormFox.Date.Get( bNumbers )			Returns the date in string format. MM/DD or DD/MM depending on location and settings. Returns in numbers if bNumbers is true.
 ]]
 
-StormFox.Setting.AddSV("real_time",false,"stormfox.time.realtime")
+StormFox.Setting.AddSV("real_time",false)
 StormFox.Date = {}
 
 if SERVER then

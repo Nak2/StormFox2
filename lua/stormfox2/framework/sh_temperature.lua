@@ -199,6 +199,12 @@ else
 	-- Load the temperature settings.
 	-- Setup setting
 	StormFox.Setting.AddCL("dispaly_temperature",default_temp,"Changes the temperature displayed.")
+	local t = {}
+	for k, v in pairs(symbol) do
+		if t[k] then continue end
+		t[k] = string.upper(k[1]) .. string.sub(k, 2) .. " " .. v
+	end
+	StormFox.Setting.SetType( "dispaly_temperature", t, {"celsius", "fahrenheit", "kelvin"} )
 	StormFox.Setting.Callback("dispaly_temperature",function(sType)
 		temp_type = convert_to[sType] and sType or "celsius"
 	end,"stormfox.temp.type")
