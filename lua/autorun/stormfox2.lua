@@ -64,6 +64,18 @@ StormFox.Msg("Version: V" .. StormFox.Version .. ".")
 		end
 	end
 
+-- Resources
+	if SERVER then
+		local lans = {"en"}
+		for _,lan in ipairs(lans) do
+			if file.Exists("resource/localization/" .. lan .. "/stormfox.properties", "GAME") then
+				resource.AddSingleFile("resource/localization/" .. lan .. "/stormfox.properties")
+			else
+				StormFox.Warning("Missing language file: resource/localization/" .. lan .. "/stormfox.properties")
+			end
+		end
+	end
+
 -- Load lib. Libaries are where base functions like temperature, wind, terrain and map data are created.
 	HandleFolder("stormfox2/lib")
 	-- Check if map-data has loaded

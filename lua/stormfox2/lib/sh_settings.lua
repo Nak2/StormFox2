@@ -66,6 +66,9 @@ function StormFox.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nMa
 	settings[sName] = type(vDefaultVar)
 	settings_env[sName] = true
 	settings_group[sName] = sGroup and string.lower(sGroup)
+	if not sDescription then
+		sDescription = "sf_" .. sName .. ".desc"
+	end
 	settings_desc[sName] = sDescription
 
 	if settings[sName] == "boolean" then		
@@ -97,6 +100,9 @@ if CLIENT then
 		settings[sName] = type(vDefaultVar)
 		settings_env[sName] = false
 		settings_group[sName] = sGroup and string.lower(sGroup)
+		if not sDescription then
+			sDescription = "sf_" .. sName .. ".desc"
+		end
 		settings_desc[sName] = sDescription
 		if settings[sName] == "boolean" then
 			vDefaultVar = vDefaultVar and "1" or "0"
@@ -237,13 +243,16 @@ end
 	- temp / temperature
 	- Time_toggle
 ]]
-function StormFox.Setting.SetType( sName, sType )
+function StormFox.Setting.SetType( sName, sType, tSortOrter )
+	if type(sType) == "nil" then
+		StormFox.Warning("Can't make ConVar a nil-type!")
+	end
 	if type(sType) == "boolean" then
 		settings_ov[sName] = "boolean"
 	elseif type(sType) == "number" then
 		settings_ov[sName] = "number"
 	elseif type(sType) == "table" then -- A table is a list of options
-		settings_ov[sName] = sType
+		settings_ov[sName] = {sType, tSortOrter}
 	else
 		if sType == "bool" then
 			settings_ov[sName] = "boolean"
