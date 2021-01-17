@@ -166,7 +166,7 @@ else
 		- rømer
 	---------------------------------------------------------------------------]]
 	function StormFox.Temperature.SetDisplayType(sType)
-		StormFox.Setting.Set("dispaly_temperature",convert_to[sType] and sType or "celsius")
+		StormFox.Setting.Set("display_temperature",convert_to[sType] and sType or "celsius")
 		if convert_to[sType] then
 			return true
 		end
@@ -179,7 +179,7 @@ else
 		return temp_type
 	end
 	--[[<Client>------------------------------------------------------------------
-	Returns the dispaly temperature.
+	Returns the display temperature.
 	---------------------------------------------------------------------------]]
 	function StormFox.Temperature.GetDisplay()
 		return StormFox.Temperature.Get(temp_type)
@@ -198,18 +198,18 @@ else
 	end
 	-- Load the temperature settings.
 	-- Setup setting
-	StormFox.Setting.AddCL("dispaly_temperature",default_temp,"Changes the temperature displayed.")
+	StormFox.Setting.AddCL("display_temperature",default_temp)
 	local t = {}
 	for k, v in pairs(symbol) do
 		if t[k] then continue end
 		t[k] = string.upper(k[1]) .. string.sub(k, 2) .. " " .. v
 	end
-	StormFox.Setting.SetType( "dispaly_temperature", t, {"celsius", "fahrenheit", "kelvin"} )
-	StormFox.Setting.Callback("dispaly_temperature",function(sType)
+	StormFox.Setting.SetType( "display_temperature", t, {"celsius", "fahrenheit", "kelvin"} )
+	StormFox.Setting.Callback("display_temperature",function(sType)
 		temp_type = convert_to[sType] and sType or "celsius"
 	end,"stormfox.temp.type")
 	-- Load setting
-	local sType = StormFox.Setting.Get("dispaly_temperature",default_temp)
+	local sType = StormFox.Setting.Get("display_temperature",default_temp)
 	temp_type = convert_to[sType] and sType or "celsius"
 
 	hook.Remove("stormfox2.postlib", "StormFox.TemperatureSettings")

@@ -2,8 +2,8 @@
 This scripts job is to sort out the computers and potatoes.
 ---------------------------------------------------------------------------]]
 StormFox.Client = StormFox.Client or {}
-StormFox.Setting.AddCL("quality_ultra",false,"Enable higer quality.")
-StormFox.Setting.AddCL("quality_target",60,"The FPS we should target.")
+StormFox.Setting.AddCL("quality_ultra",false)
+StormFox.Setting.AddCL("quality_target",144,nil,nil, 0, 300)
 
 local conDetect = 1
 -- Calculate the avageFPS for the client and make a value we can use.
@@ -21,7 +21,7 @@ local conDetect = 1
 			avagefps = buffer / bi
 			bi,buffer = 0,0
 			local q = StormFox.Setting.GetCache("quality_ultra",false)
-			local delta_fps = avagefps - StormFox.Setting.GetCache("quality_target",60)
+			local delta_fps = avagefps - StormFox.Setting.GetCache("quality_target",144)
 			local delta = math.Clamp(delta_fps / 8,-3,3)
 			conDetect = math.Clamp(math.Round(conDetect + delta, 1),0,q and 20 or 7)
 		end
@@ -32,7 +32,7 @@ Returns a number based on the clients FPS.
 ---------------------------------------------------------------------------]]
 function StormFox.Client.GetQualityNumber()
 	if not system.HasFocus() then
-		return 1
+		return 1, 1 / RealFrameTime()
 	end
-	return conDetect
+	return conDetect, avagefps
 end

@@ -7,7 +7,7 @@ local function toggle()
 		
 	end
 end
-concommand.Add("sf_toggle_debug", toggle, nil, "Dispalys debug values. (Require sv_cheat 1)", FCVAR_CHEAT)
+concommand.Add("sf_toggle_debug", toggle, nil, "Displays debug values. (Require sv_cheat 1)", FCVAR_CHEAT)
 
 hook.Add("HUDPaint", "stormfox.debugdisplay", function()
 	local w,h = ScrW(),ScrH()
