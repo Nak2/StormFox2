@@ -509,7 +509,7 @@ Generate meshes and env-points out from the map-data.
 				mesh.End()
 			elseif self.w and self.h then
 				local c = self:GetCenter()
-				render.DrawQuadEasy( c, n, self.w, -self.h, Color(255,255,255), ent:GetAngles().r )
+				render.DrawQuadEasy( c, n, self.w, -self.h, color_white, ent:GetAngles().r )
 			end
 		end
 
@@ -827,7 +827,7 @@ Renders glass-meshes.
 		--	render.PushFilterMag( 0 )
 		--	render.PushFilterMin( 0 )
 			cam.Start2D()
-				surface.SetDrawColor(Color(255,255,255))
+				surface.SetDrawColor(color_white)
 				func(TEX_SIZE,TEX_SIZE)
 			cam.End2D()
 		--	render.PopFilterMag()
@@ -968,7 +968,7 @@ local function env_corotinefunction()
 					if curDist and dis > curDist then continue end
 					local win = close_window_ents[i]
 					local n = view.ang:Forward()
-					debugoverlay.Cross(win:GetCenter()- n * 15, 15, 1, Color(255,255,255))
+					debugoverlay.Cross(win:GetCenter()- n * 15, 15, 1, color_white)
 					local v, tr = MatchTrace(view.pos,win:GetCenter() - n * 15)
 					if not v then continue end
 					curDist = dis
@@ -1001,7 +1001,7 @@ local function env_corotinefunction()
 		coroutine.yield()
 		-- Roof pos
 			roof_pos, roof_type = StormFox.DownFall.CheckDrop(viewPos, Vector(0,0,-1), 3, StormFox.util.ViewEntity())
-			debugoverlay.Cross(roof_pos, 15, 1, Color(255,255,255), true)
+			debugoverlay.Cross(roof_pos, 15, 1, color_white, true)
 	end
 	coroutine.yield()
 end
