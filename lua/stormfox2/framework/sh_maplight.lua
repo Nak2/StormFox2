@@ -10,19 +10,13 @@ StormFox.Setting.SetType( "extra_lightsupport", {
 	[1] = "#enable"
 } )
 
-StormFox.Setting.AddSV("overwrite_extra_darkness",0,nil, "Effects", -1, 1)
-StormFox.Setting.SetType( "overwrite_extra_darkness", {
-	[-1] = "#turn_off",
-	[0] = "#disable",
-	[1] = "#turn_on"
-} )
-
-StormFox.Setting.AddSV("overwrite_extra_darkness_amount",-1,nil, "Effects", -1, 1)
-StormFox.Setting.SetType( "overwrite_extra_darkness_amount", "special_float")
+StormFox.Setting.AddSV("overwrite_extra_darkness",-1,nil, "Effects", -1, 1)
+StormFox.Setting.SetType( "overwrite_extra_darkness", "special_float")
 
 if CLIENT then
 	StormFox.Setting.AddCL("extra_darkness",render.SupportsPixelShaders_2_0(),nil,"Effects",0,1)
 	StormFox.Setting.AddCL("extra_darkness_amount",0.75,nil, "Effects",0,1)
+	StormFox.Setting.SetType( "extra_darkness_amount", "float" )
 end
 
 if CLIENT then
@@ -203,13 +197,12 @@ else
 			return
 		end 
 		-- Check settings
-		local sv_setting = StormFox.Setting.GetCache("overwrite_extra_darkness",0)
-		if sv_setting <= -1 then return end
-		local cl_setting = StormFox.Setting.GetCache("extra_darkness",true)
-		if sv_setting == 0 and not cl_setting then return end
-
-		local sv_amount = StormFox.Setting.GetCache("overwrite_extra_darkness_amount",-1)
-		local scale = sv_amount >= 0 and sv_amount or StormFox.Setting.GetCache("extra_darkness_amount",1)
+		local scale = StormFox.Setting.GetCache("overwrite_extra_darkness",-1)
+		if scale == 0 then return end -- Force off.
+		if scale < 0 then
+			if not StormFox.Setting.GetCache("extra_darkness",true) then return end
+			scale = StormFox.Setting.GetCache("extra_darkness_amount",1)
+		end
 		if scale <= 0 then return end
 		-- Calc the "fade" between outside and inside
 		local t = StormFox.Environment.Get()

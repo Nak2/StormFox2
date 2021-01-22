@@ -266,9 +266,9 @@ end
 -- If the map is cold or has snow, always check for footsteps.
 	bAlwaysFootstep = StormFox.Map.IsCold() or StormFox.Map.HasSnow() -- This is a cold map.
 	if CLIENT then
-		StormFox.Setting.AddCL("footprint_disable",false,"Disables Player and NPC's making footprints.") -- Add footprint setting
-		StormFox.Setting.AddCL("footprint_max",200,"Max footprints.") -- Add footprint setting
-		StormFox.Setting.AddCL("footprint_distance",2000,"The renderdistance for footprints") -- Add footprint setting
-		StormFox.Setting.AddCL("footprint_playeronly",false,"Only players can make footprints.") -- Add footprint setting
+		StormFox.Setting.AddCL("footprint_disable",false) -- Add footprint setting
+		StormFox.Setting.AddCL("footprint_max",200) -- Add footprint setting
+		StormFox.Setting.AddCL("footprint_distance",2000) -- Add footprint setting
+		StormFox.Setting.AddCL("footprint_playeronly",false) -- Add footprint setting
 	end
-	StormFox.Setting.AddSV("footprint_disablelogic",false,"Disables footprints serverside.")
+	StormFox.Setting.AddSV("footprint_disablelogic",false)

@@ -1,7 +1,7 @@
 --[[-------------------------------------------------------------------------
 Use the map-data to set a minimum and maximum fogdistance
 ---------------------------------------------------------------------------]]
-StormFox.Setting.AddCL("enable_fog",true,"Enables fog.")
+StormFox.Setting.AddCL("enable_fog",true)
 
 --[[TODO: There are still problems with the fog looking strange.
 ]]
