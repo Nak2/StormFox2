@@ -121,7 +121,6 @@ do
 			end
 		end
 		function self._b:OnSelect( index, text, data )
-			print(index, text, data)
 			if type(data) == "nil" then -- Somehow we didn't get the value, try and locate it from button
 				data = table.KeyFromValue(tab, string.lower(text))
 			elseif type(data) == "boolean" then
@@ -194,7 +193,7 @@ do
 		self:InvalidateLayout(true)
 	end
 	function PANEL:PerformLayout(w, h)
-		local text, lines = wrapText(self._des, self:GetWide())
+		local text, lines = wrapText(language.GetPhrase(self._des), self:GetWide())
 		self._d:SetText(text)
 		self._d:SizeToContents()
 		self._desr = text
@@ -451,7 +450,6 @@ do
 		end
 		if ampm then
 			function ampm:OnSelect()
-				print("CHECK")
 				OnValChang()
 			end
 		end
@@ -585,7 +583,7 @@ do
 		self.trigger = true
 		self._enabled = true
 		--self.Paint = empty
-		local use_12 = StormFox.Setting.GetCache("12h_display",default_12) or true
+		local use_12 = StormFox.Setting.GetCache("12h_display",default_12)
 		local l = vgui.Create( "DLabel", self )
 		local hour = vgui.Create("DNumberWang", self)
 		local dot = vgui.Create("DPanel", self)
@@ -735,12 +733,12 @@ do
 				self._t:SetChecked( true )
 			end
 			local time_str = StormFox.Time.Display(vVar)
-			local h,m,am = string.match(time_str, "(%d+):(%d+)%s?(A?M?)")
+			local h,m,am = string.match(time_str, "(%d+):(%d+)%s?([PA]M)")
 			pln.hour:SetValue(tonumber(h))
 			local n = tonumber(m)
 			pln.minute:SetValue(n)
 			if pln.ampm then
-				pln.ampm:SetValue(am and "AM" or "PM")
+				pln.ampm:SetValue(am=="AM" and "AM" or "PM")
 			end
 			pln.trigger = true
 		end,self)
@@ -856,6 +854,9 @@ do
 	local cCol1 = Color(55,55,55,55)
 	local cCol2 = Color(55,55,255,105)
 	local seg = 40
+	function PANEL:SetColor(r,g,b,a)
+		self.cCol2 = (r and g and b) and Color(r,g,b,a or 105) or r
+	end
 	function PANEL:Init()
 		self._val = 1
 		self._off = 0.05

@@ -21,121 +21,48 @@ end
 
 StormFox.Menu = {}
 
-local function niceName(sName)
-	if sName[1] == "#" then
-		sName = sName:sub(2)
-	end
-	sName = string.Replace(sName, "_", " ")
-	local str = ""
-	for s in string.gmatch(sName, "[^%s]+") do
-		str = str .. string.upper(s[1]) .. string.sub(s, 2) .. " "
-	end
-	return string.TrimRight(str, " ")
-end
-
 local tabs = {
 	[1] = {"Start","#start",(Material("stormfox2/hud/menu/dashboard.png")),function(board)
-		local dash = vgui.Create("DPanel", board)
-		dash.Paint = empty
-		dash:Dock(TOP)
-		dash:SetTall(100)
-		local fps, qu, sup
-		-- FPS
-			local p = vgui.Create("SF_HudRing", dash)
-			p:SetText(string.upper(language.GetPhrase("#fps")) .. ": ")
-			p:SetSize(74, 74)
-			p:SetPos(24,10)
-			function p:Think()
-				if (self.u_t or 0) > SysTime() then return end
-				if not system.HasFocus() then return end
-				self.u_t = SysTime() + 1
-				local t = StormFox.Setting.GetCache("quality_target",144)
-				local _, avgFPS = StormFox.Client.GetQualityNumber()
-				self:SetValue( avgFPS / t)
-				p:SetText(string.upper(language.GetPhrase("#fps")) .. ": " .. math.floor(avgFPS))
-			end
-			fps = p
-		-- Quality
-			local p = vgui.Create("SF_HudRing", dash)
-			p:SetText(language.GetPhrase("#effects"))
-			p:SetSize(74, 74)
-			p:SetPos(106,10)
-			function p:Think()
-				if (self.u_t or 0) > SysTime() then return end
-				if not system.HasFocus() then return end
-				self.u_t = SysTime() + 1
-				local max_q = StormFox.Setting.GetCache("quality_ultra",false) and 20 or 7
-				local q, _ = StormFox.Client.GetQualityNumber()
-				local f = q / max_q
-				self:SetValue( f )
-				p:SetText(language.GetPhrase("#effects") .. "\n" .. math.floor(f * 100) .. "%")
-			end
-			qu = p
-		-- Support
-			local p = vgui.Create("SF_HudRing", dash)
-			p:SetText(niceName(language.GetPhrase("#support")))
-			p:SetSize(74, 74)
-			p:SetPos(188,10)
-			--p:SetColor(255,0,0)
-			local t = {render.SupportsPixelShaders_1_4(),render.SupportsVertexShaders_2_0(), render.SupportsPixelShaders_2_0(), render.SupportsHDR()}
-			local v = 0
-			for k,v2 in ipairs(t) do
-				if not v2 then break end
-				v = v + 1
-			end
-			local f = v / #t
-			p:SetValue(f)
-			local c = HSLToColor(120 * f, 1, 0.5 * f)
-			--p:SetColor(c.r,c.g,c.b)
-			p:SetText(niceName(language.GetPhrase("#support")) .. "\n" .. v .. "/" .. #t)
-			sup = p
-		
-		function dash:PerformLayout(w, h)
-			local a = w / 5
-			fps:SetPos(a, h - fps:GetTall())
-			qu:SetPos(a*2, h - qu:GetTall())
-			sup:SetPos(a*3, h - sup:GetTall())
-		end
-		board:AddSetting("quality_target")
-		board:AddSetting("quality_ultra")
-		board:AddTitle("#sf_customization")
-		local l = vgui.Create("DPanel", board)
-		l:DockMargin(10,0,0,0)
-		l:SetTall(24)
-		l:Dock(TOP)
-		function l:Paint(w,h)
-			local md = StormFox.Setting.GetCache("use_monthday",false) and os.date( "%m/%d/%Y" ) or os.date( "%d/%m/%Y" )
-			local dt = StormFox.Setting.GetCache("display_temperature")
-			local hs = string.Explode(":", os.date( "%H:%M") or "17:23")
-			local n = hs[1] * 60 + hs[2]
-			local str = niceName(language.GetPhrase("#time")) .. ": " .. StormFox.Time.Display(n) .. "   " .. md
-			str = str .. "   " .. niceName(language.GetPhrase("#temperature")) .. ": " .. math.Round(StormFox.Temperature.Convert(nil,dt,22), 1) .. StormFox.Temperature.GetDisplaySymbol()
-			draw.DrawText(str, "DermaDefaultBold", 0, 0, color_black, TEXT_ALIGN_LEFT)
-		end
-		board:AddSetting("12h_display")
-		board:AddSetting("use_monthday")
-		board:AddSetting("display_temperature")
+		board:AddTitle("TODO: Add Dashboard")
 	end},
-	[2] = {"Effects","#effects",(Material("stormfox2/hud/menu/settings.png")),function(board)
-		board:AddTitle(language.GetPhrase("#effects"))
-		board:AddSetting("enable_fog")
-		board:AddSetting("extra_darkness")
-		board:AddSetting("extra_darkness_amount")
-		board:AddTitle(language.GetPhrase("#footprints"))
-		board:AddSetting("footprint_disable")
-		board:AddSetting("footprint_playeronly")
-		board:AddSetting("footprint_distance")
-		board:AddSetting("footprint_max")
-		board:AddTitle(language.GetPhrase("#sf_window_effects"))
-		board:AddSetting("window_enable")
-		board:AddSetting("window_distance")
+	[2] = {"Time","#time",(Material("stormfox2/hud/menu/clock.png")),function(board)
+		board:AddTitle("#time")
+		board:AddSetting("real_time")
+		board:AddSetting("start_time")
+		board:AddSetting("time_speed")
+		board:AddTitle("#sun")
+		board:AddSetting("sunrise")
+		board:AddSetting("sunset")
+		board:AddSetting("sunyaw")
+		board:AddTitle("#moon")
+		board:AddSetting("moonlock")
 	end},
-	[3] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png"))},
-	[4] = {"DLC","#DLC",(Material("stormfox2/hud/menu/dlc.png"))}
+	[3] = {"Weather","#weather",(Material("stormfox2/hud/menu/weather.png")),function(board)
+		board:AddTitle("#weather")
+		board:AddSetting("auto_weather")
+		board:AddSetting("max_weathers_prday")
+		board:AddTitle("#temperature")
+		board:AddSetting("max_temp")
+		board:AddSetting("min_temp")
+		board:AddSetting("temp_acc")		
+	end},
+	[4] = {"Effects","#effects",(Material("stormfox2/hud/menu/settings.png")),function(board)
+		board:AddTitle(language.GetPhrase("#map") .. language.GetPhrase("#light"))
+		board:AddSetting("maplight_smooth")
+		board:AddSetting("extra_lightsupport")
+		board:AddSetting("maplight_min")
+		board:AddSetting("maplight_max")
+		board:AddSetting("maplight_updaterate")
+		board:AddTitle("#effects_pp")
+		board:AddSetting("overwrite_extra_darkness")
+		board:AddSetting("footprint_disablelogic")
+	end},
+	[5] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png"))},
+	[6] = {"DLC","#DLC",(Material("stormfox2/hud/menu/dlc.png"))},
 }
 
 local col = {Color(230,230,230), color_white}
-local col_dis = Color(255,255,255,55)
+local col_dis = Color(0,0,0,55)
 local col_dis2 = Color(0,0,0,55)
 local bh_col = Color(55,55,55,55)
 
@@ -173,8 +100,25 @@ local function switch(sName, tab)
 			v:Hide()
 		end
 	end
+	if not IsValid(pnl) or pnl:GetDisabled() then
+		pnl = tab["start"]
+		if IsValid(pnl) then
+			pnl:Show()
+		end
+	end
 	cookie.Set("sf2_lastmenusv", sName)
 	return pnl
+end
+local function niceName(sName)
+	if sName[1] == "#" then
+		sName = sName:sub(2)
+	end
+	sName = string.Replace(sName, "_", " ")
+	local str = ""
+	for s in string.gmatch(sName, "[^%s]+") do
+		str = str .. string.upper(s[1]) .. string.sub(s, 2) .. " "
+	end
+	return string.TrimRight(str, " ")
 end
 local function addSetting(sName, pPanel, _type)
 	local setting
@@ -210,7 +154,7 @@ end
 local t_mat = "icon16/font.png"
 local s_mat = "icon16/cog.png"
 
-function StormFox.OpenMenu()
+function StormFox.OpenSVMenu()
 	if _SFMENU and IsValid(_SFMENU) then
 		_SFMENU:Remove()
 		_SFMENU = nil
@@ -236,7 +180,7 @@ function StormFox.OpenMenu()
 		surface.SetDrawColor(55,55,55,255)
 		surface.DrawRect(0, 0, w, 24)
 
-		local t = "StormFox " .. niceName(language.GetPhrase("#client")) .. " ".. language.GetPhrase("#spawnmenu.utilities.settings")
+		local t = "StormFox " .. niceName(language.GetPhrase("#server")) .. " ".. language.GetPhrase("#spawnmenu.utilities.settings")
 		surface.SetFont("DermaDefault")
 		local tw,th = surface.GetTextSize( t )
 		surface.SetTextColor(color_white)
@@ -428,7 +372,7 @@ function StormFox.OpenMenu()
 				search_tab["sf_" .. sName] = {self.sBName, setting, s_mat}
 			end
 			--local setting = _type == "boolean" and vgui.Create("SFConVar_Bool", board) or  vgui.Create("SFConVar", board)
-			setting:DockMargin(15,0,0,10)
+			setting:DockMargin(15,0,0,15)
 			setting:Dock(TOP)
 			self:AddItem(setting)
 			used[sName] = true
@@ -442,7 +386,8 @@ function StormFox.OpenMenu()
 			dL:SetFont("SF_Menu_H2")
 			dL:SizeToContents()
 			dL:Dock(TOP)
-			dL:DockMargin(5,0,0,0)
+			dL:DockMargin(5,self._title and 20 or 0,0,0)
+			self._title = true
 			self:AddItem(dL)
 			if (not search_tab[text] or not self._isstart) and #sName > 0 and not bIgnoreSearch then
 				search_tab[text] = {self.sBName, dL, t_mat}
@@ -462,7 +407,7 @@ function StormFox.OpenMenu()
 	for sBName, pnl in pairs(p_right.sub) do
 		pnl._other = true
 	end
-	for _, sName in ipairs( StormFox.Setting.GetAllClient() ) do
+	for _, sName in ipairs( StormFox.Setting.GetAllServer() ) do
 		if used[sName] then continue end
 		p:AddSetting( sName )
 	end
@@ -492,4 +437,4 @@ function StormFox.OpenMenu()
 	_SFMENU:MakePopup()
 end
 
-timer.Simple(1, StormFox.OpenMenu)
+timer.Simple(1, StormFox.OpenSVMenu)
