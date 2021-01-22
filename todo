@@ -1,9 +1,8 @@
 
 ## Moonparses
     Problems:  
-        Russian tosaters can't handle dynamic texture changes and RT. It could have been me not checking for pixelshader support but still.
-        People complain that the realistic system where wrong (Moon does curve in rotation)
-
+		People complain that the realistic system where wrong (Moon does curve in rotation)
+		Terrain footprints should be removed, if the next terrain doesn't have footprints.
     Make it pr day based and render the parses. Maybe even just pre-make them.
 
 ## Texture Swap
@@ -12,14 +11,21 @@
         Also doesn't have a way for map-creators to work with.
 
 ## Menu
-    - Make the menu the same as SF1, however update the design abit
     - People got confused with the "Set Weather", instead have a list of weathers they can select and a slider for amount.
+	- Finish the menu design.
 
 ## Other
-    - Mixer seems to glitch out now and then. Need to fix it somehow.
+    - Mixer seems to glitch out now and then. Need to fix it somehow. (Noted it happening on time_speed 0)
     - Sunset/rise has a wider area irl
+	- Maplight should be updated at all times for extra_darkness to work. Only force the "env_l" functions to call now and then
 
 ## Terrian
 	- Fix texture swap problems
 	- Fix texture swap-ground problems
 	- Fix footprints
+
+## Rain / Particles
+	- Seem to ignore glass (Remember, bullet masks ignore glass)
+	- Outside + MovingFast = Wind Effect
+	- Fix fox in rain
+	
