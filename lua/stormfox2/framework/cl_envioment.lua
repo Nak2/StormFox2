@@ -8,7 +8,8 @@ local GLASS_VERTS = 2
 local GLASS_ROOF_VERTS = 3
 local METAL_ROOF_VERTS = 4
 
-StormFox.Setting.AddCL("window_distance",800,"The distance window-effects will render.")
+StormFox.Setting.AddCL("window_enable",render.SupportsPixelShaders_2_0())
+StormFox.Setting.AddCL("window_distance",800, nil, nil, 0, 4000)
 
 --[[-------------------------------------------------------------------------
 Adds a window model for SF to use.
@@ -532,6 +533,7 @@ Generate meshes and env-points out from the map-data.
 	-- Scans for nearby window entities.
 	local function scan_dynamic()
 		glass_dynamic = {}
+		if not StormFox.Setting.GetCache("window_enable", true) then return end
 		local view = StormFox.util.GetCalcView()
 		local tEnts = ents.FindInSphere(view.pos, StormFox.Setting.GetCache("window_distance",800))
 		for i,ent in ipairs(tEnts) do
@@ -838,6 +840,7 @@ Renders glass-meshes.
 	-- Update material
 	hook.Add("Think", "StormFox.Environment.UpdateRTWIndow", function()
 		if not StormFox.Terrain then return end
+		if not StormFox.Setting.GetCache("window_enable", true) then return end
 		local windRender, windRenderRef, windRender64, windRender64Ref = GetRenderFunctions()
 		-- Refract materials
 			if windRenderRef then
@@ -872,6 +875,7 @@ Renders glass-meshes.
 			--puddle_mapmesh:Draw()
 		end
 		if #glass_mapmesh < 4 then return end
+		if not StormFox.Setting.GetCache("window_enable", true) then return end
 		local windRender, windRenderRef, windRender64, windRender64Ref = GetRenderFunctions()
 		-- Refract materials
 			if windRenderRef then
@@ -1013,6 +1017,7 @@ local env_corotine = coroutine.wrap(function()
 end)
 timer.Create("stormfox2.enviroment.think", 0.25, 0, function()
 	if not StormFox.Loaded or not _STORMFOX_POSTENTITY then return end
+	if not StormFox.Setting.GetCache("window_enable", true) then return end
 	env_corotine()
 end)
 
