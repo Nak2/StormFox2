@@ -239,14 +239,17 @@ do
 	local cos,sin,rad = math.cos, math.sin, math.rad
 	-- Calculates and locates a downfall-drop infront/nearby of the client.
 	-- #1 = Hit Position, #2 hitType, #3 The offset from view, #4 hitNormal
-	function StormFox.DownFall.CalculateDrop( nDis, nSize, nTries, vNorm )
+	function StormFox.DownFall.CalculateDrop( nDis, nSize, nTries, vNorm, ignoreVel, nMaxDistance )
 		vNorm = vNorm or StormFox.Wind.GetNorm()
 		local view = StormFox.util.GetCalcView()
-		local v_pos = view.pos + StormFox.util.ViewEntity():GetVelocity() / 2
+		local v_vel = StormFox.util.ViewEntity():GetVelocity()
+		local v_pos = view.pos
+		if not ignoreVel then
+			v_pos = v_pos + Vector(v_vel.x,v_vel.y,0) / 3
+		end
 		for i = 1, nTries do
 			-- Get a random angle
-			local d = math.Rand(1,4)
-
+			local d = math.Rand(nDis / 200,4)
 			local deg = math.random(d * 45)
 			if math.random() > 0.5 then
 				deg = -deg
@@ -255,8 +258,9 @@ do
 			local yaw = rad(view.ang.y + deg)
 			local offset = v_pos + Vector(cos(yaw),sin(yaw)) * nDis
 			local pos, n, hitNorm = StormFox.DownFall.CheckDrop( offset, vNorm, nSize)
-			if pos and n > -2 then 
-				return pos,n,offset, hitNorm
+			if pos and n > -2 and pos:DistToSqr(v_pos) < 11009851 then
+				local bRandomAge = not ignoreVel and nDis > nMaxDistance - v_vel:Length2D()
+				return pos,n,offset, hitNorm, bRandomAge
 			end
 		end
 	end
@@ -295,8 +299,11 @@ if CLIENT then
 		self.w = nWidth
 		self.h = nHeight
 	end
-	-- On hit (Overwrite it)
-	function pt_meta:OnHit( vPos, vNormal, nHitType )
+	function pt_meta:GetSize()
+		return self.w or 1, self.h or 1
+	end
+		-- On hit (Overwrite it)
+	function pt_meta:OnHit( vPos, vNormal, nHitType, zPart )
 	end
 	-- On Explosion
 	function pt_meta:OnExplosion( vExposionPos, nDistance, iRange, iMagnitude)
@@ -307,17 +314,32 @@ if CLIENT then
 	function pt_meta:SetNorm( vNorm )
 		self.vNorm = vNorm
 	end
-	function StormFox.DownFall.CreateTemplate(sMaterial, bBeam)
+	function pt_meta:SetRandomAngle( r_a )
+		self._ra = r_a
+	end
+	function pt_meta:SetRoll( nRoll )
+		self._roll = nRoll
+	end
+	function pt_meta:SetFadeIn( b )
+		self._bFIn = b
+	end
+	function pt_meta:_REM()
+		local v = self.data or self
+		v.num = v.num - 1
+	end
+	function StormFox.DownFall.CreateTemplate(sMaterial, bBeam, bFollow)
 		local t = {}
 		setmetatable(t,pt_meta)
 		t:SetMaterial(sMaterial)
-		t.c = Color(255,255,255)
+		t.c = color_white
 		t.bBeam = bBeam or false
 		t.w = 32
 		t.h = 32
 		t.g = 1
 		t.r_H = 400
 		t.i_G = false
+		t.bFollow = bFollow
+		t.num = 0
 		return t
 	end
 	-- Particles
@@ -325,9 +347,10 @@ if CLIENT then
 	p_meta.__index = function(self, key)
 		return p_meta[key] or self.data[key]
 	end
-	-- Creates a particle from the template
+	-- Creates a particle from the template. Can return nil if something happen
 	function pt_meta:CreateParticle( vEndPos, vNorm, hitType, hitNorm )
-		local z_view = StormFox.util.GetCalcView().pos.z
+		local view = StormFox.util.GetCalcView().pos
+		local z_view = view.z
 		local t = {}
 		t.data = self
 		t.vNorm = vNorm
@@ -345,12 +368,25 @@ if CLIENT then
 		if cG > 0 then -- Start from the sky and down
 			local l = z_view + (t.r_H or 200) - t.endpos.z + math.Rand(0, t.h)
 			t.curlength = l * -dir_z
+			if t.curlength <= 0 then -- Something went wrong
+				self.h = 0
+				return
+			end
 		elseif cG < 0 then -- Start from ground and up
 			local l = math.max(0, z_view - (t.r_H or 200) - t.endpos.z) -- Ground or below renderheight
 			t.curlength = l * -dir_z
 		end
+		if self.bFollow then
+			t.endpos = vEndPos - view
+			t.bFollow = true
+		end
 		t:CalcPos()
+		self.num = self.num + 1
 		return t, (t.r_H or 200) * 2 / math.abs( cG ) -- Secondary is how long we thing it will take for the particle to die. We also want this to be steady.
+	end
+	-- Returns the amount of particles spawned
+	function pt_meta:GetNumber()
+		return self.num or 0
 	end
 	-- Calculates the current position of the particle
 	function p_meta:CalcPos()
@@ -373,12 +409,37 @@ if CLIENT then
 	function p_meta:GetHitNormal()
 		return self.hitNorm or Vector(0,0,-1)
 	end
+	-- Sets the "age" of the particle between 0 - 1
+	function p_meta:SetAge( f )
+		self.curlength = self.curlength * f
+	end
+	-- Sets the max-distance from view
+	function p_meta:SetMaxDistance( f )
+		self.mDis2Sqr = f ^ 2
+	end
 	-- Renders the particles
-	function p_meta:Render()
+	function p_meta:Render(viewPos)
 		local pos = self:GetPos()
+		if self.bFollow then
+			pos = pos + viewPos
+		end
+		local c = self.c
+		if self._renh and self._bFIn and self._renh < 0.5 then -- We're fading out
+			self.cL = Color(c.r, c.g, c.b, self._renh * 510)
+		elseif self._bFIn and (self._bFInA or 0) < 1 then -- We're fading in
+			self._bFInA = math.min((self._bFInA or 0) + FrameTime(), 1)
+			self.cL = Color(c.r, c.g, c.b, self._bFInA * 255)
+		end
 		render.SetMaterial(self.iMat)
 		if self.bBeam then
-			render.DrawBeam(pos - self:GetNorm() * self.h, pos, self.w, 0, 1, self.c)
+			if self._renh then
+				if self._renh <= 0 then return end
+				local sr = 1 - self._renh
+				local sh = self:GetNorm() * self.h
+				render.DrawBeam(pos - sh, pos - sh * sr, self.w, 0, self._renh, self.cL or c)
+			else
+				render.DrawBeam(pos - self:GetNorm() * self.h, pos, self.w, 0, 1, self.cL or c)
+			end
 		else
 			render.DrawSprite(pos, self.w, self.h, self.c)
 		end
@@ -394,9 +455,34 @@ if CLIENT then
 
 	-- Moves and kills the particles
 	local t_sfp = {}
+	local e_check = 0
+	local pause = false
+	hook.Add("OnPlayerChat", "D", function(_,str)
+		pause = !pause
+	end)
+	function GETPART(pos, dis)
+		local t = {}
+		for k,v in ipairs( t_sfp ) do
+			local part = v[2]
+			if part:GetPos():Distance(pos) <= dis then
+				table.insert(t, {k,part})
+			end
+		end
+		return t
+	end
+	function GETPARTI(i)
+		return t_sfp[i]
+	end
 	local function ParticleTick()
+		if pause then return end
 		if #t_sfp < 1 then return end
-		local z_view = StormFox.util.GetCalcView().pos.z
+		if e_check > #t_sfp then
+			e_check = 0
+		end
+		local view = StormFox.util.GetCalcView().pos
+		local v_vel = StormFox.util.ViewEntity():GetVelocity()
+		local v_l = math.max(v_vel.x,v_vel.y)
+		local z_view = view.z
 		local fr = FrameTime() * 600 -- * game.GetTimeScale()
 		local die = {}
 		local gg = GLGravity() -- Global Gravity
@@ -407,13 +493,24 @@ if CLIENT then
 			if not part:GetIgnoreGravity() then
 				move = part.g * gg 
 			end
+			if e_check < n + 100 and part.mDis2Sqr and not part.bFollow then
+				if (part:GetPos() - view - v_vel / 4):Length2DSqr() > part.mDis2Sqr + v_l then
+					part.hitType = SF_DOWNFALL_HIT_NIL
+					table.insert(die, n)
+					continue
+				end
+			end
 			part.curlength = part.curlength - move * fr
 			-- Check if it dies
 			if move > 0 then
 				local zp = part:CalcPos().z
 				if zp < part.endpos.z then
 					-- Hit ground
-					table.insert(die, n)
+					if zp < part.endpos.z - part.h or part.h < 10 then
+						table.insert(die, n)
+					else
+						part._renh = 1 - (part.endpos.z - zp) / (part.h * 0.9)
+					end
 				elseif zp < z_view - part.r_H or zp > z_view + part.r_H + part.h then
 					-- Die in air
 					part.hitType = SF_DOWNFALL_HIT_NIL
@@ -426,27 +523,33 @@ if CLIENT then
 				end
 			end
 		end
+		e_check = e_check + 100
 		-- Kill particles
 		for i = #die, 1, -1 do
 			local t = table.remove(t_sfp, die[i])
 			local part = t[2]
+			part:_REM()
 			--print("					Real Death: ", CurTime() - (part.to or 0))
 			if part.hitType ~= SF_DOWNFALL_HIT_NIL and part.OnHit then
-				part:OnHit( part.endpos, part:GetHitNormal(), part.hitType )
+				part:OnHit( part.endpos, part:GetHitNormal(), part.hitType, part )
 			end
 		end
 	end
 	-- Renders all particles. t_sfp should be in render-order
 	local function ParticleRender()
+		local v = StormFox.util.GetCalcView().pos
+		local view = Vector(v.x,v.y,0)
+		
 		for _,t in ipairs(t_sfp) do
 		--	render.DrawLine(t[2]:GetPos(), t[2].endpos, color_white, true)
-			t[2]:Render()
+			t[2]:Render(view)
 		end
 	end
 
 	-- Adds a particle.
-	function StormFox.DownFall.AddTemplateSimple( tTemplate, vEndPos, hitType, hitNorm, nDistance )
+	function StormFox.DownFall.AddTemplateSimple( tTemplate, vEndPos, hitType, hitNorm, nDistance, vNorm )
 		local part = tTemplate:CreateParticle( vEndPos, vNorm, hitType, hitNorm )
+		if not part then return end
 		if not nDistance then
 			local p = StormFox.util.GetCalcView().pos
 			nDistance = Vector(p.x,p.y,vEndPos.z):Distance( vEndPos )
@@ -469,9 +572,13 @@ if CLIENT then
 	end
 
 	-- Tries to add a particle. Also has cache build in.
-	function StormFox.DownFall.AddTemplate( tTemplate, nDistance, traceSize, vNorm )
+	function StormFox.DownFall.AddTemplate( tTemplate, nMaxDistance, nDistance, traceSize, vNorm )
 		vNorm = vNorm or StormFox.Wind.GetNorm()
-		local vEnd, nHitType, vCenter, hitNorm = StormFox.DownFall.CalculateDrop( nDistance, traceSize, 1, vNorm )
+		if tTemplate._ra then -- Random angle
+			vNorm = Vector(vNorm.x, vNorm.y, vNorm.z) + Vector(math.Rand(-tTemplate._ra, tTemplate._ra),math.Rand(-tTemplate._ra, tTemplate._ra),0)
+			vNorm:GetNormal()
+		end
+		local vEnd, nHitType, vCenter, hitNorm, bRandomAge = StormFox.DownFall.CalculateDrop( nDistance, traceSize, 1, vNorm, tTemplate.bFollow, nMaxDistance )
 		-- pos,n,offset, hitNorm
 		if not vEnd then 
 			if tTemplate.m_cache then
@@ -480,16 +587,26 @@ if CLIENT then
 				nHitType = t[2]
 				vCenter = t[3]
 				hitNorm = t[4]
+				nMaxDistance = t[5]
+				vNorm = t[6]
 			else
 				return false 
 			end
 		end -- Couldn't locate a position for the partice
 		--debugoverlay.Cross(vEnd, 15, 1, Color(255,255,255), false)
 		if not tTemplate.m_cache then tTemplate.m_cache = {} end
-		if table.insert(tTemplate.m_cache, {vEnd,nHitType, vCenter, hitNorm}) > 10 then
+		if table.insert(tTemplate.m_cache, {vEnd,nHitType, vCenter, hitNorm, nMaxDistance, vNorm}) > 10 then
 			table.remove(tTemplate.m_cache,1)
 		end
-		return StormFox.DownFall.AddTemplateSimple( tTemplate, vEnd, nHitType, hitNorm, nDistance )
+		local part = StormFox.DownFall.AddTemplateSimple( tTemplate, vEnd, nHitType, hitNorm, nDistance, vNorm )
+		if not part then return false end
+		if bRandomAge then
+			part:SetAge( math.Rand(0.1, 1))
+		end
+		if nMaxDistance then
+			part:SetMaxDistance( nMaxDistance + 50 )
+		end
+		return part
 	end
 
 	-- Max particles by quality setting.
@@ -510,7 +627,8 @@ if CLIENT then
 		--	print("nAimAmountPrT: " .. nAimAmount * FrameTime())
 		--	print("SPEED", speed)
 		local alive_time = tTemplate.r_H / speed * FrameTime() -- How long would it be alive? (Only half the time, since players are usually are on the ground)
-		local prtick = nAimAmount * FrameTime() / alive_time
+		local prtick = 4 or nAimAmount * FrameTime() / alive_time
+		
 		local m = max_particles()
 		reached_max = reached_max or m < 1
 		return prtick * m
@@ -518,28 +636,32 @@ if CLIENT then
 
 	-- Automaticlly spawns particles and returns a table of them.
 	local ex = 0
-	function StormFox.DownFall.SmartTemplate( tTemplate, nDistance, nAimAmount, traceSize, vNorm, fFunc )
+	local emp_t = {}
+	function StormFox.DownFall.SmartTemplate( tTemplate, nMaxDistance, nDistance, nAimAmount, traceSize, vNorm, fFunc )
+		local n = tTemplate:GetNumber()
+		if n >= nAimAmount then return emp_t end
 		local t = CurTime() - (tTemplate.s_timer or 0)
-		local n = StormFox.DownFall.CalcTemplateTimer( tTemplate, nAimAmount ) -- How many times this need to run pr tick
 		if t >= 0 then
+			local b = math.min(1, n / nAimAmount * 10)
+			local n = StormFox.DownFall.CalcTemplateTimer( tTemplate, nAimAmount * b) -- How many times this need to run pr tick
 			tTemplate.s_timer = CurTime()
 			if n < 1 then
 				ex = ex + n
 				if ex < 1 then
-					return {}
+					return emp_t
 				else
 					ex = ex - 1
 				end
 			end
 			local t = {}
 			for i = 1, math.Clamp(n + ex, 1, 20) do
-				local p = StormFox.DownFall.AddTemplate( tTemplate, nDistance, traceSize or 5, vNorm )
+				local p = StormFox.DownFall.AddTemplate( tTemplate, nMaxDistance, nDistance, traceSize or 5, vNorm )
 				if p then table.insert(t, p) end
 			end
 			ex = ex % 1
 			return t
 		end
-		return {}
+		return emp_t
 	end
 
 	hook.Add("Think","StormFox.Downfall.Tick", ParticleTick)
@@ -565,6 +687,7 @@ if CLIENT then
 			if part.OnExplosion then
 				part:OnExplosion(pos, math.Clamp(1 - (dis / iRadius), 0, 1),iRadius, iMagnitude)
 			end
+			part:_REM()
 			table.remove(t_sfp, i)
 		end
 	end)

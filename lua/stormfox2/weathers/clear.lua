@@ -92,3 +92,22 @@ end
 	clear:Set("gauge",0)
 	clear:Set("gaugeColor", Color(255,255,255))
 	clear:Set("enableThunder") 	-- Tells the generator that this weather_type can't have thunder.
+
+-- 2D skyboxes
+if SERVER then
+	local t_day, t_night, t_sunrise, t_sunset
+	t_day = {"sky_day01_05", "sky_day01_04", "sky_day02_01","sky_day02_03","sky_day02_04","sky_day02_05"}
+	t_sunrise = {"sky_day01_05", "sky_day01_06", "sky_day01_08"}
+	t_sunset = {"sky_day02_02", "sky_day02_01"}
+	t_night = {"sky_day01_09", "sky_black_nofog"}
+
+	-- IF CSGO
+	if StormFox.Setting.Get("csgo_2dskybox") then
+		table.insert(t_night, "sky_csgo_night_flat")
+		table.insert(t_day, "vertigoblue_hdr")
+	end
+	clear:SetSunStamp("skyBox",t_day,		SF_SKY_DAY)
+	clear:SetSunStamp("skyBox",t_sunrise,	SF_SKY_SUNRISE)
+	clear:SetSunStamp("skyBox",t_sunset,	SF_SKY_SUNSET)
+	clear:SetSunStamp("skyBox",t_night,		SF_SKY_NIGHT)
+end
