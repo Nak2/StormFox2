@@ -20,12 +20,23 @@
 	- Maplight should be updated at all times for extra_darkness to work. Only force the "env_l" functions to call now and then
 
 ## Terrian
-	- Fix texture swap problems
-	- Fix texture swap-ground problems
-	- Fix footprints
+	- Fix footprint-sounds
 
 ## Rain / Particles
 	- Seem to ignore glass (Remember, bullet masks ignore glass)
 	- Outside + MovingFast = Wind Effect
 	- Fix fox in rain
 	
+## Terrain Light
+	- Display maps original-light in settings
+
+
+
+	[stormfox2] lua/includes/extensions/util.lua:113: attempt to index local 'typename' (a nil value)
+  1. Get - lua/includes/extensions/util.lua:113
+   2. unknown - addons/stormfox2/lua/stormfox2/weathers/clear.lua:105
+    3. unknown - [C]:-1
+     4. pcall - [C]:-1
+      5. v - addons/stormfox2/lua/stormfox2/lib/sh_weather_meta.lua:187
+       6. Run - lua/includes/modules/hook.lua:84
+        7. unknown - addons/stormfox2/lua/autorun/stormfox2.lua:90
