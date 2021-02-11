@@ -42,8 +42,9 @@ local tabs = {
 		board:AddSetting("auto_weather")
 		board:AddSetting("max_weathers_prday")
 		board:AddTitle("#temperature")
-		board:AddSetting("max_temp")
-		board:AddSetting("min_temp")
+		local temp = board:AddSetting({"min_temp", "max_temp"}, "temperature", "sf_temp_range")
+		temp:SetMin(-10)
+		temp:SetMax(32)
 		board:AddSetting("temp_acc")		
 	end},
 	[4] = {"Effects","#effects",(Material("stormfox2/hud/menu/settings.png")),function(board)
@@ -58,7 +59,7 @@ local tabs = {
 		board:AddSetting("footprint_disablelogic")
 	end},
 	[5] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png"))},
-	[6] = {"DLC","#DLC",(Material("stormfox2/hud/menu/dlc.png"))},
+	[6] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png"))},
 }
 
 local col = {Color(230,230,230), color_white}
@@ -159,6 +160,18 @@ function StormFox.OpenSVMenu()
 		_SFMENU:Remove()
 		_SFMENU = nil
 	end
+	local p = vgui.Create("SF_Menu")
+	_SFMENU = p
+	p:SetTitle("StormFox " .. niceName(language.GetPhrase("#server")) .. " ".. language.GetPhrase("#spawnmenu.utilities.settings"))
+	p:CreateLayout(tabs, StormFox.Setting.GetAllServer())
+	p:SetCookie("sf2_lastmenusv")
+	_SFMENU:MakePopup()
+end
+function StormFox.OpenSVMenu2()
+	if _SFMENU and IsValid(_SFMENU) then
+		_SFMENU:Remove()
+		_SFMENU = nil
+	end
 	local p = vgui.Create("DFrame")
 	_SFMENU = p
 	
@@ -232,7 +245,7 @@ function StormFox.OpenSVMenu()
 	end
 
 	-- Add search bar
-	local p = vgui.Create("DPanel", p_left)
+	local p = vgui.Create("DPanel", self.p_left)
 	local search_tab = {}
 	p:Dock(TOP)
 	p:SetTall(40)
