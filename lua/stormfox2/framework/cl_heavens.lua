@@ -21,6 +21,9 @@ StormFox.Sky = {}
 	StormFox.Setting.AddSV("sunyaw",90,nil, "Effects", 0, 360)
 	StormFox.Setting.AddSV("moonlock",false,nil,"Effects", 0, 1)
 
+	StormFox.Setting.AddSV("use_2dskybox",false,nil, "Effects")
+	StormFox.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
+
 	-- The sun is up ½ of the day; 1440 / 2 = 720. 720 / 2 = 360 and 360 * 3 = 1080
 	local SunDelta = 180 / (StormFox.Data.Get("sun_sunset",1080) - StormFox.Data.Get("sun_sunrise",360))
 	--[[-------------------------------------------------------------------------
@@ -271,16 +274,19 @@ StormFox.Sky = {}
 			if not StormFox.Moon then return end
 			if not StormFox.Moon.GetAngle then return end
 		local c_pos = StormFox.util.RenderPos()
+		local use_2d = StormFox.Setting.GetCache("use_2dskybox",false)
 		cam.Start3D( Vector( 0, 0, 0 ), EyeAngles() ,nil,nil,nil,nil,nil,1,32000)  -- 2d maps fix
 			render.OverrideDepthEnable( false,false )
 			render.SuppressEngineLighting(true)
 			render.SetLightingMode( 2 )
-			hook.Run("StormFox.2DSkybox.StarRender",	c_pos)
+			if not use_2d then
+				hook.Run("StormFox.2DSkybox.StarRender",	c_pos)
 
-			-- hook.Run("StormFox.2DSkybox.BlockStarRender",c_pos)
-			hook.Run("StormFox.2DSkybox.SunRender",		c_pos) -- No need to block, shrink the sun.		
+				-- hook.Run("StormFox.2DSkybox.BlockStarRender",c_pos)
+				hook.Run("StormFox.2DSkybox.SunRender",		c_pos) -- No need to block, shrink the sun.		
 
-			hook.Run("StormFox.2DSkybox.Moon",			c_pos)
+				hook.Run("StormFox.2DSkybox.Moon",			c_pos)
+			end
 			hook.Run("StormFox.2DSkybox.CloudBox",		c_pos)
 			hook.Run("StormFox.2DSkybox.CloudLayer",	c_pos)
 			render.SuppressEngineLighting(false)

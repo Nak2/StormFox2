@@ -3,8 +3,13 @@ if StormFox and StormFox.Version < 2 then
 	error("StormFox 1 detected. StormFox 2 can't run.")
 end
 
--- We need that skybox
-RunConsoleCommand("sv_skyname", "painted")
+-- While sv_skyname is fixed, I still want this to be first.
+if SERVER then
+	local con = GetConVar("sf_use_2dskybox")
+	if not con or con:GetInt() ~= 1 then
+		RunConsoleCommand("sv_skyname", "painted")
+	end
+end
 
 --[[-------------------------------------------------------------------------
 StormFox 2.0
