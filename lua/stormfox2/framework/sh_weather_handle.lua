@@ -94,7 +94,7 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 	if CurrentWeather.Tick10 then
 		CurrentWeather.Tick10()
 	end
-	hook.Run("stormfox.weather.postchange", sName ,nPercentage )
+	hook.Run("stormfox.weather.postchange", sName ,nPercentage, nDelta )
 end
 
 hook.Add("StormFox.Sky.StampChange","StormFox.Weather.Stamp",function(_,nLerpTime)
@@ -149,6 +149,7 @@ if SERVER then
 		if not cT and not terrain then return end -- No terrain detected
 		if cT and terrain and cT == terrain then return end -- Same terrain detected
 		if terrain then -- Switch terraintype out. This can't be the same as the other
+			print("TERRAIIN:", terrain.Name)
 			StormFox.Terrain.Set(terrain.Name)
 		elseif not terrain and not cT.lock then -- This terrain doesn't have a lock. Reset terrain
 			StormFox.Terrain.Reset()

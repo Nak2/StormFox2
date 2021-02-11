@@ -1,8 +1,8 @@
 StormFox.Setting.AddSV("maplight_min",0,mil, "Effects", 0, 100)
 StormFox.Setting.AddSV("maplight_max",80,nil, "Effects", 0, 100)
-StormFox.Setting.AddSV("maplight_smooth",game.SinglePlayer(),nil, "Effects",0,1)
+StormFox.Setting.AddSV("maplight_smooth",true,nil, "Effects",0,1)
 
-StormFox.Setting.AddSV("maplight_updaterate",game.SinglePlayer() and 2 or 10,nil, "Effects")
+StormFox.Setting.AddSV("maplight_updaterate",game.SinglePlayer() and 6 or 3,nil, "Effects")
 StormFox.Setting.AddSV("extra_lightsupport",-1,nil, "Effects",-1,1)
 StormFox.Setting.SetType( "extra_lightsupport", {
 	[-1] = "#sf_auto",
@@ -19,100 +19,172 @@ if CLIENT then
 	StormFox.Setting.SetType( "extra_darkness_amount", "float" )
 end
 
-if CLIENT then
-	ORIGINALREDOWNLOADMAP = ORIGINALREDOWNLOADMAP or render.RedownloadAllLightmaps
-	function render.RedownloadAllLightmaps( ... )
-		ORIGINALREDOWNLOADMAP( ... )
-	end
+-- Light breaks if we use 'a'. Because light is multiplied by 0.
+local function convertTo( nNum )
+	local byte = math.Round(6 * nNum / 25 + 98)
+	return string.char(byte)
+end
+local function convertToFull( nNum )
+	return string.char(97 + nNum / 4)
+end
+local function convertFrom( char )
+	local byte = string.byte( char )
+	return (byte - 98) * 25 / 6
 end
 
-local LightAmount = 80
-
+local last_f, last_char
 if SERVER then
 	util.AddNetworkString("stormfox.maplight")
-	local v = StormFox.Setting.Get("extra_lightsupport",-1)
-
-	-- A bit map logic
-	local should_enable_es = false
-	if StormFox.Ent.light_environments then -- No need for ES, unless small map or singleplayer.
-		local mapsize = StormFox.Map.MaxSize() - StormFox.Map.MinSize()
-		if mapsize:Length() < 20000 or not game.IsDedicated() then
-			should_enable_es = true
+	local Started_up,d = false
+	hook.Add("StormFox.PostEntityScan", "StormFox.LMap.Apply", function()
+		Started_up = true
+		if d then
+			StormFox.Map.SetLight( d[1], d[2] )
 		end
-	else
-		should_enable_es = true
-		if v == 0 then
-			StormFox.Warning("Map doesn't have light_environment. It is required to have sf_extra_lightsupport on 1 for lightsupport.")
-		end
-	end
-
-	-- Light breaks if we use 'a'. Because light is multiplied and 0 breaks all others.
-	local function convertTo( nNum )
-		local byte = math.Round(6 * nNum / 25 + 98)
-		return string.char(byte)
-	end
-	local function convertFrom( char )
-		local byte = string.byte( char )
-		return (byte - 98) * 25 / 6
-	end
-	local lastLight, lastUpdate
-	local nextUpdate,nextFull
-	local function SetLight( nAmount, bFull )
-		local nChar = convertTo( nAmount )
-		-- Only change if the light amount changes
-		if lastLight and nChar == lastLight then return end
-		-- Only do full updates between 3 chars or more. (Or if it is full dark/bright)
-		if nChar ~= "b" and nChar ~= "z" then
-			bFull = true
-		elseif lastLight then
-			bFull = math.abs(string.byte(lastLight) - string.byte(nChar)) > 2
-		end
-		-- Buffer. We don't want to spam the clients.
-		local updateRate = StormFox.Setting.Get("maplight_updaterate",10)
-		if lastUpdate and lastUpdate + updateRate > CurTime() then
-			nextUpdate = nAmount
-			nextFull = nFull
+	end)
+	function StormFox.Map.SetLight( f, ignore_lightstyle )
+		f = math.Clamp(f, 0, 100)
+		if not Started_up then -- We need PostEntityScan before setting the light
+			d = {f, ignore_lightstyle}
 			return
 		end
-		hook.Run("stormfox.lightsystem.new", nAmount)
-		lastLight = nChar
-		lastUpdate = CurTime()
-		LightAmount = nAmount
-		-- Engine lightstyle
-		local n = StormFox.Setting.Get("extra_lightsupport",-1)
-		if n > 0 or (n < 0 and should_enable_es) then
-			engine.LightStyle(0,nChar)
+		local r_char = convertToFull(f)
+		local char = convertTo( f )
+		last_f = f
+		if last_char and last_char == r_char then return end
+		last_char = r_char
+		hook.Run("stormfox.lightsystem.new", f)
+		-- 2D Skybox
+		local str = StormFox.Setting.GetCache("overwrite_2dskybox","")
+		local use_2d = StormFox.Setting.GetCache("use_2dskybox",false)
+		if (str ~= "" or use_2d) and str ~= "painted" then
+			StormFox.Map.Set2DSkyBoxDarkness( f * 0.009 + 0.1 )
 		end
-		-- light_env
-		for _,light in ipairs(StormFox.Ent.light_environments or {}) do
-			light:Fire("FadeToPattern", nChar ,0)
-			if nChar == "b" then
-				light:Fire("TurnOff","",0)
-			else
-				light:Fire("TurnOn","",0)
+
+		local smooth = StormFox.Setting.GetCache("maplight_smooth",game.SinglePlayer()) -- light_environments
+		local n = StormFox.Setting.GetCache("extra_lightsupport",-1)					-- LightStyle
+		if StormFox.Ent.light_environments and smooth then
+			for _,light in ipairs(StormFox.Ent.light_environments) do	-- Doesn't lag
+				light:Fire("FadeToPattern", r_char ,0)
+				if r_char == "a" then
+					light:Fire("TurnOff","",0)
+				else
+					light:Fire("TurnOn","",0)
+				end
+				light:Activate()
 			end
-			light:Activate()
+		elseif n <= -1 then -- Auto. Enable lightsupport when no light_env is found
+			n = 1
 		end
-		net.Start("stormfox.maplight")
-			net.WriteBool( bFull or false )
-			net.WriteUInt(nAmount, 7)
-		net.Broadcast()
+		if n > 0 and not ignore_lightstyle then -- "Laggy" light_env
+			engine.LightStyle(0,char)
+			net.Start("stormfox.maplight")
+				net.WriteUInt(string.byte(char), 7)
+			net.Broadcast()
+		end
 	end
-	StormFox.Map.SetLight = SetLight
+else
+	function StormFox.Map.SetLight( f )
+		hook.Run("stormfox.lightsystem.new", f)
+		last_char = convertTo( f )
+		last_f = f
+	end
+	local last_sv
+	-- Server tells the client to update lightmaps
+	net.Receive("stormfox.maplight", function(len)
+		local c_var = net.ReadUInt(7)
+		if last_sv and last_sv == c_var then return end -- No need
+		last_sv = c_var
+		timer.Simple(1, function()
+			render.RedownloadAllLightmaps( true, true )
+		end)
+	end)
+	-- Give it 30 seconds, then update the lightmaps
+	timer.Simple(30, function()
+		if last_sv then return end
+		render.RedownloadAllLightmaps(true, true)
+	end)
+end
+function StormFox.Map.GetLightChar()
+	return last_char or 'u'
+end
+function StormFox.Map.GetLight()
+	return last_f or 80
+end
+
+--[[ Lerp light
+	People complain if we use lightStyle too much (Even with settings), so I've removed lerp from maps without light_environment.
+]]
+if SERVER then
+	local t = {}
+	local lerp_to
+	function StormFox.Map.SetLightLerp(f, nLerpTime, ignore_lightstyle )
+		if last_f == f then return end -- No need to update
+		if lerp_to and lerp_to == f then return end -- Already lerping
+		-- If there isn't a smooth-option, don't use lerp.
+		local smooth = StormFox.Setting.GetCache("maplight_smooth",true)
+		if not StormFox.Ent.light_environments or not smooth or not last_f then
+			StormFox.Map.SetLight( f, ignore_lightstyle )
+			return
+		end
+		-- Check to see if we we can lerp.
+		local delta = last_f - f
+		if nLerpTime <= 5 or not last_f or math.abs(delta) < 3.7 then -- No need to lerp
+			StormFox.Map.SetLight( f, ignore_lightstyle )
+			return
+		end
+		-- Start lerping ..
+		-- We make a time-list of said values. Where the last will trigger light_style (If enabled)
+		lerp_to = f
+		local ticks = math.floor( math.max(nLerpTime / 5, StormFox.Setting.GetCache("maplight_updaterate", 3)) ) -- How many times should the light update?
+		local c = CurTime()
+		t = {}
+		local n = delta / ticks
+		for i = 2, ticks do
+			table.insert(t, {c + (i - 1) * 5, last_f - n * i, ignore_lightstyle})
+		end
+		StormFox.Map.SetLight( last_f + n, true )
+	end
 	timer.Create("stormfox.lightupdate", 1, 0, function()
-		if not nextUpdate or not lastUpdate then return end
-		-- Wait until we can update it again
-		local updateRate = StormFox.Setting.Get("maplight_updaterate",10)
-		if lastUpdate + updateRate > CurTime() then return end
-		-- Try again
-		local n = nextUpdate
-		local n2 = nextFull
-		nextUpdate = nil
-		nextFull = nil
-		SetLight( n, n2 )
+		if #t <= 0 then return end
+		if t[1][1] > CurTime() then return end -- Wait
+		local v = table.remove(t, 1)
+		StormFox.Map.SetLight( v[2], v[3] and #t ~= 0 ) -- Set the light, and lightsystel if last.
 	end)
 
-	hook.Add("stormfox.weather.postchange", "stormfox.weather.setlight", function( sName )
+	-- Control light
+	hook.Add("stormfox.weather.postchange", "stormfox.weather.setlight", function( sName ,nPercentage, nDelta )
+		local night,day = StormFox.Data.GetFinal("mapNightLight", 0), StormFox.Data.GetFinal("mapDayLight",100)					-- Maplight
+		local minlight,maxlight = StormFox.Setting.GetCache("maplight_min",0),StormFox.Setting.GetCache("maplight_max",80) 	-- Settings
+		local smooth = StormFox.Setting.GetCache("maplight_smooth",game.SinglePlayer())
+
+		-- Calc maplight
+		local stamp, mapLight = StormFox.Sky.GetLastStamp()
+		local b_i = false
+		if stamp >= SF_SKY_NAUTICAL then
+			mapLight = night
+		elseif stamp <= SF_SKY_DAY then
+			mapLight = day
+		else
+			local delta = math.abs( SF_SKY_DAY - SF_SKY_NAUTICAL )
+			local f = StormFox.Sky.GetLastStamp() / delta
+			if smooth and false then
+				mapLight = Lerp(f, day, night)
+				b_i = true
+			elseif f <= 0.5 then
+				mapLight = day
+			else
+				mapLight = night
+			end
+		end
+		-- Apply settings
+		local newLight = minlight + mapLight * (maxlight - minlight) / 100
+		StormFox.Map.SetLightLerp(newLight, nDelta, b_i )
+	end)
+
+else -- Fake darkness. Since some maps are bright
+
+	hook.Add("stormfox.weather.postchange", "stormfox.weather.setlight", function( sName ,nPercentage, nDelta )
 		local night,day = StormFox.Data.GetFinal("mapNightLight", 0), StormFox.Data.GetFinal("mapDayLight",100)					-- Maplight
 		local minlight,maxlight = StormFox.Setting.GetCache("maplight_min",0),StormFox.Setting.GetCache("maplight_max",80) 	-- Settings
 		local smooth = StormFox.Setting.GetCache("maplight_smooth",game.SinglePlayer())
@@ -126,7 +198,7 @@ if SERVER then
 		else
 			local delta = math.abs( SF_SKY_DAY - SF_SKY_NAUTICAL )
 			local f = StormFox.Sky.GetLastStamp() / delta
-			if smooth then
+			if smooth and false then
 				mapLight = Lerp(f, day, night)
 			elseif f <= 0.5 then
 				mapLight = day
@@ -135,35 +207,9 @@ if SERVER then
 			end
 		end
 		-- Apply settings
-		local newLight = minlight + mapLight * (maxlight - minlight) / 100
-		SetLight(newLight)
+		StormFox.Map.SetLight( minlight + mapLight * (maxlight - minlight) / 100 )
 	end)
-
-	hook.Add("stormFox.data.initspawn", "stormfox.weather.lightinit", function(ply)
-		net.Start("stormfox.maplight")
-			net.WriteBool( true )
-			net.WriteUInt(LightAmount, 7)
-		net.Send(ply)
-	end)
-else
-	local lastRedownload
-	local function Redownload( nAmount, nFull )
-		-- Just in case
-		if lastRedownload and lastRedownload == nAmount then return end
-		lastRedownload = nAmount
-		LightAmount = nAmount
-		render.RedownloadAllLightmaps( nFull )
-	end
-	local nAmount, nFull
-	net.Receive("stormfox.maplight", function(len)
-		nFull = net.ReadBool()
-		nAmount = net.ReadUInt(7)
-		timer.Simple(1, function()
-			print("Redownload",nAmount, nFull)
-			Redownload(nAmount, nFull)
-		end)
-	end)
-	-- Fake darkness. Since some maps are bright
+	
 	local function exp(n)
 		return n * n
 	end
@@ -186,12 +232,11 @@ else
 		render.PopRenderTarget()
 		mat_screen:SetTexture( "$basetexture", texMM )
 	end
-	LightAmount = 0
 	local fade = 0
 	hook.Add("RenderScreenspaceEffects","StormFox.Light.MapMat",function()
 		-- How old is the GPU!?
 		if not render.SupportsPixelShaders_2_0() then return end
-		local a = 1 - LightAmount
+		local a = 1 - StormFox.Map.GetLight()
 		if a <= 0 then -- Too bright
 			fade = 0
 			return
@@ -238,8 +283,4 @@ else
 		render.DrawScreenQuadEx(0,0,w,h)
 		render.OverrideBlend( false )
 	end)
-end
-
-function StormFox.Map.GetLight()
-	return LightAmount or 80
 end
