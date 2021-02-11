@@ -56,6 +56,10 @@ if CLIENT then
 	Returns the current viewentity
 	---------------------------------------------------------------------------]]
 	function StormFox.util.ViewEntity()
-		return LocalPlayer():GetViewEntity() or LocalPlayer()
+		local p = LocalPlayer():GetViewEntity() or LocalPlayer()
+		if p.GetVehicle and p == LocalPlayer() then
+			p = p:GetVehicle() or p
+		end
+		return p
 	end
 end
