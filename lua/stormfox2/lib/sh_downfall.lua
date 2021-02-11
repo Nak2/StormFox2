@@ -258,7 +258,7 @@ do
 			local yaw = rad(view.ang.y + deg)
 			local offset = v_pos + Vector(cos(yaw),sin(yaw)) * nDis
 			local pos, n, hitNorm = StormFox.DownFall.CheckDrop( offset, vNorm, nSize)
-			if pos and n > -2 and pos:DistToSqr(v_pos) < 11009851 then
+			if pos and n > -2 and pos:DistToSqr(v_pos) < 11000000 then -- TODO: Why does this happen? Position shouldn't be that waaaay away.
 				local bRandomAge = not ignoreVel and nDis > nMaxDistance - v_vel:Length2D()
 				return pos,n,offset, hitNorm, bRandomAge
 			end
@@ -456,25 +456,7 @@ if CLIENT then
 	-- Moves and kills the particles
 	local t_sfp = {}
 	local e_check = 0
-	local pause = false
-	hook.Add("OnPlayerChat", "D", function(_,str)
-		pause = !pause
-	end)
-	function GETPART(pos, dis)
-		local t = {}
-		for k,v in ipairs( t_sfp ) do
-			local part = v[2]
-			if part:GetPos():Distance(pos) <= dis then
-				table.insert(t, {k,part})
-			end
-		end
-		return t
-	end
-	function GETPARTI(i)
-		return t_sfp[i]
-	end
 	local function ParticleTick()
-		if pause then return end
 		if #t_sfp < 1 then return end
 		if e_check > #t_sfp then
 			e_check = 0
@@ -581,7 +563,7 @@ if CLIENT then
 		local vEnd, nHitType, vCenter, hitNorm, bRandomAge = StormFox.DownFall.CalculateDrop( nDistance, traceSize, 1, vNorm, tTemplate.bFollow, nMaxDistance )
 		-- pos,n,offset, hitNorm
 		if not vEnd then 
-			if tTemplate.m_cache then
+			if tTemplate.m_cache and tTemplate.m_cache > 0 then
 				local t = table.remove(tTemplate.m_cache, 1)
 				vEnd = t[1]
 				nHitType = t[2]
