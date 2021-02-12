@@ -4,8 +4,11 @@
 if not StormFox.Misc then StormFox.Misc = {} end
 local m_snow = Material("particle/snow")
 local m_snow_multi = Material("stormfox2/effects/snow-multi.png")
+local m_rain = Material("stormfox2/effects/raindrop.png")
+local m_rain_multi = Material("particle/particle_smokegrenade")
 local rainsplash_w = Material("effects/splashwake3")
 local rainsplash = Material("effects/splash4")
+local m_noise = Material("particle/particle_noisesphere")
 
 -- Hit particles
 local function MakeRing( vPos, vNormal, L )
@@ -17,14 +20,15 @@ local function MakeRing( vPos, vNormal, L )
 		p:SetEndAlpha(0)
 		p:SetStartAlpha(math.min(255,5 + math.random(7,10) + L))
 end
-local function MakeSplash( vPos, vNormal, L )
+local function MakeSplash( vPos, vNormal, L, Part )
 	local p = StormFox.DownFall.AddParticle( rainsplash, vPos, false )
 		p:SetAngles(vNormal:Angle())
 		p:SetStartSize(4)
-		p:SetEndSize(7)
+		local _,s = Part:GetSize()
+		p:SetEndSize(s / 3)
 		p:SetDieTime(0.2)
 		p:SetEndAlpha(0)
-		p:SetStartAlpha(math.min(255, 10 + L))
+		p:SetStartAlpha(math.min(105, 10 + L))
 end
 local function MakeSnowflake( vPos, vNormal, L, Part )
 	local p = StormFox.DownFall.AddParticle( m_snow, vPos - vNormal, false )
@@ -46,6 +50,9 @@ local init = function()
 	StormFox.Misc.snow_template = snow_template
 	StormFox.Misc.snow_template_multi = snow_template_multi
 	
+	--rain_template_multi
+	rain_template_multi:SetFadeIn( true )
+
 	snow_template:SetRandomAngle(0.4)
 	snow_template:SetSpeed( 1 * 0.15)
 	snow_template:SetSize(5,5)
@@ -87,18 +94,21 @@ local init = function()
 			MakeSnowflake( vPos, vNormal, L, zPart )
 		end
 	end
-	function rain_template:OnHit( vPos, vNormal, nHitType )
+	function rain_template:OnHit( vPos, vNormal, nHitType, zPart )
 		if math.random(3) > 1 then return end -- 33% chance to spawn a splash
 		local L = StormFox.Weather.GetLuminance() - 10
 		if nHitType == SF_DOWNFALL_HIT_WATER then
 			MakeRing( vPos, vNormal, L )
 		elseif nHitType == SF_DOWNFALL_HIT_GLASS then
-			MakeSplash( vPos, vNormal, L )
+			MakeSplash( vPos, vNormal, L, zPart )
 		else -- if nHitType == SF_DOWNFALL_HIT_GROUND then
-			MakeSplash( vPos, vNormal, L )
+			MakeSplash( vPos, vNormal, L, zPart )
 		end
 	end
+
 end
 
 hook.Add("stormfox2.postlib", "stormfox2.loadParticles", init)
-init()
+if StormFox.DownFall and StormFox.DownFall.CreateTemplate then
+	init()
+end

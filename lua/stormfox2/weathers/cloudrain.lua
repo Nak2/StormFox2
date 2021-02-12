@@ -282,42 +282,35 @@ if CLIENT then
 		rain_roof_wood:SetVolume( P * 0.3 * TP )
 		rain_roof_metal:SetVolume( P * 1 * TP )
 		rain_glass:SetVolume( P * 0.5 * TP )
-
-		-- Update rain (Only if it isn't snowing)
-		if T > -3 then
-			
-			local s = 1.22 + 1.56 * P
-			local speed = 0.72 + 0.26 * P
-			rain_template:SetSpeed( speed ) 
-			rain_template:SetSize( s , 5.22 + 7.56 * P)
-			rain_template:SetAlpha(math.min(45 + 15 * P + L,255))
-			if P > 0.15 then
-				rain_template_multi:SetSpeed( speed * 1.2 ) 
-				rain_template_multi:SetSize( 40 + 50 * P, 600 + 1200 * P )
-				rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255))
-			end
-		else
-			local speed = 0.15 + 0.16 * P
-		--	snow_template:SetSpeed( speed ) 
-		end
 	end
 	-- Gets called every tick to add rain.
-	local multi_dis = 900
+	local multi_dis = 1200
 	function rain.Think()
 		local P = StormFox.Weather.GetProcent()
+		local L = StormFox.Weather.GetLuminance()
 		if StormFox.DownFall.GetGravity() < 0 then return end -- Rain can't come from the ground.
 		local T = StormFox.Temperature.Get() + 2
-		if T > math.random(-3, 0) then -- Spawn rain particles
+		if T > 0 or T > math.random(-3, 0) then -- Spawn rain particles
+			-- Set alpha
+			local s = 1.22 + 1.56 * P
+			local speed = 0.72 + 0.26 * P
+			StormFox.Misc.rain_template:SetSize( s , 5.22 + 7.56 * P)
+			StormFox.Misc.rain_template:SetSpeed( speed )
+			StormFox.Misc.rain_template:SetAlpha(math.min(15 + 4 * P + L,255))
 			-- Spawn rain particles
-			for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template, 500, math.random(10,500), 100 + P * 800, 5, vNorm ) or {} ) do
+			for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template, 500, math.random(10,500), 100 + P * 900, 5, vNorm ) or {} ) do
 				v:SetSize(  1.22 + 1.56 * P * math.Rand(1,2), 5.22 + 7.56 * P )
 			end
 			-- Spawn distant rain
 			if P > 0.15 then
-				local r_w = math.Rand(1,2)
-				local r_part_multis = StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template_multi, 700, math.random(500,700), P * 100 , 50 * r_w, vNorm )
-				for i = 1, #r_part_multis do
-					r_part_multis[i]:SetSize( 80 + 50 * P * r_w , 40 + 50 * P )
+				StormFox.Misc.rain_template_multi:SetSpeed( speed * 1.5 ) 
+				StormFox.Misc.rain_template_multi:SetSize( 40 + 50 * P, 600 + 200 * P )
+				StormFox.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * .2)
+				local dis = math.random(900,multi_dis)
+				local d = math.max(dis / multi_dis, 0.5)
+				local s = math.Rand(0.5,1) * math.max(0.7,P) * 300 * d
+				for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template_multi, multi_dis, dis, 90 + P * 250, s, vNorm ) or {} ) do
+					v:SetSize(  s, s * math.random(1,1.5) )
 				end
 			end
 		else
@@ -332,10 +325,10 @@ if CLIENT then
 			end
 			-- Spawn snow distant
 			if P > 0.15 then
-				local dis = math.random(300,multi_dis)
-				local d = math.max(dis / multi_dis, 0.5)
+				local dis = math.random(300,900)
+				local d = math.max(dis / 900, 0.5)
 				local s = math.Rand(0.5,1) * math.max(0.7,P) * 500 * d
-				for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.snow_template_multi, multi_dis, dis, 90 + P * 250, s, vNorm ) or {} ) do
+				for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.snow_template_multi, 900, dis, 90 + P * 250, s, vNorm ) or {} ) do
 					v:SetSize(  s, s * math.random(1,1.5) )
 					v:SetSpeed( math.Rand(1, 2) * 0.50 * d)
 					v:SetRoll( math.Rand(0, 360))

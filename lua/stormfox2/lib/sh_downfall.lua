@@ -290,6 +290,9 @@ if CLIENT then
 	AccessorFunc(pt_meta, "i_G", "IgnoreGravity")
 	-- Sets the alpha
 	function pt_meta:SetAlpha( nAlpha )
+		if self.c == color_white then
+			self.c = Color(255,255,255)
+		end
 		self.c.a = nAlpha
 	end
 	function pt_meta:GetAlpha()
@@ -425,10 +428,10 @@ if CLIENT then
 		end
 		local c = self.c
 		if self._renh and self._bFIn and self._renh < 0.5 then -- We're fading out
-			self.cL = Color(c.r, c.g, c.b, self._renh * 510)
+			self.cL = Color(c.r, c.g, c.b, self._renh * 2 * c.a)
 		elseif self._bFIn and (self._bFInA or 0) < 1 then -- We're fading in
 			self._bFInA = math.min((self._bFInA or 0) + FrameTime(), 1)
-			self.cL = Color(c.r, c.g, c.b, self._bFInA * 255)
+			self.cL = Color(c.r, c.g, c.b, self._bFInA * c.a)
 		end
 		render.SetMaterial(self.iMat)
 		if self.bBeam then
@@ -563,7 +566,7 @@ if CLIENT then
 		local vEnd, nHitType, vCenter, hitNorm, bRandomAge = StormFox.DownFall.CalculateDrop( nDistance, traceSize, 1, vNorm, tTemplate.bFollow, nMaxDistance )
 		-- pos,n,offset, hitNorm
 		if not vEnd then 
-			if tTemplate.m_cache and tTemplate.m_cache > 0 then
+			if tTemplate.m_cache and #tTemplate.m_cache > 0 then
 				local t = table.remove(tTemplate.m_cache, 1)
 				vEnd = t[1]
 				nHitType = t[2]
