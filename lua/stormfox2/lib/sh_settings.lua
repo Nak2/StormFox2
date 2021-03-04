@@ -14,7 +14,6 @@ local callback_func = {}
 local callBack = function(sName,oldvar,newvar)
 	local sName = string.match(sName,"sf_(.+)")
 	if not sName or not settings[sName] or not callback_func[sName] then return end
-
 	-- Convert newvar
 		local vVar
 		if settings[sName] == "number" then
@@ -117,6 +116,7 @@ end
 --[[<Shared>-----------------------------------------------------------------
 Returns a setting and will try to convert to the given defaultvar type.
 ---------------------------------------------------------------------------]]
+local w_list = {"float","int","vector","angle","bool","string","entity"}
 function StormFox.Setting.Get(sName,vDefaultVar)
 	local con = GetConVar("sf_" .. sName)
 	if not con then return vDefaultVar end
@@ -127,7 +127,14 @@ function StormFox.Setting.Get(sName,vDefaultVar)
 	elseif settings[sName] == "boolean" then
 		return con:GetString() == "1"
 	else
-		return util.StringToType(con:GetString(),settings[sName])
+		local st = (settings[sName] or type(vDefaultVar) or vDefaultVar):lower()
+		if st == "boolean" then st = "bool"
+		elseif st == "number" then st = "float" end
+		if table.HasValue(w_list, st) then
+			return util.StringToType(con:GetString(),st)
+		else
+			return con:GetString()
+		end
 	end
 end
 --[[<Shared>-----------------------------------------------------------------
