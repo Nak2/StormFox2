@@ -89,8 +89,6 @@ end
 	clear:Set("starSpeed", 0.001)
 	clear:Set("starScale", 2.2)
 	clear:Set("starTexture", "skybox/starfield")
-	clear:Set("gauge",0)
-	clear:Set("gaugeColor", Color(255,255,255))
 	clear:Set("enableThunder") 	-- Tells the generator that this weather_type can't have thunder.
 
 -- 2D skyboxes
@@ -102,7 +100,7 @@ if SERVER then
 	t_night = {"sky_day01_09", "sky_black_nofog"}
 
 	-- IF CSGO
-	if StormFox.Setting.Get("csgo_2dskybox") then
+	if StormFox.Setting.Get("csgo_2dskybox", false) then
 		table.insert(t_night, "sky_csgo_night_flat")
 		table.insert(t_day, "vertigoblue_hdr")
 	end

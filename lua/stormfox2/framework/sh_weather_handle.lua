@@ -38,7 +38,7 @@ local function Blender(nFraction, vFrom, vTo) -- Will it blend?
 	return vFrom
 end
 
-local function IsSame(sName, nPercentage)
+local function IsSame(sName, nPercentage, nDelta)
 	if CurrentPercent ~= nPercentage then return false end
 	if not CurrentWeather then return false end
 	return CurrentWeather.Name == sName
@@ -106,20 +106,39 @@ function StormFox.Weather.GetCurrent()
 end
 
 function StormFox.Weather.GetProcent()
+	return StormFox.Data.Get("w_Percentage",CurrentPercent) 
+end
+
+function StormFox.Weather.GetFinishProcent()
 	return CurrentPercent
 end
 
 if SERVER then
 	util.AddNetworkString("stormfox.weather")
+	local l_data
 	function StormFox.Weather.Set( sName, nPercentage, nDelta )
-		if IsSame(sName, nPercentage) then return false end
+		if nDelta and l_data and nDelta == l_data then
+			if IsSame(sName, nPercentage) then return false end
+		end
+		l_data = nDelta
+		-- Default vals
 		if not nDelta then
 			nDelta = 4
 		end
-		if not nPercentage then nPercentage = 1 end
+		if not nPercentage then 
+			nPercentage = 1
+		end
+		-- Unknown weathers gets replaced with 'Clear'
 		if not StormFox.Weather.Get( sName ) then
 			StormFox.Warning("Unknown weather: " .. tostring(sName))
 			sName = "Clear"
+		end
+		-- In case we set the weather to clear, change it so it is the current weather at 0 instead
+		if sName == "Clear" and CurrentWeather and nDelta > 0 then
+			nPercentage = 0
+			sName = CurrentWeather.Name
+		elseif sName == "Clear" then
+			nPercentage = 1
 		end
 		lastSet = CurTime()
 		net.Start("stormfox.weather")
@@ -129,6 +148,10 @@ if SERVER then
 			net.WriteString(sName)
 		net.Broadcast()
 		ApplyWeather(sName, nPercentage, nDelta)
+		if sName == "Clear" then
+			nPercentage = 0
+		end
+		StormFox.Data.Set("w_Percentage",nPercentage,nDelta)
 		return true
 	end
 	net.Receive("stormfox.weather", function(len, ply) -- OI, what weather?
@@ -159,6 +182,13 @@ if SERVER then
 			end
 		end
 	end)
+	-- Clear up weather when it reaches 0
+	timer.Create("stormfox.weather.clear",1,0,function()
+		local p = StormFox.Weather.GetProcent()
+		if p <= 0 then
+			StormFox.Weather.Set("Clear", 1, 0)
+		end
+	end)
 else
 	net.Receive("stormfox.weather", function(len)
 		local lastSet = net.ReadUInt(32)
@@ -168,6 +198,10 @@ else
 		-- Calculate the time since server set this
 		local n_delta = CurTime() - lastSet
 		ApplyWeather(sName, nPercentage, nDelta - n_delta)
+		if sName == "Clear" then
+			nPercentage = 0
+		end
+		StormFox.Data.Set("w_Percentage",nPercentage,nDelta)
 	end)
 	-- Ask the server what weather we have
 	hook.Add("stormfox.InitPostEntity", "stormfox.terrain", function()
@@ -182,10 +216,16 @@ hook.Add("Think", "stormfox.Weather.Think", function()
 	CurrentWeather.Think()
 end)
 
-timer.Create("stormfox.Weather.tick10", 10, 0, function()
+timer.Create("stormfox.Weather.tickslow", 1, 0, function()
 	if not CurrentWeather then return end
-	if not CurrentWeather.Tick10 then return end
-	CurrentWeather.Tick10()
+	if not CurrentWeather.TickSlow then return end
+	CurrentWeather.TickSlow()
+end)
+
+hook.Add("stormfox.weather.postchange", "stormfox.weather.slowtickinit", function()
+	if not CurrentWeather then return end
+	if not CurrentWeather.TickSlow then return end
+	CurrentWeather.TickSlow()
 end)
 
 if CLIENT then
