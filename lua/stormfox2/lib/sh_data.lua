@@ -119,7 +119,7 @@ end
 -- Sets data. Will lerp if given delta.
 function StormFox.Data.Set( sKey, zVar, nDelta )
 	-- Check if vars are the same
-	if StormFox_DATA[sKey] ~= nil then
+	if StormFox_DATA[sKey] ~= nil and not StormFox_AIMDATA[sKey] then
 		if StormFox_DATA[sKey] == zVar then return end
 	end
 	-- Delete old cache
