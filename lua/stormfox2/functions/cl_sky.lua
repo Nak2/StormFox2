@@ -63,14 +63,22 @@ We overwrite the sky variables. Its much better to handle it clientside.
 		if not StormFox.Time then return end
 		if not StormFox.Mixer then return end
 		-- Top color + Thunder
+			local fogAm
+			if StormFox.Fog then
+				fogAm = StormFox.Fog.GetZAmount()
+			end
 			local thunder = 0
 			if StormFox.Thunder then
 				thunder = min(255,StormFox.Thunder.GetSkyLight() or 0)
 			end
 			local t_data = StormFox.Mixer.Get("topColor") or Color( 51, 127.5, 255 )
 			local t_color = Color(max(thunder,t_data.r),max(thunder,t_data.g),max(thunder,t_data.b))
+			local b_color = StormFox.Mixer.Get("bottomColor") or Color(204, 255, 255)
+			if fogAm and fogAm > 0.75 then
+				t_color = StormFox.Mixer.Blender((fogAm - .75) * 3, t_color, StormFox.Fog.GetColor())
+			end
 			g_SkyPaint:SetTopColor(ColVec(t_color,255))
-			g_SkyPaint:SetBottomColor(ColVec(StormFox.Mixer.Get("bottomColor") or Color(204, 255, 255),255))
+			g_SkyPaint:SetBottomColor(ColVec(b_color,255))
 			g_SkyPaint:SetFadeBias(StormFox.Mixer.Get("fadeBias",0.2))
 			g_SkyPaint:SetDuskColor(ColVec(StormFox.Mixer.Get("duskColor",color_white) or color_white,255))
 			g_SkyPaint:SetDuskIntensity(StormFox.Mixer.Get("duskIntensity",1.94))
