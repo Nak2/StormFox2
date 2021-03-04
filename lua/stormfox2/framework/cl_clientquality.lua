@@ -6,6 +6,9 @@ StormFox.Setting.AddCL("quality_ultra",false)
 StormFox.Setting.AddCL("quality_target",144,nil,nil, 0, 300)
 
 local conDetect = 1
+local t_num = {1, 1, 1, 1, 1}
+local i = 1
+local q_num = 1
 -- Calculate the avageFPS for the client and make a value we can use.
 	local bi,buffer = 0,0
 	local avagefps = 1 / RealFrameTime()
@@ -24,6 +27,14 @@ local conDetect = 1
 			local delta_fps = avagefps - StormFox.Setting.GetCache("quality_target",144)
 			local delta = math.Clamp(delta_fps / 8,-3,3)
 			conDetect = math.Clamp(math.Round(conDetect + delta, 1),0,q and 20 or 7)
+			table.insert(t_num, conDetect)
+			table.remove(t_num, 1)
+
+			local a = 0
+			for _,v in ipairs( t_num ) do
+				a = a + v
+			end
+			q_num = (q_num + (a / #t_num)) / 2
 		end
 	end)
 --[[<Client>-----------------------------------------------------------------
@@ -34,5 +45,5 @@ function StormFox.Client.GetQualityNumber()
 	if not system.HasFocus() then
 		return 1, 1 / RealFrameTime()
 	end
-	return conDetect, avagefps
+	return q_num, avagefps
 end
