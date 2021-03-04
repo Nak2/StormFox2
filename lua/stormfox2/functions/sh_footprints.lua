@@ -20,6 +20,10 @@ local defaultSnowSnd = {
 	"stormfox/footstep/footstep_snow9.ogg"
 }
 
+if SERVER then
+	util.AddNetworkString("stormfox.feetfix")
+end
+
 -- We use this to cache the last foot for the players.
 	local lastFoot = {}
 	hook.Add("PlayerFootstep", "stormfox.lastfootprint", function(ply, pos, foot, sound, volume, filter, ...)
@@ -132,7 +136,9 @@ local defaultSnowSnd = {
 	end)
 	-- Singleplayer and entity fix
 	if CLIENT then
+		local cT = StormFox.Terrain.GetCurrent()
 		net.Receive("stormfox.feetfix",function()
+			if not cT then return end
 			local ent = net.ReadEntity()
 			if not IsValid(ent) then return end
 			local foot = net.ReadInt(2)
