@@ -49,12 +49,12 @@ local function GetVar( wWeather, sKey )
 	return Blender(nStampFraction, v1, v2)
 end
 
-function StormFox.Mixer.Get( sKey, zDefault )
+function StormFox.Mixer.Get( sKey, zDefault, cP )
 	if cache[sKey] ~= nil then return cache[sKey] end
 	if not StormFox.Weather then return zDefault end
 	local cW = StormFox.Weather.GetCurrent()
-	if not cW then return StormFox.Weather.Get( "Clear" ):Get(sKey, cStamp) or zDefault end
-	local cP = StormFox.Weather.GetProcent()
+	if not cW or cW.Name == "Clear" then return StormFox.Weather.Get( "Clear" ):Get(sKey, cStamp) or zDefault end
+	cP = cP or StormFox.Weather.GetProcent()
 	if cP >= 1 then
 		cache[sKey] = GetVar(cW, sKey)
 		return cache[sKey] or zDefault
@@ -65,6 +65,8 @@ function StormFox.Mixer.Get( sKey, zDefault )
 	cache[sKey] = Blender(cP, var1, var2)
 	return cache[sKey] or zDefault
 end
+
+StormFox.Mixer.Blender = Blender
 
 --[[t.Function = {}
 	t.Static = {}
