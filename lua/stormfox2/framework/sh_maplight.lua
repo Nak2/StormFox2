@@ -89,7 +89,7 @@ else
 		last_char = convertTo( f )
 		last_f = f
 	end
-	local last_sv
+	local last_sv,bSR
 	-- Server tells the client to update lightmaps
 	net.Receive("stormfox.maplight", function(len)
 		local c_var = net.ReadUInt(7)
@@ -101,8 +101,9 @@ else
 	end)
 	-- Give it 30 seconds, then update the lightmaps
 	timer.Simple(30, function()
-		if last_sv then return end
-		render.RedownloadAllLightmaps(true, true)
+		if last_sv or bSR then return end
+		bSR = true
+		--render.RedownloadAllLightmaps(true, true)
 	end)
 end
 function StormFox.Map.GetLightChar()
@@ -119,9 +120,12 @@ if SERVER then
 	local t = {}
 	local lerp_to
 	function StormFox.Map.SetLightLerp(f, nLerpTime, ignore_lightstyle )
-		if last_f == f then return end -- No need to update
+		print("MAPLIGHT",f, nLerpTime, ignore_lightstyle )
+		if last_f == f and not lerp_to then return end -- No need to update
 		if lerp_to and lerp_to == f then return end -- Already lerping
 		-- If there isn't a smooth-option, don't use lerp.
+		print("Accepted")
+		t = {}
 		local smooth = StormFox.Setting.GetCache("maplight_smooth",true)
 		if not StormFox.Ent.light_environments or not smooth or not last_f then
 			StormFox.Map.SetLight( f, ignore_lightstyle )
@@ -138,7 +142,6 @@ if SERVER then
 		lerp_to = f
 		local ticks = math.floor( math.max(nLerpTime / 5, StormFox.Setting.GetCache("maplight_updaterate", 3)) ) -- How many times should the light update?
 		local c = CurTime()
-		t = {}
 		local n = delta / ticks
 		for i = 2, ticks do
 			table.insert(t, {c + (i - 1) * 5, last_f - n * i, ignore_lightstyle})
@@ -157,7 +160,6 @@ if SERVER then
 		local night,day = StormFox.Data.GetFinal("mapNightLight", 0), StormFox.Data.GetFinal("mapDayLight",100)					-- Maplight
 		local minlight,maxlight = StormFox.Setting.GetCache("maplight_min",0),StormFox.Setting.GetCache("maplight_max",80) 	-- Settings
 		local smooth = StormFox.Setting.GetCache("maplight_smooth",game.SinglePlayer())
-
 		-- Calc maplight
 		local stamp, mapLight = StormFox.Sky.GetLastStamp()
 		local b_i = false
@@ -179,7 +181,7 @@ if SERVER then
 		end
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
-		StormFox.Map.SetLightLerp(newLight, nDelta, b_i )
+		StormFox.Map.SetLightLerp(newLight, nDelta or 0, b_i )
 	end)
 
 else -- Fake darkness. Since some maps are bright
