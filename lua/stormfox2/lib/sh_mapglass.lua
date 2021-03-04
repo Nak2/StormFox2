@@ -142,10 +142,10 @@ StormFox.Map = {}
 			t.filelen = f:ReadLong()
 			t.version = f:ReadLong()
 			t.fourCC = ReadBits(f,4)
-		else-- "People might decompile the maps before we release L4D2. What do we do?"
+		else-- "People might share the new maps for other games. What do we do?"
 			-- "Just switch up the lump data a bit. But only for L4D2. So nothing is compatible ..."
 			if isl4dmap == nil then
-				-- Check if it is a l4d map. The first lump is Entities, and there are always one map-entity.
+				-- Check if it is a l4d map. The first lump is Entities, and there are always at least one.
 				local fileofs = f:ReadLong() -- Version
 				local filelen = f:ReadLong() -- fileofs
 				local version = f:ReadLong() -- filelen
@@ -321,9 +321,9 @@ StormFox.Map = {}
 						if count > 16385 then
 							StormFox.Warning("Can't read the maps static props. [Crazy amount]")
 						else
-							for i = 1,count do
+							for i = 0, count - 1 do
 								-- This is to try and get as much valid data we can.
-								f:Seek(staticStart + staticSize * (i - 1))
+								f:Seek(staticStart + staticSize * i)
 								local t,sizeused = ReadStaticProp(f,staticprop_version,m, staticSize)
 								staticUsed = sizeused
 								table.insert(SF_BSPDATA.StaticProps,t)
