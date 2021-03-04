@@ -127,15 +127,25 @@ StormFox.Time = StormFox.Time or {}
 	--[[-------------------------------------------------------------------------
 	Returns a number between 0 and 1400. Where 0 and 1400 is midnight.
 	---------------------------------------------------------------------------]]
+	local c
 	function StormFox.Time.Get(bNearestSecond)
+		if not bNearestSecond and c then
+			return c
+		end
 		if TIME_SPEED <= 0 then
 			if bNearestSecond then return math.Round(BASETIME % 1440) end
+			c = BASETIME
 			return BASETIME
 		end
 		local n = (CurTime() - BASETIME) * TIME_SPEED
-		if bNearestSecond then return math.Round(n % 1440) end
-		return n % 1440
+		if bNearestSecond then
+			c = math.Round(n % 1440)
+			return c
+		end
+		c = n % 1440
+		return c
 	end
+	timer.Create("stormfox.time.cache", 0, 0, function() c = nil end)
 	--[[-------------------------------------------------------------------------
 	Returns the given or current time in a string format.
 	---------------------------------------------------------------------------]]
