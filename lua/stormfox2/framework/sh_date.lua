@@ -88,8 +88,7 @@ end
 -- Returns the date in string "day / month"
 
 local country = system.GetCountry() or "UK"
--- Wait, Sweden uses Month / Day?
-local crazy_countries = {"AS", "BT", "CN", "FM", "GU", "HU", "JP", "KP", "KR", "LT", "MH", "MN", "MP", "TW", "UM", "US", "VI", "SE"}
+local crazy_countries = {"AS", "BT", "CN", "FM", "GU", "HU", "JP", "KP", "KR", "LT", "MH", "MN", "MP", "TW", "UM", "US", "VI"}
 local default = table.HasValue(crazy_countries, country)
 if CLIENT then
 	StormFox.Setting.AddCL("use_monthday",default,"Display MM/DD instead of DD/MM.")
