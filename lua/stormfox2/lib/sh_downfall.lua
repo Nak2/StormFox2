@@ -2,7 +2,7 @@
 	downfall_meta:GetNextParticle()
 
 ---------------------------------------------------------------------------]]
-local max,min,t_insert = math.max,math.min,table.insert
+local max,min,t_insert,abs = math.max,math.min,table.insert,math.abs
 
 -- Particle emitters
 if CLIENT then
@@ -422,6 +422,13 @@ if CLIENT then
 	function p_meta:SetAge( f )
 		self.curlength = self.curlength * f
 	end
+	--
+	function p_meta:GetDistance()
+		if self._distance then
+			return self._distance
+		end
+		print("ERROR")
+	end
 	-- Sets the max-distance from view
 	function p_meta:SetMaxDistance( f )
 		self.mDis2Sqr = f ^ 2
@@ -454,6 +461,18 @@ if CLIENT then
 			render.DrawSprite(pos, self.w, self.h, self.c)
 		end
 	end
+	-- Checks the view
+	function p_meta:IsInsideView()
+		return self._iv == nil and true or self._iv
+	end
+
+	local function IVCheck( view, part )
+		local vN = (part:GetPos() - view.pos)
+		vN:Normalize()
+		local dot = vN:Dot(view.ang:Forward())
+		part._iv = dot > -( view.fov / 90 ) + 1
+	end
+
 	--[[
 		StormFox.DownFall.CreateTemplate(sMaterial, bBeam)
 		Creates a template. This particle-data is shared between all other particles that are made from this.
@@ -471,11 +490,12 @@ if CLIENT then
 		if e_check > #t_sfp then
 			e_check = 0
 		end
-		local view = StormFox.util.GetCalcView().pos
+		local view = StormFox.util.GetCalcView()
+		local viewp = view.pos
 		local v_vel = StormFox.util.ViewEntity():GetVelocity()
 		local v_l = max(v_vel.x,v_vel.y)
-			v_vel = v_vel / 4 + view
-		local z_view = view.z
+			v_vel = v_vel / 4 + viewp
+		local z_view = viewp.z
 		local fr = FrameTime() * 600 -- * game.GetTimeScale()
 		local die = {}
 		local gg = GLGravity() -- Global Gravity
@@ -493,6 +513,7 @@ if CLIENT then
 					die[#die + 1] = n
 					continue
 				end
+				IVCheck( view, part)
 			end
 			part.curlength = part.curlength - move * fr
 			-- Check if it dies
@@ -536,7 +557,9 @@ if CLIENT then
 		
 		for _,t in ipairs(t_sfp) do
 		--	render.DrawLine(t[2]:GetPos(), t[2].endpos, color_white, true)
-			t[2]:Render(view)
+			if t[2]:IsInsideView() then
+				t[2]:Render(view)
+			end
 		end
 	end
 
@@ -600,8 +623,9 @@ if CLIENT then
 		end
 		local part = StormFox.DownFall.AddTemplateSimple( tTemplate, vEnd, nHitType, hitNorm, nDistance, vNorm )
 		if not part then return false end
-		if bRandomAge then
-			part:SetAge( math.Rand(0.1, 1))
+		if bRandomAge or true then
+			local n = part.h / (part.r_H * 2)
+			part:SetAge( math.Rand(-n, 1))
 		end
 		if nMaxDistance then
 			part:SetMaxDistance( nMaxDistance + 50 )
@@ -619,6 +643,7 @@ if CLIENT then
 		return qt / 7
 	end
 
+	local sm_timer = 0.05
 	-- Returns the how many particles it should create pr 0.1 second
 	function StormFox.DownFall.CalcTemplateTimer( tTemplate, nAimAmount )
 		local speed = math.abs( tTemplate.g * GLGravity() ) * 600
@@ -628,7 +653,7 @@ if CLIENT then
 		--	print("SPEED", speed)
 		--  
 		local alive_time = tTemplate.r_H / speed -- How long would it be alive? (Only half the time, since players are usually are on the ground)
-		local a = nAimAmount / alive_time * .1
+		local a = nAimAmount / alive_time * sm_timer
 		return a * max_particles(), alive_time
 	end
 
@@ -639,7 +664,7 @@ if CLIENT then
 		local am = tTemplate:GetNumber()
 		if am >= nAimAmount then return emp_t end
 		if tTemplate.s_timer and tTemplate.s_timer > CurTime() then return emp_t end
-		tTemplate.s_timer = CurTime() + 0.1
+		tTemplate.s_timer = CurTime() + sm_timer
 		local b = math.min(1, am / nAimAmount) -- Full amount
 		local n,at = StormFox.DownFall.CalcTemplateTimer( tTemplate, nAimAmount  )-- How many times this need to run pr tick
 		local t = {}
@@ -650,6 +675,7 @@ if CLIENT then
 			end
 			local p = StormFox.DownFall.AddTemplate( tTemplate, nMaxDistance, _d, traceSize or 5, vNorm )
 			if p then
+				p._distance = _d
 				p:SetAge( 1 + math.Rand(0,at) )
 				t_insert(t, p) 
 			end
