@@ -450,4 +450,4 @@ function StormFox.OpenSVMenu2()
 	_SFMENU:MakePopup()
 end
 
-timer.Simple(1, StormFox.OpenSVMenu)
+concommand.Add('stormfox2_svmenu', StormFox.OpenSVMenu, nil, "Opens SF serverside menu")

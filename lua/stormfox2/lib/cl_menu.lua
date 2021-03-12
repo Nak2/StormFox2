@@ -147,4 +147,4 @@ function StormFox.OpenMenu()
 	_SFMENU:MakePopup()
 end
 
-timer.Simple(1, StormFox.OpenMenu)
+concommand.Add('stormfox2_menu', StormFox.OpenMenu, nil, "Opens SF clientside menu")
