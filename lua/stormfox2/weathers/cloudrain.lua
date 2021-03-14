@@ -69,7 +69,7 @@ end
 do
 	-- Day -- 
 		cloudy:SetSunStamp("topColor",Color(3.0, 2.9, 3.5),		SF_SKY_DAY)
-		cloudy:SetSunStamp("bottomColor",Color(42.9 * .5,44.4 * .5,45.6 * .5),	SF_SKY_DAY)
+		cloudy:SetSunStamp("bottomColor",Color(20, 25, 25),	SF_SKY_DAY)
 		cloudy:SetSunStamp("duskColor",Color(3, 2.9, 3.5),		SF_SKY_DAY)
 		cloudy:SetSunStamp("duskScale",1,						SF_SKY_DAY)
 		cloudy:SetSunStamp("HDRScale",0.33,						SF_SKY_DAY)
@@ -91,12 +91,14 @@ do
 	cloudy:Set("enableThunder",  true)
 
 	rain:Set("mapDayLight",0)
-	rain:SetSunStamp("fogEnd",800,SF_SKY_DAY)
-	rain:SetSunStamp("fogEnd",800,SF_SKY_SUNRISE)
-	rain:SetSunStamp("fogEnd",2000,SF_SKY_NIGHT)
-	rain:SetSunStamp("fogEnd",2000,SF_SKY_BLUE_HOUR)
-	rain:Set("fogDensity",1)
-	rain:Set("fogStart",0)
+	--rain:SetSunStamp("fogEnd",800,SF_SKY_DAY)
+	--rain:SetSunStamp("fogEnd",800,SF_SKY_SUNRISE)
+	--rain:SetSunStamp("fogEnd",2000,SF_SKY_NIGHT)
+	--rain:SetSunStamp("fogEnd",2000,SF_SKY_BLUE_HOUR)
+	--rain:Set("fogDensity",1)
+	--rain:Set("fogStart",0)
+	rain:Set("fogDistance", 2000)
+	rain:Set("fogIndoorDistance", 3000)
 	--rain:Set("fogColor", Color(135, 166, 175))
 end
 -- Window render
@@ -156,7 +158,7 @@ do
 		return StormFox.Temperature.Get() < -1 and snow or rain_t
 	end)
 
-	-- Make the snow stay, until temp is high.
+	-- Make the snow stay, until temp is high or it being replaced.
 	snow:LockUntil(function()
 		return StormFox.Temperature.Get() > -2
 	end)
@@ -257,7 +259,8 @@ if CLIENT then
 	rain_outside:SetFadeDistance(100, 200)
 	-- Materials
 	local m_rain = Material("stormfox2/raindrop.png")
-	local m_rain2 = Material("stormfox2/effects/raindrop2.png")
+	local m_rain2 = Material("stormfox2/effects/raindrop-multi2.png")
+	local m_rain3 = Material("stormfox2/effects/raindrop-multi3.png")
 	local m_rain_multi = Material("stormfox2/effects/snow-multi.png","noclamp smooth")
 	local m_snow = Material("particle/snow")
 	local m_snow1 = Material("stormfox2/effects/snowflake1.png")
@@ -275,9 +278,10 @@ if CLIENT then
 		local P = StormFox.Weather.GetProcent()
 		local L = StormFox.Weather.GetLuminance()
 		local T = StormFox.Temperature.Get() + 2
+		local TL = StormFox.Thunder.GetLight()
 		local TP = math.Clamp(T / 4,0,1)
 
-		rain_outside:SetVolume( P * 1.2 * TP )
+		rain_outside:SetVolume( P * 1 )
 		rain_light:SetVolume( P * TP )
 		rain_window:SetVolume( P * 0.3 * TP )
 		rain_roof_wood:SetVolume( P * 0.3 * TP )
@@ -287,7 +291,9 @@ if CLIENT then
 		local P = StormFox.Weather.GetProcent()
 		local speed = 0.72 + 0.36 * P
 		StormFox.Misc.rain_template:SetSpeed( speed )
-		StormFox.Misc.rain_template_multi:SetSpeed( speed * .45 ) 
+		StormFox.Misc.rain_template_medium:SetSpeed( speed )
+
+		
 	end
 	-- Gets called every tick to add rain.
 	local multi_dis = 1200
@@ -302,7 +308,9 @@ if CLIENT then
 			-- Set alpha
 			local s = 1.22 + 1.56 * P
 			StormFox.Misc.rain_template:SetSize( s , 5.22 + 7.56 * P)
+			StormFox.Misc.rain_template:SetColor(Color(150,150,150))
 			StormFox.Misc.rain_template:SetAlpha(math.min(15 + 4 * P + L,255))
+			StormFox.Misc.rain_template_medium:SetAlpha(math.min(15 + 4 * P + L,255)  /3)
 			-- Spawn rain particles
 			for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template, 10, 700, 10 + P * 900, 5, vNorm ) or {} ) do
 				v:SetSize(  1.22 + 1.56 * P * math.Rand(1,2), 5.22 + 7.56 * P )
@@ -311,17 +319,41 @@ if CLIENT then
 					--v:SetSize(  1.22 + 1.56 * P * math.Rand(1,2) * 10, 5.22 + 7.56 * P * 10 )
 				end
 			end
+
 			-- Spawn distant rain
 			if P > 0.15 then
+				for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template_medium, 250, 700, 10 + P * 500, 250, vNorm ) or {} ) do
+					local a = math.random(0,2)
+					if a > 0 then
+						if a > 1 then
+							v:SetMaterial( m_rain2 )
+						else
+							v:SetMaterial(m_rain3 )
+						end
+						v:SetSize(  250, 250 )
+						v:SetSpeed( v:GetSpeed() * math.Rand(1,2))
+					else
+						v:SetSize(  1.22 + 1.56 * P * math.Rand(1,3) * 10, 5.22 + 7.56 * P * 10 )
+					end
+					v:SetAlpha(math.min(15 + 4 * P + L,255) * 0.2)
+				--	v:SetMaterial( Material('color') )
+				--	v:SetAlpha(255)
+				end
+
 				local dis = math.random(900 - W * 100 - P * 500,multi_dis)
 				local d = math.max(dis / multi_dis, 0.5)
 				local s = math.Rand(0.5,1) * math.max(0.7,P) * 300 * d
 
-				StormFox.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * .2)
+				--StormFox.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * .2)
 
-				StormFox.Misc.rain_template_multi:SetSize( 150, 500 )
-				for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template_multi, dis, multi_dis, 90 + P * (250 + W), s, vNorm ) or {} ) do
-					v:SetSize(  150 * 1.5, 500 )
+				for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template_multi, dis, multi_dis * 2, (90 + P * (250 + W)) / 2, s, vNorm ) or {} ) do
+					local d = v:GetDistance()
+					if not d or d < 500 then 
+						v:SetSize(  225, 500 )
+					else
+						v:SetSize( d * .45, d)
+					end
+
 					if math.random(0,1) == 1 then
 						v:SetMaterial(m2)
 					end
@@ -332,7 +364,12 @@ if CLIENT then
 			local dis = math.random(40,500)
 			local d = math.min(dis / 500, 1)
 			local s = math.Rand(3,5) * d * math.max(0.7,P)
-			for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.snow_template, 500, dis, 200 + P * 600, 5, vNorm ) or {} ) do
+			StormFox.Misc.snow_template:SetSpeed( 1 * 0.15)
+			local n = math.max(math.min(L * 3, 255), 100)
+			local sC = Color(n,n,n)
+			StormFox.Misc.snow_template:SetColor(sC)
+			StormFox.Misc.snow_template_multi:SetColor(sC)
+			for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.snow_template, 500, dis, 400 + P * 4600, 5, vNorm ) or {} ) do
 				v:SetSize(  s, s )
 				v:SetSpeed( math.Rand(1, 2) * 0.15)
 			--	v:SetMaterial(Material("particle/warp3_warp_noz"))
@@ -342,7 +379,7 @@ if CLIENT then
 				local dis = math.random(300,900)
 				local d = math.max(dis / 900, 0.5)
 				local s = math.Rand(0.5,1) * math.max(0.7,P) * 500 * d
-				for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.snow_template_multi, 900, dis, 90 + P * 250, s, vNorm ) or {} ) do
+				for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.snow_template_multi, 900, dis, 190 + P * 550, s, vNorm ) or {} ) do
 					v:SetSize(  s, s * math.random(1,1.5) )
 					v:SetSpeed( math.Rand(1, 2) * 0.50 * d)
 					v:SetRoll( math.Rand(0, 360))
@@ -350,6 +387,18 @@ if CLIENT then
 						v:SetMaterial(m_snowmulti2)
 					end
 				--	v:SetMaterial(Material("particle/warp3_warp_noz"))
+				end
+			end
+			for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template_medium, dis * 2, multi_dis * 2 , (90 + P * (20 + W)) / 2, s, vNorm ) or {} ) do
+				local d = v:GetDistance()
+				if not d or d < 500 then 
+					v:SetSize(  225, 500 )
+				else
+					v:SetSize( d * .45, d)
+				end
+
+				if math.random(0,1) >= 0 then
+					v:SetMaterial(m2)
 				end
 			end
 		end

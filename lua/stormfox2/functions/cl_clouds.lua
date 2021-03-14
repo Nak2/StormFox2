@@ -224,8 +224,9 @@ hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function(eye)
 		-- Update material-color
 		local c = StormFox.Mixer.Get("bottomColor") or Color(204, 255, 255)
 		-- Render sideclouds
-		for _,v in ipairs(side_clouds) do
-			v[1]:SetVector("$color",Vector(c.r,c.g,c.b) / 255)
+		local vec = Vector(c.r,c.g,c.b) / 255
+		for k,v in ipairs(side_clouds) do
+			v[1]:SetVector("$color",vec)
 		end
 		local cloud_speed = StormFox.Time.GetSpeed() * 0.1
 		local sideclouds = 10 * cl_amd
@@ -243,10 +244,17 @@ hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function(eye)
 		-- Render top clouds
 		local up = Vector(0,0,1)
 		local n = max(0,min(math.ceil(layers * cl_amd),layers))
+		local thunder = 0
+		if StormFox.Thunder then
+			thunder = min(255,StormFox.Thunder.GetLight() or 0) / 25
+		end
 
 		for i = 1,n do
 			local ri = n - i + layers
 			local cloud_amplifier = 1 + .4 * (1 -  (i / n))
+			if i == 1 then
+				cloud_amplifier = cloud_amplifier + thunder
+			end
 			UpdateCloudMaterial(i,255)
 			sky_mats[i]:SetVector("$color",Vector(min(c.r * cloud_amplifier,255),min(c.g * cloud_amplifier,255),min(c.b * cloud_amplifier,255)) / 255 )
 			RenderDome(up * (z_level + 0.4 * ri) + eye * eye_mult,sky_mats[i],255)

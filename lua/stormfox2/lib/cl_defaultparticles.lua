@@ -133,6 +133,18 @@ local init = function()
 	--snow_template_multi:SetRenderHeight( 600 )
 	snow_template_multi:SetRandomAngle(0.3)
 
+	-- Think functions:
+	function rain_template_multi:Think()
+		local P = StormFox.Weather.GetProcent()
+		local fC = StormFox.Fog.GetColor()
+		local L = StormFox.Weather.GetLuminance()
+		local TL = StormFox.Thunder.GetLight() / 2
+		local speed = 0.162 * P + 0.324
+		StormFox.Misc.rain_template_multi:SetColor( Color(fC.r + TL + 15, fC.g + TL + 15, fC.b + TL + 15) ) 
+		StormFox.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * 25)
+		StormFox.Misc.rain_template_multi:SetSpeed( speed ) 
+	end
+
 	-- Particle Explosion
 	-- Make "rain" explosion at rain particles
 	function rain_template:OnExplosion( vExPos, nDisProcent, iRange, iMagnetide )

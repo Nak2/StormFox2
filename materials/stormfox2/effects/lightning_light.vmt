@@ -1,0 +1,9 @@
+UnlitGeneric
+{
+	"$basetexture" "particle/particle_glow_04"
+	"$translucent" 1
+	"$vertexalpha" 1
+	"$vertexcolor" 0
+	"$nofog"	1
+	"$selfillum" 1
+}

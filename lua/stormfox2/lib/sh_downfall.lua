@@ -289,6 +289,8 @@ if CLIENT then
 	AccessorFunc(pt_meta, "g", "Speed")
 	AccessorFunc(pt_meta, "r_H", "RenderHeight")
 	AccessorFunc(pt_meta, "i_G", "IgnoreGravity")
+	-- Think function .. This will be called each time SmartTemplate gets called
+	function pt_meta:Think() end
 	-- Sets the alpha
 	function pt_meta:SetAlpha( nAlpha )
 		if self.c == color_white then
@@ -661,6 +663,9 @@ if CLIENT then
 	-- This will spawn particles 10 times pr second
 	local emp_t = {}
 	function StormFox.DownFall.SmartTemplate( tTemplate, nMinDistance, nMaxDistance, nAimAmount, traceSize, vNorm, fFunc )
+		if tTemplate.Think then
+			tTemplate:Think()
+		end
 		local am = tTemplate:GetNumber()
 		if am >= nAimAmount then return emp_t end
 		if tTemplate.s_timer and tTemplate.s_timer > CurTime() then return emp_t end
