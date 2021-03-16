@@ -29,6 +29,10 @@ function w_meta:SetOnChange(fFunc)
 	self.OnChange = fFunc
 end
 
+function w_meta:IsValid()
+	return true
+end
+
 function StormFox.Weather.Add( sName, sInherit )
 	if Weathers[sName] then return Weathers[sName] end
 	local t = {}

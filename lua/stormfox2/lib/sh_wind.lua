@@ -159,4 +159,3 @@ function StormFox.Wind.IsEntityInWind(eEnt,bDont_cache)
 	end
 	return hitSky,windNorm
 end
-
