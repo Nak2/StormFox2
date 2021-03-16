@@ -107,11 +107,13 @@ local init = function()
 	local rain_template_multi = StormFox.DownFall.CreateTemplate(m_rain_multi, 	true)
 	local snow_template = 		StormFox.DownFall.CreateTemplate(m_snow, 		false, false)
 	local snow_template_multi = StormFox.DownFall.CreateTemplate(m_snow_multi, 	true)
+	local fog_template = 		StormFox.DownFall.CreateTemplate(m_rain, 		true)
 	StormFox.Misc.rain_template = rain_template
 	StormFox.Misc.rain_template_multi = rain_template_multi
 	StormFox.Misc.rain_template_medium = rain_template_medium
 	StormFox.Misc.snow_template = snow_template
 	StormFox.Misc.snow_template_multi = snow_template_multi
+	StormFox.Misc.fog_template = fog_template
 
 	--rain_template_multi
 	rain_template_medium:SetFadeIn( true )
@@ -199,6 +201,14 @@ local init = function()
 			return 
 		end
 		i = 0
+		local L = StormFox.Weather.GetLuminance() - 10
+		MakeMist( vPos, L, zPart)
+	end
+
+	fog_template:SetSize(512,512)
+	fog_template:SetSpeed(5)
+	fog_template:SetAlpha(0)
+	function fog_template:OnHit( vPos, vNormal, nHitType, zPart)
 		local L = StormFox.Weather.GetLuminance() - 10
 		MakeMist( vPos, L, zPart)
 	end
