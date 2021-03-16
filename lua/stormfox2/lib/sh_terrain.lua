@@ -67,7 +67,10 @@ function meta:SetGroundTexture( iTexture )
 end
 -- Adds a texture swap.
 function meta:AddTextureSwap( mMaterial, basetexture, basetextire2 )
-	if not basetexture or not basetextire2 then return end
+	if type(mMaterial) ~= "IMaterial" then
+		mMaterial = Material(mMaterial)
+	end
+	if not basetexture and not basetextire2 then return end
 	self.swap[mMaterial] = { basetexture, basetextire2 }
 end
 -- Makes footprints. Allows to overwrite footstep sounds.
@@ -157,7 +160,6 @@ end
 local function SetMat(self, tex1, tex2)
 	if not tex1 and not tex2 then return end
 	local mat = self:GetName() or "unknown"
-	print("SETM",self,tex1,tex2)
 	-- Save the default texture
 	if not _STORMFOX_TEXORIGINAL[mat] then _STORMFOX_TEXORIGINAL[mat] = {} end
 	if tex1 and not _STORMFOX_TEXORIGINAL[mat][1] then
@@ -259,7 +261,10 @@ else
 	end)
 	-- Ask the server
 	hook.Add("stormfox.InitPostEntity", "stormfox.terrain", function()
-		net.Start("stormfox.terrain")
-		net.SendToServer()
+		timer.Simple(1, function()
+			net.Start("stormfox.terrain")
+				net.WriteBit(1)
+			net.SendToServer()
+		end)
 	end)
 end
