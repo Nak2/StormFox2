@@ -190,6 +190,42 @@ if SERVER then
 		end
 	end)
 else
+	local hasLocalWeather = false
+	local svWeather
+	local function SetW( sName, nPercentage, nDelta )
+		-- Block same weather
+		if IsSame(sName, nPercentage) then return false end
+		ApplyWeather(sName, nPercentage, nDelta)
+		if sName == "Clear" then
+			nPercentage = 0
+		end
+		StormFox.Data.Set("w_Percentage",nPercentage,nDelta)
+	end
+	function StormFox.Weather.SetLocal( sName, nPercentage, nDelta, nTemperature)
+		-- If nil then remove the local weather
+		if not sName then
+			return StormFox.Weather.RemoveLocal()
+		end
+		-- Unknown weathers gets replaced with 'Clear'
+		if not StormFox.Weather.Get( sName ) then
+			StormFox.Warning("Unknown weather: " .. tostring(sName))
+			sName = "Clear"
+		end
+		if not hasLocalWeather then
+			svWeather = {StormFox.Weather.GetCurrent().Name, StormFox.Weather.GetFinishProcent(), StormFox.Temperature.Get()}
+		end
+		StormFox.Temperature.SetLocal(nTemperature)
+		-- Block same weather
+		SetW(sName, nPercentage, nDelta)
+		hasLocalWeather = true
+	end
+	function StormFox.Weather.RemoveLocal()
+		if not hasLocalWeather then return end
+		SetW(svWeather[1], svWeather[2], 4)
+		StormFox.Temperature.SetLocal(nil)
+		svWeather = nil
+		hasLocalWeather = false
+	end
 	net.Receive("stormfox.weather", function(len)
 		local lastSet = net.ReadUInt(32)
 		local nDelta = net.ReadInt(8)
@@ -197,11 +233,12 @@ else
 		local sName = net.ReadString()
 		-- Calculate the time since server set this
 		local n_delta = CurTime() - lastSet
-		ApplyWeather(sName, nPercentage, nDelta - n_delta)
-		if sName == "Clear" then
-			nPercentage = 0
+		if not hasLocalWeather then
+			SetW(sName, nPercentage, nDelta - n_delta)
+		else
+			svWeather[1] = sName
+			svWeather[2] = nPercentage
 		end
-		StormFox.Data.Set("w_Percentage",nPercentage,nDelta)
 	end)
 	-- Ask the server what weather we have
 	hook.Add("stormfox.InitPostEntity", "stormfox.terrain", function()

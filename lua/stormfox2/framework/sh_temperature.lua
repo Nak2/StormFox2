@@ -82,8 +82,9 @@ Returns the current temperature. Valid temperatures:
 	- réaumur
 	- rømer
 ---------------------------------------------------------------------------]]
+local tempOverwrite
 function StormFox.Temperature.Get(sType)
-	local n = StormFox.Data.Get( "Temp", 20 )
+	local n = tempOverwrite or StormFox.Data.Get( "Temp", 20 )
 	if not sType or sType == "celsius" then return n end
 	if not convert_to[sType] then
 		StormFox.Warning("Invalid temperature type [" .. tostring(sType) .. "].", true)
@@ -213,4 +214,12 @@ else
 	temp_type = convert_to[sType] and sType or "celsius"
 
 	hook.Remove("stormfox2.postlib", "StormFox.TemperatureSettings")
+
+	--[[<Client>
+	Local temp
+	]]
+	function StormFox.Temperature.SetLocal( n )
+		tempOverwrite = n
+	end
+	
 end
