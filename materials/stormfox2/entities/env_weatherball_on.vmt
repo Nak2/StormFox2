@@ -1,0 +1,41 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "stormfox2/entities/env_weatherball_on"
+	"$bumpmap" "MaxOfS2D/models/hover_basic_normal"
+	
+	"$phong" "1"
+	"$phongexponent" "10.0"
+	"$phongboost" "1"
+	"$phongfresnelranges"	"[0.4 0.8 0.2]"
+	
+	"$BasemapAlphaPhongMask" "1"
+
+	"$selfillum" 1
+	"$selfillumtint" "[1 1 1]"
+	"$selfillummask" "stormfox2/entities/env_weatherball_on"
+
+	Proxies
+	{
+		Sine
+		{
+			resultVar	"$selfillumtint[1]"
+			sineperiod	4
+			sinemin		0.1
+			sinemax		1
+		}
+		Sine
+		{
+			resultVar	"$selfillumtint[2]"
+			sineperiod	4
+			sinemin		0.1
+			sinemax		1
+		}
+		Sine
+		{
+			resultVar	"$selfillumtint[0]"
+			sineperiod	4
+			sinemin		0.1
+			sinemax		1
+		}
+	}
+}

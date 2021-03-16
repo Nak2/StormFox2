@@ -1,0 +1,28 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "stormfox2/entities/env_weatherball_on"
+	"$translucent" "1"
+
+	"$detail" "stormfox2/entities/env_weatherball_on_mask"
+	"$detailscale" 1
+	"$detailblendfactor" 0.5
+	"$detailblendmode" 5
+
+	Proxies
+	{
+		Sine
+		{
+			resultVar	$detailblendfactor
+			sineperiod	4
+			sinemin		0
+			sinemax		0.6
+		}
+		Sine
+		{
+			resultVar	$alpha
+			sineperiod	4
+			sinemin		0
+			sinemax		1
+		}
+	}
+}
