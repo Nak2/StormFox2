@@ -114,9 +114,32 @@ if CLIENT then
 	end
 end
 --[[<Shared>-----------------------------------------------------------------
-Returns a setting and will try to convert to the given defaultvar type.
+Tries to onvert to the given defaultvar to match the setting.
 ---------------------------------------------------------------------------]]
 local w_list = {"float","int","vector","angle","bool","string","entity"}
+function StormFox.Setting.StringToType( sName, sString )
+	if not settings[sName] then return sString end -- No idea
+	if settings[sName] == "number" then
+		return tonumber(sString)
+	elseif settings[sName] == "string" then
+		return sString
+	elseif settings[sName] == "boolean" then
+		return sString == "1"
+	else
+		local st = (settings[sName] or type(vDefaultVar) or vDefaultVar):lower()
+		if st == "boolean" then st = "bool"
+		elseif st == "number" then st = "float" end
+		if table.HasValue(w_list, st) then
+			return util.StringToType(sString,st)
+		else
+			return sString
+		end
+	end
+end
+
+--[[<Shared>-----------------------------------------------------------------
+Returns a setting and will try to convert to the given defaultvar type.
+---------------------------------------------------------------------------]]
 function StormFox.Setting.Get(sName,vDefaultVar)
 	local con = GetConVar("sf_" .. sName)
 	if not con then return vDefaultVar end
@@ -144,7 +167,12 @@ function StormFox.Setting.Set(sName,vVar)
 	if not settings[sName] then return false,"Not a stormfox setting" end -- Not a stormfox setting
 	local con = GetConVar("sf_" .. sName)
 	if not con then return false,"IS not a convar" end
-	if CLIENT and con:IsFlagSet(FCVAR_REPLICATED) then return false,"Server setting" end -- Can't set serverside variables
+	if CLIENT and settings_env[sName]then -- Ask the server
+		if StormFox.Permission then
+			StormFox.Permission.RequestSetting(sName, vVar)
+		end
+		return false
+	end
 	-- Check if the type is correct
 	if type(vVar) ~= settings[sName] then return false,"Not same type" end -- Is not a valid string, type
 	-- Convert to string
@@ -199,23 +227,13 @@ function StormFox.Setting.GetCache(sName,vDefaultVar)
 	return cache[sName]
 end
 
--- Add the permission to change settings. (Client permission has been checked, but input isn't filtered)
-hook.Add("StormFox.PostLib", "StormFox.SettingPermission",function()
-	StormFox.Permission.Add("StormFox Settings","SuperAdmin","Allows the player to edit the server-settings for StormFox.",function(pPly,sName,vVar)
-		if type(sName) ~= "string" then return end
-		if not settings[sName] then return end -- Not a stormfox setting you goof!
-		if StormFox.Setting.Set(sName,vVar) then -- If the new setting is accepted.
-			StormFox.Msg((pPly and pPly:Nick() or "Console") .. " has changed " .. sName .. " to " .. tostring(vVar) .. ".")
-		end
-	end)
-	hook.Remove("StormFox.PostLib", "StormFox.SettingPermission")
-end)
-
---
 function StormFox.Setting.GetAll()
 	return table.GetKeys( settings )
 end
 function StormFox.Setting.GetAllServer()
+	if SERVER then
+		return table.GetKeys( settings )
+	end
 	local t = {}
 	for k,v in pairs(settings_env) do
 		if not v then continue end
@@ -268,4 +286,3 @@ function StormFox.Setting.SetType( sName, sType, tSortOrter )
 		end
 	end
 end
-

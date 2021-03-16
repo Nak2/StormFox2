@@ -51,6 +51,21 @@ local function PaintOver(self, w, h)
 	surface.SetDrawColor(0,0,0, a * 100)
 	surface.DrawRect(0,0,w,h)
 end
+
+local function SetSFConVar( convar, str )
+	if string.sub(convar, 0, 3) == "sf_" then
+		convar = string.sub(convar, 4)
+	end
+	local var = StormFox.Setting.StringToType( convar, str )
+	StormFox.Setting.Set(convar, var)
+end
+
+local function ConVarChanged( PANEL, strNewValue )
+	if ( !PANEL.m_strConVar ) then return end
+	SetSFConVar(PANEL.m_strConVar, strNewValue)
+end
+
+
 -- Title
 do
 	local PANEL = {}
@@ -136,7 +151,7 @@ do
 			elseif type(data) == "boolean" then
 				data = data and 1 or 0
 			end
-			RunConsoleCommand("sf_" .. sName, tostring(data))
+			SetSFConVar(sName, tostring(data))
 		end
 		local text = tab[con:GetString()] or tab[con:GetFloat()] or tab[con:GetBool()] or con:GetString()
 		self._b:SetText(niceName( language.GetPhrase(sDesc or text)))
@@ -199,6 +214,7 @@ do
 		local con = GetConVar( "sf_" .. sName )
 		self._l:SetText( sDesc and sDesc or "#sf_" .. sName )
 		self._b:SetConVar( "sf_" .. sName )
+		self._b.ConVarChanged = ConVarChanged
 		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
 		self:InvalidateLayout(true)
 	end
@@ -248,9 +264,11 @@ do
 		self._l:SetText( sDesc and sDesc or "#sf_" .. sName )
 		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
 		self._b:SetConVar( "sf_" .. sName )
+		self._b.ConVarChanged = ConVarChanged
 		self._b:SetMin(con:GetMin() or 0)
 		self._b:SetMax(con:GetMax() or 1)
-		
+		self._b.Scratch.ConVarChanged = ConVarChanged
+		self._b.TextArea.ConVarChanged = ConVarChanged
 		self:InvalidateLayout(true)
 	end
 	function PANEL:PerformLayout(w, h)
@@ -304,11 +322,14 @@ do
 		self._l:SetText( sDesc and sDesc or "#sf_" .. sName )
 		self._des = language.GetPhrase(sDesc and sDesc .. "desc" or con:GetHelpText() or "Unknown")
 		self._b:SetConVar( "sf_" .. sName )
+		self._b.ConVarChanged = ConVarChanged
+		self._b.Scratch.ConVarChanged = ConVarChanged
+		self._b.TextArea.ConVarChanged = ConVarChanged
 		function self._t:DoClick()
 			if con:GetFloat() >= 0 then
-				RunConsoleCommand( "sf_" .. sName, -1 )
+				SetSFConVar(sName, -1)
 			else
-				RunConsoleCommand( "sf_" .. sName, .5 )
+				SetSFConVar(sName, 0.5)
 			end
 		end
 		function self._t:Think()
@@ -368,6 +389,7 @@ do
 			n:SetMax(nil)
 			self._dw = 64
 			n:SetConVar( "sf_" .. sName )
+			n.ConVarChanged = ConVarChanged
 			self._d:SetPos(74,self._l:GetTall() + 4)
 			if nMin then n:SetMin(nMin) end
 		else
@@ -382,6 +404,9 @@ do
 			if nMin then b:SetMin(nMin) end
 			b:SetMax(nMax)
 			b:SetConVar( "sf_" .. sName  )
+			b.Scratch.ConVarChanged = ConVarChanged
+			b.TextArea.ConVarChanged = ConVarChanged
+			b.ConVarChanged = ConVarChanged
 			self._d:SetPos(305, self._l:GetTall() + 2)
 		end
 		self:InvalidateLayout(true)
@@ -455,7 +480,7 @@ do
 			end
 			local num = StormFox.Time.StringToTime(t)
 			if num and self.sName then
-				RunConsoleCommand("sf_" .. self.sName, num)
+				SetSFConVar(self.sName, num)
 			end
 		end
 		if ampm then
@@ -640,7 +665,7 @@ do
 			end
 			local num = StormFox.Time.StringToTime(t)
 			if num and self.sName then
-				RunConsoleCommand("sf_" .. self.sName, num)
+				SetSFConVar(self.sName, num)
 			end
 		end
 		if ampm then
@@ -717,9 +742,9 @@ do
 		self.trigger = true
 		function self._t:DoClick()
 			if con:GetFloat() < 0 then
-				RunConsoleCommand("sf_" .. sName, 0)
+				SetSFConVar(sName, 0)
 			else 
-				RunConsoleCommand("sf_" .. sName, -1)
+				SetSFConVar(sName, -1)
 			end
 		end
 		StormFox.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
@@ -836,7 +861,7 @@ do
 		function self._b:OnLoseFocus( )
 			local num = tonumber(self:GetText()) or 0
 			num = StormFox.Temperature.Convert(StormFox.Temperature.GetDisplayType(),nil,num)
-			RunConsoleCommand( "sf_" .. sName, num )
+			SetSFConVar( sName, num )
 		end
 		StormFox.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
 			local val = StormFox.Temperature.Convert(nil,StormFox.Temperature.GetDisplayType(),tonumber(vVar) or 0)
@@ -1011,10 +1036,10 @@ do
 	end
 	local function conFunc(self, min, max)
 		if self._conMin:GetFloat() ~= min then
-			RunConsoleCommand(self._conMin:GetName(), min)
+			SetSFConVar(self._conMin:GetName(), min)
 		end
 		if self._conMax:GetFloat() ~= max then
-			RunConsoleCommand(self._conMax:GetName(), max)
+			SetSFConVar(self._conMax:GetName(), max)
 		end
 	end
 	function PANEL:SetConvar( sMinName, sMaxName )
@@ -1161,17 +1186,18 @@ do
 		self.n_min._con = minCon
 		self.n_max._con = maxCon
 		self._b:SetConvar( sMinName, sMaxName )
+		self._b.ConVarChanged = ConVarChanged
 		self.n_min.OnValueChange = function( self, val )
 			if self._temp then
 				val = StormFox.Temperature.Convert(StormFox.Temperature.GetDisplayType(),nil,val)
 			end
-			RunConsoleCommand(self._con:GetName(), val)
+			SetSFConVar(self._con:GetName(), val)
 		end
 		self.n_max.OnValueChange = function( self, val )
 			if self._temp then
 				val = StormFox.Temperature.Convert(StormFox.Temperature.GetDisplayType(),nil,val)
 			end
-			RunConsoleCommand(self._con:GetName(), val)
+			SetSFConVar(self._con:GetName(), val)
 		end
 		StormFox.Setting.Callback(sMinName,function(vVar,vOldVar,_, pln)
 			if self._temp then
