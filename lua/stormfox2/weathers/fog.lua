@@ -3,8 +3,11 @@ local fog = StormFox.Weather.Add( "Fog" )
 fog:Set("fogDistance", 150)
 if CLIENT then
 	function fog.Think()
+		local p = StormFox.Weather.GetProcent()
+		if p < 0.5 then return end
 		// tTemplate, nMinDistance, nMaxDistance, nAimAmount, traceSize, vNorm, fFunc )
-		for _,v in ipairs( StormFox.DownFall.SmartTemplate(StormFox.Misc.fog_template, 200, 900, 50, 250, vNorm ) or {} ) do
+		for _,v in ipairs( StormFox.DownFall.SmartTemplate(StormFox.Misc.fog_template, 200, 900, 45 * p - 15, 250, vNorm ) or {} ) do
+			v:SetColor( StormFox.Fog.GetColor() )
 		end
 	end
 end
