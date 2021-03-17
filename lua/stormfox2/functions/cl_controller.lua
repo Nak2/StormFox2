@@ -147,4 +147,4 @@ function StormFox.Menu.CloseController()
 	end
 end
 
-StormFox.Menu.OpenController()
+--StormFox.Menu.OpenController()

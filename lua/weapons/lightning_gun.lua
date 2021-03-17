@@ -126,10 +126,6 @@ end
 function SWEP:ShouldDropOnDie() return false end
 
 if ( SERVER ) then return end -- Only clientside lua after this line
-
-function SWEP:OnRemove()
-
-end
 function SWEP:Holster()
 
 end
@@ -171,20 +167,7 @@ function SWEP:DrawWorldModel()
 	  surface.DrawRect(s,s,w - s*2,h - s*2)
    cam.End3D2D()
 end
--- ViewModel Rendering
-function SWEP:PreDrawViewModel()
 
-end
-function boneBap(ent)
-   for i=1,ent:GetBoneCount() do
-	  print(i,ent:GetBoneName(i))
-   end
-end
-function PrintBones( entity )
-    for i = 0, entity:GetBoneCount() - 1 do
-        print( i, entity:GetBoneName( i ) )
-    end
-end
 local g_mat = Material("sprites/glow04_noz")
 function SWEP:PostDrawViewModel(vm,wep,ply)
 	if not vm then return end
@@ -211,8 +194,4 @@ function SWEP:PostDrawViewModel(vm,wep,ply)
 		end
 		surface.DrawRect(s,s,(w2 - s * 2),h - s*2)
 	cam.End3D2D()
-end
-
-function SWEP:AdjustMouseSensitivity()
-   return 1
 end
