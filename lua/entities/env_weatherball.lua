@@ -28,9 +28,15 @@ end
 
 function ENT:SetupDataTables()
 	local weathers = {}
+	if CLIENT then
+		local s = language.GetPhrase("#none")
+		weathers[string.upper(s[1]) .. string.sub(s, 2)] = "none"
+	else
+		weathers["None"] = "one"
+	end
 	for _, str in ipairs( StormFox.Weather.GetAll() ) do
 		if str == "BlueMoon" then continue end -- Shhh
-		weathers[str] = StormFox.Weather.Get(str).Name
+		weathers[StormFox.Weather.Get(str).Name] = str
 	end
 	self:NetworkVar( "String", 	0, 	"WeatherName", { KeyName = "Weather",	Edit = { type = "Combo", order = 1, values = weathers } } )
 	self:NetworkVar( "Float", 	0, 	"Percent", { KeyName = "Percent",	Edit = { type = "Float", order = 2, min = 0, max = 1 } } )
@@ -71,7 +77,7 @@ if SERVER then
 	end
 else
 	local v1 = Vector(1,1,1)
-	local col1, col2 = Color(255,0,0,55),Color(0,255,0,55)
+	local col1, col2 = Color(255,0,0,55),Color(0,255,0,255)
 	function ENT:Draw()
 		local w,p = self:GetWeatherName(),self:GetPercent()
 		local r = self:GetRange()
@@ -122,6 +128,5 @@ else
 		else
 			StormFox.Weather.SetLocal( ent:GetWeatherName(), ent:GetPercent(), 4, ent:GetTemperature())
 		end
-		
 	end)
 end
