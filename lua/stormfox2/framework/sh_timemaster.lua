@@ -75,10 +75,6 @@ StormFox.Time = StormFox.Time or {}
 		return ( h * 60 + m ) % 1440
 	end
 
-	function IO()
-		local dt = string.Explode(":",os.date("%H:%M:%S"))
-		return tonumber(dt[1]) * 60 + tonumber(dt[2]) + tonumber(dt[3]) / 60
-	end
 -- Get the start time.
 	local start = StormFox.Setting.Get("start_time",-1)
 	local TIME_SPEED = (StormFox.Setting.Get("time_speed",60) or 60) / 60
@@ -129,7 +125,7 @@ StormFox.Time = StormFox.Time or {}
 	---------------------------------------------------------------------------]]
 	local c
 	function StormFox.Time.Get(bNearestSecond)
-		if not bNearestSecond and c then
+		if bNearestSecond and c then
 			return c
 		end
 		if TIME_SPEED <= 0 then
