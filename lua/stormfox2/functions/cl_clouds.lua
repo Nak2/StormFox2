@@ -207,7 +207,7 @@ local eye_mult = -.0001
 -- Cloud movement
 	hook.Add("PreRender","StormFox.Client.CloudMove",function()
 		local w_ang = rad(StormFox.Wind.GetYaw())
-		local w_force = max(StormFox.Wind.GetForce(),0.1) * 0.5 * RealFrameTime() * StormFox.Time.GetSpeed()
+		local w_force = max(StormFox.Wind.GetForce(),0.1) * 0.008 * RealFrameTime() * StormFox.Time.GetSpeed()
 		local x_w,y_w = cos(w_ang) * w_force,sin(w_ang) * w_force
 		for i = 1,layers do
 			local ri = (layers - i + 1)
