@@ -289,10 +289,12 @@ StormFox.Sky = {}
 			end
 			hook.Run("StormFox.2DSkybox.CloudBox",		c_pos)
 			hook.Run("StormFox.2DSkybox.CloudLayer",	c_pos)
+			hook.Run("StormFox.2DSkybox.FogLayer",	c_pos)
 			render.SuppressEngineLighting(false)
 			render.SetLightingMode( 0 )
 			render.OverrideDepthEnable( false, false )
 		cam.End3D()
+		
 		render.SetColorMaterial()
 	end)
 

@@ -65,7 +65,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 		-- Top color + Thunder
 			local fogAm
 			if StormFox.Fog then
-				fogAm = StormFox.Fog.GetZAmount()
+				fogAm = StormFox.Fog.GetAmount()
 			end
 			local thunder = 0
 			if StormFox.Thunder then
