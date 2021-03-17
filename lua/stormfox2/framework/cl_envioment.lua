@@ -296,6 +296,19 @@ Generate meshes and env-points out from the map-data.
 			end
 			return nocull,transparent
 		end
+		local function PlyTrace( ent, vec )
+			local m,ma = ent:OBBMins(), ent:OBBMaxs()
+			m.z = 0
+			ma.z = 5
+			return util.TraceHull( {
+				start = ent:GetPos(),
+				endpos = ent:GetPos() + vec,
+				filter = ent:GetPos(),
+				mins = m,
+				maxs = ma,
+				collisiongroup = COLLISION_GROUP_PLAYER
+			} )
+		end
 		local nocull = false
 		local function IsTransparent( iMat )
 			local k = iMat:GetKeyValues()
@@ -912,6 +925,8 @@ local roof_type, roof_pos -- Roof_type is hit_type enums from lib/sh_downfall.lu
 -- Bools
 local is_inside, is_inwind, in_water
 
+local z_distance = 0
+
 local viewPos
 local function sort_func(a, b)
 	return a[2]:DistToSqr(viewPos) < b[2]:DistToSqr(viewPos)
@@ -947,6 +962,13 @@ local function env_corotinefunction()
 	-- is inside
 		is_inwind = StormFox.Wind.IsEntityInWind(LocalPlayer(),true)
 		is_inside = not (is_inwind or UnderSky2(viewPos))
+	-- ZDis
+		local tr = PlyTrace( StormFox.util.ViewEntity(), Vector( 0, 0, -16000))
+		if not tr.Hit then
+			z_distance = 16000
+		else
+			z_distance = tr.Fraction * 16000
+		end
 	-- Locate nearest outside / window
 	if is_inside and not in_water then
 		-- Nearest window
@@ -1029,6 +1051,7 @@ function StormFox.Environment.Get()
 	local t = {}
 	t.outside = not is_inside
 	t.in_water = in_water
+	t.z_distance = z_distance
 	if is_inside and not in_water then
 		t.nearest_window = is_inside and nearest_window
 		t.nearest_outside = is_inside and nearest_outside
@@ -1040,10 +1063,18 @@ function StormFox.Environment.Get()
 	return t
 end
 
-function OI()
-	return surfaceinfos
+--[[-------------------------------------------------------------------------
+Returns the clients height over ground.
+---------------------------------------------------------------------------]]
+function StormFox.Environment.GetZHeight( bForceUpdate )
+	local tr = PlyTrace( StormFox.util.ViewEntity(), Vector( 0, 0, -16000))
+	if not tr.Hit then
+		z_distance = 16000
+	else
+		z_distance = tr.Fraction * 16000
+	end
+	return z_distance
 end
-
 	--[[NOTES:
 		- Make breakable windows have this too.
 		- Make a weather seed generator, and use it for puddles and clouds (better).
