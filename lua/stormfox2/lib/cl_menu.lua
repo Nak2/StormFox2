@@ -91,7 +91,6 @@ local tabs = {
 					else
 						s = "#problem.no_hdr"
 					end
-					
 					break
 				end
 				v = v + 1
@@ -119,9 +118,9 @@ local tabs = {
 			["gmod_mcore_test"] = 1,
 			["mat_queue_mode"] = 2}
 			local v = 0
-			local s = ""
+			local s = "\n"
 			for k,v2 in pairs(t) do
-				if GetConVar(k):GetInt() ~= v2 or math.random(1, 2) == 1 then
+				if GetConVar(k):GetInt() ~= v2 then
 					s = s .. k .. " " .. v2 .. "\n"
 					continue
 				end
@@ -131,16 +130,13 @@ local tabs = {
 			p:SetValue(f)
 			local c = HSLToColor(120 * f, 1, 0.5 * f)
 			--p:SetColor(c.r,c.g,c.b)
-			p:SetText(niceName(language.GetPhrase("#MThread")) .. "\n\n" .. v .. "/" .. table.Count(t))
+			p:SetText(niceName(language.GetPhrase("#MThread")) .. "\n" .. v .. "/" .. table.Count(t))
 			if f < 1 then
 				p:SetTooltip(string.format(language.GetPhrase("#sf_mthreadwarning"), s))
 			else
 				p:SetTooltip(language.GetPhrase("#problems.no_problems"))
 			end
 			mth = p
-
-			
-			
 		function dash:PerformLayout(w, h)
 			local a = w / 5
 			local x = -fps:GetTall() / 2
