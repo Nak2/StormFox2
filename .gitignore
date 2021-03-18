@@ -3,3 +3,5 @@
 *old_*
 # Not sure if I'll need said function for sprites .. but it is there
 lua/stormfox2/functions/cl_streetlight.lua
+unused_materials
+*gmod_default.txt
