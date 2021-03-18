@@ -16,7 +16,7 @@ end
 -- Cloud icon
 do
 	-- Icon
-	local m_def = Material("sstormfox2/hud/w_cloudy.png")
+	local m_def = Material("stormfox2/hud/w_fog.png")
 	function fog.GetSymbol( nTime ) -- What the menu should show
 		return m_def
 	end
