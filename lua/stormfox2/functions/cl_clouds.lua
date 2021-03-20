@@ -207,7 +207,7 @@ local eye_mult = -.0001
 -- Cloud movement
 	hook.Add("PreRender","StormFox.Client.CloudMove",function()
 		local w_ang = rad(StormFox.Wind.GetYaw())
-		local w_force = max(StormFox.Wind.GetForce(),0.1) * 0.008 * RealFrameTime() * StormFox.Time.GetSpeed()
+		local w_force = max(StormFox.Wind.GetForce(),0.1) * 0.08 * RealFrameTime()
 		local x_w,y_w = cos(w_ang) * w_force,sin(w_ang) * w_force
 		for i = 1,layers do
 			local ri = (layers - i + 1)
@@ -248,7 +248,6 @@ hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function(eye)
 		if StormFox.Thunder then
 			thunder = min(255,StormFox.Thunder.GetLight() or 0) / 25
 		end
-
 		for i = 1,n do
 			local ri = n - i + layers
 			local cloud_amplifier = 1 + .4 * (1 -  (i / n))
