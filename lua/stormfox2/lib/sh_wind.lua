@@ -67,7 +67,7 @@ function StormFox.Wind.GetBeaufort(ms)
 	local n = ms or StormFox.Wind.GetForce()
 	local Beaufort, Description = 0, "sf_winddescription.calm"
 	for k,kms in ipairs( bfkey ) do
-		if kms < n then
+		if kms <= n then
 			Beaufort, Description = k - 1, bfs[ kms ]
 		else
 			break
@@ -93,7 +93,7 @@ local windVec = Vector(0,0,0)
 local wind,windAng = 0,-1
 local function calcfunc()
 	local owind = StormFox.Data.Get("Wind",0)
-	local nwind = owind * 0.75
+	local nwind = owind * 0.2
 	local nang = StormFox.Data.Get("WindAngle",0)
 	if nwind == wind and nang == windAng then return end -- Nothing changed
 	wind = nwind
@@ -108,7 +108,7 @@ local function calcfunc()
 end
 
 -- If the wind-data changes, is changing or is done changing. Reclaculate the wind.
-timer.Create("StormFox.Wind.Update", 2, 0, function()
+timer.Create("StormFox.Wind.Update", 1, 0, function()
 	if not StormFox.Data.IsLerping("Wind") and not StormFox.Data.IsLerping("WindAngle") then return end
 	calcfunc()
 end)
