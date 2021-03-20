@@ -3,6 +3,24 @@
 
 local clear = StormFox.Weather.Add( "Clear" )
 
+-- Description
+if CLIENT then
+	function clear:GetName(nTime, nTemp, nWind, bThunder, nFraction )
+		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 3
+		if b_windy then
+			return language.GetPhrase("#sf_weather.clear.windy")
+		end
+		return language.GetPhrase("#sf_weather.clear")
+	end
+else
+	function clear:GetName(nTime, nTemp, nWind, bThunder, nFraction )
+		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 3
+		if b_windy then
+			return "Windy"
+		end
+		return "Clear"
+	end
+end
 -- Icon
 local m1,m2,m3,m4 = (Material("stormfox2/hud/w_clear.png")),(Material("stormfox2/hud/w_clear_night.png")),(Material("stormfox2/hud/w_clear_windy.png")),(Material("stormfox2/hud/w_clear_cold.png"))
 function clear.GetSymbol( nTime ) -- What the menu should show

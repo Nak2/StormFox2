@@ -10,10 +10,35 @@ if CLIENT then
 			v:SetColor( StormFox.Fog.GetColor() )
 		end
 	end
+
+	function fog:GetName(nTime, nTemp, nWind, bThunder, nFraction )
+		if nFraction < 0.2 then
+			return language.GetPhrase('#sf_weather.clear')
+		elseif nFraction < 0.6 then
+			return language.GetPhrase('#sf_weather.fog.low')
+		elseif nFraction < 0.8 then
+			return language.GetPhrase('#sf_weather.fog.medium')
+		else
+			return language.GetPhrase('#sf_weather.fog.high')
+		end
+	end
+else
+	function fog:GetName(nTime, nTemp, nWind, bThunder, nFraction )
+		if nFraction < 0.2 then
+			return 'Clear'
+		elseif nFraction < 0.6 then
+			return 'Haze'
+		elseif nFraction < 0.8 then
+			return 'Fog'
+		else
+			return 'Thick Fog'
+		end
+	end
 end
 
 
--- Cloud icon
+
+-- Fog icon
 do
 	-- Icon
 	local m_def = Material("stormfox2/hud/w_fog.png")

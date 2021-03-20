@@ -4,6 +4,28 @@ local rain = StormFox.Weather.Add( "Rain", "Cloud" )
 
 -- Cloud icon
 do
+	-- Description
+	if CLIENT then
+		function cloudy:GetName(nTime, nTemp, nWind, bThunder, nFraction )
+			if StormFox.Wind.GetBeaufort(nWind) >= 10 then
+				return language.GetPhrase('sf_weather.cloud.storm')
+			elseif bThunder then
+				return language.GetPhrase('sf_weather.cloud.thunder')
+			else
+				return language.GetPhrase('sf_weather.cloud')
+			end
+		end
+	else
+		function cloudy:GetName(nTime, nTemp, nWind, bThunder, nFraction )
+			if StormFox.Wind.GetBeaufort(nWind) >= 10 then
+				return "Storm"
+			elseif bThunder then
+				return "Thunder"
+			else
+				return "Cloudy"
+			end
+		end
+	end
 	-- Icon
 	local m_def = Material("stormfox2/hud/w_cloudy.png")
 	local m_night = Material("stormfox2/hud/w_cloudy_night.png")
@@ -31,6 +53,36 @@ end
 
 -- Rain icon
 do
+	-- Description
+	if CLIENT then
+		function rain:GetName(nTime, nTemp, nWind, bThunder, nFraction )
+			if StormFox.Wind.GetBeaufort(nWind) >= 10 then
+				return language.GetPhrase('sf_weather.cloud.storm')
+			elseif bThunder then
+				return language.GetPhrase('sf_weather.cloud.thunder')
+			elseif nTemp > 0 then
+				return language.GetPhrase('sf_weather.rain')
+			elseif nTemp > -2 then
+				return language.GetPhrase('sf_weather.rain.sleet')
+			else
+				return language.GetPhrase('sf_weather.rain.snow')
+			end
+		end
+	else
+		function rain:GetName(nTime, nTemp, nWind, bThunder, nFraction )
+			if StormFox.Wind.GetBeaufort(nWind) >= 10 then
+				return 'Storm'
+			elseif bThunder then
+				return 'Thunder'
+			elseif nTemp > 0 then
+				return 'Raining'
+			elseif nTemp > -2 then
+				return 'Sleet'
+			else
+				return 'Snowing'
+			end
+		end
+	end
 	-- Icon
 	local m_def = Material("stormfox2/hud/w_raining.png")
 	local m_thunder = Material("stormfox2/hud/w_raining_thunder.png")
