@@ -5,23 +5,28 @@
 
 AddCSLuaFile()
 
+SWEP.PrintName = "Mjölnir Gun"
+SWEP.Instructions	= "The power of Thor!"
+SWEP.Spawnable			= true
+SWEP.AdminOnly			= true
+SWEP.UseHands			= true
+
 SWEP.ViewModel = Model( "models/weapons/c_pistol.mdl") --"models/weapons/w_eq_tablet.mdl") -- )
 SWEP.WorldModel = Model( "models/weapons/w_pistol.mdl" )
 
 -- No ammo
-   SWEP.Primary.ClipSize      = -1
-   SWEP.Primary.DefaultClip   = -1
-   SWEP.Primary.Automatic     = false
-   SWEP.Primary.Ammo       = "none"
+	SWEP.Primary.ClipSize      = -1
+	SWEP.Primary.DefaultClip   = -1
+	SWEP.Primary.Automatic     = false
+	SWEP.Primary.Ammo       = "none"
 
-   SWEP.Secondary.ClipSize    = -1
-   SWEP.Secondary.DefaultClip = -1
-   SWEP.Secondary.Automatic   = true
-   SWEP.Secondary.Ammo        = "none"
+	SWEP.Secondary.ClipSize    = -1
+	SWEP.Secondary.DefaultClip = -1
+	SWEP.Secondary.Automatic   = true
+	SWEP.Secondary.Ammo        = "none"
 
-SWEP.PrintName = "Mjölnir Gun"
-   SWEP.Slot      = 5
-   SWEP.SlotPos   = 1
+	SWEP.Slot      = 5
+	SWEP.SlotPos   = 1
 
 SWEP.DrawAmmo     = false
 SWEP.DrawCrosshair   = false
