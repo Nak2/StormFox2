@@ -79,7 +79,7 @@ end
 	if CLIENT then
 		hook.Add("StormFox.Wind.Change","StormFox.Wind.CLFix",function(windNorm, wind)
 			if StormFox.Map.HadClass( "env_wind" ) then return end
-			local nw = StormFox.Wind.GetForce() * 0.06
+			local nw = math.min(StormFox.Wind.GetForce() * 0.6, 21)
 			local ra = math.rad( StormFox.Data.Get( "WindAngle", 0 ) )
 			local wx,wy = math.cos(ra) * nw,math.sin(ra) * nw
 			RunConsoleCommand("cl_tree_sway_dir",wx,wy)

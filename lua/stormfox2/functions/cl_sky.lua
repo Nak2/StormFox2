@@ -69,7 +69,8 @@ We overwrite the sky variables. Its much better to handle it clientside.
 			end
 			local thunder = 0
 			if StormFox.Thunder then
-				thunder = min(255,StormFox.Thunder.GetLight() or 0)
+				local cl_amd = StormFox.Mixer.Get("clouds",0) or 0
+				thunder = min(255,StormFox.Thunder.GetLight() or 0)  * 0.1 + (cl_amd * .9)
 			end
 			local t_data = StormFox.Mixer.Get("topColor") or Color( 51, 127.5, 255 )
 			local t_color = Color(max(thunder,t_data.r),max(thunder,t_data.g),max(thunder,t_data.b))

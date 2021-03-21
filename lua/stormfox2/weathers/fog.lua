@@ -6,8 +6,10 @@ if CLIENT then
 		local p = StormFox.Weather.GetProcent()
 		if p < 0.5 then return end
 		// tTemplate, nMinDistance, nMaxDistance, nAimAmount, traceSize, vNorm, fFunc )
+		local fc = StormFox.Fog.GetColor()
+		local c = Color(fc.r,fc.g,fc.b, 0)
 		for _,v in ipairs( StormFox.DownFall.SmartTemplate(StormFox.Misc.fog_template, 200, 900, 45 * p - 15, 250, vNorm ) or {} ) do
-			v:SetColor( StormFox.Fog.GetColor() )
+			v:SetColor( c )
 		end
 	end
 
