@@ -485,6 +485,9 @@ function StormFox.Menu.OpenController()
 	if _SF_CONTROLLER then
 		_SF_CONTROLLER:Remove()
 	end
+	if spawnmenu and spawnmenu.SetActiveControlPanel then
+		spawnmenu.SetActiveControlPanel(nil)
+	end
 	local p = vgui.Create("DFrame")
 
 	if not p then return end
@@ -532,4 +535,18 @@ function StormFox.Menu.CloseController()
 	end
 end
 
-StormFox.Menu.OpenController()
+
+
+list.Set( "DesktopWindows", "StormFoxController", {
+
+	title		= "#sf_wcontoller",
+	icon		= "stormfox2/hud/controller.png",
+	width		= 960,
+	height		= 700,
+	onewindow	= true,
+	init		= function( icon, window )
+		window:Remove()
+		surface.PlaySound("buttons/button14.wav")
+		StormFox.Menu.OpenController()
+	end
+} )
