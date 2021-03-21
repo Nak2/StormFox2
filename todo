@@ -6,37 +6,31 @@
     Make it pr day based and render the parses. Maybe even just pre-make them.
 
 ## Texture Swap
-    Problems:
-        Doesn't work atm. When calling the function it just refuses to update the map.
-        Also doesn't have a way for map-creators to work with.
-
-## Menu
-    - People got confused with the "Set Weather", instead have a list of weathers they can select and a slider for amount.
-	- Finish the menu design.
+	- Doesn't have a way for map-creators to work with.
 
 ## Other
-    - Mixer seems to glitch out now and then. Need to fix it somehow. (Noted it happening on time_speed 0)
     - Sunset/rise has a wider area irl
-	- Maplight should be updated at all times for extra_darkness to work. Only force the "env_l" functions to call now and then
 
 ## Terrian
 	- Fix footprint-sounds
 
 ## Rain / Particles
 	- Seem to ignore glass (Remember, bullet masks ignore glass)
-	- Outside + MovingFast = Wind Effect
-	- Fix fox in rain
-	
-## Terrain Light
-	- Display maps original-light in settings
+
+# Footprint
+	- Terrain footprints cause errors
+	- Terrain footprints no sound
+	- Terrain doesn't apply for joining people
+
+Useful TEXT
+frame_blend_pp.desc2=Warning\: This will lower your FPS.
+
+[stormfox2] Warning! A net message (stormfox.feetfix) is already started! Discarding in favor of the new message! (stormfox.feetfix)
+  1. v - addons/stormfox2/lua/stormfox2/functions/sh_footprints.lua:123
+   2. unknown - lua/includes/modules/hook.lua:84
 
 
-
-	[stormfox2] lua/includes/extensions/util.lua:113: attempt to index local 'typename' (a nil value)
-  1. Get - lua/includes/extensions/util.lua:113
-   2. unknown - addons/stormfox2/lua/stormfox2/weathers/clear.lua:105
-    3. unknown - [C]:-1
-     4. pcall - [C]:-1
-      5. v - addons/stormfox2/lua/stormfox2/lib/sh_weather_meta.lua:187
-       6. Run - lua/includes/modules/hook.lua:84
-        7. unknown - addons/stormfox2/lua/autorun/stormfox2.lua:90
+[stormfox2] addons/stormfox2/lua/stormfox2/functions/sh_footprints.lua:126: bad argument #1 to 'WriteString' (string expected, got nil)
+  1. WriteString - [C]:-1
+   2. v - addons/stormfox2/lua/stormfox2/functions/sh_footprints.lua:126
+    3. unknown - lua/includes/modules/hook.lua:84
