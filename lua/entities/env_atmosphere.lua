@@ -5,10 +5,10 @@ AddCSLuaFile()
 
 DEFINE_BASECLASS( "base_anim" )
 
-ENT.PrintName = "SF WeatherBall"
+ENT.PrintName = "SF Atmo-Sphere"
 ENT.Author = "Nak"
 ENT.Information = "Changes the weather for players near it."
-ENT.Category = "Other"
+ENT.Category	= "StormFox2"
 
 ENT.Editable = true
 ENT.Spawnable = true
@@ -110,7 +110,7 @@ else
 
 	hook.Add("Think", "StormFox.Weather.EController", function()
 		local t = {}
-		for _, ent in ipairs( ents.FindByClass("env_weatherball") ) do
+		for _, ent in ipairs( ents.FindByClass("env_atmosphere") ) do
 			local p = ent:GetPos()
 			local r = ent:GetRange()
 			local dis = StormFox.util.RenderPos():Distance( p )
