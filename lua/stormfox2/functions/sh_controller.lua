@@ -538,7 +538,6 @@ end
 
 
 list.Set( "DesktopWindows", "StormFoxController", {
-
 	title		= "#sf_wcontoller",
 	icon		= "stormfox2/hud/controller.png",
 	width		= 960,
