@@ -192,6 +192,7 @@ local init = function()
 	end
 	function rain_template_multi:OnHit( vPos, vNormal, nHitType, zPart)
 		local L = StormFox.Weather.GetLuminance() - 10
+		if math.random(1,3)> 2 then return end
 		MakeMist( vPos, L, zPart)
 	end
 	local i = 0
