@@ -62,7 +62,12 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 	end
 	if nPercentage >= 1 then
 		for _,key in ipairs( StormFox.Weather.GetKeys() ) do
-			StormFox.Data.Set(key, CurrentWeather:Get( key, stamp ), nDelta)
+			local v = CurrentWeather:Get( key, stamp )
+			if type(v) == "table" and not (v.r and v.g and v.b) then
+				StormFox.Data.Set(key, v)
+			else
+				StormFox.Data.Set(key, v, nDelta)
+			end
 		end
 	elseif nPercentage <= 0 then
 		for _,key in ipairs( StormFox.Weather.GetKeys() ) do
@@ -71,8 +76,12 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 	else -- Mixing bin
 		for _,key in ipairs( StormFox.Weather.GetKeys() ) do
 			local var2,b_nomix = CurrentWeather:Get( key, stamp )
+			local d = nDelta
+			if type(var2) == "table" and not (var2.r and var2.g and var2.b) then
+				d = nil
+			end
 			if b_nomix then
-				StormFox.Data.Set(key, var2, nDelta)
+				StormFox.Data.Set(key, var2, d)
 			else
 				local var1 = clear:Get( key, stamp )
 				if var2 and not var1 then -- This is not a default variable
@@ -81,9 +90,9 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 					end
 				end
 				if not var1 and var2 then -- THis is not a default varable
-					StormFox.Data.Set(key, var2, nDelta)
+					StormFox.Data.Set(key, var2, d)
 				elseif var1 and var2 then
-					StormFox.Data.Set(key, Blender(nPercentage, var1, var2), nDelta)
+					StormFox.Data.Set(key, Blender(nPercentage, var1, var2), d)
 				end
 			end
 		end
@@ -111,6 +120,23 @@ end
 
 function StormFox.Weather.GetFinishProcent()
 	return CurrentPercent
+end
+
+function StormFox.Weather.GetDescription()
+	local c = StormFox.Weather.GetCurrent()
+	if not c.GetName then
+		return c.Name
+	end
+	return c:GetName(StormFox.Time.Get(), StormFox.Temperature.Get(), StormFox.Wind.GetForce(), false, StormFox.Weather.GetProcent())
+end
+
+local errM = Material("error")
+function StormFox.Weather.GetIcon()
+	local c = StormFox.Weather.GetCurrent()
+	if not c.GetIcon then
+		return errM
+	end
+	return c.GetIcon(StormFox.Time.Get(), StormFox.Temperature.Get(), StormFox.Wind.GetForce(), false, StormFox.Weather.GetProcent())
 end
 
 if SERVER then
