@@ -289,7 +289,7 @@ if CLIENT then
 	local rain_outside = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_outside.ogg", SF_AMB_NEAR_OUTSIDE, 0.1 )
 	--local rain_underwater = StormFox.Ambience.CreateAmbienceSnd( "", SF_AMB_UNDER_WATER, 0.1 ) Unused
 	local rain_watersurf = StormFox.Ambience.CreateAmbienceSnd( "ambient/water/water_run1.wav", SF_AMB_UNDER_WATER_Z, 0.1 )
-	local rain_roof_wood = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_roof.wav", SF_AMB_ROOF_WOOD, 0.1 )
+	local rain_roof_wood = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_roof.ogg", SF_AMB_ROOF_WOOD, 0.1 )
 	local rain_roof_metal = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_roof_metal.ogg", SF_AMB_ROOF_METAL, 0.1 )
 	local rain_glass = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_glass.ogg", SF_AMB_ROOF_GLASS, 0.1 )
 	rain:AddAmbience( rain_light )
