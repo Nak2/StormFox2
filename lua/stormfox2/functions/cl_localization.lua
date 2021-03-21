@@ -1,7 +1,7 @@
-
--- This is a localization backup.
+-- This is a localization backup, in case the file didn't transferre.
 if not file.Exists("resource/localization/en/stormfox.properties", "GAME") then return end
 local str = [[
+
 	#stormfox.weather = weather
 	# https://github.com/Facepunch/garrysmod/blob/master/garrysmod/resource/localization/en/community.properties Check this first
 	# weather, day, night, sun, lightning, snow, cloud
@@ -35,7 +35,14 @@ local str = [[
 	sf_setang=Set Angle
 	sf_setang.desc=Sets the wind-angle to your view.
 	sf_setwind=Sets the windspeed in m/s
-	sf_wcontoller=Weather Controller
+	sf_wcontoller=SF Controller
+	sf_map.light_environment.check=This map supports fast lightchanges.
+	sf_map.light_environment.problem=This map will cause lagspikes for clients when the light changes.
+	sf_map.env_wind.none=This map doesn't support windgusts.
+	sf_map.logic_relay.check=This map has custome day/night relays.
+	sf_map.logic_relay.none=This map doens't have custome day/night relays.
+	
+	
 	
 	#Details
 	sf_quality_target=FPS Target
