@@ -535,7 +535,7 @@ function StormFox.Menu.CloseController()
 	end
 end
 
-
+concommand.Add('stormfox2_controller', StormFox.Menu.OpenController, nil, "Opens SF controller menu")
 
 list.Set( "DesktopWindows", "StormFoxController", {
 	title		= "#sf_wcontoller",
