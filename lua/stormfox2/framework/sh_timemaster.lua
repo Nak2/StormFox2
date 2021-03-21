@@ -129,16 +129,16 @@ StormFox.Time = StormFox.Time or {}
 			return c
 		end
 		if TIME_SPEED <= 0 then
-			if bNearestSecond then return math.Round(BASETIME % 1440) end
+			if bNearestSecond then return math.ceil(BASETIME % 1440) end
 			c = BASETIME
 			return BASETIME
 		end
 		local n = (CurTime() - BASETIME) * TIME_SPEED
 		if bNearestSecond then
-			c = math.Round(n % 1440)
+			c = math.ceil(n % 1440)
 			return c
 		end
-		c = n % 1440
+		c = math.ceil(n % 1440)
 		return c
 	end
 	timer.Create("stormfox.time.cache", 0, 0, function() c = nil end)
