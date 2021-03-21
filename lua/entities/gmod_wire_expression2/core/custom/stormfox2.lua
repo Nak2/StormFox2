@@ -1,7 +1,7 @@
 -- StormFox2 E2 extension
 -- By Nak
 
-E2Lib.RegisterExtension("stormfox2", false, "Lets E2 chips use StormFox functions")
+E2Lib.RegisterExtension("stormfox2", true, "Lets E2 chips use StormFox functions")
 
 __e2setcost( 3 )
 
@@ -42,6 +42,10 @@ __e2setcost( 3 )
 	e2function number isSnowing()
 		if not isCold() then return 0 end
 		return isRaining() and 1 or 0
+	end
+
+	e2function number isThundering()
+		return StormFox.Data.Get("bThunder", false) and 1 or 0
 	end
 
 	__e2setcost( 10 )
