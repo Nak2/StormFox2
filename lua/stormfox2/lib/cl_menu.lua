@@ -157,7 +157,7 @@ local tabs = {
 			local dt = StormFox.Setting.GetCache("display_temperature")
 			local hs = string.Explode(":", os.date( "%H:%M") or "17:23")
 			local n = hs[1] * 60 + hs[2]
-			local str = niceName(language.GetPhrase("#time")) .. ": " .. StormFox.Time.Display(n) .. "   " .. md
+			local str = niceName(language.GetPhrase("#time")) .. ": " .. StormFox.Time.GetDisplay(n) .. "   " .. md
 			str = str .. "   " .. niceName(language.GetPhrase("#temperature")) .. ": " .. math.Round(StormFox.Temperature.Convert(nil,dt,22), 1) .. StormFox.Temperature.GetDisplaySymbol()
 			draw.DrawText(str, "DermaDefaultBold", 0, 0, color_black, TEXT_ALIGN_LEFT)
 		end

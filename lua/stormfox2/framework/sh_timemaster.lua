@@ -345,7 +345,7 @@ if CLIENT then
 	--[[-------------------------------------------------------------------------
 	Returns the time in a string, matching the players setting.
 	---------------------------------------------------------------------------]]
-	function StormFox.Time.Display(nTime)
+	function StormFox.Time.GetDisplay(nTime)
 		local use_12 = StormFox.Setting.GetCache("12h_display",default_12)
 		return StormFox.Time.TimeToString(nTime,use_12)
 	end

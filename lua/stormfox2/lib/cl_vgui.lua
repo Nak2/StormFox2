@@ -544,7 +544,7 @@ do
 				end
 				self:SetDisabled(true)		
 			end
-			local time_str = StormFox.Time.Display(n)
+			local time_str = StormFox.Time.GetDisplay(n)
 			local h,m = string.match(time_str, "(%d+):(%d+)")
 			local am = string.find(time_str, "AM") and true or false
 			self.hour:SetValue(tonumber(h))
@@ -572,7 +572,7 @@ do
 				end
 				self:SetDisabled(false)
 			end
-			local time_str = StormFox.Time.Display(vVar)
+			local time_str = StormFox.Time.GetDisplay(vVar)
 			local h,m,am = string.match(time_str, "(%d+):(%d+)%s?([PA]M)")
 			pln.hour:SetValue(tonumber(h))
 			local n = tonumber(m)
@@ -731,7 +731,7 @@ do
 			else
 				self._t:SetChecked( true )
 			end
-			local time_str = StormFox.Time.Display(n)
+			local time_str = StormFox.Time.GetDisplay(n)
 			local h,m = string.match(time_str, "(%d+):(%d+)")
 			local am = string.find(time_str, "AM") and true or false
 			self.hour:SetValue(tonumber(h))
@@ -767,7 +767,7 @@ do
 				self._enabled = true
 				self._t:SetChecked( true )
 			end
-			local time_str = StormFox.Time.Display(vVar)
+			local time_str = StormFox.Time.GetDisplay(vVar)
 			local h,m,am = string.match(time_str, "(%d+):(%d+)%s?([PA]M)")
 			pln.hour:SetValue(tonumber(h))
 			local n = tonumber(m)
