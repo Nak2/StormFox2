@@ -12,6 +12,16 @@ local function ET(pos,pos2,mask,filter)
 end
 
 if SERVER then
+	hook.Add("stormfox2.postlib", "stormfox2.svWindInit",function()
+		if not StormFox.Ent.env_winds then return end
+		for _,ent in ipairs( StormFox.Ent.env_winds ) do
+			ent:SetKeyValue('windradius',-1) -- Make global
+			ent:SetKeyValue('maxgustdelay', 20)
+			ent:SetKeyValue('mingustdelay', 10)
+			ent:SetKeyValue('gustduration', 5)
+		end
+		hook.Remove("stormfox2.postlib", "stormfox2.svWindInit")
+	end)
 	--[[-------------------------------------------------------------------------
 	Sets the wind force. Second argument is the lerp-time.
 	---------------------------------------------------------------------------]]
@@ -83,6 +93,25 @@ end
 			local ra = math.rad( StormFox.Data.Get( "WindAngle", 0 ) )
 			local wx,wy = math.cos(ra) * nw,math.sin(ra) * nw
 			RunConsoleCommand("cl_tree_sway_dir",wx,wy)
+		end)
+	else
+		hook.Add("StormFox.Wind.Change","StormFox.Wind.CLFix",function(windNorm, wind)
+			if not StormFox.Ent.env_winds then return end
+			local nw = StormFox.Wind.GetForce() * 2
+			local ang = StormFox.Data.Get( "WindAngle", 0 )
+
+			local min = nw * .6
+			local max = nw * .8
+			local gust = math.min(nw, 5)
+			for _,ent in ipairs( StormFox.Ent.env_winds ) do
+				print(ent, max, min ,gust)
+				ent:Fire('SetWindDir', ang)
+				ent:SetKeyValue('minwind', min)
+				ent:SetKeyValue('maxwind', max)
+				ent:SetKeyValue('gustdirchange', math.max(0, 21 - nw))			
+				ent:SetKeyValue('maxgust', gust)
+				ent:SetKeyValue('mingust', gust * .8)
+			end
 		end)
 	end
 --[[-------------------------------------------------------------------------
