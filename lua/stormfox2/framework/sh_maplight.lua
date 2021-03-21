@@ -120,11 +120,9 @@ if SERVER then
 	local t = {}
 	local lerp_to
 	function StormFox.Map.SetLightLerp(f, nLerpTime, ignore_lightstyle )
-		print("MAPLIGHT",f, nLerpTime, ignore_lightstyle )
 		if last_f == f and not lerp_to then return end -- No need to update
 		if lerp_to and lerp_to == f then return end -- Already lerping
 		-- If there isn't a smooth-option, don't use lerp.
-		print("Accepted")
 		t = {}
 		local smooth = StormFox.Setting.GetCache("maplight_smooth",true)
 		if not StormFox.Ent.light_environments or not smooth or not last_f then
