@@ -19,7 +19,7 @@ do
 end
 
 
-StormFox.Menu = {}
+StormFox.Menu = StormFox.Menu or {}
 
 local function niceName(sName)
 	if sName[1] == "#" then
@@ -183,7 +183,7 @@ local tabs = {
 	[4] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png"))}
 }
 
-function StormFox.OpenMenu()
+function StormFox.Menu.Open()
 	if _SFMENU and IsValid(_SFMENU) then
 		_SFMENU:Remove()
 		_SFMENU = nil
@@ -196,4 +196,4 @@ function StormFox.OpenMenu()
 	_SFMENU:MakePopup()
 end
 
-concommand.Add('stormfox2_menu', StormFox.OpenMenu, nil, "Opens SF clientside menu")
+concommand.Add('stormfox2_menu', StormFox.Menu.Open, nil, "Opens SF clientside menu")

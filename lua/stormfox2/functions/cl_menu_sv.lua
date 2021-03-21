@@ -19,11 +19,108 @@ do
 end
 
 
-StormFox.Menu = {}
+StormFox.Menu = StormFox.Menu or {}
+
+local mapPoint = 0
+local maxMapPoint = 60 + 12 + 7 + 7 + 12
+if StormFox.Ent.light_environments then	-- Without this, the map will lag doing lightchanges
+	mapPoint = mapPoint + 60
+end
+if StormFox.Ent.env_winds then	-- Allows windgust and a bit more "alive" wind
+	mapPoint = mapPoint + 12
+end
+if StormFox.Ent.shadow_controls then	-- Allows modifying shadows
+	mapPoint = mapPoint + 7
+end
+if StormFox.Ent.env_tonemap_controllers then	-- Allows to "tone down" the exposure of light
+	mapPoint = mapPoint + 7
+end
+local hlR = StormFox.Map.HasLogicRelay
+local hasMapLogic = (hlR("dusk") or hlR("night_events")) and (hlR("dawn") or hlR("day_events"))
+if hasMapLogic then
+	mapPoint = mapPoint + 12
+end
+
+local mapPointList = {
+	{"light_environment", 		StormFox.Ent.light_environments,		["check"] ="#sf_map.light_environment.check",["problem"] = "#sf_map.light_environment.problem"},
+	{"env_wind", 				StormFox.Ent.env_winds,					["none"]  ="#sf_map.env_wind.none"},
+	{"shadow_control", 			StormFox.Ent.shadow_controls},
+	{"env_tonemap_controllers", StormFox.Ent.env_tonemap_controllers},
+	{"logic_relay", 			hasMapLogic,							["check"] = "#sf_map.logic_relay.check", ["none"] = "#sf_map.logic_relay.none"}
+}
+PrintTable(mapPointList)
+
+local function niceName(sName)
+	if sName[1] == "#" then
+		sName = sName:sub(2)
+	end
+	sName = string.Replace(sName, "_", " ")
+	local str = ""
+	for s in string.gmatch(sName, "[^%s]+") do
+		str = str .. string.upper(s[1]) .. string.sub(s, 2) .. " "
+	end
+	return string.TrimRight(str, " ")
+end
+
+local m_check = Material("icon16/accept.png")
+local m_warni = Material("icon16/bullet_error.png")
+local m_none  = Material("icon16/cancel.png")
 
 local tabs = {
 	[1] = {"Start","#start",(Material("stormfox2/hud/menu/dashboard.png")),function(board)
-		board:AddTitle("TODO: Add Dashboard")
+		board:AddTitle(language.GetPhrase("#map") .. " " .. language.GetPhrase("#support"))
+		local dash = vgui.Create("DPanel", board)
+		
+		dash.Paint = empty
+		dash:Dock(TOP)
+		dash:SetTall(100)
+		
+		local p = vgui.Create("SF_HudRing", dash)
+			p:SetText(math.Round(mapPoint / maxMapPoint, 3) * 100 .. "%")
+			p:SetSize(74, 74)
+			p:SetPos(24,10)
+			p:SetValue(mapPoint / maxMapPoint)
+		local x, y = 0,0
+		for k,v in ipairs(mapPointList) do
+			local p = vgui.Create("DPanel", dash)
+			p.Paint = function() end
+			p:SetSize(150, 20)
+			local l = vgui.Create("DLabel", p)
+			local d = vgui.Create("DImage", p)
+			d:SetSize(16, 16)
+			if v[2] then
+				d:SetMaterial(m_check)
+				if v.check then
+					d:SetToolTip(v.check)
+					p:SetToolTip(v.check)
+				end
+			elseif v.problem then
+				d:SetMaterial(m_warni)
+				d:SetToolTip(v.problem)
+				p:SetToolTip(v.problem)
+			else
+				d:SetMaterial(m_none)
+				if v.none then
+					d:SetToolTip(v.none)
+					p:SetToolTip(v.none)
+				end
+			end
+			
+			l:SetFont('SF_Menu_H2')
+			l:SetText(v[1])
+			l:SizeToContents()
+			l:SetDark( true )
+			p:SetPos(124 + x * 180,14 + y * 25)
+			l:SetPos( 20 )
+			d:SetPos(0,0)
+			y= y + 1
+			if y > 2 then
+				x = x + 1
+				y = 0
+			end
+		end
+
+
 	end},
 	[2] = {"Time","#time",(Material("stormfox2/hud/menu/clock.png")),function(board)
 		board:AddTitle("#time")
@@ -110,17 +207,6 @@ local function switch(sName, tab)
 	cookie.Set("sf2_lastmenusv", sName)
 	return pnl
 end
-local function niceName(sName)
-	if sName[1] == "#" then
-		sName = sName:sub(2)
-	end
-	sName = string.Replace(sName, "_", " ")
-	local str = ""
-	for s in string.gmatch(sName, "[^%s]+") do
-		str = str .. string.upper(s[1]) .. string.sub(s, 2) .. " "
-	end
-	return string.TrimRight(str, " ")
-end
 local function addSetting(sName, pPanel, _type)
 	local setting
 	if type(_type) == "table" then
@@ -155,7 +241,8 @@ end
 local t_mat = "icon16/font.png"
 local s_mat = "icon16/cog.png"
 
-function StormFox.OpenSVMenu()
+function StormFox.Menu.OpenSV()
+	if not StormFox.Loaded then return end
 	if _SFMENU and IsValid(_SFMENU) then
 		_SFMENU:Remove()
 		_SFMENU = nil
@@ -168,5 +255,5 @@ function StormFox.OpenSVMenu()
 	_SFMENU:MakePopup()
 end
 
-
-concommand.Add('stormfox2_svmenu', StormFox.OpenSVMenu, nil, "Opens SF serverside menu")
+StormFox.Menu.OpenSV()
+concommand.Add('stormfox2_svmenu', StormFox.Menu.OpenSV, nil, "Opens SF serverside menu")
