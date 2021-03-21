@@ -71,12 +71,13 @@ StormFox.Msg("Version: V" .. StormFox.Version .. ".")
 
 -- Resources
 	if SERVER then
-		local lans = {"en"}
-		for _,lan in ipairs(lans) do
+		local _,folder = file.Find("resource/localization/*", "GAME")
+		for _,lan in ipairs(folder) do
 			if file.Exists("resource/localization/" .. lan .. "/stormfox.properties", "GAME") then
 				resource.AddSingleFile("resource/localization/" .. lan .. "/stormfox.properties")
-			else
-				StormFox.Warning("Missing language file: resource/localization/" .. lan .. "/stormfox.properties")
+				print("Added","resource/localization/" .. lan .. "/stormfox.properties")
+			elseif lan == "en" then
+				StormFox.Warning("Missing language file: resource/localization/en/stormfox.properties")
 			end
 		end
 	end
