@@ -830,8 +830,8 @@ Renders glass-meshes.
 	local function GetRenderFunctions()
 		if not StormFox.Weather or not StormFox.Terrain or not StormFox.Terrain.GetCurrent then return end
 		local cT = StormFox.Terrain.GetCurrent() or {}
-		local cW = cT.Function or {}
-		return cW.windRender or cT.windRender, cW.windRenderRef or cT.windRenderRef, cW.windRender64 or cT.windRender64, cW.windRenderRef64 or cT.windRenderRef64
+		local cW = StormFox.Weather.GetCurrent()
+		return cW._RenderWindow or cT.windRender, cW._RenderWindowRefract or cT.windRenderRef, cW._RenderWindow64x64 or cT.windRender64, cW._RenderWindowRefract64x64 or cT.windRenderRef64
 	end
 
 	local close_window_ents = {} -- glass_dynamic

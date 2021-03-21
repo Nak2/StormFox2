@@ -158,19 +158,19 @@ end
 
 -- A function that renders a window-texure
 function w_meta:RenderWindow( fFunc )
-	self:Set( "windRender", fFunc )
+	self._RenderWindow = fFunc
 end
 
 function w_meta:RenderWindowRefract( fFunc )
-	self:Set( "windRenderRef", fFunc )
+	self._RenderWindowRefract = fFunc
 end
 
 function w_meta:RenderWindow64x64( fFunc )
-	self:Set( "windRender64", fFunc )
+	self._RenderWindow64x64 = fFunc
 end
 
 function w_meta:RenderWindowRefract64x64( fFunc )
-	self:Set( "windRenderRef64", fFunc )
+	self._RenderWindowRefract64x64 = fFunc
 end
 
 --[[<Shared>------------------------------------------------------------------

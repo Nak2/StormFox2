@@ -95,7 +95,7 @@ function meta:RenderWindow64x64( fFunc )
 end
 -- A function that renders a window-texure. (Weather will trump this)
 function meta:RenderWindowRefract64x64( fFunc )
-	self.windRenderRef64 = fFun
+	self.windRenderRef64 = fFunc
 end
 
 -- Texture handler

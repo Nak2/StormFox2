@@ -154,11 +154,12 @@ do
 	--rain:Set("fogColor", Color(135, 166, 175))
 end
 -- Window render
+local rain_t = StormFox.Terrain.Create("rain")
 do
 	local raindrops = {}
 	local raindrops_mat = {(Material("stormfox2/effects/window/raindrop_normal")),(Material("stormfox2/effects/window/raindrop_normal2")),(Material("stormfox2/effects/window/raindrop_normal3"))}
 	local s = 2
-	local function RenderRain(w, h)
+	rain:RenderWindowRefract64x64(function(w, h)
 		if StormFox.Temperature.Get() < -1 then return false end
 		local QT = StormFox.Client.GetQualityNumber()
 		local P = StormFox.Weather.GetProcent()
@@ -195,13 +196,12 @@ do
 		for i = #r,1,-1 do
 			table.remove(raindrops, r[i])
 		end
-	end
-	rain:RenderWindowRefract64x64(RenderRain)
+	end)
 end
 -- Snow Terrain and footsteps
 do
 	local snow = StormFox.Terrain.Create("snow")
-	local rain_t = StormFox.Terrain.Create("rain")
+	
 	-- Make the snow terrain apply, if temp is low
 	rain:SetTerrain( function() 
 		if SERVER then
