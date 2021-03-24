@@ -36,8 +36,10 @@ StormFox.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
 
 
 	local SunDelta = 180 / (StormFox.Data.Get("sun_sunset",1080) - StormFox.Data.Get("sun_sunrise",360))
+	local SunMidday = (StormFox.Data.Get("sun_sunrise",360) + StormFox.Data.Get("sun_sunset",1080)) / 60)
 	local function SunDeltaUpdate()
 		SunDelta = 180 / StormFox.Time.DeltaTime(StormFox.Data.Get("sun_sunrise",360),StormFox.Data.Get("sun_sunset",1080))
+		SunMidday = (StormFox.Data.Get("sun_sunrise",360) + StormFox.Data.Get("sun_sunset",1080)) / 60)
 		--[[-------------------------------------------------------------------------
 		Gets called when the sunset and sunrise changes.
 		---------------------------------------------------------------------------]]
@@ -47,6 +49,7 @@ StormFox.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
 	Sets the time for sunrise.
 	---------------------------------------------------------------------------]]
 	function StormFox.Sun.SetSunRise(nTime)
+		if StormFox.Sun.GetSunRise() == nTime then return end
 		StormFox.Network.Set("sun_sunrise",nTime)
 		SunDeltaUpdate()
 	end
@@ -55,6 +58,7 @@ StormFox.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
 	Sets the tiem for sunsets.
 	---------------------------------------------------------------------------]]
 	function StormFox.Sun.SetSunSet(nTime)
+		if StormFox.Sun.GetSunSet() == nTime then return end
 		StormFox.Network.Set("sun_sunset",nTime)
 		SunDeltaUpdate()
 	end
@@ -70,6 +74,12 @@ StormFox.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
 	---------------------------------------------------------------------------]]
 	function StormFox.Sun.GetSunSet()
 		return StormFox.Data.Get("sun_sunset",1080)
+	end
+	--[[
+		Returns the time when sun is at its higest
+	]]
+	function StormFox.Sun.GetSunAtHigest()
+		return SunMidday or 720
 	end
 -- Sun functions
 
