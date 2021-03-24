@@ -18,6 +18,12 @@ if SERVER then
 	function StormFox.Date.SetYearDay( nDay )
 		StormFox.Network.Set("day", nDay % 365)
 	end
+
+	concommand.Add("stormfox2_setyearday", function(ply, _, _, argStr)
+		StormFox.Permission.EditAccess(ply, function()
+			StormFox.Date.SetYearDay( tonumber(argStr) or 0 )
+		end)
+	end)
 end
 
 -- Returns the day within the year. [0 - 364]
