@@ -36,12 +36,12 @@ if SERVER then
 		if not CAMI then return end
 		-- If singleplayer/host
 		if ply:IsListenServerHost() then
-			return StormFox.Menu.SetWeather(ply, tID, var)
+			return StormFox.Menu.SetWeatherData(ply, tID, var)
 		end
 		-- Check CAMI
 		CAMI.PlayerHasAccess(ply,"StormFox WeatherEdit",function(b)
 			if not b then return end
-			StormFox.Menu.SetWeather(ply, tID, var)
+			StormFox.Menu.SetWeatherData(ply, tID, var)
 		end)
 	end
 	net.Receive("stormfox.permission", function(len, ply)
@@ -52,6 +52,17 @@ if SERVER then
 			plyRequestEdit(ply, net.ReadUInt(4), net.ReadType())
 		end
 	end)
+
+	function StormFox.Permission.EditAccess(ply, sPermission, onSuccess, ...)
+		if not ply or ply:IsListenServerHost() then -- Console or host
+			return onSuccess(ply, ... )
+		end
+		local a = {...}
+		CAMI.PlayerHasAccess(ply,sPermission,function(b)
+			if not b then return end
+			onSuccess(ply, unpack(a) )
+		end)
+	end
 else
 	function StormFox.Permission.RequestSetting( convar, var )
 		if StormFox.Setting.Get(convar, var) == var then
