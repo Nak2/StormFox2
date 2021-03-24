@@ -8,10 +8,11 @@ local SF_SETWIND_F	= 3
 local SF_SETTIME	= 4
 local SF_SETTIME_S	= 5
 local SF_THUNDER	= 6
+local SF_YEARDAY	= 7
 
 if SERVER then
 	-- Gets called from sh_permission.lua
-	function StormFox.Menu.SetWeather(ply, uID, var)
+	function StormFox.Menu.SetWeatherData(ply, uID, var)
 		if uID == SF_SETWEATHER and type(var) == "table" then
 			if type(var[1]) ~= "string" or type(var[2])~= "number" then return end
 			StormFox.Weather.Set( var[1], var[2] )
@@ -26,9 +27,36 @@ if SERVER then
 		elseif uID == SF_SETTIME_S and type(var) == "number" then
 			StormFox.Time.SetSpeed( var )
 		elseif uID == SF_THUNDER and type(var) == "boolean" then
-			
+			StormFox.Thunder.SetEnabled(var)
+		elseif uID == SF_YEARDAY and type(var) == "number" then
+			StormFox.Date.SetYearDay( var )
 		end
 	end
+
+	concommand.Add("stormfox2_setweather", function(ply, _, arg, _)
+		StormFox.Permission.EditAccess(ply, function()
+			StormFox.Weather.Set( string.lower( arg[1] ), tonumber( arg[2] or "1" ) or 1)
+		end)
+	end)
+
+	concommand.Add("stormfox2_setthunder", function(ply, _, _, argS)
+		argS = argS or "1"
+		StormFox.Permission.EditAccess(ply, function()
+			StormFox.Thunder.SetEnabled(argS == "1" or argS == "true")
+		end)
+	end)
+
+	concommand.Add("stormfox2_settime", function(ply, _, _, argS)
+		StormFox.Permission.EditAccess(ply, function()
+			StormFox.Time.Set( argS )
+		end)
+	end)
+
+	concommand.Add("stormfox2_settimespeed", function(ply, _, _, argS)
+		StormFox.Permission.EditAccess(ply, function()
+			StormFox.Time.SetSpeed( tonumber(argS) or 60 )
+		end)
+	end)
 	return
 end
 
