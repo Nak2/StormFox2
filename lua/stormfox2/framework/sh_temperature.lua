@@ -144,7 +144,7 @@ if SERVER then
 		if nCelsius < -273.15 then --  ( In space, there are 270.45 C )
 			nCelsius = -273.15
 		end
-		StormFox.Network.Set("Temp",nCelsius,nLerpTime)
+		StormFox.Network.Set("Temp",nCelsius,nLerpTime or 2 * StormFox.Time.GetSpeed())
 	end
 else
 	local country = system.GetCountry() or "UK"
