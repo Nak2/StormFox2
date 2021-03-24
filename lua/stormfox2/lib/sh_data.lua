@@ -2,6 +2,9 @@
 --[[
 	Unlike SF1, this doesn't support networking.
 	
+	If timespeed changes, and some lerpvalues like temperature has been applied, we need to keep it syncronised.
+	That is why we now use Time value instead of CurTime
+	
 	Data.Set( sKey, zVar, nDelta )	Sets the data. Supports lerping if given delta.
 	Data.Get( sKey, zDefault )		Returns the data. Returns zDefault if nil.
 	Data.GetFinal( zKey, zDefault)	Returns the data without calculating the lerp.
@@ -98,6 +101,10 @@ do
 			return var1
 		elseif fraction < 1 then
 			lerpCache[sKey] = LerpVar( fraction, var1, var2 )
+			if not lerpCache[sKey] then
+				print("DATA",sKey, zDefault)
+				print(debug.traceback())
+			end
 			return lerpCache[sKey] or zDefault
 		else -- Fraction end
 			StormFox_DATA[sKey] = var2
@@ -125,13 +132,13 @@ function StormFox.Data.Set( sKey, zVar, nDelta )
 	-- Delete old cache
 	lerpCache[sKey] = nil
 	-- Set to nil
-	if not zVar then
+	if not zVar and zVar == nil then
 		StormFox_DATA[sKey] = nil
 		StormFox_AIMDATA[sKey] = nil
 		return
 	end
 	-- If delta is 0 or below. (Or no prev data). Set it.
-	if not nDelta or nDelta <= 0 or StormFox_DATA[sKey] == nil then
+	if not nDelta or nDelta <= 0 or StormFox_DATA[sKey] == nil or StormFox.Time.GetSpeed() <= 0 then
 		StormFox_AIMDATA[sKey] = nil
 		StormFox_DATA[sKey] = zVar
 		hook.Run("stormfox.data.change",sKey,zVar)
@@ -141,7 +148,7 @@ function StormFox.Data.Set( sKey, zVar, nDelta )
 	if StormFox_AIMDATA[sKey] then
 		StormFox_DATA[sKey] = StormFox.Data.Get( sKey )
 	end
-	StormFox_AIMDATA[sKey] = {zVar, CurTime(), CurTime() + nDelta}
+	StormFox_AIMDATA[sKey] = {zVar, CurTime(), CurTime() + nDelta, StormFox.Time.GetSpeed()}
 	hook.Run("stormFox.data.lerpstart",sKey,zVar, nDelta)
 	hook.Run("stormFox.data.change", sKey, zVar, nDelta)
 end
@@ -160,3 +167,23 @@ function StormFox.Data.IsLerping( sKey )
 	hook.Run("stormFox.data.lerpend",sKey,zVar)
 	return true
 end
+
+-- If time changes, we need to update the lerp values
+hook.Add("StormFox.Time.Set", "stormfox.datatimefix", function()
+	local nT = StormFox.Time.GetSpeed()
+	local c = CurTime()
+	if nT <= 0.001 then return end
+	for k,v in pairs( StormFox_AIMDATA ) do
+		if not v[4] or v[4] == nT then continue end
+		local now_value = StormFox.Data.Get( k )
+		if not StormFox_AIMDATA[k] then continue end -- After checking the value, it is now gone.
+		if now_value then
+			StormFox_DATA[k] = now_value
+		end
+		local delta_timeamount = (v[3] - c) -- Time left
+		local delta_time = v[4] / nT				-- Time multiplication
+		StormFox_AIMDATA[k][2] = c
+		StormFox_AIMDATA[k][3] = c + delta_timeamount * delta_time
+		StormFox_AIMDATA[k][4] = nT
+	end
+end)
