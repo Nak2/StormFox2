@@ -37,7 +37,7 @@ do
 	function cloudy.GetIcon( nTime, nTemp, nWind, bThunder, nFraction) -- What symbol the weather should show
 		local b_day = StormFox.Time.IsDay(nTime)
 		local b_cold = nTemp < -2
-		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 3
+		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 7
 		local b_H = nFraction > 0.5
 		if bThunder then
 			return m_thunder
@@ -96,7 +96,7 @@ do
 		return m_def
 	end
 	function rain.GetIcon( _, nTemp, nWind, bThunder, nFraction) -- What symbol the weather should show
-		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 3
+		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 7
 		if bThunder then
 			return m_thunder
 		elseif b_windy and nTemp > -4 then
