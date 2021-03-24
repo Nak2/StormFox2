@@ -257,6 +257,7 @@ do
 		self._l = l
 		self._b = b	
 		self._d = d
+		b.TextArea:SetDrawLanguageID( false )
 		self:InvalidateLayout(true)
 	end
 	function PANEL:SetConvar( sName, _, sDesc )
@@ -293,6 +294,7 @@ do
 		local b = vgui.Create("DNumSlider", self)
 		local t = vgui.Create("DCheckBox", self)
 		t.b = b
+		b.TextArea:SetDrawLanguageID( false )
 		b.Label:Dock(NODOCK)
 		b.PerformLayout = empty
 		local d = vgui.Create( "DLabel", self )
@@ -389,6 +391,7 @@ do
 			n:SetMax(nil)
 			self._dw = 64
 			n:SetConVar( "sf_" .. sName )
+			n:SetDrawLanguageID( false )
 			n.ConVarChanged = ConVarChanged
 			self._d:SetPos(74,self._l:GetTall() + 4)
 			if nMin then n:SetMin(nMin) end
@@ -406,6 +409,7 @@ do
 			b:SetConVar( "sf_" .. sName  )
 			b.Scratch.ConVarChanged = ConVarChanged
 			b.TextArea.ConVarChanged = ConVarChanged
+			b.TextArea:SetDrawLanguageID( false )
 			b.ConVarChanged = ConVarChanged
 			self._d:SetPos(305, self._l:GetTall() + 2)
 		end
@@ -441,6 +445,8 @@ do
 		minute:SetMax(59)
 		hour:SetMin(0)
 		minute:SetMin(0)
+		minute:SetDrawLanguageID( false )
+		hour:SetDrawLanguageID( false )
 		local ampm
 		if use_12 then
 			hour:SetMax(12)
@@ -449,6 +455,7 @@ do
 			ampm:AddChoice( "PM", 1, false )
 			ampm:SetSize(64, 20)
 			hour:SetMin(1)
+			ampm:SetDrawLanguageID( false )
 		else
 			hour:SetMax(23)
 		end
@@ -630,6 +637,8 @@ do
 		minute:SetMax(59)
 		hour:SetMin(0)
 		minute:SetMin(0)
+		hour:SetDrawLanguageID( false )
+		minute:SetDrawLanguageID( false )
 		local ampm
 		if use_12 then
 			hour:SetMax(12)
@@ -637,6 +646,7 @@ do
 			ampm:AddChoice( "AM", 0, false )
 			ampm:AddChoice( "PM", 1, false )
 			ampm:SetSize(64, 20)
+			ampm:SetDrawLanguageID( false )
 		else
 			hour:SetMax(23)
 		end
@@ -1215,6 +1225,79 @@ do
 
 	derma.DefineControl( "SF_DDSliderNum", "", PANEL, "DPanel" )
 end
+-- World Display
+do
+	local PANEL = {}
+	AccessorFunc( PANEL, "m_lat", "Lat" )
+	AccessorFunc( PANEL, "m_lon", "Lon" )
+	AccessorFunc( PANEL, "m_zoom","Zoom" )
+	local w_map = Material("stormfox2/hud/world.png")
+	local c = Color(0,0,0,55)
+	function PANEL:Init()
+		self._map = vgui.Create("DPanel", self)
+		self:SetLat(52.6139095)
+		self:SetLon(-2.0059601)
+		self:SetSize(400, 300)
+		self:SetZoom(5)
+		self._range = 1
+		self:ReSize()
+		self._map._s = self
+		function self._map:Paint(w,h)
+			surface.SetDrawColor(color_white)
+			surface.SetMaterial( w_map )
+			surface.DrawTexturedRect(0,0,w,h)
+			local x = 0.5 + ( self._s:GetLon()) / 360
+			local y = 0.5 - ( self._s:GetLat()) / 180
+			local ws = math.ceil(w / 360)
+			local hs = math.ceil(h / 180)
+			surface.SetDrawColor(color_black)
+			local xx,yy = x * w - ws / 2, y * h - hs / 2
+			surface.DrawOutlinedRect(xx,yy, ws, hs)
+			surface.SetDrawColor(c)
+			c.a = 150 + math.sin(SysTime() * 10) * 50
+			local xT = math.max(1, ws / 4)
+			local yT = math.max(1, hs / 4)
+			-- X
+			surface.DrawRect(0, 		yy + hs * .5 - xT / 2, xx, yT)
+			surface.DrawRect(xx + ws, 	yy + hs * .5 - xT / 2, w - xx - ws, yT)
+			--Y
+			surface.DrawRect(xx + ws * 0.5 - yT / 2, 0, xT, yy)
+			surface.DrawRect(xx + ws * 0.5 - yT / 2, yy + hs, xT, h - yy - hs)
+		end
+		self:SetMouseInputEnabled( true )
+	end
+	function PANEL:ReSize()
+		local z = self:GetZoom() * 0.5
+		local w,h = 1617 * z, 808 * z
+		if w < self:GetWide() or h < self:GetTall() then
+			z = math.max(self:GetWide() / 1617, self:GetTall() / 808)
+			w = 1617 * z
+			h = 808 * z
+		end
+		self._map:SetSize(w, h)
+		local x,y = 0.5 + ( self:GetLon()) / 360, 0.5 - ( self:GetLat() ) / 180
+		local px,py = -w * x + self:GetWide() / 2, -h * y + self:GetTall() / 2
+		px = math.Clamp(px, -w, 0)
+		py = math.Clamp(py, -h, 0)
+		
+		self._map:SetPos(px,py)
+	end
+	function PANEL:OnMouseWheeled( sD )
+		local z = self:GetZoom() + sD / 2
+		self:SetZoom( math.Clamp(z, 1, 28) )
+		self:ReSize()
+		return true
+	end
+
+	function PANEL:Paint(w,h)
+		surface.SetDrawColor(color_white)
+		surface.SetMaterial( w_map )
+		surface.DrawTexturedRectUV(0,0,w,h,0,0,0.01,0.01)
+	end
+	derma.DefineControl( "SF_WorldMap", "", PANEL, "DPanel" )
+	
+end
+
 -- Menu
 do
 	local function empty() end
