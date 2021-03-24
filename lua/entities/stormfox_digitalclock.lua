@@ -21,6 +21,8 @@ if SERVER then
 		self:SetMoveType( MOVETYPE_VPHYSICS )   -- after all, gmod is a physics
 		self:SetSolid( SOLID_VPHYSICS )         -- Toolbox
 		self:SetRenderMode(RENDERMODE_TRANSALPHA)
+		self.mode = 1
+		self:SetUseType( SIMPLE_USE )
 	end
 	function ENT:SpawnFunction( ply, tr, ClassName )
 		if ( !tr.Hit ) then return end
@@ -31,6 +33,10 @@ if SERVER then
 		ent:Spawn()
 		ent:Activate()
 		return ent
+	end
+	function ENT:Use( activator )
+		self.mode = (self.mode + 1) % 3
+		self:SetNWInt("mode", self.mode)
 	end
 else
 	surface.CreateFont( "SkyFox-DigitalClock", {
@@ -106,7 +112,8 @@ else
 		-- Draw Display
 		cam.Start3D2D(self:GetPos(),Angle(180,EyeAngles().y + 90,-a.p -90),0.07)
 			local _showWeather = CurTime() % 14 < 7
-			if _showWeather then
+			local mode = self:GetNWInt("mode", 0)
+			if _showWeather and mode ~= 2 or mode == 1 then
 				surface.SetDrawColor(col)
 				surface.SetMaterial(StormFox.Weather.GetIcon())
 				surface.SetTextColor(col)
