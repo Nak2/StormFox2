@@ -132,6 +132,15 @@ local function check(SF_AMB_TYPE, env)
 end
 
 local p_br = {}
+-- Forces a sound to play
+local fP
+function StormFox.Ambience.ForcePlay( snd, nVolume, playbackSpeed )
+	if string.sub(snd, 0, 6) ~= "sound/" then
+		snd = "sound/" .. snd 
+	end
+	fP[snd] = nVolume
+	p_br[snd] = playbackSpeed or 1
+end
 hook.Add("Think", "StormFox.Ambiences.Logic", function()
 	local c = StormFox.Weather.GetCurrent()
 	local v_pos = StormFox.util.GetCalcView().pos
@@ -141,8 +150,8 @@ hook.Add("Think", "StormFox.Ambiences.Logic", function()
 		t2[2] = 0
 	end
 	-- Generate a list of all sounds the client should hear. And set the the volume
+	local t = {}
 	if c.ambience_tab then
-		local t = {}
 		for _,amb_object in ipairs( c.ambience_tab ) do
 			local c_vol = t[amb_object.snd] or 0
 			-- WATER
@@ -215,16 +224,18 @@ hook.Add("Think", "StormFox.Ambiences.Logic", function()
 				p_br[amb_object.snd] = amb_object.playbackrate
 			end
 		end
-		-- Set the target volume
-		for snd, vol in pairs( t ) do
-			if not SF_AMB_CHANNEL[snd] then -- Request to create the sound channel
-				RequestChannel( snd )
-			else
-				SF_AMB_CHANNEL[snd][2] = vol -- Set the target volume
-				if IsValid( SF_AMB_CHANNEL[snd][1] ) then
-					if SF_AMB_CHANNEL[snd][1]:GetPlaybackRate() ~= p_br[snd] then
-						SF_AMB_CHANNEL[snd][1]:SetPlaybackRate(p_br[snd])
-					end
+	end
+	fP = t
+	hook.Run("StormFox.Ambiences.OnSound")
+	-- Set the target volume
+	for snd, vol in pairs( t ) do
+		if not SF_AMB_CHANNEL[snd] then -- Request to create the sound channel
+			RequestChannel( snd )
+		else
+			SF_AMB_CHANNEL[snd][2] = vol -- Set the target volume
+			if IsValid( SF_AMB_CHANNEL[snd][1] ) then
+				if SF_AMB_CHANNEL[snd][1]:GetPlaybackRate() ~= p_br[snd] then
+					SF_AMB_CHANNEL[snd][1]:SetPlaybackRate(p_br[snd])
 				end
 			end
 		end
