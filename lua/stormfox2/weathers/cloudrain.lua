@@ -1,7 +1,8 @@
 -- Rain and cloud is nearly the same.
 local cloudy = StormFox.Weather.Add( "Cloud" )
 local rain = StormFox.Weather.Add( "Rain", "Cloud" )
-
+	-- cloudy.spawnable = true Cloud is not spawnable. Since it is a "default" when it is cloudy
+	rain.spawnable = true
 -- Cloud icon
 do
 	-- Description
