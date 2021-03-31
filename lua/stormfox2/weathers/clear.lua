@@ -93,7 +93,7 @@ end
 -- Default variables. These don't change.
 	clear:Set("moonColor", Color( 205, 205, 205 ))
 	clear:Set("moonSize",30)
-	clear:Set("moonTexture", ( Material( "stormfox/effects/moon.png" ) ))
+	clear:Set("moonTexture", ( Material( "stormfox2/effects/moon/moon.png" ) ))
 	clear:Set("skyVisibility",100) -- Blocks out the sun/moon
 	clear:Set("mapDayLight",100)
 	clear:Set("mapNightLight",0)

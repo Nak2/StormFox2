@@ -11,7 +11,7 @@
 	Data.IsLerping( sKey )			Returns true if the data is currently lerping.
 
 	Hooks:
-		- stormFox.data.change		sKey	zVar		Called when data changed or started lerping.
+		- stormfox.data.change		sKey	zVar		Called when data changed or started lerping.
 		- stormfox.data.lerpstart	sKey	zVar		Called when data started lerping
 		- stormfox.data.lerpend		sKey	zVar		Called when data stopped lerping (This will only be called if we check for the variable)
 ]]
@@ -149,8 +149,8 @@ function StormFox.Data.Set( sKey, zVar, nDelta )
 		StormFox_DATA[sKey] = StormFox.Data.Get( sKey )
 	end
 	StormFox_AIMDATA[sKey] = {zVar, CurTime(), CurTime() + nDelta, StormFox.Time.GetSpeed()}
-	hook.Run("stormFox.data.lerpstart",sKey,zVar, nDelta)
-	hook.Run("stormFox.data.change", sKey, zVar, nDelta)
+	hook.Run("stormfox.data.lerpstart",sKey,zVar, nDelta)
+	hook.Run("stormfox.data.change", sKey, zVar, nDelta)
 end
 
 function StormFox.Data.IsLerping( sKey )

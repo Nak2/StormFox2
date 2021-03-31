@@ -137,7 +137,7 @@ end
 if SERVER then
 	-- Sets the starting day.
 	if StormFox.Setting.Get("real_time", false) then
-		StormFox.Network.Set("day", os.date("%j"))
+		StormFox.Network.Set("day", tonumber(os.date("%j")))
 	else
 		StormFox.Network.Set("day", cookie.GetNumber("sf_date", math.random(0,364)))
 	end

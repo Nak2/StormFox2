@@ -29,7 +29,7 @@ StormFox.Sky = {}
 	--[[-------------------------------------------------------------------------
 	Gets called when the sunset and sunrise changes.
 	---------------------------------------------------------------------------]]
-	hook.Add("StormFox.Data.Change","StormFox.Sky.DeltaChange",function(key,var)
+	hook.Add("stormfox.data.change","StormFox.Sky.DeltaChange",function(key,var)
 		if key ~= "sun_sunrise" and key ~= "sun_sunset" then return end
 		SunDelta = 180 / StormFox.Time.DeltaTime(StormFox.Data.Get("sun_sunrise",360),StormFox.Data.Get("sun_sunset",1080))
 	end)
@@ -44,6 +44,12 @@ StormFox.Sky = {}
 	---------------------------------------------------------------------------]]
 	function StormFox.Sun.GetSunSet()
 		return StormFox.Data.Get("sun_sunset",1080)
+	end
+	--[[
+		Returns the time when sun is at its higest
+	]]
+	function StormFox.Sun.GetSunAtHigest()
+		return (StormFox.Sun.GetSunRise() + StormFox.Sun.GetSunSet()) / 2
 	end
 -- Sun functions
 	--[[-------------------------------------------------------------------------
@@ -203,14 +209,43 @@ StormFox.Sky = {}
 
 -- Moon functions
 	--[[-------------------------------------------------------------------------
+		Sets the moon phase
+	---------------------------------------------------------------------------]]
+	SF_MOON_NEW				= 0
+	SF_MOON_WAXIN_CRESCENT	= 1
+	SF_MOON_FIRST_QUARTER	= 2
+	SF_MOON_WAXING_GIBBOUS	= 3
+	SF_MOON_FULL			= 4
+	SF_MOON_WANING_GIBBOUS	= 5
+	SF_MOON_LAST_QUARTER	= 6
+	SF_MOON_WANING_CRESCENT = 7
+	--[[-------------------------------------------------------------------------
+		Returns the moon phase for the current day
+	---------------------------------------------------------------------------]]
+	function StormFox.Moon.GetPhase()
+		local mp = StormFox.Data.Get("moon_phase",SF_MOON_FULL)
+		local yd = StormFox.Date.GetYearDay()
+		return yd - mp
+	end
+
+	--[[-------------------------------------------------------------------------
 		Returns the angle for the moon. First argument can also be a certain time.
 	---------------------------------------------------------------------------]]
+	local tf = 0
+	local a = 7 / 7.4
 	function StormFox.Moon.GetAngle(nTime)
-		local time_pitch = (nTime or StormFox.Time.Get()) * 0.25
-		local ts = StormFox.Data.Get("moon_cycle",12.203) / 360
-		local p_c = time_pitch + StormFox.Data.Get("moon_magicnumber",0) + time_pitch * ts
+		if true then return Angle(200,StormFox.Data.Get("sun_yaw",90),0) end
+		local day_f = (nTime or StormFox.Time.Get()) / 1440
+		tf = math.max(tf, day_f)
+		local day_n = tf + StormFox.Date.GetYearDay()
+		local p_c = ((day_n * a) % 8) * 360 + StormFox.Data.Get("magic_moonnumber",0)
 		return Angle(-p_c % 360,StormFox.Data.Get("sun_yaw",90),0)
 	end
+	-- It might take a bit for the server to tell us the day changed.
+	hook.Add("stormfox.data.change", "stormfox.moon.datefix", function(sKey, nDay)
+		if sKey ~= "day" then return end
+		tf = 0
+	end)
 	--[[-------------------------------------------------------------------------
 		Returns true if the moon is up.
 	---------------------------------------------------------------------------]]
@@ -229,14 +264,25 @@ StormFox.Sky = {}
 	function StormFox.Moon.GetPhase(nTime)
 		-- Calculate the distance between the two (Somewhat real scale)
 		local mAng = StormFox.Moon.GetAngle(nTime)
-		local A = StormFox.Sun.GetAngle(nTime):Forward() * 14975
+		local sAng = StormFox.Sun.GetAngle(nTime)
+		local A = sAng:Forward() * 14975
 		local B = mAng:Forward() * 39
 		-- Get the angle towards the sun from the moon
 		local moonTowardSun = (A - B):Angle()
 		local C = mAng
 			C.r = 0
 		local dot = C:Forward():Dot(moonTowardSun:Forward())
-		return clamp(2.5 - (5.5 * dot) / 2,0,5),moonTowardSun
+		-- Dot: 1 = new moon
+		-- Dot: waz < 0 then waxin
+		local wax = math.AngleDifference(sAng.p,mAng.p) < 0
+		if wax then
+			return SF_MOON_FULL - SF_MOON_FULL * dot,moonTowardSun
+		end
+		local n = 2 * dot + 6
+		if n >= 8 then
+			n = n - 8
+		end
+		return n,moonTowardSun
 	end
 	--[[-------------------------------------------------------------------------
 		Returns the moon phase name
@@ -299,7 +345,7 @@ StormFox.Sky = {}
 	end)
 
 -- Render Sun
-	local sunMat = Material("stormfox/moon_glow")
+	local sunMat = Material("stormfox2/effects/moon/moon_glow")
 	hook.Add("StormFox.2DSkybox.SunRender","StormFox.RenderSun",function(c_pos)
 		local SunN = -StormFox.Sun.GetAngle():Forward()
 		local s_size = StormFox.Sun.GetSize()
@@ -311,36 +357,30 @@ StormFox.Sky = {}
 
 -- Render moon
 	-- Setup params and vars
-		local params = {}
-			params[ "$basetexture" ] = ""
-			params[ "$translucent" ] = 1
-			params[ "$vertexalpha" ] = 1
-			params[ "$vertexcolor" ] = 1
-			params[ "$nofog" ] = 1
-			params[ "$nolod" ] = 1
-			params[ "$nomip" ] = 1
-			params["$additive"] = 1
-		local CurrentMoonTexture = CreateMaterial("SF_RENDER_MOONTEX","UnlitGeneric",params)
-		local Mask_25,Mask_0,Mask_50,Mask_75 = Material("stormfox/moon_phases/25.png"),Material("stormfox/moon_phases/0.png"),Material("stormfox/moon_phases/50.png"),Material("stormfox/moon_phases/75.png")
+		local CurrentMoonTexture = Material("stormfox2/effects/moon/rt_moon")
+		local Mask_25 = Material("stormfox2/effects/moon/25.png")
+		local Mask_0  = Material("stormfox2/effects/moon/0.png")
+		local Mask_50 = Material("stormfox2/effects/moon/50.png")
+		local Mask_75 = Material("stormfox2/effects/moon/75.png")
 		local texscale = 512
-		local RTMoonTexture = GetRenderTargetEx( "StormFox.Moon", texscale, texscale, 1, MATERIAL_RT_DEPTH_NONE, 2, CREATERENDERTARGETFLAGS_UNFILTERABLE_OK, IMAGE_FORMAT_RGBA8888)
+		local RTMoonTexture = GetRenderTargetEx( "StormFox_RTMoon", texscale, texscale, 1, MATERIAL_RT_DEPTH_NONE, 2, CREATERENDERTARGETFLAGS_UNFILTERABLE_OK, IMAGE_FORMAT_RGBA8888)
 	-- Functions to update the moon phase
 		local lastRotation = -1
 		local lastCurrentPhase = -1
-		local lastMoonMat = Material("stormfox/effects/moon.png")
+		local lastMoonMat
 		local function RenderMoonPhase(rotation,currentPhase)
+			currentPhase = math.Round(currentPhase or 1.3, 2)
+			--currentPhase = 3
 			-- Check if there is a need to re-render
-				local moonMat = StormFox.Data.Get("moonTexture",(Material("stormfox/effects/moon.png")))
-				if TypeID(moonMat) ~= 21 then return end -- Something went wrong. Lets wait.
-				rotation = rotation or 0
-				currentPhase = currentPhase or 1.3
-				if lastRotation == rotation and lastCurrentPhase == currentPhase and lastMoonMat:GetName() == moonMat:GetName() then
+				local moonMat = StormFox.Data.Get("moonTexture",lastMoonMat)
+				if type(moonMat) ~= "IMaterial" then return end -- Something went wrong. Lets wait.
+				if lastCurrentPhase == currentPhase and lastMoonMat and lastMoonMat == moonMat then
 					-- Already rendered
 					return true
 				end
-				lastRotation = rotation
 				lastCurrentPhase = currentPhase
-				lastMoonMat = moonMat
+				lastMoonMat = moonMat:GetName()
+			
 			render.PushRenderTarget( RTMoonTexture )
 			render.OverrideAlphaWriteEnable( true, true )
 
@@ -348,16 +388,16 @@ StormFox.Sky = {}
 			render.Clear( 0, 0, 0, 0 )
 			cam.Start2D()
 				-- Render moon
-				surface.SetDrawColor(255,255,255)
+				surface.SetDrawColor(color_white)
 				surface.SetMaterial(moonMat)
 				surface.DrawTexturedRectUV(0,0,texscale,texscale,-0.01,-0.01,1.01,1.01)
 				-- Mask Start
 				--	render.OverrideBlendFunc( true, BLEND_ZERO, BLEND_SRC_ALPHA, BLEND_DST_ALPHA, BLEND_ZERO )
 					render.OverrideBlend(true, BLEND_ZERO, BLEND_SRC_ALPHA,0,BLEND_DST_ALPHA, BLEND_ZERO,0)
 				-- Render mask
-					surface.SetDrawColor(Color(255,255,255,255))
+					surface.SetDrawColor(color_white)
 					-- 0 to 50%
-					if currentPhase < 2.9 then
+					if currentPhase < 3 then
 						local s = 7 - 2.3 * currentPhase
 						surface.SetMaterial(Mask_25)
 						surface.DrawTexturedRectRotated(texscale / 2,texscale / 2,texscale * s,texscale,rotation)
@@ -368,12 +408,11 @@ StormFox.Sky = {}
 							surface.DrawTexturedRectRotated(texscale / 2 + x * (-texscale * 0.51),texscale / 2 + y * (-texscale * 0.51),texscale * 0.9,texscale,rotation)
 						end
 					elseif currentPhase < 3.1 then -- 50%
-						local s = 1
 						surface.SetMaterial(Mask_50)
-						surface.DrawTexturedRectRotated(texscale / 2,texscale / 2,texscale * s,texscale,rotation)
-					elseif currentPhase < 4.9 then -- 50% to 100%
-														-- 5.8 to 0.4
-						local s = (3.176 * currentPhase) - 9.76
+						surface.DrawTexturedRectRotated(texscale / 2,texscale / 2,texscale,texscale,rotation)
+					elseif currentPhase <= 4.9 then -- 50% to 100%
+													-- 5.8 to 0.4
+						local s = (currentPhase - 3) * 3
 						surface.SetMaterial(Mask_75)
 						surface.DrawTexturedRectRotated(texscale / 2,texscale / 2,texscale * s,texscale,rotation + 180)
 						if s < 1 then
@@ -416,7 +455,8 @@ StormFox.Sky = {}
 			gda = 1 - clamp((moonAng.p - 350) / 10,0,1)
 		end
 		-- Dark moonarea
+	--	PrintTable(CurrentMoonTexture:GetKeyValues())
 		render.SetMaterial( CurrentMoonTexture )
 		local aa = max(0,(3.125 * a) - 57.5)
-		render.DrawQuadEasy( N * 200, NN, moonScale , moonScale, Color(c.r,c.g,c.b, aa  ), sa )
+		render.DrawQuadEasy( N * 200, NN, moonScale , moonScale, Color(c.r,c.g,c.b, aa ), sa )
 	end)

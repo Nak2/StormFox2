@@ -164,7 +164,7 @@ local eye_mult = -.0001
 	local sky_rts = {}
 	local texscale = 512
 	for i = 1,layers do
-		sky_rts[i] = GetRenderTargetEx( "StormFox.Sky" .. i, texscale, texscale, 1, MATERIAL_RT_DEPTH_NONE, 2, CREATERENDERTARGETFLAGS_UNFILTERABLE_OK, IMAGE_FORMAT_RGBA8888)
+		sky_rts[i] = GetRenderTargetEx( "StormFox_Sky" .. i, texscale, texscale, 1, MATERIAL_RT_DEPTH_NONE, 2, CREATERENDERTARGETFLAGS_UNFILTERABLE_OK, IMAGE_FORMAT_RGBA8888)
 		offset[i] = {i * 99,i * 33}
 	end
 	local function UpdateCloudMaterial(layer,cloud_alpha)
