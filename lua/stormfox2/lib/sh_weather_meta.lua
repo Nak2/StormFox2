@@ -59,6 +59,16 @@ function StormFox.Weather.GetAll()
 	return table.GetKeys( Weathers )
 end
 
+function StormFox.Weather.GetAllSpawnable()
+	local t = {}
+	for w, v in pairs( Weathers ) do
+		if v.spawnable and w ~= "Clear" then -- clear is default
+			table.insert(t, w)
+		end
+	end
+	return t
+end
+
 local keys = {}
 local l_e,l_c, c_c = -1,0
 
