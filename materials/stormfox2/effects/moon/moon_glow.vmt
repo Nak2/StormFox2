@@ -1,0 +1,9 @@
+"UnlitGeneric"
+{
+	"$basetexture" "stormfox/moon_glow"
+	"$translucent" 1
+	"$vertexalpha" 1
+	"$vertexcolor" 1
+	"$nofog" 1
+	"$additive" 1
+}
