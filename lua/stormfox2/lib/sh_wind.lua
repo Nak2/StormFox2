@@ -11,6 +11,13 @@ local function ET(pos,pos2,mask,filter)
 	return t,t.HitSky
 end
 
+-- Settings
+hook.Add("stormfox2.postlib", "stormfox2.windSettings",function()
+	StormFox.Setting.AddSV("windmove_players",true,nil,"Effects")
+	hook.Remove("stormfox2.postlib", "stormfox2.windSettings")
+end)
+
+
 if SERVER then
 	hook.Add("stormfox2.postlib", "stormfox2.svWindInit",function()
 		if not StormFox.Ent.env_winds then return end
@@ -187,3 +194,160 @@ function StormFox.Wind.IsEntityInWind(eEnt,bDont_cache)
 	end
 	return hitSky,windNorm
 end
+
+-- Wind sounds
+if CLIENT then
+	local windSnd = -1 	-- -1 = none, 0 = outside, 0+ Distance to outside
+	local windGusts = {}
+	local maxVol = 1.5
+	local function AddGuest( snd, vol, duration )
+		if windGusts[snd] then return end
+		if not duration then duration = SoundDuration( snd ) end 
+		windGusts[snd] = {vol, CurTime() + duration - 1}
+	end
+
+	timer.Create("StormFox.Wind.Snd", 1, 0, function()
+		windSnd = -1
+		if StormFox.Wind.GetForce() <= 0 then return end
+		local env = StormFox.Environment.Get()
+		if not env or (not env.outside and not env.nearest_outside) then return end	
+		if not env.outside and env.nearest_outside then
+			local view =  StormFox.util.RenderPos()
+			windSnd = StormFox.util.RenderPos():Distance(env.nearest_outside)
+		else 
+			windSnd = 0
+		end
+		-- Guests
+		local vM = (400 - windSnd) / 400
+		if vM <= 0 then return end
+		local wForce = StormFox.Wind.GetForce()
+		if math.random(50) > 40 then
+			if wForce > 17 and math.random(1,2) > 1 then
+				AddGuest("ambient/wind/windgust.wav",math.Rand(0.8, 1) * vM)
+			elseif wForce > 4 and wForce < 30 then
+				AddGuest("ambient/wind/wind_med" .. math.random(1,2) .. ".wav", math.min(maxVol, wForce / 30) * vM)
+			end
+		end
+		if wForce > 27 and math.random(50) > 30 then
+			AddGuest("ambient/wind/windgust_strong.wav",math.min(maxVol, wForce / 30) * vM)
+		end
+	end)
+
+	-- Cold "empty" wind: ambience/wind1.wav
+	--					ambient/wind/wind1.wav
+	-- ambient/wind/wind_rooftop1.wav
+	-- ambient/wind/wind1.wav
+	-- StormFox.Ambience.ForcePlay
+	hook.Add("StormFox.Ambiences.OnSound", "StormFox.Ambiences.Wind", function()
+		if windSnd < 0 then return end -- No wind
+		local wForce = StormFox.Wind.GetForce()
+		local vM = (400 - windSnd) / 400
+		if vM <= 0 then return end
+		-- Main loop
+		StormFox.Ambience.ForcePlay( "ambient/wind/wind_rooftop1.wav", math.min((wForce - 1) / 35, maxVol) * vM, math.min(1.2, 0.9 + wForce / 100) )
+		-- Wind gusts
+		for snd,data in pairs(windGusts) do
+			if data[2] <= CurTime() then
+				windGusts[snd] = nil
+			else	
+				StormFox.Ambience.ForcePlay( snd, data[1] * vM + math.Rand(0, 0.1) )
+			end
+		end
+	end)
+else
+	-- Flag models
+	local flags = {}
+	local flag_models = {}
+		flag_models["models/props_fairgrounds/fairgrounds_flagpole01.mdl"] = 90
+		flag_models["models/props_street/flagpole_american.mdl"] = 90
+		flag_models["models/props_street/flagpole_american_tattered.mdl"] = 90
+		flag_models["models/props_street/flagpole.mdl"] = 90
+		flag_models["models/mapmodels/flags.mdl"] = 0
+		flag_models["models/props/de_cbble/cobble_flagpole.mdl"] = 180
+		flag_models["models/props/de_cbble/cobble_flagpole_2.mdl"] = 225
+		flag_models["models/props/props_gameplay/capture_flag.mdl"] = 270
+		flag_models["models/props_medieval/pendant_flag/pendant_flag.mdl"] = 0
+		flag_models["models/props_moon/parts/moon_flag.mdl"] = 0
+	local function FlagInit()
+		-- Check if there are any flags on the map
+		for _,ent in pairs(ents.GetAll()) do
+			if not ent:CreatedByMap() then continue end
+			-- Check the angle
+			if math.abs(ent:GetAngles():Forward():Dot(Vector(0,0,1))) > 5 then continue end
+			if not flag_models[ent:GetModel()] then continue end
+			table.insert(flags,ent)
+		end
+		if #flags > 0 then -- Only add the hook if there are flags on the map.
+			hook.Add("stormfox.data.change","stormfox.flagcontroller",function(key,var)
+				if key == "WindAngle" then
+					print("Windang", var)
+					for _,ent in ipairs(flags) do
+						if not IsValid(ent) then continue end
+						local y = flag_models[ent:GetModel()] or 0
+						ent:SetAngles(Angle(0,var + y,0))
+					end
+				elseif key == "Wind" then
+					print("Wind", var)
+					for _,ent in ipairs(flags) do
+						if not IsValid(ent) then continue end
+						ent:SetPlaybackRate(math.Clamp(var / 7,0.5,10))
+					end
+				end
+			end)
+		end
+	end
+	hook.Add("StormFox.PostEntityScan", "StormFox.Wind.FlagInit", FlagInit)
+	FlagInit()
+end
+-- Wind movment
+	local function windMove(ply, mv, cmd )
+		if not StormFox.Setting.GetCache("windmove_players") then return end
+		local wF = (StormFox.Wind.GetForce() - 15) / 11
+		if wF <= 0 then return end
+		if not StormFox.Wind.IsEntityInWind(ply) then return end -- Not in wind
+		-- Calc windforce
+		local r = math.rad( StormFox.Wind.GetYaw() - ply:GetAngles().y )
+		local fS = math.cos( r ) * wF 
+		local sS = math.sin( r ) * wF
+		
+		if mv:GetForwardSpeed() == 0 and mv:GetSideSpeed() == 0 then -- Not moving
+			--mv:SetSideSpeed( - sS / 10)		 Annoying
+			--mv:SetForwardSpeed( - fS / 10)
+		else
+			-- GetForwardMove() returns 10000y. We need to figure out the speed first.
+			local running, walking = mv:KeyDown( IN_SPEED ), mv:KeyDown( IN_WALK )
+			local speed = running and ply:GetRunSpeed() or walking and ply:GetSlowWalkSpeed() or ply:GetWalkSpeed()
+
+			local forward = math.Clamp(mv:GetForwardSpeed(), -speed, speed)
+			local side    = math.Clamp(mv:GetSideSpeed(), -speed, speed)
+			if forward~=0 and side~=0 then
+				forward = forward * .7
+				side = side * .7
+			end
+			-- Now we modify them. We don't want to move back.
+			if forward > 0 and fS < 0 then
+				forward = math.max(0, forward / -fS)
+			elseif forward < 0 and fS > 0 then
+				forward = math.min(0, forward / fS)
+			end
+			if side > 0 and sS > 0 then
+				side = math.max(0, side / sS)
+				forward = forward + fS * 20
+			elseif side < 0 and sS < 0 then
+				side = math.min(0, side / -sS)
+				forward = forward + fS * 20
+			end
+			-- Apply the new speed
+			mv:SetForwardSpeed( forward )
+			cmd:SetForwardMove( forward )
+			mv:SetSideSpeed( side )
+			cmd:SetSideMove( side )
+		end
+		
+		
+		
+
+		--print(fS)
+	end
+
+	hook.Add("SetupMove", "windtest", windMove)
