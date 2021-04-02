@@ -1,6 +1,6 @@
 
 -- Weather functions
-StormFox.Menu = {}
+StormFox.Menu = StormFox.Menu or {}
 local SF_SETWEATHER = 0
 local SF_SETTEMP	= 1
 local SF_SETWIND_A	= 2
@@ -509,7 +509,7 @@ end)
 
 local mat = Material("gui/workshop_rocket.png")
 local c = Color(55,55,55)
-function StormFox.Menu.OpenController()
+function StormFox.Menu._OpenController()
 	if _SF_CONTROLLER then
 		_SF_CONTROLLER:Remove()
 	end
@@ -528,6 +528,7 @@ function StormFox.Menu.OpenController()
 	settings:SetText("")
 	settings:SetToolTip("#spawnmenu.utilities.server_settings")
 	function settings:DoClick()
+		surface.PlaySound("buttons/button14.wav")
 		RunConsoleCommand("stormfox2_svmenu")
 	end
 	function settings:Paint() end
@@ -557,6 +558,12 @@ function StormFox.Menu.OpenController()
 	return _SF_CONTROLLER
 end
 
+function StormFox.Menu.OpenController()
+	net.Start("stormfox.menu")
+		net.WriteBool(false)
+	net.SendToServer()
+end
+
 function StormFox.Menu.CloseController()
 	if _SF_CONTROLLER then
 		_SF_CONTROLLER:Remove()
@@ -577,3 +584,6 @@ list.Set( "DesktopWindows", "StormFoxController", {
 		StormFox.Menu.OpenController()
 	end
 } )
+
+
+-- icon16/shield

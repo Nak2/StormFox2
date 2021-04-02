@@ -107,4 +107,3 @@ end)
 function StormFox.WeatherGen.GetData()
 	return SF_WEEKWEATHER
 end
-StormFox.Menu.OpenSV()

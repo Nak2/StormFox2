@@ -398,7 +398,7 @@ end
 local t_mat = "icon16/font.png"
 local s_mat = "icon16/cog.png"
 
-local function OpenSV()
+function StormFox.Menu._OpenSV()
 	if not StormFox.Loaded then return end
 	if _SFMENU and IsValid(_SFMENU) then
 		_SFMENU:Remove()
@@ -411,15 +411,12 @@ local function OpenSV()
 	p:SetCookie("sf2_lastmenusv")
 	_SFMENU:MakePopup()
 end
-net.Receive("stormfox.menu", OpenSV)
 
--- Request the server if we're allowed
-concommand.Add('stormfox2_svmenu', function()
-	net.Start("stormfox.menu")
-	net.SendToServer()
-end, nil, "Opens SF serverside menu")
 function StormFox.Menu.OpenSV()
 	net.Start("stormfox.menu")
+		net.WriteBool(true)
 	net.SendToServer()
 end
-StormFox.Menu.OpenSV()
+
+-- Request the server if we're allowed
+concommand.Add('stormfox2_svmenu', StormFox.Menu.OpenSV, nil, "Opens SF serverside menu")

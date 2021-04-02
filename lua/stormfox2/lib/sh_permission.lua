@@ -23,14 +23,17 @@ if SERVER then
 		"sf_openweathermap_key", "sf_openweathermap_real_lat", "sf_openweathermap_real_lon", "sf_openweathermap_real_city"
 	}
 	net.Receive("stormfox.menu", function(len, ply)
+		local req = net.ReadBool()
 		if ply:IsListenServerHost() then
 			net.Start("stormfox.menu")
+				net.WriteBool(req)
 			net.Send( ply )
 			StormFox.WeatherGen.UpdatePlayer( ply ) -- Tell the player about the upcoming weather
 		end
-		CAMI.PlayerHasAccess(ply,"StormFox Settings",function(b)
+		CAMI.PlayerHasAccess(ply,req and "StormFox Settings" or "StormFox WeatherEdit",function(b)
 			if not b then return end
 			net.Start("stormfox.menu")
+				net.WriteBool(req)
 			net.Send( ply )
 			StormFox.WeatherGen.UpdatePlayer( ply ) -- Tell the player about the upcoming weather
 		end)
@@ -81,6 +84,14 @@ if SERVER then
 		end)
 	end
 else
+	net.Receive("stormfox.menu", function(len)
+		local n = net.ReadBool()
+		if n then
+			StormFox.Menu._OpenSV()
+		else
+			StormFox.Menu._OpenController()
+		end
+	end)
 	local w_list = {
 		"sf_menu","sf_openweathermap_key", "sf_openweathermap_real_lat", "sf_openweathermap_real_lon", "sf_openweathermap_real_city"
 	}

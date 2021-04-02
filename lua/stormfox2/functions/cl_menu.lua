@@ -197,3 +197,16 @@ function StormFox.Menu.Open()
 end
 
 concommand.Add('stormfox2_menu', StormFox.Menu.Open, nil, "Opens SF clientside menu")
+
+list.Set( "DesktopWindows", "StormFoxSetting", {
+	title		= "SF " .. niceName(language.GetPhrase("#spawnmenu.utilities.settings")),
+	icon		= "stormfox2/hud/settings.png",
+	width		= 960,
+	height		= 700,
+	onewindow	= true,
+	init		= function( icon, window )
+		window:Remove()
+		surface.PlaySound("buttons/button14.wav")
+		StormFox.Menu.Open()
+	end
+} )
