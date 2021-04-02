@@ -65,12 +65,75 @@ local function ConVarChanged( PANEL, strNewValue )
 	SetSFConVar(PANEL.m_strConVar, strNewValue)
 end
 
+local function FindPercent( x, a, b )
+	return (x - a) / (b - a)
+end
+
 
 -- Title
 do
 	local PANEL = {}
 	PANEL.PaintOver = PaintOver
 	derma.DefineControl( "SFTitle", "", PANEL, "DLabel" )
+end
+-- String
+do
+	local PANEL = {}
+	PANEL.Paint = empty
+	function PANEL:Init()
+		self:DockMargin(5,0,10,0)
+		--self.Paint = empty
+		local l = vgui.Create( "DLabel", self )
+		local b = vgui.Create("DTextEntry", self)
+		local d = vgui.Create( "DLabel", self )
+		l:SetText("Unknown ConVar")
+		self._des = "This is an unset ConVar panel."
+		d:SetText(self._des)
+		l:SetColor(color_black)
+		l:SetFont("DermaDefaultBold")
+		l:SizeToContents()
+		l:InvalidateLayout(true)
+		l:Dock(TOP)
+		b:SetPos(5, l:GetTall() + 2)
+		b:SetWide(150)
+		d:SetPos(74, l:GetTall() + 2)
+		d:SetDark(true)
+		d:SizeToContents()
+		self:SetTall(l:GetTall() + 34)
+		self._l = l
+		self._b = b	
+		self._d = d
+		
+		self._w = 64
+		self:InvalidateLayout(true)
+	end
+	function PANEL:SetConvar( sName, sType, sDesc )
+		local con = GetConVar( "sf_" .. sName )
+		self._l:SetText( "#sf_" .. sName )
+		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
+		self._b:SetText( con:GetString())
+		function self._b:OnEnter( str )
+			SetSFConVar(sName, tostring(str))
+		end
+		StormFox.Setting.Callback(sName,function(vVar,vOldVar,_, self)
+			self._b:SetText(vVar)
+		end,self)
+		self:InvalidateLayout(true)
+	end
+	function PANEL:PerformLayout(w, h)
+		local text, lines = wrapText(self._des, self:GetWide() - self._b:GetWide())
+		self._d:SetPos(10 + self._b:GetWide(), self._l:GetTall() + 2)
+		self._d:SetText(text)
+		self._d:SizeToContents()
+		self._desr = text
+		local h = math.max( 40, 10 + lines * 20)
+		if lines == 1 then
+			self._d:SetTall(22)
+		end
+		self:SetTall( h )
+	end
+	PANEL.PaintOver = PaintOver
+	derma.DefineControl( "SFConVar_String", "", PANEL, "DPanel" )
 end
 -- Table
 do
@@ -214,6 +277,9 @@ do
 		local con = GetConVar( "sf_" .. sName )
 		self._l:SetText( sDesc and sDesc or "#sf_" .. sName )
 		self._b:SetConVar( "sf_" .. sName )
+		function self._b:DoClick()
+			SetSFConVar(sName, not self:GetChecked())
+		end
 		self._b.ConVarChanged = ConVarChanged
 		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
 		self:InvalidateLayout(true)
@@ -1227,6 +1293,7 @@ do
 end
 -- World Display
 do
+	local owm = Material("stormfox2/hud/openweather.png")
 	local PANEL = {}
 	AccessorFunc( PANEL, "m_lat", "Lat" )
 	AccessorFunc( PANEL, "m_lon", "Lon" )
@@ -1235,14 +1302,15 @@ do
 	local c = Color(0,0,0,55)
 	function PANEL:Init()
 		self._map = vgui.Create("DPanel", self)
-		self:SetLat(52.6139095)
-		self:SetLon(-2.0059601)
+		self:SetLat(StormFox.Setting.Get("openweathermap_lat", 52.6139095))
+		self:SetLon(StormFox.Setting.Get("openweathermap_lon", -2.0059601))
 		self:SetSize(400, 300)
-		self:SetZoom(5)
+		self:SetZoom(3)
 		self._range = 1
-		self:ReSize()
+		
 		self._map._s = self
 		function self._map:Paint(w,h)
+			if self._s:GetDisabled() then return end
 			surface.SetDrawColor(color_white)
 			surface.SetMaterial( w_map )
 			surface.DrawTexturedRect(0,0,w,h)
@@ -1265,6 +1333,14 @@ do
 			surface.DrawRect(xx + ws * 0.5 - yT / 2, yy + hs, xT, h - yy - hs)
 		end
 		self:SetMouseInputEnabled( true )
+		StormFox.Setting.Callback("openweathermap_lat",function(vVar,_,_, self)
+			self:SetLat( tonumber(vVar) )
+			self:ReSize()
+		end,self)
+		StormFox.Setting.Callback("openweathermap_lon",function(vVar,_,_, self)
+			self:SetLon( tonumber(vVar) )
+			self:ReSize()
+		end,self)
 	end
 	function PANEL:ReSize()
 		local z = self:GetZoom() * 0.5
@@ -1288,16 +1364,191 @@ do
 		self:ReSize()
 		return true
 	end
-
+	function PANEL:PerformLayout()
+		self:ReSize()
+	end
 	function PANEL:Paint(w,h)
+		if self:GetDisabled() then return end
 		surface.SetDrawColor(color_white)
 		surface.SetMaterial( w_map )
 		surface.DrawTexturedRectUV(0,0,w,h,0,0,0.01,0.01)
 	end
+	function PANEL:PaintOver(w,h)
+		surface.SetDrawColor(color_black)
+		surface.SetMaterial(owm)
+		local tw = w / 5
+		local th = tw * 0.42
+		surface.DrawTexturedRect(0, h - th, tw, th)
+	end
 	derma.DefineControl( "SF_WorldMap", "", PANEL, "DPanel" )
-	
 end
 
+-- Day Display
+do
+	local function displayLayout(self, width, height )
+		-- Temp changes
+		local tmin,tmax = StormFox.Setting.Get("min_temp",-10), StormFox.Setting.Get("max_temp",20)
+		local tsize = (tmax - tmin)
+		self.temp_size = height / 20
+		self.temp_y = FindPercent(0, tmax, tmin)
+		if self.last_temp then
+			self.TempY = FindPercent(self.last_temp, tmax, tmin) * height
+		else
+			self.TempY = 0
+		end
+		self.TempY2 = FindPercent(self.temp, tmax, tmin) * height
+		self.TempY3 = FindPercent(self.next_temp, tmax, tmin) * height
+	end
+	local b_c = Color(255,255,255,55)
+	local b_c2 = Color(255,255,255,5)
+	local r_c = Color(155,155,255,25)
+	local function displayPaint(self, w, h)
+		-- Draw bar
+		surface.SetDrawColor(b_c)
+		surface.DrawLine(0,self.temp_y * h, w, self.temp_y * h)
+		surface.SetDrawColor(b_c2)
+		for y = self.temp_y * h, 0, -20 do
+			surface.DrawLine(0,y, w, y)
+		end
+		for y = self.temp_y * h, h, 20 do
+			surface.DrawLine(0,y, w, y)
+		end
+		-- Draw "rain"
+		if self.weather and self.weather.Name == "Rain" then
+			surface.SetDrawColor(r_c)
+			local h2 = self.weather_a * h
+			surface.DrawRect(0, h - h2, w, h2)
+		end
+		if not self.TempY or not self.TempY2 or not self.TempY3 then return end
+		if self.TempY < self.TempY2 then -- Down
+			surface.SetDrawColor(color_white)
+		else							-- Up
+			surface.SetDrawColor(Color(0,255,0))
+		end
+		surface.DrawLine(-w / 2, self.TempY, w / 2, self.TempY2 )
+		if self.TempY2 < self.TempY3 then -- Blue
+			surface.SetDrawColor(color_white)
+		else							-- Up
+			surface.SetDrawColor(Color(0,255,0))
+		end
+		surface.DrawLine(w / 2, self.TempY2, w * 1.5, self.TempY3)
+	end
+
+	local PANEL = {}
+	function PANEL:Init()
+		self:SetWide(60)
+		self.icon = vgui.Create("DImage", self)
+		self.icon:Dock(TOP)
+		self.icon:DockMargin(15,15,15,5)
+		self.icon:SetMaterial( Material("gui/noicon.png") )
+		self.temp = vgui.Create("DPanel", self)
+		self.temp:Dock(TOP)
+		self.temp.text = ""
+		self.time = ""
+		self.temp.desc = "Unknown"
+		self.temp:SetTall(30)
+		function self.temp:Paint(w,h)
+			draw.SimpleText(self.text, "DermaDefault",w / 2,0,color_white,TEXT_ALIGN_CENTER)
+			draw.SimpleText(self.desc, "DermaDefault",w / 2,h/2,color_white,TEXT_ALIGN_CENTER)
+		end
+		self.display = vgui.Create("DPanel", self)
+		self.display:Dock(FILL)
+		self.display.PerformLayout = displayLayout
+		self.display.Paint = displayPaint
+		self.time = vgui.Create("DPanel", self)
+		self.time:Dock(BOTTOM)
+		self.time:SetTall(30)
+		function self.time:Paint(w,h)
+			draw.SimpleText(self.text, "DermaDefault",w / 2,h / 4,color_white,TEXT_ALIGN_CENTER)
+		end
+	end
+	function PANEL:SetData(time, last_data, data, next_data )
+		self.data = data
+		self.temp.text = StormFox.Temperature.GetDisplay(data.temp) .. StormFox.Temperature.GetDisplaySymbol()
+		
+		self.display.last_temp 	= last_data and last_data.temp or 0
+		self.display.next_temp 	= next_data and next_data.temp or data.temp
+		self.display.temp 		= data.temp
+
+		self.time.text = StormFox.Time.GetDisplay(time)
+		self.weather = StormFox.Weather.Get( data.weather and data.weather[2] or "Clear" )
+		self.display.weather = self.weather
+		self.display.weather_a = data.weather[1]
+		if self.weather then
+			self.icon:SetMaterial(self.weather.GetIcon(time, data.temp or 20, StormFox.Wind.GetForce(), false, data.weather[1]))
+			self.temp.desc = self.weather:GetName(time, data.temp or 20, StormFox.Wind.GetForce(), false, data.weather[1] )
+		end
+	end
+
+	function PANEL:PerformLayout(w, h)
+		-- Icon
+		self.icon:SetTall(w - 30)
+	end
+
+	function PANEL:Paint(w, h)
+
+		-- self.desc
+	end
+	derma.DefineControl( "SF_WeatherHour", "", PANEL, "DPanel" )
+end
+
+-- Weather Display
+do
+	local PANEL = {}
+	local col = Color(26,41,72, 255)
+	local mat = Material("vgui/loading-rotate")
+	function PANEL:Init()
+		-- StormFox.WeatherGen.GetData()
+		self:SetSize( 400, 300 )
+		self._Generated = false
+		
+		self._board = vgui.Create("DHorizontalScroller", self)
+		self._board:Dock(FILL)
+		self._board:DockPadding(0,0,0,24)
+		self:Update()
+	end
+	function PANEL:Update()
+		if not StormFox.WeatherGen then return end
+		if table.Count(StormFox.WeatherGen.GetData()) < 1 then return end
+		self.data = StormFox.WeatherGen.GetData()
+		local key = table.GetKeys( self.data )
+		table.sort(key, function(a,b) return b > a end)
+		local time = StormFox.Time.Get()
+		for i, hour in ipairs( key ) do
+			if hour + 60 < time then continue end
+			local data = self.data[ hour ]
+			local v_hour = vgui.Create("SF_WeatherHour", self._board)
+			v_hour:DockMargin(0,0,0,24)
+			self._board:AddPanel(v_hour)
+			v_hour:SetData( (hour % 1440), self.data[ key[i - 1] ],data, self.data[ key[i + 1] ] )
+		end
+		self._board:InvalidateLayout()
+	end
+	function PANEL:Think()
+		if not self.data then
+			self:Update()
+		end
+	end
+	function PANEL:Paint(w,h)
+		surface.SetDrawColor(col)
+		surface.DrawRect(0, 0, w,h)
+	end
+	function PANEL:PaintOver(w,h)
+		if not self.data then
+			surface.SetMaterial(mat)
+			surface.SetDrawColor(color_white)
+			surface.DrawTexturedRectRotated(w / 2, h / 2, 50, 50, SysTime() * 300 % 360)
+			surface.SetFont("SF_Menu_H2")
+			local t = niceName(language.GetPhrase("loading"))
+			t = t .. string.rep(".", CurTime() % 4)
+			local tw,th = surface.GetTextSize( t )
+			surface.SetTextColor(color_white)
+			surface.SetTextPos(w / 2 - tw / 2, h / 2 - th / 2 - 40)
+			surface.DrawText(t)
+		end
+	end
+	derma.DefineControl( "SF_WeatherMap", "", PANEL, "DPanel" )
+end
 -- Menu
 do
 	local function empty() end
@@ -1346,6 +1597,8 @@ do
 			setting = vgui.Create("SFConVar_Number", pPanel)
 		elseif _type == "time" then
 			setting = vgui.Create("SFConVar_Time", pPanel)
+		elseif _type == "string" then
+			setting = vgui.Create("SFConVar_String", pPanel)
 		elseif _type == "time_toggle" then
 			setting = vgui.Create("SFConVar_Time_Toggle", pPanel)
 		elseif _type == "temp" or _type == "temperature" then
@@ -1663,6 +1916,9 @@ do
 				end
 				return dL
 			end
+			function pnl:MarkUsed( sName )
+				p:MarkUsed( sName )
+			end
 		end
 		-- Make the layout
 		for _,v in ipairs(tabs) do
@@ -1710,4 +1966,9 @@ do
 		switch(str_page, self.p_right.sub,self.p_left.buttons, self._cookie)
 	end
 	derma.DefineControl( "SF_Menu", "", PANEL, "DFrame" )
+end
+
+
+if StormFox.Menu and StormFox.Menu.OpenSV then
+	StormFox.Menu.OpenSV()
 end

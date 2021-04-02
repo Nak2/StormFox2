@@ -18,10 +18,27 @@ local SF_WEATHEREDIT= 1
 
 if SERVER then
 	util.AddNetworkString("stormfox.permission")
+	util.AddNetworkString("stormfox.menu")
+	local w_list = {
+		"sf_openweathermap_key", "sf_openweathermap_real_lat", "sf_openweathermap_real_lon", "sf_openweathermap_real_city"
+	}
+	net.Receive("stormfox.menu", function(len, ply)
+		if ply:IsListenServerHost() then
+			net.Start("stormfox.menu")
+			net.Send( ply )
+			StormFox.WeatherGen.UpdatePlayer( ply ) -- Tell the player about the upcoming weather
+		end
+		CAMI.PlayerHasAccess(ply,"StormFox Settings",function(b)
+			if not b then return end
+			net.Start("stormfox.menu")
+			net.Send( ply )
+			StormFox.WeatherGen.UpdatePlayer( ply ) -- Tell the player about the upcoming weather
+		end)
+	end)
 	local function plyRequestSetting(ply, convar, var)
 		if not CAMI then return end
 		-- Check if its a stormfox setting
-			if not StormFox.Setting.GetType( convar ) then return false, "Not SF" end
+			if not table.HasValue(w_list,convar) and not StormFox.Setting.GetType( convar ) then return false, "Not SF" end
 		-- If singleplayer/host
 			if ply:IsListenServerHost() then
 				return StormFox.Setting.Set(convar,var)
@@ -64,8 +81,11 @@ if SERVER then
 		end)
 	end
 else
+	local w_list = {
+		"sf_menu","sf_openweathermap_key", "sf_openweathermap_real_lat", "sf_openweathermap_real_lon", "sf_openweathermap_real_city"
+	}
 	function StormFox.Permission.RequestSetting( convar, var )
-		if StormFox.Setting.Get(convar, var) == var then
+		if not table.HasValue(w_list, convar) and StormFox.Setting.Get(convar, var) == var then
 			return
 		end
 		net.Start("stormfox.permission")

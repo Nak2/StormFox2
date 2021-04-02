@@ -213,7 +213,7 @@ function StormFox.Terrain.Set( sName )
 	local t = StormFox.Terrain.Get( sName )
 	if not t then
 		StormFox.Terrain.Reset()
-		return
+		return false
 	end
 	StormFox.Terrain.Reset( true )
 	t:Apply()
@@ -250,6 +250,7 @@ end
 -- NET
 if SERVER then
 	net.Receive("stormfox.terrain", function(len, ply) -- OI, what terrain?
+		print("> Telling client", CURRENT_TERRAIN and CURRENT_TERRAIN.Name or "")
 		net.Start("stormfox.terrain")
 			net.WriteString( CURRENT_TERRAIN and CURRENT_TERRAIN.Name or "" )
 		net.Send(ply)
@@ -257,11 +258,14 @@ if SERVER then
 else
 	net.Receive("stormfox.terrain", function(len)
 		local sName = net.ReadString()
-		StormFox.Terrain.Set( sName )
+		local b = StormFox.Terrain.Set( sName )
+		print("Terrain Recived: ", sName, b)
+		
 	end)
 	-- Ask the server
-	hook.Add("stormfox.InitPostEntity", "stormfox.terrain", function()
+	hook.Add("stormfox.InitPostEntity", "stormfox.terrain.init", function()
 		timer.Simple(1, function()
+			print("< Asking for terrain")
 			net.Start("stormfox.terrain")
 				net.WriteBit(1)
 			net.SendToServer()

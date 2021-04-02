@@ -171,7 +171,7 @@ local tabs = {
 		board:AddSetting("extra_darkness")
 		board:AddSetting("extra_darkness_amount")
 		board:AddTitle(language.GetPhrase("#footprints"))
-		board:AddSetting("footprint_disable")
+		board:AddSetting("footprint_enabled")
 		board:AddSetting("footprint_playeronly")
 		board:AddSetting("footprint_distance")
 		board:AddSetting("footprint_max")

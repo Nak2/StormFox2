@@ -118,6 +118,9 @@ Tries to onvert to the given defaultvar to match the setting.
 ---------------------------------------------------------------------------]]
 local w_list = {"float","int","vector","angle","bool","string","entity"}
 function StormFox.Setting.StringToType( sName, sString )
+	if type(sString) == "boolean" then
+		sString = sString and "1" or "0"
+	end
 	if not settings[sName] then return sString end -- No idea
 	if settings[sName] == "number" then
 		return tonumber(sString)
@@ -163,8 +166,22 @@ end
 --[[<Shared>-----------------------------------------------------------------
 Sets a StormFox setting
 ---------------------------------------------------------------------------]]
+local w_list = {
+	"openweathermap_key", "openweathermap_real_lat", "openweathermap_real_lon"
+}
+settings["openweathermap_key"] = "string"
+settings["openweathermap_real_lat"] = "string"
+settings["openweathermap_real_lon"] = "string"
+
 function StormFox.Setting.Set(sName,vVar)
-	if not settings[sName] then return false,"Not a stormfox setting" end -- Not a stormfox setting
+	if string.sub(sName, 0, 3) == "sf_" then
+		sName = string.sub(sName, 4)
+	end
+	if sName == "openweathermap_real_city" then
+		StormFox.WeatherGen.APISetCity( vVar )
+		return
+	end
+	if not table.HasValue(w_list, sName) and not settings[sName] then return false,"Not a stormfox setting" end -- Not a stormfox setting
 	local con = GetConVar("sf_" .. sName)
 	if not con then return false,"IS not a convar" end
 	if CLIENT and settings_env[sName]then -- Ask the server

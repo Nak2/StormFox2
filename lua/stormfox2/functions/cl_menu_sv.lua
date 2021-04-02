@@ -48,7 +48,6 @@ local mapPointList = {
 	{"env_tonemap_controllers", StormFox.Ent.env_tonemap_controllers},
 	{"logic_relay", 			hasMapLogic,							["check"] = "#sf_map.logic_relay.check", ["none"] = "#sf_map.logic_relay.none"}
 }
-PrintTable(mapPointList)
 
 local function niceName(sName)
 	if sName[1] == "#" then
@@ -62,10 +61,23 @@ local function niceName(sName)
 	return string.TrimRight(str, " ")
 end
 
+local function CheckSetAPI(self, str )
+	http.Fetch("http://api.openweathermap.org/data/2.5/weather?lat=52.6139095&lon=-2.0059601&appid=" .. str, function(body, len, head, code)
+		if code == 401 then -- Most likly an invalid API-Key.
+			self:SetPlaceholderText("INVALID CODE")
+		else
+			self:SetPlaceholderText("********************************")
+			StormFox.Permission.RequestSetting( "sf_openweathermap_key", str )
+		end
+		self:SetText("")
+	end)
+end
+
 local m_check = Material("icon16/accept.png")
 local m_warni = Material("icon16/bullet_error.png")
 local m_none  = Material("icon16/cancel.png")
-
+local m_bu 	= Material("gui/workshop_rocket.png")
+local c_bu = Color(155,155,155)
 local tabs = {
 	[1] = {"Start","#start",(Material("stormfox2/hud/menu/dashboard.png")),function(board)
 		board:AddTitle(language.GetPhrase("#map") .. " " .. language.GetPhrase("#support"))
@@ -119,8 +131,34 @@ local tabs = {
 				y = 0
 			end
 		end
+		board:AddTitle(language.GetPhrase("#weather"))
 
+		local w_panel = vgui.Create("DPanel", board)
+		w_panel:SetTall(240)
+		w_panel:DockMargin(15,0,15,0)
+		w_panel:Dock(TOP)
 
+		local weather_board = vgui.Create("SF_WeatherMap", w_panel)
+		weather_board:Dock(FILL)
+		
+		local wmap_board = vgui.Create("DPanel", w_panel)
+		wmap_board:Dock(FILL)
+		local wmap = vgui.Create("SF_WorldMap", wmap_board)
+		wmap:Dock(FILL)
+
+		local b = not StormFox.Setting.Get("openweathermap_enabled", false)
+		wmap_board:SetDisabled(b)
+		if b then
+			wmap_board:Hide()
+		end
+		StormFox.Setting.Callback("openweathermap_enabled",function(vVar,_,_, self)
+			wmap_board:SetDisabled(not vVar)
+			if vVar then
+				wmap_board:Show()
+			else
+				wmap_board:Hide()
+			end
+		end,wmap)
 	end},
 	[2] = {"Time","#time",(Material("stormfox2/hud/menu/clock.png")),function(board)
 		board:AddTitle("#time")
@@ -137,12 +175,129 @@ local tabs = {
 	[3] = {"Weather","#weather",(Material("stormfox2/hud/menu/weather.png")),function(board)
 		board:AddTitle("#weather")
 		board:AddSetting("auto_weather")
-		board:AddSetting("max_weathers_prday")
+		board:AddSetting("max_weathers_prweek")
 		board:AddTitle("#temperature")
 		local temp = board:AddSetting({"min_temp", "max_temp"}, "temperature", "sf_temp_range")
 		temp:SetMin(-10)
 		temp:SetMax(32)
-		board:AddSetting("temp_acc")		
+		board:AddSetting("temp_acc")
+	
+		board:AddTitle("OpenWeatherMap API")
+			local apiboard = vgui.Create("DPanel", board)
+			apiboard:SetTall(54)
+			apiboard:Dock(TOP)
+			function apiboard.Paint() end
+			-- Website
+			local web_button = vgui.Create("DImageButton", apiboard)
+			web_button:SetImage("stormfox2/hud/openweather.png")
+			web_button:SetSize(100,42)
+			function apiboard:PerformLayout(width, height)
+				web_button:SetPos( width - 160, 5)
+			end
+			function web_button:Paint(w,h)
+				local s = 40
+				surface.SetDrawColor(c_bu)
+				surface.SetMaterial(m_bu)
+				DisableClipping(true)
+				surface.DrawTexturedRectUV(-10, -10, w + 20, h + 20, 0.2,0.1,0.8,.9)
+				DisableClipping(false)
+			end
+			function web_button.DoClick()
+				gui.OpenURL("https://openweathermap.org/api")
+			end
+			
+			local l_t = vgui.Create("DLabel", apiboard)
+			l_t:SetPos( 15,3)
+			l_t:SetDark(true)
+			l_t:SetText("API: ")
+			local api_key = vgui.Create("DTextEntry", apiboard)
+			api_key:SetPos(40,3)
+			api_key:SetWide(200)
+			function api_key:OnEnter( str )
+				CheckSetAPI( self, str )
+			end
+			local b = StormFox.Setting.Get("openweathermap_enabled", false)
+			if b then
+				api_key:SetPlaceholderText("********************************")
+			else
+				api_key:SetPlaceholderText("API KEY")
+			end
+			local lon, lat, city = vgui.Create("DTextEntry", apiboard), vgui.Create("DTextEntry", apiboard), vgui.Create("DTextEntry", apiboard)
+			lon:SetDrawLanguageID( false )
+			lat:SetDrawLanguageID( false )
+			city:SetDrawLanguageID( false )
+			api_key:SetDrawLanguageID( false )
+			lon:SetNumeric(true)
+			lat:SetNumeric(true)
+			-- Lon
+			local l_t = vgui.Create("DLabel", apiboard)
+			l_t:SetPos( 15, 30)
+			l_t:SetDark(true)
+			l_t:SetText("lon: ")
+			lon:SetPos( 40, 30)
+			lon:SetText(StormFox.Setting.Get("openweathermap_lon","lon"))
+			-- Lat
+			local l_t = vgui.Create("DLabel", apiboard)
+			l_t:SetPos( 115, 30)
+			l_t:SetDark(true)
+			l_t:SetText("lon: ")
+			lat:SetPos( 140, 30)
+			lat:SetText(StormFox.Setting.Get("openweathermap_lat","lat"))
+			local l_t = vgui.Create("DLabel", apiboard)
+			l_t:SetPos( 215, 30)
+			l_t:SetDark(true)
+			l_t:SetText("/")
+			-- City
+			local l_t = vgui.Create("DLabel", apiboard)
+			l_t:SetPos( 228, 30)
+			l_t:SetDark(true)
+			l_t:SetText("#searchbar_placeholder")
+			city:SetPos( 264, 30)
+			city:SetPlaceholderText(niceName(language.GetPhrase("#city")))
+			if not b then
+				lon:SetDisabled( true )
+				lat:SetDisabled( true )
+				city:SetDisabled( true )
+			end
+			local apienable = vgui.Create("DCheckBox", apiboard)
+			StormFox.Setting.Callback("openweathermap_enabled",function(b,_,_, self)
+				if b then
+					api_key:SetText("********************************")
+				else
+					api_key:SetText("API KEY")
+				end
+				lon:SetDisabled(not b)
+				city:SetDisabled(not b)
+				lat:SetDisabled(not b)
+				apienable:SetChecked( b )
+			end,apiboard)
+
+			StormFox.Setting.Callback("openweathermap_lon",function(str,_,_, self)
+				lon:SetText(str)
+			end,lon)
+			StormFox.Setting.Callback("openweathermap_lat",function(str,_,_, self)
+				lat:SetText(str)
+			end,lat)
+			apienable:SetChecked( b )
+			function apienable:OnChange(b)
+				StormFox.Setting.Set("openweathermap_enabled", b)
+			end
+			apienable:SetPos(248, 5)
+			-- Lat. Lon
+			function lat:OnEnter( str )
+				StormFox.Permission.RequestSetting("sf_openweathermap_real_lat", str)
+			end
+			function lon:OnEnter( str )
+				StormFox.Permission.RequestSetting("sf_openweathermap_real_lon", str)
+			end
+			function city:OnEnter( str )
+				StormFox.Permission.RequestSetting("sf_openweathermap_real_city", str)
+			end
+		board:MarkUsed("openweathermap_enabled")
+		board:MarkUsed("openweathermap_lat")
+		board:MarkUsed("openweathermap_lon")
+		
+		
 	end},
 	[4] = {"Effects","#effects",(Material("stormfox2/hud/menu/settings.png")),function(board)
 		board:AddTitle(language.GetPhrase("#map") .. language.GetPhrase("#light"))
@@ -153,7 +308,7 @@ local tabs = {
 		board:AddSetting("maplight_updaterate")
 		board:AddTitle("#effects_pp")
 		board:AddSetting("overwrite_extra_darkness")
-		board:AddSetting("footprint_disablelogic")
+		board:AddSetting("footprint_enablelogic")
 	end},
 	[5] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png"))},
 	[6] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png"))},
@@ -221,6 +376,8 @@ local function addSetting(sName, pPanel, _type)
 		setting = vgui.Create("SFConVar_Number", pPanel)
 	elseif _type == "time" then
 		setting = vgui.Create("SFConVar_Time", pPanel)
+	elseif _type == "string" then
+		setting = vgui.Create("SFConVar_String", pPanel)
 	elseif _type == "time_toggle" then
 		setting = vgui.Create("SFConVar_Time_Toggle", pPanel)
 	elseif _type == "temp" or _type == "temperature" then
@@ -241,7 +398,7 @@ end
 local t_mat = "icon16/font.png"
 local s_mat = "icon16/cog.png"
 
-function StormFox.Menu.OpenSV()
+local function OpenSV()
 	if not StormFox.Loaded then return end
 	if _SFMENU and IsValid(_SFMENU) then
 		_SFMENU:Remove()
@@ -254,6 +411,15 @@ function StormFox.Menu.OpenSV()
 	p:SetCookie("sf2_lastmenusv")
 	_SFMENU:MakePopup()
 end
+net.Receive("stormfox.menu", OpenSV)
 
+-- Request the server if we're allowed
+concommand.Add('stormfox2_svmenu', function()
+	net.Start("stormfox.menu")
+	net.SendToServer()
+end, nil, "Opens SF serverside menu")
+function StormFox.Menu.OpenSV()
+	net.Start("stormfox.menu")
+	net.SendToServer()
+end
 StormFox.Menu.OpenSV()
-concommand.Add('stormfox2_svmenu', StormFox.Menu.OpenSV, nil, "Opens SF serverside menu")

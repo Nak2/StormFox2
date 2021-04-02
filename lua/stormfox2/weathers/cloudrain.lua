@@ -86,6 +86,7 @@ do
 	end
 	-- Icon
 	local m_def = Material("stormfox2/hud/w_raining.png")
+	local m_def_light = Material("stormfox2/hud/w_raining_light.png")
 	local m_thunder = Material("stormfox2/hud/w_raining_thunder.png")
 	local m_windy = Material("stormfox2/hud/w_raining_windy.png")
 	local m_snow = Material("stormfox2/hud/w_snowing.png")
@@ -103,7 +104,11 @@ do
 		elseif b_windy and nTemp > -4 then
 			return m_windy
 		elseif nTemp > 0 then
-			return m_def
+			if nFraction > 0.4 then
+				return m_def
+			else
+				return m_def_light
+			end
 		elseif nTemp <= -4 then
 			return m_snow
 		else
@@ -208,7 +213,7 @@ do
 		if SERVER then
 			StormFox.Map.w_CallLogicRelay(rain.LogicRelay())
 		end
-		return StormFox.Temperature.Get() < -1 and snow or rain_t
+		return StormFox.Temperature.Get() < -3 and snow or rain_t
 	end)
 
 	-- Make the snow stay, until temp is high or it being replaced.
@@ -228,17 +233,17 @@ do
 	end
 	snow:RenderWindow( RenderSnow )
 	-- Footprints
-	snow:MakeFootprints({
-		"stormfox/footstep/footstep_snow0.ogg",
-		"stormfox/footstep/footstep_snow1.ogg",
-		"stormfox/footstep/footstep_snow2.ogg",
-		"stormfox/footstep/footstep_snow3.ogg",
-		"stormfox/footstep/footstep_snow4.ogg",
-		"stormfox/footstep/footstep_snow5.ogg",
-		"stormfox/footstep/footstep_snow6.ogg",
-		"stormfox/footstep/footstep_snow7.ogg",
-		"stormfox/footstep/footstep_snow8.ogg",
-		"stormfox/footstep/footstep_snow9.ogg"
+	snow:MakeFootprints(true,{
+		"stormfox2/footstep/footstep_snow0.mp3",
+		"stormfox2/footstep/footstep_snow1.mp3",
+		"stormfox2/footstep/footstep_snow2.mp3",
+		"stormfox2/footstep/footstep_snow3.mp3",
+		"stormfox2/footstep/footstep_snow4.mp3",
+		"stormfox2/footstep/footstep_snow5.mp3",
+		"stormfox2/footstep/footstep_snow6.mp3",
+		"stormfox2/footstep/footstep_snow7.mp3",
+		"stormfox2/footstep/footstep_snow8.mp3",
+		"stormfox2/footstep/footstep_snow9.mp3"
 	},"snow.step")
 
 	snow:SetGroundTexture("nature/snowfloor001a")

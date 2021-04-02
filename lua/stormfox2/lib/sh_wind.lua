@@ -224,7 +224,7 @@ if CLIENT then
 		if math.random(50) > 40 then
 			if wForce > 17 and math.random(1,2) > 1 then
 				AddGuest("ambient/wind/windgust.wav",math.Rand(0.8, 1) * vM)
-			elseif wForce > 4 and wForce < 30 then
+			elseif wForce > 14 and wForce < 30 then
 				AddGuest("ambient/wind/wind_med" .. math.random(1,2) .. ".wav", math.min(maxVol, wForce / 30) * vM)
 			end
 		end
@@ -240,7 +240,7 @@ if CLIENT then
 	-- StormFox.Ambience.ForcePlay
 	hook.Add("StormFox.Ambiences.OnSound", "StormFox.Ambiences.Wind", function()
 		if windSnd < 0 then return end -- No wind
-		local wForce = StormFox.Wind.GetForce()
+		local wForce = StormFox.Wind.GetForce() * 0.5
 		local vM = (400 - windSnd) / 400
 		if vM <= 0 then return end
 		-- Main loop
@@ -297,7 +297,6 @@ else
 		end
 	end
 	hook.Add("StormFox.PostEntityScan", "StormFox.Wind.FlagInit", FlagInit)
-	FlagInit()
 end
 -- Wind movment
 	local function windMove(ply, mv, cmd )
@@ -343,11 +342,5 @@ end
 			mv:SetSideSpeed( side )
 			cmd:SetSideMove( side )
 		end
-		
-		
-		
-
-		--print(fS)
 	end
-
 	hook.Add("SetupMove", "windtest", windMove)
