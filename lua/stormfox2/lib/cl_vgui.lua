@@ -1052,9 +1052,14 @@ do
 		self:SetDark(true)
 		self:SetDecimals(2)
 	end
-	Derma_Hook( PANEL, "Paint2", "Paint", "NumSlider" )
+	--Derma_Hook( PANEL, "Paint2", "Paint", "NumSlider" )
+	--function PANEL:GetNotchColor()
+--		return color_white
+--	end
 	function PANEL:Paint( w, h )
-		self:Paint2(w,h)
+		-- GetNotchColor
+
+		--self:Paint2(w,h)
 		local sw = w - 15
 		paintKnob(self,sw * self.m_fSlideX,0)
 		paintKnob(self,sw * self.m_fSlide2X,0)

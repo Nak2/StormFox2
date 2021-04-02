@@ -136,7 +136,7 @@ hook.Add("StormFox.2DSkybox.FogLayer", "StormFox.Fog.RSky", function( v )
 	--local p = Vector(0,0,-1000) + v * 8000
 	--render.DrawQuadEasy( p, -v, 2000, 50000, Color(f_Col.r,f_Col.g,f_Col.b,255), 90)
 	local h = 2000 + 6000 * StormFox.Fog.GetAmount()
-	render.DrawSphere( Vector(0,0,h - l_fogz * 4) , -20000, 30, 30, color_white)
+	render.DrawSphere( Vector(0,0,h - l_fogz * 4) , -300000, 30, 30, color_white)
 end)
 
 local mat = Material("color")

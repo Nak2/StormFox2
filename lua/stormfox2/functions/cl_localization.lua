@@ -36,7 +36,7 @@ local str = [[
 	sf_setang.desc=Sets the wind-angle to your view.
 	sf_setwind=Sets the windspeed in m/s
 	sf_wcontoller=SF Controller
-	sf_map.light_environment.check=This map supports fast lightchanges.
+	sf_map.light_environment.check=This map support fast lightchanges.
 	sf_map.light_environment.problem=This map will cause lagspikes for clients when the light changes.
 	sf_map.env_wind.none=This map doesn't support windgusts.
 	sf_map.logic_relay.check=This map has custome day/night relays.
@@ -111,8 +111,8 @@ local str = [[
 	#Effects
 	sf_enable_fog=Enable Fog
 	sf_enable_fog.desc=Allow StormFox to edit the fog.
-	sf_footprint_disable=Disable Footprints
-	sf_footprint_disable.desc=Disables footprint effects.
+	sf_footprint_enabled=Disable Footprints
+	sf_footprint_enabled.desc=Enable footprint effects.
 	sf_footprint_playeronly=Player Footprints Only.
 	sf_footprint_playeronly.desc=Only players make footprints.
 	sf_footprint_distance=Footprint Render Distance
@@ -127,7 +127,7 @@ local str = [[
 	
 	sf_overwrite_extra_darkness=Overwrite Extra Darkness
 	sf_overwrite_extra_darkness.desc=Overwrites the players sf_extra_darkness.
-	sf_footprint_disablelogic=Disable Serverside Footprints
+	sf_footprint_enablelogic=Enables Serverside Footprints
 	sf_overwrite_extra_darkness.desc=Disables the logic to handle server-side footprints.
 	
 	sf_window_enable=Enable window effects
@@ -143,7 +143,8 @@ local str = [[
 	sf_temp_range=Temperature range
 	sf_temp_range.desc=The min and max temperature.
 	sf_temp_acc=Temperature change.
-	sf_temp_acc.desc=The max temperature changes pr day.	
+	sf_temp_acc.desc=The max temperature changes pr day.
+	
 ]]
 
 for k, v in ipairs( string.Explode("\n", str)) do

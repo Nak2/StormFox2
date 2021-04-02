@@ -184,7 +184,7 @@ else
 	---------------------------------------------------------------------------]]
 	function StormFox.Temperature.GetDisplay(nCelcius)
 		if nCelcius then
-			return StormFox.Temperature.Convert(_,temp_type,nCelcius)
+			return StormFox.Temperature.Convert(nil,temp_type,nCelcius)
 		end
 		return StormFox.Temperature.Get(temp_type)
 	end

@@ -133,10 +133,9 @@ local eye_mult = -.0001
 -- Load materials
 	-- Side clouds
 	local side_clouds = {}
-	for _,fil in ipairs(file.Find("materials/stormfox/clouds/side_cloud*.png","GAME")) do
-		local png = Material("stormfox/clouds/" .. fil,"nocull noclamp alphatest")
+	for _,fil in ipairs(file.Find("materials/stormfox2/effects/clouds/side_cloud*.png","GAME")) do
+		local png = Material("stormfox2/effects/clouds/" .. fil,"nocull noclamp alphatest")
 		png:SetInt("$flags",2099250)
-		--local mat = Material("stormfox/clouds/side_cloud2")
 		table.insert(side_clouds,{png,png:GetInt("$realwidth") / png:GetInt("$realheight")})
 	end
 	-- Top clouds
@@ -155,7 +154,7 @@ local eye_mult = -.0001
 	for i = 1,layers do
 		sky_mats[i] = CreateMaterial("StormFox_RTSKY" .. i,"UnlitGeneric",params)
 	end
-	local cloudbig = Material("stormfox/clouds/clouds_big.png","nocull noclamp smooth")
+	local cloudbig = Material("stormfox2/effects/clouds/clouds_big.png","nocull noclamp smooth")
 	-- 8240
 		cloudbig:SetInt("$flags",2099250)
 		cloudbig:SetFloat("$nocull",1)

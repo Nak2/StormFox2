@@ -228,7 +228,7 @@ if CLIENT then
 		AddPrint(ent,foot)
 	end)
 	-- Footprint render
-	local mat = {Material("stormfox/effects/foot_hq.png"),Material("stormfox/effects/foot_hql.png"),Material("stormfox/effects/foot_m.png"),Material("stormfox/effects/foot_s.png")}
+	local mat = {Material("stormfox2/effects/foot_hq.png"),Material("stormfox2/effects/foot_hql.png"),Material("stormfox2/effects/foot_m.png"),Material("stormfox2/effects/foot_s.png")}
 	local function getMat(q,foot)
 		if q == 1 then
 			if foot == 0 then
