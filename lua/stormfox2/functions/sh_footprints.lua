@@ -123,7 +123,7 @@ end
 			if SERVER and (game.SinglePlayer() or table.HasValue(NetL, data.Entity:GetClass())) then
 				net.Start("stormfox.feetfix",true)
 					net.WriteEntity(data.Entity)
-					net.WriteInt(foot,2)
+					net.WriteInt(foot or 1,2)
 					net.WriteString(data.SoundName)
 					net.WriteString(sTex)
 					net.WriteBool(bReplace)
