@@ -11,26 +11,9 @@
 ## Other
     - Sunset/rise has a wider area irl
 
-## Terrian
-	- Fix footprint-sounds
-
 ## Rain / Particles
 	- Seem to ignore glass (Remember, bullet masks ignore glass)
 
-# Footprint
-	- Terrain footprints cause errors
-	- Terrain footprints no sound
-	- Terrain doesn't apply for joining people
 
 Useful TEXT
 frame_blend_pp.desc2=Warning\: This will lower your FPS.
-
-[stormfox2] Warning! A net message (stormfox.feetfix) is already started! Discarding in favor of the new message! (stormfox.feetfix)
-  1. v - addons/stormfox2/lua/stormfox2/functions/sh_footprints.lua:123
-   2. unknown - lua/includes/modules/hook.lua:84
-
-
-[stormfox2] addons/stormfox2/lua/stormfox2/functions/sh_footprints.lua:126: bad argument #1 to 'WriteString' (string expected, got nil)
-  1. WriteString - [C]:-1
-   2. v - addons/stormfox2/lua/stormfox2/functions/sh_footprints.lua:126
-    3. unknown - lua/includes/modules/hook.lua:84
