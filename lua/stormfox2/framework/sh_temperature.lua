@@ -182,7 +182,10 @@ else
 	--[[<Client>------------------------------------------------------------------
 	Returns the display temperature.
 	---------------------------------------------------------------------------]]
-	function StormFox.Temperature.GetDisplay()
+	function StormFox.Temperature.GetDisplay(nCelcius)
+		if nCelcius then
+			return StormFox.Temperature.Convert(_,temp_type,nCelcius)
+		end
 		return StormFox.Temperature.Get(temp_type)
 	end
 	--[[<Client>------------------------------------------------------------------
