@@ -53,7 +53,7 @@ do
 	local function LerpVar(fraction, from, to)
 		local t = type(from)
 		if t ~= type(to) then
-			StormFox.Warning("Can't lerp " .. type(from) .. " to " .. type(to) .. "!")
+			--StormFox.Warning("Can't lerp " .. type(from) .. " to " .. type(to) .. "!")
 			return to
 		end
 		if t == "number" then

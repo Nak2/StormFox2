@@ -48,8 +48,8 @@ local function setLights( bTurnOn )
 end
 -- Call day and night relays
 local switch
-hook.Add("stormfox.lightsystem.new", "stormfox.mapinteractions.light", function( nProcent )
-	local lights_on = nProcent < 20
+hook.Add("stormfox.lightsystem.new", "stormfox.mapinteractions.light", function( nPercent )
+	local lights_on = nPercent < 20
 	if switch ~= nil and lights_on == switch then return end -- Nothing changed
 	if lights_on then
 		StormFox.Map.CallLogicRelay("night_events")

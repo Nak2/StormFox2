@@ -108,7 +108,6 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 		SetWeatherFromJSON(body)
 	end
 	function StormFox.WeatherGen.APISetCity( sCityName )
-		print(sCityName)
 		if key_valid == KEY_INVALID then return end
 		if n_NextAllowedCall >= CurTime() then
 			return Stormfox.Warning("API can't be called that often!")
@@ -257,6 +256,11 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 			else
 				nDay.cloudyness = cloudyness - math.Rand(nDay.acc * .5, nDay.acc)
 			end
+		-- Wind
+			nDay.wind = {}
+			local nWind = (lastDay and lastDay.wind[midday] or math.random(0, 10)) -math.random(0,nDay.acc * 2)
+			nDay.wind[midday] = math.Clamp(nWind, 0, 30)
+			nDay.wind[1439] = math.max(0, nDay.wind[midday] - math.random(nDay.wind[midday] / 2,nDay.wind[midday]))
 		-- Calculate weather
 			nDay.weather = {}
 			local max_w = StormFox.Setting.Get("max_weathers_prweek", 3)
@@ -268,12 +272,18 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 				local start_time = math.random( 1, 1380 - w_length * max_weather_time )
 				local end_time = math.Round(start_time + w_length * max_weather_time)
 				if StormFox.Weather.Get(w_name).Inherit == "Cloud" and math.random(1, 3) > 1 then -- Spawn clouds, then weather
-					nDay.weather[start_time] = {"Cloud", w_amount}
-					nDay.weather[start_time + 2] = {w_name, w_amount}
+					nDay.weather[start_time - 2] = {"Cloud", w_amount}
+					nDay.weather[start_time] = {w_name, w_amount}
 					nDay.weather[math.max(end_time, start_time + 20)] = {"Clear", 1}
 				else -- Spawn weather
 					nDay.weather[start_time] = {w_name, w_amount}
 					nDay.weather[end_time] = {"Clear", 1}
+				end
+				if StormFox.Weather.Get(w_name).thunder then
+					local activity = StormFox.Weather.Get(w_name).thunder(w_amount)
+					if activity > 0 then
+						nDay.weather[start_time][3] = activity
+					end
 				end
 				nDay.cloudyness = math.max(-0.25, nDay.cloudyness - w_amount * 5)
 			elseif nDay.cloudyness > 0.1 then -- Cloudy
@@ -287,6 +297,7 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 	end
 	-- Generate a new day
 	local function GenerateNewDay()
+		t = {}
 		if #current_weatherlist >= 7 then
 			table.remove(current_weatherlist, 1)
 		end
@@ -318,7 +329,22 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 	end
 
 	local WAIT_TIL_NEXT_DAY = -1
-	local next_temp, next_weather
+
+	local t = {}
+	local function daylogic(str, tab, time)
+		if t[str] then 
+			if t[str] == WAIT_TIL_NEXT_DAY then return end
+			if t[str] > time then return end
+		end
+		local _, n = search(tab, time)
+		if not n then
+			t[str] = WAIT_TIL_NEXT_DAY
+			return
+		end
+		t[str] = n
+		return n
+	end
+
 	hook.Add("Think", "stormfox.weather.weeklogic", function()
 		if not StormFox.Setting.GetCache("auto_weather", false) then return end
 		if StormFox.Setting.GetCache("openweathermap_enabled", false) then return end
@@ -326,32 +352,29 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 		if not curDay then return end -- No day generated
 		local time = StormFox.Time.Get()
 		local speed = StormFox.Time.GetSpeed()
-		if not next_temp then -- Locate the next temp
-			local _, n = search(curDay.temp, time)
-			if n then
-				local timeset = (n - time) / speed
-				StormFox.Temperature.Set( curDay.temp[n], timeset )
-				next_temp = n
-			else
-				next_temp = WAIT_TIL_NEXT_DAY
+		local n = daylogic("temp", curDay.temp, time)
+		if n then
+			local timeset = (n - time) / speed
+			StormFox.Temperature.Set( curDay.temp[n], timeset )
+		end
+		local n = daylogic("weather", curDay.weather, time)
+		if n then
+			StormFox.Weather.Set( curDay.weather[n][1], curDay.weather[n][2], (n - time) / speed )
+			if curDay.weather[n][3] then -- Thunder
+				StormFox.Thunder.SetEnabled( true, curDay.weather[n][3], 50 / speed )
 			end
 		end
-		if not next_weather then
-			local _, n = search(curDay.weather or {}, time)
-			if n then
-				StormFox.Weather.Set( curDay.weather[n][1], curDay.weather[n][2], (n - time) / speed )
-				next_weather = n
-			else
-				next_weather = WAIT_TIL_NEXT_DAY
-			end
+		local n = daylogic("wind", curDay.wind, time)
+		if n then
+			StormFox.Wind.SetForce( curDay.wind[n], (n - time) / speed )
 		end
+
 	end)
 	-- New day
 	hook.Add("StormFox.Time.NextDay", "StormFox.Weathergen.NextDay", function(nDaysPast)
 		for i = 1, nDaysPast do
 			GenerateNewDay() -- New day
 		end
-		next_temp, next_weather = nil,nil
 	end)
 
 -- Returns the generated week
@@ -369,6 +392,7 @@ function StormFox.WeatherGen.UpdatePlayer( ply )
 		for _, wDay in ipairs( current_weatherlist ) do
 			net.WriteTable(wDay.temp)
 			net.WriteTable(wDay.weather)
+			net.WriteTable(wDay.wind)
 		end
 	if not ply then
 		net.Broadcast()

@@ -1,5 +1,14 @@
 
 StormFox.Thunder = {}
+
+function StormFox.Thunder.IsThundering()
+	return StormFox.Data.Get("nThunder", 0) > 0
+end
+
+function StormFox.Thunder.GetActivity() -- The amount of strikes pr minute
+	return StormFox.Data.Get("nThunder", 0)
+end
+
 if SERVER then
 	util.AddNetworkString("stormfox.thunder")
 
@@ -66,9 +75,10 @@ if SERVER then
 			SkyPos = Vector(vPos.x, vPos.y, StormFox.Map.MaxSize().z)
 			SkyPos = StormFox.DownFall.FindSky( SkyPos, vector_up, 1 ) or SkyPos
 		end
+		--debugoverlay.Box(SkyPos, Vector(1,1,1) * -20, Vector(1,1,1) * 20, 15, Color(255,0,0))
 		-- Find the strike distance (Some maps are suuuper tall)
-		local tr = ETHull(SkyPos - vector_up * 10, Vector( vPos.x, vPos.y, StormFox.Map.MinSize().z), 256)
-		if tr.AllSolid or tr.Fraction == 0 then -- This is solid and should instead be done in the skybox.
+		local tr = ETHull(SkyPos - vector_up * 10, Vector( vPos.x, vPos.y, StormFox.Map.MinSize().z), 256, MASK_SOLID_BRUSHONLY )
+		if tr.AllSolid or tr.Fraction == 0 then -- This is inside solid and should instead be done in the skybox.
 			return THUNDER_MAKE_SKYBOX, SkyPos
 		end
 		SkyPos.z = math.min( SkyPos.z, tr.HitPos.z + 8000 )		
@@ -93,7 +103,7 @@ if SERVER then
 				table.insert(line, pos2)
 				pos = pos2
 			else
-				if tr.HitSky then -- Doesn't count
+				if tr.HitSky then -- We hit the side of the skybox. Go to other way
 					olddir = -olddir
 				else
 					table.insert(line, tr.HitPos)
@@ -129,7 +139,6 @@ if SERVER then
 				table.insert(list, pos)
 			end
 		end
-
 		return table.Reverse(list)
 	end
 
@@ -155,6 +164,9 @@ if SERVER then
 		local b_InSkybox = false
 		local vMapMin = StormFox.Map.MinSize()
 		local vMapMax = StormFox.Map.MaxSize()
+		if not pos then
+			pos = Vector( math.Rand(vMapMin.x, vMapMax.x), math.Rand(vMapMin.y, vMapMax.y), math.Rand(vMapMax.z, vMapMin.z / 2) )
+		end
 		local bInside = pos.x >= vMapMin.x and pos.x <= vMapMax.x and vMapMin.y and pos.y <= vMapMax.y
 		if bInside then
 			t_Var, tList, tr = MakeStrikeDown( pos )
@@ -168,6 +180,7 @@ if SERVER then
 		end
 		if not tList then return false end -- Unable to create lightning strike here.
 		local hPos = tr and tr.HitPos or tList[#tList]
+		if not hPos then return end
 		if tr and IsValid( tr.Entity ) then
 			table.insert(tList, tr.Entity:GetPos() + tr.Entity:OBBCenter())
 			hPos = tr.Entity:GetPos() + tr.Entity:OBBCenter()
@@ -206,6 +219,11 @@ if SERVER then
 	end
 
 	function StormFox.Thunder.Rumble( pos, bLight )
+		if not pos then
+			local vMapMin = StormFox.Map.MinSize()
+			local vMapMax = StormFox.Map.MaxSize()
+			pos = Vector( math.Rand(vMapMin.x, vMapMax.x), math.Rand(vMapMin.y, vMapMax.y), math.Rand(vMapMax.z, vMapMin.z / 2) )
+		end
 		local n_Length = bLight and math.Rand(.4,0.7) or 0
 		local n_Light = bLight and math.random(150, 250) or 0
 		net.Start("stormfox.thunder")
@@ -214,6 +232,40 @@ if SERVER then
 			net.WriteFloat(n_Length)
 			net.WriteUInt(n_Light,8)
 		net.Broadcast()
+	end
+
+	-- Enables thunder and makes them spawn at random, until set off or another weather gets selected
+	local b = false
+	local n = math.max(StormFox.Map.MaxSize().x, StormFox.Map.MaxSize().y, -StormFox.Map.MinSize().x,-StormFox.Map.MinSize().y)
+	if StormFox.Map.Has3DSkybox() then
+		n = n * 1.5
+	end
+
+	do
+		local n = 0
+		function StormFox.Thunder.SetEnabled( bEnable, nActivityPrMinute, nTimeAmount )
+			n = 0
+			if bEnable then
+				StormFox.Network.Set("nThunder", nActivityPrMinute)
+				if nTimeAmount then
+					StormFox.Network.Set("nThunder", 0, nTimeAmount)
+				end
+			else
+				StormFox.Network.Set("nThunder", 0)
+			end
+		end
+		hook.Add("Think", "stormfox.thunder.activity", function()
+			if not StormFox.Thunder.IsThundering() then return end
+			if n >= CurTime() then return end
+			local a = StormFox.Thunder.GetActivity()
+			n = CurTime() + math.random(50, 60) / a
+			-- Strike or rumble
+			if math.random(1,3) < 3 then
+				StormFox.Thunder.CreateAt()
+			else
+				StormFox.Thunder.Rumble( nil, math.random(10) > 1 )
+			end
+		end)
 	end
 else
 	lightningStrikes = lightningStrikes or {}
@@ -277,7 +329,6 @@ else
 			snd = table.Random(FarStrikes)
 		end
 		if string.sub(snd, 0, 6 ) == "sound/" or string.sub(snd,-4) == ".ogg" then
-			print(".ogg", snd, nViewDis)
 			sound.PlayFile( snd, "3dnoplay", function( station, errCode, errStr )
 				if ( IsValid( station ) ) then
 					station:Set3DFadeDistance( 0, 10 )
@@ -287,23 +338,18 @@ else
 				end
 			end)
 		else
-			
-			print(".wav", snd, nViewDis)
 			surface.PlaySound( snd )
 		end
 	end
-
 	--[[
 		Sound moves about 343 meters pr second
 		52.49 hU = 1 meter ~ 18.004 hU pr second
-
 	]]
 	local b = true
 	local function SndThink()
 		if #snd_buffer < 1 then
 			hook.Remove("Think","StormFox.Thunder.SndDis")
 			b = false
-			print("OFF")
 			return
 		end
 		local r = {}
@@ -329,7 +375,6 @@ else
 		sound.Play("ambient/energy/weld" .. math.random(1,2) .. ".wav", pos)
 		if not b then
 			hook.Add("Think","StormFox.Thunder.SndDis", SndThink)
-			print("ON")
 		end
 		table.insert(snd_buffer, {pos, CurTime()})
 		local c = CurTime()
@@ -352,7 +397,6 @@ else
 		local b_Strike = net.ReadBool()
 		if b_Strike then
 			local tList = {}
-			
 			local old
 			local n = net.ReadUInt(5)
 			for i = 1, n do
@@ -365,6 +409,7 @@ else
 				end
 				old = new
 				tList[i] = {new,math.Rand(1.2,1.5),randir,math.random(0,1)}
+				--debugoverlay.Sphere(new, 15, 15, Color(255,255,255), true)
 			end
 			local b_InSkybox = net.ReadBool()
 			Strike(tList, b_InSkybox, net.ReadFloat(), net.ReadUInt(8))
@@ -383,12 +428,13 @@ else
 	local t = 0
 	hook.Add("PostDrawOpaqueRenderables","StormFox.Render.Lightning",function(a,sky)
 		if a or #lightningStrikes < 1 then return end
+		if sky then return end -- Doesn't work yet
 		local r = {}
 		local c = CurTime()
 		local col = Color( 255, 255, 255, 255)
 		for k, v in ipairs( lightningStrikes ) do
 			-- Render world or skybox
-			if v[3] ~= sky then continue end
+			--if v[3] ~= sky then continue end
 			-- Remove if dead
 			if v[1] < c then
 				table.insert(r, k)

@@ -235,7 +235,7 @@ StormFox.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
 
 
 --[[-------------------------------------------------------------------------
-Sets the moon-offset it gains each day. (Default 12.2)
+Sets the moon-offset it gains each day. (Default 7.5)
 ---------------------------------------------------------------------------]]
 function StormFox.Moon.SetDaysForFullCycle(nVar)
 	StormFox.Network.Set("moon_cycle",360 / nVar)
@@ -248,12 +248,16 @@ end)
 --[[-------------------------------------------------------------------------
 Returns the moon angles for the given or current time.
 ---------------------------------------------------------------------------]]
-	function StormFox.Moon.GetAngle(nTime)
-		local time_pitch = (nTime or StormFox.Time.Get()) * 0.25
-		local ts = StormFox.Data.Get("moon_cycle",12.203) / 360
-		local p_c = time_pitch + StormFox.Data.Get("moon_magicnumber",0) + time_pitch * ts
-		return Angle(-p_c % 360,StormFox.Data.Get("sun_yaw",90),0)
-	end
+local tf = 0
+local a = 7.4 / 7
+function StormFox.Moon.GetAngle(nTime)
+	--if true then return Angle(300,StormFox.Data.Get("sun_yaw",90),0) end
+	local day_f = (nTime or StormFox.Time.Get()) / 1440
+	tf = math.max(tf, day_f)
+	local day_n = tf + StormFox.Date.GetYearDay()
+	local p_c = ((day_n * a) % 8) * 45 + StormFox.Data.Get("magic_moonnumber",0)
+	return Angle(-p_c % 360,StormFox.Data.Get("sun_yaw",90),0)
+end
 --[[-------------------------------------------------------------------------
 Returns true if the moon is up.
 ---------------------------------------------------------------------------]]
@@ -262,6 +266,43 @@ function StormFox.Moon.IsUp()
 	local s = StormFox.Data.Get("moonSize",20) / 6.9
 	return t > 180 - s or t < s
 end
+	--[[-------------------------------------------------------------------------
+		Sets the moon phase
+	---------------------------------------------------------------------------]]
+	SF_MOON_NEW				= 0
+	SF_MOON_WAXIN_CRESCENT	= 1
+	SF_MOON_FIRST_QUARTER	= 2
+	SF_MOON_WAXING_GIBBOUS	= 3
+	SF_MOON_FULL			= 4
+	SF_MOON_WANING_GIBBOUS	= 5
+	SF_MOON_LAST_QUARTER	= 6
+	SF_MOON_WANING_CRESCENT = 7
+	-- Around 7.4 days. Angle 270 == up
+	if SERVER then
+		local a = 7.4 / 7
+		function StormFox.Moon.SetPhase( moon_phase, nTime )
+			local day_f = (nTime or StormFox.Time.Get()) / 1440
+			local day_n = day_f + StormFox.Date.GetYearDay()
+			local pitch = ((day_n * a) % 8) * 360	-- Current moon angle
+			local dif = pitch - GetSunPitch(nTime) + 180
+			StormFox.Network.Set("magic_moonnumber",dif)
+		end
+	end
+
+	--[[
+		When angle is 270, it is a max
+
+
+	]]
+	--[[-------------------------------------------------------------------------
+		Returns the moon phase for the current day
+	---------------------------------------------------------------------------]]
+	function StormFox.Moon.GetPhase()
+		local mp = StormFox.Data.Get("moon_phase",SF_MOON_FULL)
+		local yd = StormFox.Date.GetYearDay()
+		local dif = (mp - yd) % 8
+		return dif
+	end
 --[[-------------------------------------------------------------------------
 	Returns the current moon phase
 		5 = Full moon
@@ -269,7 +310,7 @@ end
 		0 = New moon
 	Seconary returns the angle towards the sun from the moon.
 ---------------------------------------------------------------------------]]
-function StormFox.Moon.GetPhase(nTime)
+function StormFox.Moon.GetPhaseold(nTime)
 	-- Calculate the distance between the two (Somewhat real scale)
 	local mAng = StormFox.Moon.GetAngle(nTime)
 	local A = StormFox.Sun.GetAngle(nTime):Forward() * 14975

@@ -3,7 +3,7 @@ local fog = StormFox.Weather.Add( "Fog" )
 fog:Set("fogDistance", 150)
 if CLIENT then
 	function fog.Think()
-		local p = StormFox.Weather.GetProcent()
+		local p = StormFox.Weather.GetPercent()
 		if p < 0.5 then return end
 		// tTemplate, nMinDistance, nMaxDistance, nAimAmount, traceSize, vNorm, fFunc )
 		local fc = StormFox.Fog.GetColor()

@@ -3,6 +3,9 @@ local cloudy = StormFox.Weather.Add( "Cloud" )
 local rain = StormFox.Weather.Add( "Rain", "Cloud" )
 	-- cloudy.spawnable = true Cloud is not spawnable. Since it is a "default" when it is cloudy
 	rain.spawnable = true
+	rain.thunder = function(percent) -- The amount of strikes pr minute
+		return true and 3 or percent > 0.5 and math.random(10) > 5 and percent * 3 or 0
+	end
 -- Cloud icon
 do
 	-- Description
@@ -168,7 +171,7 @@ do
 	rain:RenderWindowRefract64x64(function(w, h)
 		if StormFox.Temperature.Get() < -1 then return false end
 		local QT = StormFox.Client.GetQualityNumber()
-		local P = StormFox.Weather.GetProcent()
+		local P = StormFox.Weather.GetPercent()
 		-- Base
 		surface.SetMaterial(Material("stormfox2/effects/window/rain_normal"))
 		local c = (-SysTime() / 1000) % 1
@@ -225,7 +228,7 @@ do
 	local mat = Material("stormfox2/effects/window/snow")
 	local function RenderSnow(w, h)
 		if StormFox.Temperature.Get() > -2 then return false end
-		local P = 1 - StormFox.Weather.GetProcent()
+		local P = 1 - StormFox.Weather.GetPercent()
 		surface.SetMaterial(mat)
 		local lum = math.max(math.min(25 + StormFox.Weather.GetLuminance(), 255),70)
 		surface.SetDrawColor(Color(lum,lum,lum))
@@ -333,7 +336,7 @@ if CLIENT then
 	
 	-- Update the rain templates every 10th second
 	function rain.TickSlow()
-		local P = StormFox.Weather.GetProcent()
+		local P = StormFox.Weather.GetPercent()
 		local L = StormFox.Weather.GetLuminance()
 		local T = StormFox.Temperature.Get() + 2
 		local TL = StormFox.Thunder.GetLight()
@@ -346,7 +349,7 @@ if CLIENT then
 		rain_roof_metal:SetVolume( P * 1 * TP )
 		rain_glass:SetVolume( P * 0.5 * TP )
 
-		local P = StormFox.Weather.GetProcent()
+		local P = StormFox.Weather.GetPercent()
 		local speed = 0.72 + 0.36 * P
 		StormFox.Misc.rain_template:SetSpeed( speed )
 		StormFox.Misc.rain_template_medium:SetSpeed( speed )
@@ -357,7 +360,7 @@ if CLIENT then
 	local multi_dis = 1200
 	local m2 = Material("particle/particle_smokegrenade1")
 	function rain.Think()
-		local P = StormFox.Weather.GetProcent()
+		local P = StormFox.Weather.GetPercent()
 		local L = StormFox.Weather.GetLuminance()
 		local W = StormFox.Wind.GetForce()
 		if StormFox.DownFall.GetGravity() < 0 then return end -- Rain can't come from the ground.

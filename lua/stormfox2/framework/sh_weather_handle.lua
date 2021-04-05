@@ -33,8 +33,8 @@ local function Blender(nFraction, vFrom, vTo) -- Will it blend?
 		local a = Lerp( nFraction, vFrom.a or 255, vTo.a )
 		return Color( r, g, b, a )
 	end
-	StormFox.Warning("ERROR: Unsupported mix value type[" .. type(vTo) .. "]. Returning original value")
-	debug.Trace()
+	--StormFox.Warning("ERROR: Unsupported mix value type[" .. type(vTo) .. "]. Returning original value")
+	--debug.Trace()
 	return vFrom
 end
 
@@ -114,11 +114,11 @@ function StormFox.Weather.GetCurrent()
 	return CurrentWeather or StormFox.Weather.Get( "Clear" )
 end
 
-function StormFox.Weather.GetProcent()
+function StormFox.Weather.GetPercent()
 	return StormFox.Data.Get("w_Percentage",CurrentPercent) 
 end
 
-function StormFox.Weather.GetFinishProcent()
+function StormFox.Weather.GetFinishPercent()
 	return CurrentPercent
 end
 
@@ -127,7 +127,7 @@ function StormFox.Weather.GetDescription()
 	if not c.GetName then
 		return c.Name
 	end
-	return c:GetName(StormFox.Time.Get(), StormFox.Temperature.Get(), StormFox.Wind.GetForce(), false, StormFox.Weather.GetProcent())
+	return c:GetName(StormFox.Time.Get(), StormFox.Temperature.Get(), StormFox.Wind.GetForce(), StormFox.Thunder.IsThundering(), StormFox.Weather.GetPercent())
 end
 
 local errM = Material("error")
@@ -136,7 +136,7 @@ function StormFox.Weather.GetIcon()
 	if not c.GetIcon then
 		return errM
 	end
-	return c.GetIcon(StormFox.Time.Get(), StormFox.Temperature.Get(), StormFox.Wind.GetForce(), false, StormFox.Weather.GetProcent())
+	return c.GetIcon(StormFox.Time.Get(), StormFox.Temperature.Get(), StormFox.Wind.GetForce(), StormFox.Thunder.IsThundering(), StormFox.Weather.GetPercent())
 end
 
 if SERVER then
@@ -210,7 +210,7 @@ if SERVER then
 	end)
 	-- Clear up weather when it reaches 0
 	timer.Create("stormfox.weather.clear",1,0,function()
-		local p = StormFox.Weather.GetProcent()
+		local p = StormFox.Weather.GetPercent()
 		if p <= 0 then
 			StormFox.Weather.Set("Clear", 1, 0)
 		end
@@ -238,7 +238,7 @@ else
 			sName = "Clear"
 		end
 		if not hasLocalWeather then
-			svWeather = {StormFox.Weather.GetCurrent().Name, StormFox.Weather.GetFinishProcent(), StormFox.Temperature.Get()}
+			svWeather = {StormFox.Weather.GetCurrent().Name, StormFox.Weather.GetFinishPercent(), StormFox.Temperature.Get()}
 		end
 		StormFox.Temperature.SetLocal(nTemperature)
 		-- Block same weather

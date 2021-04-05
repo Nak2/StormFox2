@@ -61,7 +61,7 @@ hook.Add("Think", "StormFox.Fog.Updater", function()
 	local aim_dist = clearFogDist
 	local inD = clearFogDistIndoor
 	if cW ~= clear then
-		local wP =  StormFox.Weather.GetProcent()
+		local wP =  StormFox.Weather.GetPercent()
 		if wP ~= 0 then
 			if wP == 1 then
 				aim_dist = cW:Get('fogDistance') or 400000

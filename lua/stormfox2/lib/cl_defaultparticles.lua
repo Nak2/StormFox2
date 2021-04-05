@@ -138,7 +138,7 @@ local init = function()
 
 	-- Think functions:
 	function rain_template_multi:Think()
-		local P = StormFox.Weather.GetProcent()
+		local P = StormFox.Weather.GetPercent()
 		local fC = StormFox.Fog.GetColor()
 		local L = StormFox.Weather.GetLuminance()
 		local TL = StormFox.Thunder.GetLight() / 2
@@ -150,10 +150,10 @@ local init = function()
 
 	-- Particle Explosion
 	-- Make "rain" explosion at rain particles
-	function rain_template:OnExplosion( vExPos, nDisProcent, iRange, iMagnetide )
+	function rain_template:OnExplosion( vExPos, nDisPercent, iRange, iMagnetide )
 		local e_ang = (self:GetPos() - vExPos):Angle():Forward()
-		local boost = nDisProcent * 5
-		local p = StormFox.DownFall.AddParticle( "effects/splash1", vExPos + e_ang * iRange *nDisProcent , false )
+		local boost = nDisPercent * 5
+		local p = StormFox.DownFall.AddParticle( "effects/splash1", vExPos + e_ang * iRange *nDisPercent , false )
 			p:SetStartSize(math.random(32, 20))
 			p:SetEndSize(5)
 			p:SetDieTime(2.5)

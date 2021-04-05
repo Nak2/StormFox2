@@ -269,7 +269,7 @@ local function Init(self)
 		if StormFox.Weather.GetCurrent() == StormFox.Weather.Get('Clear') then
 			p:SetVal(85)
 		else
-			p:SetVal(math.Round(math.Clamp(StormFox.Weather.GetProcent() * 100, 0, 100), 2))
+			p:SetVal(math.Round(math.Clamp(StormFox.Weather.GetPercent() * 100, 0, 100), 2))
 		end
 		function m_weather:PerformLayout(w, h)
 			w_button:SetWide(w * 0.7)
@@ -297,7 +297,7 @@ local function Init(self)
 			function b:OnCursorEntered()
 				local w = StormFox.Weather.Get(self.weather)
 				if not IsValid(w) then return end -- Something bad happen
-				b:SetToolTip(w:GetName(StormFox.Time.Get(), StormFox.Temperature.Get(), StormFox.Wind.GetForce(), false, p:GetVal() / 100))
+				b:SetToolTip(w:GetName(StormFox.Time.Get(), StormFox.Temperature.Get(), StormFox.Wind.GetForce(), StormFox.Thunder.IsThundering(), p:GetVal() / 100))
 			end
 			function b:Paint(w,h)
 				DrawButton(self,w,h)
@@ -349,8 +349,10 @@ local function Init(self)
 		function tempslider:DrawText( n )
 			return n .. StormFox.Temperature.GetDisplaySymbol()
 		end
-		tempslider:SetVal( StormFox.Temperature.GetDisplay() )
-		
+		tempslider:SetVal( math.Round(StormFox.Temperature.GetDisplay(),1) )
+		function tempslider:Think()
+			tempslider:SetVal( math.Round(StormFox.Temperature.GetDisplay(),1) )
+		end
 	-- Wind Ang
 		local t = vgui.Create("DPanel", self)
 		t:DockMargin(padding,padding_y,padding,0)
@@ -438,6 +440,9 @@ local function Init(self)
 		windslide:SetVal( StormFox.Wind.GetForce() or 0 )
 		function windslide:OnVal( num )
 			SetWeather(SF_SETWIND_F, num)
+		end
+		function windslide:Think()
+			windslide:SetVal( StormFox.Wind.GetForce() or 0 )
 		end
 	-- Time
 		local t = vgui.Create("DPanel", self)

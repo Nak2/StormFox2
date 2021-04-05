@@ -33,8 +33,8 @@ local function Blender(nFraction, vFrom, vTo) -- Will it blend?
 		local a = Lerp( nFraction, vFrom.a or 255, vTo.a )
 		return Color( r, g, b, a )
 	end
-	StormFox.Warning("ERROR: Unsupported mix value type[" .. type(vTo) .. "]. Returning original value")
-	debug.Trace()
+	--StormFox.Warning("ERROR: Unsupported mix value type[" .. type(vTo) .. "]. Returning original value")
+	--debug.Trace()
 	return vFrom
 end
 
@@ -55,7 +55,7 @@ function StormFox.Mixer.Get( sKey, zDefault, cP )
 	if not StormFox.Weather then return zDefault end
 	local cW = StormFox.Weather.GetCurrent()
 	if not cW or cW.Name == "Clear" then return GetVar(cW, sKey) or zDefault end
-	cP = cP or StormFox.Weather.GetProcent()
+	cP = cP or StormFox.Weather.GetPercent()
 	if cP >= 1 then
 		cache[sKey] = GetVar(cW, sKey)
 		return cache[sKey] or zDefault

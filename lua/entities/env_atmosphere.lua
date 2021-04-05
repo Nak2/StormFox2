@@ -99,7 +99,7 @@ else
 				render.DrawSphere( p, r, 30, 30, col1)
 			end
 			--						 (nTime,				nTemp,												nWind,						bThunder,nFraction)
-			local symbol = we.GetIcon( StormFox.Time.Get(), self:GetTemperature() or StormFox.Temperature.Get(), StormFox.Wind.GetForce(), false, self:GetPercent() )
+			local symbol = we.GetIcon( StormFox.Time.Get(), self:GetTemperature() or StormFox.Temperature.Get(), StormFox.Wind.GetForce(), StormFox.Thunder.IsThundering(), self:GetPercent() )
 			render.SetMaterial( symbol )
 			render.DrawSprite( np , 8, 8, color_white)
 			self:SetRenderAngles( Angle(0,c * 40 % 360,0) )

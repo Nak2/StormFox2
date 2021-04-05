@@ -47,16 +47,21 @@ net.Receive("stormfox.weekweather", function(len)
 		weekdata[i] = {}
 		weekdata[i].temp = net.ReadTable()
 		weekdata[i].weather = net.ReadTable()
+		weekdata[i].wind = net.ReadTable()
 	end
 	SF_WEEKWEATHER = {}
 	local temp_list = {}
 	local weather_list = {}
+	local wind_list = {}
 	for i, wData in pairs( weekdata ) do
 		for time, temp in pairs( wData.temp ) do
 			temp_list[(i - 1) * 1440 + time] = temp
 		end
 		for time, weather in pairs( wData.weather ) do
 			weather_list[(i - 1) * 1440 + time] = weather
+		end
+		for time, wind in pairs( wData.wind ) do
+			wind_list[(i - 1) * 1440 + time] = wind
 		end
 	end
 	for h = 30, 1440 * 7, 60 do
@@ -69,6 +74,15 @@ net.Receive("stormfox.weekweather", function(len)
 			l = n
 		end
 		local temp = math.Round(Lerp(f, temp_list[l], temp_list[n]), 2)
+		-- wind
+		local l, n = search(wind_list, h)
+		local f = 1
+		if l then
+			f = FindPercent( h, l, n )
+		else
+			l = n
+		end
+		local wind = math.Round(Lerp(f, wind_list[l], wind_list[n]), 2)
 		-- weather
 		local l, n = search(weather_list, h)
 		local f = 1
@@ -98,7 +112,8 @@ net.Receive("stormfox.weekweather", function(len)
 		end
 		SF_WEEKWEATHER[h] = {
 			temp = temp,
-			weather = {amount, change_weather},
+			weather = {amount, change_weather, last_weather[3] and l + 60 >= h},
+			wind = wind,
 			debug = {l, n}
 		}
 	end
