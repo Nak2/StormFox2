@@ -329,15 +329,15 @@ StormFox.Map = {}
 								table.insert(SF_BSPDATA.StaticProps,t)
 							end
 						end
-						print("staticprop_version",staticprop_version)
+						--print("staticprop_version",staticprop_version)
 						if staticUsed == staticSize then
-							print("StaticMatch: ",staticSize)
+							--print("StaticMatch: ",staticSize)
 						else
 							StormFox.Warning("Static props doesn't match version! Size[" .. staticSize .. " bytes]")
 							if staticUsed < staticSize then
-								print("Bytes unread: ", staticSize - staticUsed)
+								--print("Bytes unread: ", staticSize - staticUsed)
 							else
-								print("Bytes overused: ", staticUsed - staticSize)
+								--print("Bytes overused: ", staticUsed - staticSize)
 							end
 						end
 					end

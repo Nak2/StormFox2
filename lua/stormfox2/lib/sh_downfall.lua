@@ -429,7 +429,7 @@ if CLIENT then
 		if self._distance then
 			return self._distance
 		end
-		print("ERROR")
+		--print("ERROR")
 	end
 	-- Sets the max-distance from view
 	function p_meta:SetMaxDistance( f )

@@ -111,7 +111,7 @@ end
 			local max = nw * .8
 			local gust = math.min(nw, 5)
 			for _,ent in ipairs( StormFox.Ent.env_winds ) do
-				print(ent, max, min ,gust)
+				--print(ent, max, min ,gust)
 				ent:Fire('SetWindDir', ang)
 				ent:SetKeyValue('minwind', min)
 				ent:SetKeyValue('maxwind', max)
@@ -280,14 +280,14 @@ else
 		if #flags > 0 then -- Only add the hook if there are flags on the map.
 			hook.Add("stormfox.data.change","stormfox.flagcontroller",function(key,var)
 				if key == "WindAngle" then
-					print("Windang", var)
+					--print("Windang", var)
 					for _,ent in ipairs(flags) do
 						if not IsValid(ent) then continue end
 						local y = flag_models[ent:GetModel()] or 0
 						ent:SetAngles(Angle(0,var + y,0))
 					end
 				elseif key == "Wind" then
-					print("Wind", var)
+					--print("Wind", var)
 					for _,ent in ipairs(flags) do
 						if not IsValid(ent) then continue end
 						ent:SetPlaybackRate(math.Clamp(var / 7,0.5,10))

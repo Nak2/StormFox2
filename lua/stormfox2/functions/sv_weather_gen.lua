@@ -358,12 +358,12 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 		local n = daylogic("temp", curDay.temp, time)
 		if n then
 			local timeset = (n - time) / speed
-			print(curDay.temp[n], timeset)
+			--print(curDay.temp[n], timeset)
 			StormFox.Temperature.Set( curDay.temp[n], timeset )
 		end
 		local n = daylogic("weather", curDay.weather, time)
 		if n then
-			print(curDay.weather[n][1], curDay.weather[n][2], (n - time) / speed)
+			--print(curDay.weather[n][1], curDay.weather[n][2], (n - time) / speed)
 			StormFox.Weather.Set( curDay.weather[n][1], curDay.weather[n][2], (n - time) / speed )
 			if curDay.weather[n][3] then -- Thunder
 				StormFox.Thunder.SetEnabled( true, curDay.weather[n][3], 50 / speed )
@@ -371,7 +371,7 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 		end
 		local n = daylogic("wind", curDay.wind, time)
 		if n then
-			print(curDay.wind[n][1], (n - time) / speed)
+			--print(curDay.wind[n][1], (n - time) / speed)
 			StormFox.Wind.SetForce( curDay.wind[n][1], (n - time) / speed )
 			StormFox.Wind.SetYaw( curDay.wind[n][2] ) --, (n - time) / speed ) Looks strange
 		end

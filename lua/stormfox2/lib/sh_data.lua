@@ -77,7 +77,7 @@ do
 				return from
 			end
 		else
-			print("UNKNOWN", t,"TO",to)
+			--print("UNKNOWN", t,"TO",to)
 		end
 	end
 
@@ -102,8 +102,8 @@ do
 		elseif fraction < 1 then
 			lerpCache[sKey] = LerpVar( fraction, var1, var2 )
 			if not lerpCache[sKey] then
-				print("DATA",sKey, zDefault)
-				print(debug.traceback())
+				--print("DATA",sKey, zDefault)
+				--print(debug.traceback())
 			end
 			return lerpCache[sKey] or zDefault
 		else -- Fraction end

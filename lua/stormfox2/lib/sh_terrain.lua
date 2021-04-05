@@ -187,7 +187,7 @@ end
 
 -- Resets the terrain to default.
 function StormFox.Terrain.Reset( bNoUpdate )
-	print("Reset")
+	--print("Reset")
 	if SERVER and not bNoUpdate then
 		StormFox.Map.CallLogicRelay("terrain_clear")
 	end
@@ -258,7 +258,7 @@ else
 	net.Receive("stormfox.terrain", function(len)
 		local sName = net.ReadString()
 		local b = StormFox.Terrain.Set( sName )
-		print("Terrain Recived: ", sName, b)
+	--"Terrain Recived: ", sName, b)
 		
 	end)
 	-- Ask the server
