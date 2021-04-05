@@ -250,7 +250,6 @@ end
 -- NET
 if SERVER then
 	net.Receive("stormfox.terrain", function(len, ply) -- OI, what terrain?
-		print("> Telling client", CURRENT_TERRAIN and CURRENT_TERRAIN.Name or "")
 		net.Start("stormfox.terrain")
 			net.WriteString( CURRENT_TERRAIN and CURRENT_TERRAIN.Name or "" )
 		net.Send(ply)
@@ -265,7 +264,6 @@ else
 	-- Ask the server
 	hook.Add("stormfox.InitPostEntity", "stormfox.terrain.init", function()
 		timer.Simple(1, function()
-			print("< Asking for terrain")
 			net.Start("stormfox.terrain")
 				net.WriteBit(1)
 			net.SendToServer()
