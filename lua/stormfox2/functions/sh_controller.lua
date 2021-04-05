@@ -34,26 +34,29 @@ if SERVER then
 	end
 
 	concommand.Add("stormfox2_setweather", function(ply, _, arg, _)
-		StormFox.Permission.EditAccess(ply, function()
-			StormFox.Weather.Set( string.lower( arg[1] ), tonumber( arg[2] or "1" ) or 1)
+		if #arg < 1 then return end
+		local s = string.upper(string.sub(arg[1],0,1)) .. string.lower(string.sub(arg[1], 2))
+		StormFox.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
+			StormFox.Weather.Set( s, tonumber( arg[2] or "1" ) or 1)
 		end)
 	end)
 
 	concommand.Add("stormfox2_setthunder", function(ply, _, _, argS)
-		argS = argS or "1"
-		StormFox.Permission.EditAccess(ply, function()
-			StormFox.Thunder.SetEnabled(argS == "1" or argS == "true")
+		StormFox.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
+			local n = tonumber(argS)
+			if n == 1 then n = 6 end
+			StormFox.Thunder.SetEnabled( n > 0, n )
 		end)
 	end)
 
 	concommand.Add("stormfox2_settime", function(ply, _, _, argS)
-		StormFox.Permission.EditAccess(ply, function()
+		StormFox.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
 			StormFox.Time.Set( argS )
 		end)
 	end)
 
 	concommand.Add("stormfox2_settimespeed", function(ply, _, _, argS)
-		StormFox.Permission.EditAccess(ply, function()
+		StormFox.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
 			StormFox.Time.SetSpeed( tonumber(argS) or 60 )
 		end)
 	end)
