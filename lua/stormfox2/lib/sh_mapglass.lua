@@ -187,7 +187,7 @@ StormFox.Map = {}
 -- Find soundscape in PAK
 	local function PAKSearch(f,len)
 		local data = f:Read(len)
-		file.Write("oi3.txt",data)
+		if not data then return end
 		local found = false
 		for s in string.gmatch( data, "scripts\\soundscapes_.-txt.-PK" ) do
 			if not found then
@@ -397,10 +397,10 @@ StormFox.Map = {}
 			end
 		-- PAK search
 			local len = SetToLump(f,lumps[41])
-			if len > 10 then
-				StormFox.Msg("Found mapdata, might take a few more seconds.")
-				PAKSearch(f,len)
-			end
+			--if len > 10 then
+				--StormFox.Msg("Found mapdata, might take a few more seconds.") -- Ignore this for now
+				--PAKSearch(f,len)
+			--end
 			--pak_data = f:Read(len)
 		-- Planes
 		--	local planes = {}

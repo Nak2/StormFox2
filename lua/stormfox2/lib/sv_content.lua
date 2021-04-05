@@ -20,4 +20,8 @@ if not StormFox.WorkShopVersion then
 	AddDir("sound/stormfox2")
 	AddDir("models/stormfox2")
 	StormFox.Msg("Added " .. i .. " content files.")
+-- Add the workshop
+else
+	resource.AddWorkshop(string.match(StormFox.WorkShopURL, "%d+$"))
+	StormFox.Msg("Added content files from workshop.")
 end

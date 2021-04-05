@@ -242,8 +242,8 @@ do
 	function StormFox.DownFall.CalculateDrop( nDis, nSize, nTries, vNorm, ignoreVel, nMaxDistance )
 		vNorm = vNorm or StormFox.Wind.GetNorm()
 		local view = StormFox.util.GetCalcView()
-		local v_vel = StormFox.util.ViewEntity():GetVelocity()
-		local v_pos = view.pos
+		local v_vel = StormFox.util.ViewEntity():GetVelocity() or Vector(0,0,0)
+		local v_pos = view.pos or Vector(0,0,0)
 		if not ignoreVel then
 			v_pos = v_pos + Vector(v_vel.x,v_vel.y,0) / 3
 		end
