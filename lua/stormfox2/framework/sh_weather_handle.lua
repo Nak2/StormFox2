@@ -301,3 +301,13 @@ if CLIENT then
 		end)
 	end
 end
+
+-- Some functions to make it easier
+function StormFox.Weather.IsRaining()
+	return StormFox.Weather.GetCurrent().Name == "Rain"
+end
+
+function StormFox.Weather.GetRainAmount()
+	if not StormFox.Weather.IsRaining() then return 0 end
+	return StormFox.Weather.GetPercent()
+end

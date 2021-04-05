@@ -296,7 +296,9 @@ local tabs = {
 		board:MarkUsed("openweathermap_enabled")
 		board:MarkUsed("openweathermap_lat")
 		board:MarkUsed("openweathermap_lon")
-		
+
+		board:AddTitle("#sf_wind")
+		board:AddSetting("windmove_players")
 		
 	end},
 	[4] = {"Effects","#effects",(Material("stormfox2/hud/menu/settings.png")),function(board)
@@ -308,7 +310,14 @@ local tabs = {
 		board:AddSetting("maplight_updaterate")
 		board:AddTitle("#effects_pp")
 		board:AddSetting("overwrite_extra_darkness")
+		board:AddSetting("enable_fogz")
 		board:AddSetting("footprint_enablelogic")
+
+		-- Hide this features, as they're broken
+		board:MarkUsed("csgo_2dskybox")
+		board:MarkUsed("use_2dskybox")
+		board:MarkUsed("overwrite_2dskybox")
+		
 	end},
 	[5] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png"))},
 	[6] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png"))},

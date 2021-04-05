@@ -258,9 +258,12 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 			end
 		-- Wind
 			nDay.wind = {}
-			local nWind = (lastDay and lastDay.wind[midday] or math.random(0, 10)) -math.random(0,nDay.acc * 2)
-			nDay.wind[midday] = math.Clamp(nWind, 0, 30)
-			nDay.wind[1439] = math.max(0, nDay.wind[midday] - math.random(nDay.wind[midday] / 2,nDay.wind[midday]))
+			local nWind = (lastDay and lastDay.wind and lastDay.wind[midday] and lastDay.wind[midday][1] or math.random(0, 10)) -math.random(0,nDay.acc * 2)
+			nWind = math.Clamp(nWind, 0, 30)
+			local nWindAngle = lastDay and lastDay.wind[1439] and lastDay.wind[1439][2] or math.random(0, 360)
+			nWindAngle = (nWindAngle + math.Rand(16, -16)) % 360
+			nDay.wind[midday] = {nWind, nWindAngle}
+			nDay.wind[1439] = {math.max(0, nWind - math.random(nWind / 2,nWind)), (nWindAngle + math.Rand(16, -16)) % 360}
 		-- Calculate weather
 			nDay.weather = {}
 			local max_w = StormFox.Setting.Get("max_weathers_prweek", 3)
@@ -296,6 +299,7 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 		return nDay
 	end
 	-- Generate a new day
+	local t = {}
 	local function GenerateNewDay()
 		t = {}
 		if #current_weatherlist >= 7 then
@@ -330,7 +334,6 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 
 	local WAIT_TIL_NEXT_DAY = -1
 
-	local t = {}
 	local function daylogic(str, tab, time)
 		if t[str] then 
 			if t[str] == WAIT_TIL_NEXT_DAY then return end
@@ -355,10 +358,12 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 		local n = daylogic("temp", curDay.temp, time)
 		if n then
 			local timeset = (n - time) / speed
+			print(curDay.temp[n], timeset)
 			StormFox.Temperature.Set( curDay.temp[n], timeset )
 		end
 		local n = daylogic("weather", curDay.weather, time)
 		if n then
+			print(curDay.weather[n][1], curDay.weather[n][2], (n - time) / speed)
 			StormFox.Weather.Set( curDay.weather[n][1], curDay.weather[n][2], (n - time) / speed )
 			if curDay.weather[n][3] then -- Thunder
 				StormFox.Thunder.SetEnabled( true, curDay.weather[n][3], 50 / speed )
@@ -366,7 +371,9 @@ StormFox.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 		end
 		local n = daylogic("wind", curDay.wind, time)
 		if n then
-			StormFox.Wind.SetForce( curDay.wind[n], (n - time) / speed )
+			print(curDay.wind[n][1], (n - time) / speed)
+			StormFox.Wind.SetForce( curDay.wind[n][1], (n - time) / speed )
+			StormFox.Wind.SetYaw( curDay.wind[n][2] ) --, (n - time) / speed ) Looks strange
 		end
 
 	end)

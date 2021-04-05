@@ -82,7 +82,7 @@ net.Receive("stormfox.weekweather", function(len)
 		else
 			l = n
 		end
-		local wind = math.Round(Lerp(f, wind_list[l], wind_list[n]), 2)
+		local wind = math.Round(Lerp(f, wind_list[l][1], wind_list[n][1]), 2)
 		-- weather
 		local l, n = search(weather_list, h)
 		local f = 1
