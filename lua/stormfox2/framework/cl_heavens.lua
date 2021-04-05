@@ -234,7 +234,7 @@ StormFox.Sky = {}
 	local tf = 0
 	local a = 7 / 7.4
 	function StormFox.Moon.GetAngle(nTime)
-		if true then return Angle(200,StormFox.Data.Get("sun_yaw",90),0) end
+		--if true then return Angle(200,StormFox.Data.Get("sun_yaw",90),0) end
 		local day_f = (nTime or StormFox.Time.Get()) / 1440
 		tf = math.max(tf, day_f)
 		local day_n = tf + StormFox.Date.GetYearDay()
@@ -274,15 +274,8 @@ StormFox.Sky = {}
 		local dot = C:Forward():Dot(moonTowardSun:Forward())
 		-- Dot: 1 = new moon
 		-- Dot: waz < 0 then waxin
-		local wax = math.AngleDifference(sAng.p,mAng.p) < 0
-		if wax then
-			return SF_MOON_FULL - SF_MOON_FULL * dot,moonTowardSun
-		end
-		local n = 2 * dot + 6
-		if n >= 8 then
-			n = n - 8
-		end
-		return n,moonTowardSun
+
+		return math.abs(math.AngleDifference(C.p,moonTowardSun.p) / 45),moonTowardSun
 	end
 	--[[-------------------------------------------------------------------------
 		Returns the moon phase name
@@ -369,8 +362,8 @@ StormFox.Sky = {}
 		local lastCurrentPhase = -1
 		local lastMoonMat
 		local function RenderMoonPhase(rotation,currentPhase)
-			currentPhase = math.Round(currentPhase or 1.3, 2)
-			--currentPhase = 3
+			--currentPhase = SF_MOON_FIRST_QUARTER - 0.01
+			if currentPhase == SF_MOON_NEW then return end -- New moon. No need to render.
 			-- Check if there is a need to re-render
 				local moonMat = StormFox.Data.Get("moonTexture",lastMoonMat)
 				if type(moonMat) ~= "IMaterial" then return end -- Something went wrong. Lets wait.
@@ -396,32 +389,57 @@ StormFox.Sky = {}
 					render.OverrideBlend(true, BLEND_ZERO, BLEND_SRC_ALPHA,0,BLEND_DST_ALPHA, BLEND_ZERO,0)
 				-- Render mask
 					surface.SetDrawColor(color_white)
-					-- 0 to 50%
-					if currentPhase < 3 then
-						local s = 7 - 2.3 * currentPhase
+					-- New to first q; 0 to 50%
+					if currentPhase < SF_MOON_FIRST_QUARTER then
+						local s = 7 - 3.5 * currentPhase
 						surface.SetMaterial(Mask_25)
 						surface.DrawTexturedRectRotated(texscale / 2,texscale / 2,texscale * s,texscale,rotation)
-						if currentPhase >= 2.6 then
+						if currentPhase >= SF_MOON_WAXIN_CRESCENT then
 							-- Ex step
 							local x,y = math.cos(math.rad(-rotation)),math.sin(math.rad(-rotation))
 							surface.SetMaterial(Mask_0)
-							surface.DrawTexturedRectRotated(texscale / 2 + x * (-texscale * 0.51),texscale / 2 + y * (-texscale * 0.51),texscale * 0.9,texscale,rotation)
+							surface.DrawTexturedRectRotated(texscale / 2 + x * (-texscale * 0.51),texscale / 2 + y * (-texscale * 0.51),texscale * 1,texscale,rotation)
 						end
-					elseif currentPhase < 3.1 then -- 50%
+					elseif currentPhase == SF_MOON_FIRST_QUARTER then -- 50%
 						surface.SetMaterial(Mask_50)
 						surface.DrawTexturedRectRotated(texscale / 2,texscale / 2,texscale,texscale,rotation)
-					elseif currentPhase <= 4.9 then -- 50% to 100%
-													-- 5.8 to 0.4
-						local s = (currentPhase - 3) * 3
+					elseif currentPhase < SF_MOON_FULL then -- 50% to 100%
+						local s = (currentPhase - SF_MOON_FIRST_QUARTER) * 3
 						surface.SetMaterial(Mask_75)
 						surface.DrawTexturedRectRotated(texscale / 2,texscale / 2,texscale * s,texscale,rotation + 180)
-						if s < 1 then
+						local x,y = math.cos(math.rad(-rotation)),math.sin(math.rad(-rotation))
+						surface.SetMaterial(Mask_0)
+						if s < 0.2 then
+							surface.DrawTexturedRectRotated(texscale / 2 + x * (-texscale * 0.5),texscale / 2 + y * (-texscale * 0.51),texscale * 1,texscale,rotation + 180)
+						elseif s < 1 then
+							surface.DrawTexturedRectRotated(texscale / 2 + x * (-texscale * 0.5),texscale / 2 + y * (-texscale * 0.51),texscale * 0.9,texscale,rotation + 180)
+						end
+					elseif currentPhase == SF_MOON_FULL then
+						-- FULL MOON
+					elseif currentPhase < SF_MOON_LAST_QUARTER then
+						local s = 12 - (currentPhase - SF_MOON_FIRST_QUARTER) * 3
+						surface.SetMaterial(Mask_75)
+						surface.DrawTexturedRectRotated(texscale / 2,texscale / 2,texscale * s,texscale,rotation)
+						local x,y = math.cos(math.rad(-rotation)),math.sin(math.rad(-rotation))
+						surface.SetMaterial(Mask_0)
+						if s < 0.05 then
+							surface.DrawTexturedRectRotated(texscale / 2 + x * (texscale * 0.5),texscale / 2 + y * (texscale * 0.51),texscale * 1,texscale,rotation)
+						elseif s < 1 then
+							surface.DrawTexturedRectRotated(texscale / 2 + x * (texscale * 0.5),texscale / 2 + y * (texscale * 0.51),texscale * 0.9,texscale,rotation)
+						end
+					elseif currentPhase == SF_MOON_LAST_QUARTER then
+						surface.SetMaterial(Mask_50)
+						surface.DrawTexturedRectRotated(texscale / 2,texscale / 2,texscale,texscale,rotation + 180)
+					elseif currentPhase < SF_MOON_WANING_CRESCENT + 1 then
+						local s = (currentPhase - (SF_MOON_WANING_CRESCENT - 1)) * 3.5
+						surface.SetMaterial(Mask_25)
+						surface.DrawTexturedRectRotated(texscale / 2,texscale / 2,texscale * s,texscale,rotation + 180)
+						if currentPhase >= SF_MOON_WAXIN_CRESCENT then
+							-- Ex step
 							local x,y = math.cos(math.rad(-rotation)),math.sin(math.rad(-rotation))
 							surface.SetMaterial(Mask_0)
-							surface.DrawTexturedRectRotated(texscale / 2 + x * (-texscale * 0.5),texscale / 2 + y * (-texscale * 0.5),texscale * 0.9,texscale,rotation + 180)
+							surface.DrawTexturedRectRotated(texscale / 2 + x * (texscale * 0.51),texscale / 2 + y * (texscale * 0.51),texscale,texscale,rotation)
 						end
-					else
-						-- FULL MOON
 					end
 				-- Mask End
 				   	render.OverrideBlend(false)
