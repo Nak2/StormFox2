@@ -14,7 +14,7 @@ end
 local n = max_Dist
 local function SetFarZ( num )
 	if not StormFox.Setting.Get("enable_fogz") then
-		num = max_Dist
+		num = inf_Dist and -1 or max_Dist
 	elseif not inf_Dist then
 		num = math.min(max_Dist, num + 700)
 	end

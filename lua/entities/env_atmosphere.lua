@@ -109,7 +109,7 @@ else
 	end
 
 	hook.Add("Think", "StormFox.Weather.EController", function()
-		if not StormFox then return end
+		if not StormFox or StormFox.Version < 2 then return end
 		local t = {}
 		for _, ent in ipairs( ents.FindByClass("env_atmosphere") ) do
 			local p = ent:GetPos()
