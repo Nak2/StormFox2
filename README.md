@@ -16,10 +16,14 @@ Please report any bugs via the issue tracker.
 
 Changelogs can be found on the Steam Workshop Page [here.][4]
 
+## Content pack
+Don't reupload SF2 content on the workshop, instead use [this.][5]
+
 
 
 [1]:https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443
 [2]:https://github.com/Nak2/StormFox2/archive/master.zip
 [3]:https://github.com/Nak2/StormFox2/blob/master/LICENSE
 [4]:https://steamcommunity.com/sharedfiles/filedetails/changelog/2447774443
+[5]:https://steamcommunity.com/sharedfiles/filedetails/?id=2447979470
 
