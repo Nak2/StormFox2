@@ -9,7 +9,7 @@ You can also install from this repository via this link [here.][2]
 
 ## License
 
-This project is licensed under the
+This project is licensed under the [GNU General Public License v3.0][3]
 
 ## Still in beta
 Please report any bugs via the issue tracker.
@@ -20,6 +20,6 @@ Changelogs can be found on the Steam Workshop Page [here.][4]
 
 [1]:https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443
 [2]:https://github.com/Nak2/StormFox2/archive/master.zip
-[3]:https://github.com/Nak2/StormFox/blob/master/LICENSE
+[3]:https://github.com/Nak2/StormFox2/blob/master/LICENSE
 [4]:https://steamcommunity.com/sharedfiles/filedetails/changelog/2447774443
 
