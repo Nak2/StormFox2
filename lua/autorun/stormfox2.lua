@@ -1,8 +1,8 @@
 -- Check for StormFox 1
-if StormFox and StormFox.Version < 2 then
+if StormFox and StormFox.Version < 2 or file.Exists("autorun/stormfox_autorun.lua", "LUA") then
 	error("StormFox 1 detected. StormFox 2 can't run.")
+	return
 end
-
 -- While sv_skyname is fixed, I still want this to be first.
 if SERVER then
 	local con = GetConVar("sf_use_2dskybox")
@@ -18,7 +18,7 @@ StormFox = {}
 StormFox.WorkShopVersion = false--game.IsDedicated()
 StormFox.WorkShopURL = nil -- ""
 --<Var> StormFox's Version number
-	StormFox.Version = 2
+	StormFox.Version = 2.01
 	StormFox.Loaded = false
 
 --[[<Shared>-----------------------------------------------------------------
