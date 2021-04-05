@@ -3,10 +3,12 @@
 
 local clear = StormFox.Weather.Add( "Clear" )
 
+local windy = 8
+
 -- Description
 if CLIENT then
 	function clear:GetName(nTime, nTemp, nWind, bThunder, nFraction )
-		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 3
+		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= windy
 		if b_windy then
 			return language.GetPhrase("#sf_weather.clear.windy")
 		end
@@ -14,7 +16,7 @@ if CLIENT then
 	end
 else
 	function clear:GetName(nTime, nTemp, nWind, bThunder, nFraction )
-		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 3
+		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= windy
 		if b_windy then
 			return "Windy"
 		end
@@ -30,7 +32,7 @@ end
 function clear.GetIcon( nTime, nTemp, nWind, bThunder, nFraction) -- What symbol the weather should show
 	local b_day = StormFox.Time.IsDay(nTime)
 	local b_cold = nTemp < -2
-	local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 3
+	local b_windy = StormFox.Wind.GetBeaufort(nWind) >= windy
 	if b_windy then
 		return m3
 	elseif b_cold then

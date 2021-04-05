@@ -134,7 +134,7 @@ local tabs = {
 		board:AddTitle(language.GetPhrase("#weather"))
 
 		local w_panel = vgui.Create("DPanel", board)
-		w_panel:SetTall(240)
+		w_panel:SetTall(260)
 		w_panel:DockMargin(15,0,15,0)
 		w_panel:Dock(TOP)
 
@@ -417,6 +417,5 @@ function StormFox.Menu.OpenSV()
 		net.WriteBool(true)
 	net.SendToServer()
 end
-
 -- Request the server if we're allowed
 concommand.Add('stormfox2_svmenu', StormFox.Menu.OpenSV, nil, "Opens SF serverside menu")

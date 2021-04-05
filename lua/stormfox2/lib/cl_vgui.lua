@@ -1461,9 +1461,14 @@ do
 		self.display.PerformLayout = displayLayout
 		self.display.Paint = displayPaint
 		self.time = vgui.Create("DPanel", self)
+		self.wind = vgui.Create("DPanel", self)
+		self.wind:Dock(BOTTOM)
 		self.time:Dock(BOTTOM)
 		self.time:SetTall(30)
 		function self.time:Paint(w,h)
+			draw.SimpleText(self.text, "DermaDefault",w / 2,h / 4,color_white,TEXT_ALIGN_CENTER)
+		end
+		function self.wind:Paint(w,h)
 			draw.SimpleText(self.text, "DermaDefault",w / 2,h / 4,color_white,TEXT_ALIGN_CENTER)
 		end
 	end
@@ -1476,12 +1481,13 @@ do
 		self.display.temp 		= data.temp
 
 		self.time.text = StormFox.Time.GetDisplay(time)
+		self.wind.text = (data.wind or 0) .. " m/s"
 		self.weather = StormFox.Weather.Get( data.weather and data.weather[2] or "Clear" )
 		self.display.weather = self.weather
 		self.display.weather_a = data.weather[1]
 		if self.weather then
-			self.icon:SetMaterial(self.weather.GetIcon(time, data.temp or 20, StormFox.Wind.GetForce(), false, data.weather[1]))
-			self.temp.desc = self.weather:GetName(time, data.temp or 20, StormFox.Wind.GetForce(), false, data.weather[1] )
+			self.icon:SetMaterial(self.weather.GetIcon(time, data.temp or 20, data.wind, data.weather[3], data.weather[1]))
+			self.temp.desc = self.weather:GetName(time, data.temp or 20, data.wind, data.weather[3], data.weather[1] )
 		end
 	end
 
@@ -1519,8 +1525,12 @@ do
 		local key = table.GetKeys( self.data )
 		table.sort(key, function(a,b) return b > a end)
 		local time = StormFox.Time.Get()
+		for _, v in ipairs( self._board.Panels ) do
+			v:Remove()
+		end
 		for i, hour in ipairs( key ) do
 			if hour + 60 < time then continue end
+			self.firstUp = math.min(hour, self.firstUp or 1440)
 			local data = self.data[ hour ]
 			local v_hour = vgui.Create("SF_WeatherHour", self._board)
 			v_hour:DockMargin(0,0,0,24)
@@ -1531,6 +1541,9 @@ do
 	end
 	function PANEL:Think()
 		if not self.data then
+			self:Update()
+		elseif self.firstUp and self.firstUp + 60 <= StormFox.Time.Get() then
+			self.firstUp = nil
 			self:Update()
 		end
 	end
