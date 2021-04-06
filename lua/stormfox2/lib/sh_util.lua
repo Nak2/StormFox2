@@ -34,7 +34,13 @@ if CLIENT then
 	hook.Add("PreDrawTranslucentRenderables", "StormFox.util.EyeHack", function() EyePos() end)
 	hook.Add("PreRender","StormFox.util.EyeFix",function()
 		local t = hook.Run("CalcView", LocalPlayer(), EyePos(), EyeAngles(), LocalPlayer():GetFOV(),3,28377)
-		if not t then return end
+		if not t then 
+			view.pos = EyePos()
+			view.ang = EyeAngles()
+			view.fov = 90
+			view.drawviewer = LocalPlayer():ShouldDrawLocalPlayer()
+			return
+		end
 		view.pos = t.origin
 		view.ang = t.angles
 		view.fov = t.fov
@@ -50,7 +56,7 @@ if CLIENT then
 	Returns the last camera position.
 	---------------------------------------------------------------------------]]
 	function StormFox.util.RenderPos()
-		return view.pos
+		return view.pos or EyePos()
 	end
 		--[[<Client>-----------------------------------------------------------------
 	Returns the current viewentity
