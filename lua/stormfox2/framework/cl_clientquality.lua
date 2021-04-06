@@ -6,7 +6,7 @@ StormFox2.Setting.AddCL("quality_ultra",false)
 StormFox2.Setting.AddCL("quality_target",144,nil,nil, 0, 300)
 
 local conDetect = 1
-local t_num = {1, 1, 1, 1, 1}
+local t_num = {1, 1, 1, 1, 1, 1}
 local i = 1
 local q_num = 1
 -- Calculate the avageFPS for the client and make a value we can use.

@@ -554,7 +554,7 @@ if CLIENT then
 	end
 	-- Renders all particles. t_sfp should be in render-order
 	local function ParticleRender()
-		local v = StormFox2.util.GetCalcView().pos
+		local v = StormFox2.util.GetCalcView().pos or EyePos()
 		local view = Vector(v.x,v.y,0)
 		
 		for _,t in ipairs(t_sfp) do
