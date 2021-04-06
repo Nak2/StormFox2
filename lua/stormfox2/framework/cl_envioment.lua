@@ -1,16 +1,16 @@
 --[[-------------------------------------------------------------------------
 Handles enviroments by scanning the mapfile.
 ---------------------------------------------------------------------------]]
-StormFox.Environment = StormFox.Environment or {}
+StormFox2.Environment = StormFox2.Environment or {}
 local INVALID_VERTS = 0
 local WATER_VERTS = 1
 local GLASS_VERTS = 2
 local GLASS_ROOF_VERTS = 3
 local METAL_ROOF_VERTS = 4
 
-StormFox.Setting.AddSV("csgo_2dskybox",false,nil, "Effect")
-StormFox.Setting.AddCL("window_enable",render.SupportsPixelShaders_2_0())
-StormFox.Setting.AddCL("window_distance",800, nil, nil, 0, 4000)
+StormFox2.Setting.AddSV("csgo_2dskybox",false,nil, "Effect")
+StormFox2.Setting.AddCL("window_enable",render.SupportsPixelShaders_2_0())
+StormFox2.Setting.AddCL("window_distance",800, nil, nil, 0, 4000)
 
 --[[-------------------------------------------------------------------------
 Adds a window model for SF to use.
@@ -20,15 +20,15 @@ local mdl = {}
 Adds a window model to the list of valid window-models.
 These windows must have glass in them.
 ---------------------------------------------------------------------------]]
-function StormFox.Environment.AddWindowModel(sModel,vMin, vMax)
+function StormFox2.Environment.AddWindowModel(sModel,vMin, vMax)
 	if not vMin or not vMax then
-		vMin, vMax = StormFox.util.GetModelSize(sModel)
+		vMin, vMax = StormFox2.util.GetModelSize(sModel)
 	end
 	mdl[sModel] = {vMin, vMax}
 end
 local function GetWindowModel(sModel)
 	if mdl[sModel] then return mdl[sModel][1],mdl[sModel][2] end
-	local min,max = StormFox.util.GetModelSize(sModel)
+	local min,max = StormFox2.util.GetModelSize(sModel)
 	mdl[sModel] = {min,max}
 	if math.abs(max.x - min.x) < math.abs(max.y - min.y) then
 		local x = min.x + (max.x - min.x) / 2
@@ -47,18 +47,18 @@ end
 
 -- CS:GO and l4d2 seems to be the only one with window-props
 if IsMounted("csgo") or IsMounted("l4d2") then
-	StormFox.Environment.AddWindowModel("models/props/cs_militia/militiawindow02_breakable.mdl")
-	StormFox.Environment.AddWindowModel("models/props/cs_militia/wndw01.mdl")
-	StormFox.Environment.AddWindowModel("models/props_windows/window_farmhouse_big.mdl")
-	StormFox.Environment.AddWindowModel("models/props_windows/window_farmhouse_small.mdl",Vector(-26,-0.8,-31.8),Vector(26,-0.8,34))
-	StormFox.Environment.AddWindowModel("models/props_windows/window_industrial.mdl")
-	StormFox.Environment.AddWindowModel("models/props_windows/window_urban_sash_48_88_full.mdl",Vector(-21.9,0,2),Vector(21.9,0,85))
-	StormFox.Environment.AddWindowModel("models/props_windows/window_urban_sash_48_88_full.mdl",Vector(-21.9,0,2),Vector(21.9,0,85))
-	StormFox.Environment.AddWindowModel("models/props/de_house/window_48x36.mdl", Vector(-22.2,4.8,-16),Vector(21.8,4.8,16)) -- ~4 sides
-	StormFox.Environment.AddWindowModel("models/props/de_house/window_54x44.mdl", Vector(-25,4.8,7), Vector(25,4.8,47))
-	StormFox.Environment.AddWindowModel("models/props/de_house/window_54x76.mdl", Vector(-25,4.8,7.9),Vector(25,4.8,80.1))
-	StormFox.Environment.AddWindowModel("models/props/de_inferno/windowbreakable_02.mdl")
-	StormFox.Environment.AddWindowModel("models/props/cs_militia/militiawindow02_breakable.mdl", Vector(-55, 0, -35.8), Vector(56, 0, 35.8))
+	StormFox2.Environment.AddWindowModel("models/props/cs_militia/militiawindow02_breakable.mdl")
+	StormFox2.Environment.AddWindowModel("models/props/cs_militia/wndw01.mdl")
+	StormFox2.Environment.AddWindowModel("models/props_windows/window_farmhouse_big.mdl")
+	StormFox2.Environment.AddWindowModel("models/props_windows/window_farmhouse_small.mdl",Vector(-26,-0.8,-31.8),Vector(26,-0.8,34))
+	StormFox2.Environment.AddWindowModel("models/props_windows/window_industrial.mdl")
+	StormFox2.Environment.AddWindowModel("models/props_windows/window_urban_sash_48_88_full.mdl",Vector(-21.9,0,2),Vector(21.9,0,85))
+	StormFox2.Environment.AddWindowModel("models/props_windows/window_urban_sash_48_88_full.mdl",Vector(-21.9,0,2),Vector(21.9,0,85))
+	StormFox2.Environment.AddWindowModel("models/props/de_house/window_48x36.mdl", Vector(-22.2,4.8,-16),Vector(21.8,4.8,16)) -- ~4 sides
+	StormFox2.Environment.AddWindowModel("models/props/de_house/window_54x44.mdl", Vector(-25,4.8,7), Vector(25,4.8,47))
+	StormFox2.Environment.AddWindowModel("models/props/de_house/window_54x76.mdl", Vector(-25,4.8,7.9),Vector(25,4.8,80.1))
+	StormFox2.Environment.AddWindowModel("models/props/de_inferno/windowbreakable_02.mdl")
+	StormFox2.Environment.AddWindowModel("models/props/cs_militia/militiawindow02_breakable.mdl", Vector(-55, 0, -35.8), Vector(56, 0, 35.8))
 end
 
 --[[-------------------------------------------------------------------------
@@ -349,28 +349,28 @@ Generate meshes and env-points out from the map-data.
 			if norm and (to - from):Dot(norm) > 0 then return false end -- Check if the window "faces" away from the player
 			t.start = from
 			t.endpos = norm and to + norm * 10 or to
-			t.filter = filter or StormFox.util.ViewEntity()
+			t.filter = filter or StormFox2.util.ViewEntity()
 			local tr = util_TraceLine( t )
 			return not tr.Hit, tr
 		end
 		local function EasyTrace(from,to, mask)
 			t.start = from
 			t.endpos = to
-			t.filter = StormFox.util.ViewEntity()
+			t.filter = StormFox2.util.ViewEntity()
 			t.mask = mask or MASK_SOLID_BRUSHONLY
 			return not util_TraceLine( t ).Hit
 		end
 		local function AdvTrace(from,to, mask)
 			t.start = from
 			t.endpos = to
-			t.filter = StormFox.util.ViewEntity()
+			t.filter = StormFox2.util.ViewEntity()
 			t.mask = mask or MASK_SOLID_BRUSHONLY
 			return util_TraceLine( t )
 		end
 		local function UnderSky(pos, mask) 			-- Checks if a position is under the sky.
 			t.start = pos
 			t.endpos = pos + Vector(0,0,262144)
-			t.filter = StormFox.util.ViewEntity()
+			t.filter = StormFox2.util.ViewEntity()
 			t.mask = mask
 			local r = util_TraceLine( t )
 			return r.HitSky and r.HitPos
@@ -379,7 +379,7 @@ Generate meshes and env-points out from the map-data.
 		local function SkyLine(pos,norm, n, nMaxDistance, filter, sky_mask) 	-- Shoots tracers out and returns a pos, if the sky is above.
 			t2.start = pos + norm
 			t2.endpos = pos + norm * (nMaxDistance or 262144)
-			t2.filter = filter or StormFox.util.ViewEntity()
+			t2.filter = filter or StormFox2.util.ViewEntity()
 			t2.mask = MASK_SHOT
 			local r = util_TraceLine( t2 )
 			if r.HitSky then return r.HitPos end
@@ -547,9 +547,9 @@ Generate meshes and env-points out from the map-data.
 	-- Scans for nearby window entities.
 	local function scan_dynamic()
 		glass_dynamic = {}
-		if not StormFox.Setting.GetCache("window_enable", true) then return end
-		local view = StormFox.util.GetCalcView()
-		local tEnts = ents.FindInSphere(view.pos, StormFox.Setting.GetCache("window_distance",800))
+		if not StormFox2.Setting.GetCache("window_enable", true) then return end
+		local view = StormFox2.util.GetCalcView()
+		local tEnts = ents.FindInSphere(view.pos, StormFox2.Setting.GetCache("window_distance",800))
 		for i,ent in ipairs(tEnts) do
 			local c = ent:GetClass()
 			if c == "prop_dynamic" or c == "prop_physics" then 									-- Models
@@ -596,9 +596,9 @@ Generate meshes and env-points out from the map-data.
 			end
 		end
 	end
-	hook.Add("PostCleanupMap", "stormFox.environment.onclean", scan_dynamic)
+	hook.Add("PostCleanupMap", "StormFox2.environment.onclean", scan_dynamic)
 	local scan = function() -- Locates all surfaceinfos we need.
-		StormFox.Msg("Scanning surfaces ..")
+		StormFox2.Msg("Scanning surfaces ..")
 		surfaceinfos = {}
 		local puddle_surfaceinfos = {}
 		local temp_glass = {} -- [mat_string][Normal][ID] = surface
@@ -644,7 +644,7 @@ Generate meshes and env-points out from the map-data.
 			temp_glass = nil
 			coroutine.yield() -- Wait a bit
 		-- Generate a mesh for each group
-			StormFox.Msg("Generating glass-mesh data ..")
+			StormFox2.Msg("Generating glass-mesh data ..")
 			local glass_planes = {{},{}}
 			for group_i,t_group in ipairs(temp_group) do -- For each group.
 				local mesh = {}
@@ -714,8 +714,8 @@ Generate meshes and env-points out from the map-data.
 			temp_group = nil
 			coroutine.yield() -- Wait a bit
 		-- Add static models
-			StormFox.Msg("Including window models ..")
-			for _,data in pairs(StormFox.Map.StaticProps()) do
+			StormFox2.Msg("Including window models ..")
+			for _,data in pairs(StormFox2.Map.StaticProps()) do
 				if not surfaceinfos[GLASS_VERTS] then surfaceinfos[GLASS_VERTS] = {} end
 				if not data.PropType or not IsWinModel(data.PropType) then continue end
 				local min,max = GetWindowModel(data.PropType)
@@ -752,7 +752,7 @@ Generate meshes and env-points out from the map-data.
 			end
 			coroutine.yield() -- Wait a bit
 		-- We now got 4 map-wide meshes.
-			StormFox.Msg("Generating glass-meshs [" .. #glass_planes[1] .. "] ..")
+			StormFox2.Msg("Generating glass-meshs [" .. #glass_planes[1] .. "] ..")
 			-- Refract mesh
 			local obj = Mesh(refact_mat)
 			obj:BuildFromTriangles(glass_planes[1])
@@ -777,7 +777,7 @@ Generate meshes and env-points out from the map-data.
 			glass_mapmesh = {obj,obj2,obj3,obj4}
 		-- Puddle
 			obj,obj2,obj3,obj4 = nil,nil,nil,nil
-			StormFox.Msg("Generating puddle-meshs [" .. #puddle_surfaceinfos .. "] ..")
+			StormFox2.Msg("Generating puddle-meshs [" .. #puddle_surfaceinfos .. "] ..")
 			local mesh = {}
 			for i,v in ipairs(puddle_surfaceinfos) do
 				local r = i % 6
@@ -799,7 +799,7 @@ Generate meshes and env-points out from the map-data.
 			puddle_mapmesh:BuildFromTriangles(mesh)
 			table.insert(STORMFOX_WINDOWMESHES, puddle_mapmesh)
 		-- Add window-entities	
-			StormFox.Msg("Locating window entities ..")
+			StormFox2.Msg("Locating window entities ..")
 			coroutine.yield() -- Wait a bit
 			scan_dynamic()
 			coroutine.yield(true)
@@ -811,12 +811,12 @@ Generate meshes and env-points out from the map-data.
 			if cor_scan() then
 				cor_scan = nil
 				timer.Remove("SF_ENV_SCAN")
-				StormFox.Msg("Meshes completed.")
+				StormFox2.Msg("Meshes completed.")
 			end
 		end)
-		hook.Remove("stormfox.InitPostEntity", "StormFox_ENV_SCAN")
+		hook.Remove("StormFox2.InitPostEntity", "StormFox_ENV_SCAN")
 	end
-	hook.Add("stormfox.InitPostEntity", "StormFox_ENV_SCAN", StartGenerating)
+	hook.Add("StormFox2.InitPostEntity", "StormFox_ENV_SCAN", StartGenerating)
 --[[-------------------------------------------------------------------------
 Renders glass-meshes.
 ---------------------------------------------------------------------------]]
@@ -828,9 +828,9 @@ Renders glass-meshes.
 
 	-- Returns the current window-renders
 	local function GetRenderFunctions()
-		if not StormFox.Weather or not StormFox.Terrain or not StormFox.Terrain.GetCurrent then return end
-		local cT = StormFox.Terrain.GetCurrent() or {}
-		local cW = StormFox.Weather.GetCurrent()
+		if not StormFox2.Weather or not StormFox2.Terrain or not StormFox2.Terrain.GetCurrent then return end
+		local cT = StormFox2.Terrain.GetCurrent() or {}
+		local cW = StormFox2.Weather.GetCurrent()
 		return cW._RenderWindow or cT.windRender, cW._RenderWindowRefract or cT.windRenderRef, cW._RenderWindow64x64 or cT.windRender64, cW._RenderWindowRefract64x64 or cT.windRenderRef64
 	end
 
@@ -852,9 +852,9 @@ Renders glass-meshes.
 	end
 
 	-- Update material
-	hook.Add("Think", "StormFox.Environment.UpdateRTWIndow", function()
-		if not StormFox.Terrain then return end
-		if not StormFox.Setting.GetCache("window_enable", true) then return end
+	hook.Add("Think", "StormFox2.Environment.UpdateRTWIndow", function()
+		if not StormFox2.Terrain then return end
+		if not StormFox2.Setting.GetCache("window_enable", true) then return end
 		local windRender, windRenderRef, windRender64, windRender64Ref = GetRenderFunctions()
 		-- Refract materials
 			if windRenderRef then
@@ -882,14 +882,14 @@ Renders glass-meshes.
 		end
 	end
 
-	hook.Add("PreDrawTranslucentRenderables", "StormFox.Environment.RenderWindow", function(a,b)
-		if (b or not  StormFox.Terrain) then return end
+	hook.Add("PreDrawTranslucentRenderables", "StormFox2.Environment.RenderWindow", function(a,b)
+		if (b or not  StormFox2.Terrain) then return end
 		if puddle_mapmesh then
 			--render.SetMaterial(puddle_mat)
 			--puddle_mapmesh:Draw()
 		end
 		if #glass_mapmesh < 4 then return end
-		if not StormFox.Setting.GetCache("window_enable", true) then return end
+		if not StormFox2.Setting.GetCache("window_enable", true) then return end
 		local windRender, windRenderRef, windRender64, windRender64Ref = GetRenderFunctions()
 		-- Refract materials
 			if windRenderRef then
@@ -933,7 +933,7 @@ local function sort_func(a, b)
 end
 local update_windows_tick = 0
 local function env_corotinefunction()
-	local view = StormFox.util.GetCalcView()
+	local view = StormFox2.util.GetCalcView()
 		viewPos = view.pos
 	-- If we're in water, locate the z_position
 		if bit.band( util.PointContents( viewPos ), CONTENTS_WATER ) == CONTENTS_WATER then
@@ -960,10 +960,10 @@ local function env_corotinefunction()
 			table.insert(close_window_ents, v)
 		end
 	-- is inside
-		is_inwind = StormFox.Wind.IsEntityInWind(LocalPlayer(),true)
+		is_inwind = StormFox2.Wind.IsEntityInWind(LocalPlayer(),true)
 		is_inside = not (is_inwind or UnderSky2(viewPos))
 	-- ZDis
-		local tr = PlyTrace( StormFox.util.ViewEntity(), Vector( 0, 0, -16000))
+		local tr = PlyTrace( StormFox2.util.ViewEntity(), Vector( 0, 0, -16000))
 		if not tr.Hit then
 			z_distance = 16000
 		else
@@ -1010,7 +1010,7 @@ local function env_corotinefunction()
 			nearest_outside = SkyLine(view.pos,Angle(0,view.ang.y,0):Forward(), 7, 500, nil, MASK_SHOT) or SkyLine(view.pos,view.ang:Forward(), 7, 500, nil, MASK_SHOT)
 			-- If we don't hit anything, scan around the player
 			if not nearest_outside then
-				local lines = math.min(StormFox.Client.GetQualityNumber() * 2,10)
+				local lines = math.min(StormFox2.Client.GetQualityNumber() * 2,10)
 				local r = 360 / lines
 				for i = 1,lines do
 					nearest_outside = SkyLine(view.pos,Angle(0,r * i,0):Forward(), 5, 600,nil, MASK_SHOT)
@@ -1027,7 +1027,7 @@ local function env_corotinefunction()
 			end
 		coroutine.yield()
 		-- Roof pos
-			roof_pos, roof_type = StormFox.DownFall.CheckDrop(viewPos, Vector(0,0,-1), 3, StormFox.util.ViewEntity())
+			roof_pos, roof_type = StormFox2.DownFall.CheckDrop(viewPos, Vector(0,0,-1), 3, StormFox2.util.ViewEntity())
 			debugoverlay.Cross(roof_pos, 15, 1, color_white, true)
 	end
 	coroutine.yield()
@@ -1039,15 +1039,15 @@ local env_corotine = coroutine.wrap(function()
 	end
 end)
 timer.Create("stormfox2.enviroment.think", 0.25, 0, function()
-	if not StormFox.Loaded or not _STORMFOX_POSTENTITY then return end
-	if not StormFox.Setting.GetCache("window_enable", true) then return end
+	if not StormFox2.Loaded or not _STORMFOX_POSTENTITY then return end
+	if not StormFox2.Setting.GetCache("window_enable", true) then return end
 	env_corotine()
 end)
 
 --[[-------------------------------------------------------------------------
 Returns the clients enviroment and locations.
 ---------------------------------------------------------------------------]]
-function StormFox.Environment.Get()
+function StormFox2.Environment.Get()
 	local t = {}
 	t.outside = not is_inside
 	t.in_water = in_water
@@ -1066,8 +1066,8 @@ end
 --[[-------------------------------------------------------------------------
 Returns the clients height over ground.
 ---------------------------------------------------------------------------]]
-function StormFox.Environment.GetZHeight( bForceUpdate )
-	local tr = PlyTrace( StormFox.util.ViewEntity(), Vector( 0, 0, -16000))
+function StormFox2.Environment.GetZHeight( bForceUpdate )
+	local tr = PlyTrace( StormFox2.util.ViewEntity(), Vector( 0, 0, -16000))
 	if not tr.Hit then
 		z_distance = 16000
 	else
@@ -1082,7 +1082,7 @@ end
 
 --[[
 StartGenerating()
-timer.Create("stormfox.enviroment.think", 0.25, 0, function()
+timer.Create("StormFox2.enviroment.think", 0.25, 0, function()
 	env_corotine()
 	--print(coroutine.resume(env_corotine))
 end)]]

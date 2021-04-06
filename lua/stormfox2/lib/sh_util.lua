@@ -2,12 +2,12 @@
 Useful functions
 ---------------------------------------------------------------------------]]
 
-StormFox.util = {}
+StormFox2.util = {}
 local cache = {}
 --[[<Shared>-----------------------------------------------------------------
 Returns the OBBMins and OBBMaxs of a model.
 ---------------------------------------------------------------------------]]
-function StormFox.util.GetModelSize(sModel)
+function StormFox2.util.GetModelSize(sModel)
 	if cache[sModel] then return cache[sModel][1],cache[sModel][2] end
 	if not file.Exists(sModel,"GAME") then
 		cache[sModel] = {Vector(0,0,0),Vector(0,0,0)}
@@ -31,8 +31,8 @@ if CLIENT then
 		view.ang = Angle(0,0,0)
 		view.fov = 0
 		view.drawviewer = false
-	hook.Add("PreDrawTranslucentRenderables", "StormFox.util.EyeHack", function() EyePos() end)
-	hook.Add("PreRender","StormFox.util.EyeFix",function()
+	hook.Add("PreDrawTranslucentRenderables", "StormFox2.util.EyeHack", function() EyePos() end)
+	hook.Add("PreRender","StormFox2.util.EyeFix",function()
 		local t = hook.Run("CalcView", LocalPlayer(), EyePos(), EyeAngles(), LocalPlayer():GetFOV(),3,28377)
 		if not t then 
 			view.pos = EyePos()
@@ -49,19 +49,19 @@ if CLIENT then
 	--[[<Client>-----------------------------------------------------------------
 	Returns the last calcview result.
 	---------------------------------------------------------------------------]]
-	function StormFox.util.GetCalcView()
+	function StormFox2.util.GetCalcView()
 		return view
 	end
 	--[[<Client>-----------------------------------------------------------------
 	Returns the last camera position.
 	---------------------------------------------------------------------------]]
-	function StormFox.util.RenderPos()
+	function StormFox2.util.RenderPos()
 		return view.pos or EyePos()
 	end
 		--[[<Client>-----------------------------------------------------------------
 	Returns the current viewentity
 	---------------------------------------------------------------------------]]
-	function StormFox.util.ViewEntity()
+	function StormFox2.util.ViewEntity()
 		local p = LocalPlayer():GetViewEntity() or LocalPlayer()
 		if p.InVehicle and p:InVehicle() and p == LocalPlayer() then
 			p = p:GetVehicle() or p

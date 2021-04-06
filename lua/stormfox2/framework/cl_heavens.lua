@@ -1,9 +1,9 @@
 -- Fix overlapping tables
-	StormFox.Time = StormFox.Time or {}
+	StormFox2.Time = StormFox2.Time or {}
 local clamp,max,min = math.Clamp,math.max,math.min
-StormFox.Sun = {}
-StormFox.Moon = {}
-StormFox.Sky = {}
+StormFox2.Sun = {}
+StormFox2.Moon = {}
+StormFox2.Sky = {}
 
 	SF_SKY_DAY = 0
 	SF_SKY_SUNRISE = 1
@@ -14,80 +14,80 @@ StormFox.Sky = {}
 	SF_SKY_ASTRONOMICAL = 6
 	SF_SKY_NIGHT = 7
 
-	StormFox.Setting.AddSV("sunrise",360,nil, "Time", 0, 1440)
-	StormFox.Setting.SetType("sunrise", "Time")
-	StormFox.Setting.AddSV("sunset",1080,nil, "Time", 0, 1440)
-	StormFox.Setting.SetType("sunset", "Time")
-	StormFox.Setting.AddSV("sunyaw",90,nil, "Effects", 0, 360)
-	StormFox.Setting.AddSV("moonlock",false,nil,"Effects", 0, 1)
+	StormFox2.Setting.AddSV("sunrise",360,nil, "Time", 0, 1440)
+	StormFox2.Setting.SetType("sunrise", "Time")
+	StormFox2.Setting.AddSV("sunset",1080,nil, "Time", 0, 1440)
+	StormFox2.Setting.SetType("sunset", "Time")
+	StormFox2.Setting.AddSV("sunyaw",90,nil, "Effects", 0, 360)
+	StormFox2.Setting.AddSV("moonlock",false,nil,"Effects", 0, 1)
 
-	StormFox.Setting.AddSV("use_2dskybox",false,nil, "Effects")
-	StormFox.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
+	StormFox2.Setting.AddSV("use_2dskybox",false,nil, "Effects")
+	StormFox2.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
 
 	-- The sun is up ½ of the day; 1440 / 2 = 720. 720 / 2 = 360 and 360 * 3 = 1080
-	local SunDelta = 180 / (StormFox.Data.Get("sun_sunset",1080) - StormFox.Data.Get("sun_sunrise",360))
+	local SunDelta = 180 / (StormFox2.Data.Get("sun_sunset",1080) - StormFox2.Data.Get("sun_sunrise",360))
 	--[[-------------------------------------------------------------------------
 	Gets called when the sunset and sunrise changes.
 	---------------------------------------------------------------------------]]
-	hook.Add("stormfox.data.change","StormFox.Sky.DeltaChange",function(key,var)
+	hook.Add("StormFox2.data.change","StormFox2.Sky.DeltaChange",function(key,var)
 		if key ~= "sun_sunrise" and key ~= "sun_sunset" then return end
-		SunDelta = 180 / StormFox.Time.DeltaTime(StormFox.Data.Get("sun_sunrise",360),StormFox.Data.Get("sun_sunset",1080))
+		SunDelta = 180 / StormFox2.Time.DeltaTime(StormFox2.Data.Get("sun_sunrise",360),StormFox2.Data.Get("sun_sunset",1080))
 	end)
 	--[[-------------------------------------------------------------------------
 		Returns the time when the sun rises.
 	---------------------------------------------------------------------------]]
-	function StormFox.Sun.GetSunRise()
-		return StormFox.Data.Get("sun_sunrise",360)
+	function StormFox2.Sun.GetSunRise()
+		return StormFox2.Data.Get("sun_sunrise",360)
 	end
 	--[[-------------------------------------------------------------------------
 		Returns the time when the sun sets.
 	---------------------------------------------------------------------------]]
-	function StormFox.Sun.GetSunSet()
-		return StormFox.Data.Get("sun_sunset",1080)
+	function StormFox2.Sun.GetSunSet()
+		return StormFox2.Data.Get("sun_sunset",1080)
 	end
 	--[[
 		Returns the time when sun is at its higest
 	]]
-	function StormFox.Sun.GetSunAtHigest()
-		return (StormFox.Sun.GetSunRise() + StormFox.Sun.GetSunSet()) / 2
+	function StormFox2.Sun.GetSunAtHigest()
+		return (StormFox2.Sun.GetSunRise() + StormFox2.Sun.GetSunSet()) / 2
 	end
 -- Sun functions
 	--[[-------------------------------------------------------------------------
 		Returns the sun-yaw. (Normal 90)
 	---------------------------------------------------------------------------]]
-	function StormFox.Sun.GetYaw()
-		return StormFox.Data.Get("sun_yaw",90)
+	function StormFox2.Sun.GetYaw()
+		return StormFox2.Data.Get("sun_yaw",90)
 	end
 	--[[-------------------------------------------------------------------------
 		Returns true if the sun is on the sky.
 	---------------------------------------------------------------------------]]
-	function StormFox.Sun.IsUp(nTime)
-		return StormFox.Time.IsBetween(StormFox.Sun.GetSunRise(), StormFox.Sun.GetSunSet(),nTime)
+	function StormFox2.Sun.IsUp(nTime)
+		return StormFox2.Time.IsBetween(StormFox2.Sun.GetSunRise(), StormFox2.Sun.GetSunSet(),nTime)
 	end
 	--[[-------------------------------------------------------------------------
 		Returns the sun-size. (Normal 30)
 	---------------------------------------------------------------------------]]
-	function StormFox.Sun.GetSize()
-		return StormFox.Mixer.Get("sun_size",30)
+	function StormFox2.Sun.GetSize()
+		return StormFox2.Mixer.Get("sun_size",30)
 	end
 	--[[-------------------------------------------------------------------------
 		Returns the  sun-color.
 	---------------------------------------------------------------------------]]
-	function StormFox.Sun.GetColor()
-		return StormFox.Mixer.Get("sun_color",Color(255,255,255))
+	function StormFox2.Sun.GetColor()
+		return StormFox2.Mixer.Get("sun_color",Color(255,255,255))
 	end
 	local sunVisible = 0
 		--[[-------------------------------------------------------------------------
 	Returns the sunangle for the current or given time.
 	---------------------------------------------------------------------------]]
 	local function GetSunPitch(nTime)
-		local t = nTime or StormFox.Time.Get()
-		local p = (t - StormFox.Data.Get("sun_sunrise",360)) * SunDelta
+		local t = nTime or StormFox2.Time.Get()
+		local p = (t - StormFox2.Data.Get("sun_sunrise",360)) * SunDelta
 		if p < -90 or p > 270 then p = -90 end -- Sun stays at -90 pitch, the pitch is out of range
 		return p
 	end
-	function StormFox.Sun.GetAngle(nTime)
-		local a = Angle(-GetSunPitch(nTime),StormFox.Data.Get("sun_yaw",90),0)
+	function StormFox2.Sun.GetAngle(nTime)
+		local a = Angle(-GetSunPitch(nTime),StormFox2.Data.Get("sun_yaw",90),0)
 		return a
 	end
 -- We need a sun-stamp. Since we can't go by time.
@@ -110,7 +110,7 @@ StormFox.Sky = {}
 	local function GetsunSize()
 		if lC > CurTime() then return lCV end
 		lC = CurTime() + 2
-		local x = StormFox.Sun.GetSize()
+		local x = StormFox2.Sun.GetSize()
 		lCV = (-0.00019702 * x^2 + 0.149631 * x - 0.0429803) / 2
 		return lCV
 	end
@@ -141,10 +141,10 @@ StormFox.Sky = {}
 		Time until next sunstamp.
 	---------------------------------------------------------------------------]]
 	local lastStamp = 0
-	function StormFox.Sky.GetLastStamp()
+	function StormFox2.Sky.GetLastStamp()
 		return lastStamp
 	end
-	function StormFox.Sky.GetStamp(nTime,nOffsetDegree)
+	function StormFox2.Sky.GetStamp(nTime,nOffsetDegree)
 		local c_stamp,p = GetStamp(nTime,nOffsetDegree)
 		local d_delta = stamp[c_stamp][2] - (p - c_stamp) -- +degrees
 
@@ -153,14 +153,14 @@ StormFox.Sky = {}
 	end
 	-- Sky hook. Used to update the sky colors and other things.
 	local nextStamp = -1
-	hook.Add("StormFox.Time.Changed","StormFox.Sky.UpdateStamp",function()
+	hook.Add("StormFox2.Time.Changed","StormFox2.Sky.UpdateStamp",function()
 		nextStamp = -1
 	end)
-	timer.Create("StormFox.Sky.Stamp", 1, 0, function()
+	timer.Create("StormFox2.Sky.Stamp", 1, 0, function()
 		--local c_t = CurTime()
 		--if c_t < nextStamp then return end
-		local stamp,n_t = StormFox.Sky.GetStamp(nil,6) -- Look 6 degrees into the furture so we can lerp the colors.
-		--nextStamp = c_t + (n_t * SunDelta) / StormFox.Time.GetSpeed()
+		local stamp,n_t = StormFox2.Sky.GetStamp(nil,6) -- Look 6 degrees into the furture so we can lerp the colors.
+		--nextStamp = c_t + (n_t * SunDelta) / StormFox2.Time.GetSpeed()
 		--[[-------------------------------------------------------------------------
 		This hook gets called when the sky-stamp changes. This is used to change the sky-colors and other things.
 		First argument:
@@ -172,21 +172,21 @@ StormFox.Sky = {}
 		---------------------------------------------------------------------------]]
 		if lastStamp == stamp then return end -- Don't call it twice.
 		lastStamp = stamp
-		hook.Run("StormFox.Sky.StampChange", stamp, 6 / SunDelta )
+		hook.Run("StormFox2.Sky.StampChange", stamp, 6 / SunDelta )
 	end)
 	--[[-------------------------------------------------------------------
 		Returns true if the sun is visible for the client.
 	---------------------------------------------------------------------------]]
-	function StormFox.Sun.GetVisibility()
+	function StormFox2.Sun.GetVisibility()
 		return sunVisible
 	end
 	-- Pixel are a bit crazy if called twice
 	hook.Add("Think","SunUpdater",function()
-		if not StormFox.Loaded then return end
+		if not StormFox2.Loaded then return end
 		if not _STORMFOX_SUNPIX then -- Create pixel
 			_STORMFOX_SUNPIX = util.GetPixelVisibleHandle()
 		else
-			sunVisible = util.PixelVisible( LocalPlayer():GetPos() + StormFox.Sun.GetAngle():Forward() * 4096, StormFox.Mixer.Get("sun_size",30), _STORMFOX_SUNPIX )
+			sunVisible = util.PixelVisible( LocalPlayer():GetPos() + StormFox2.Sun.GetAngle():Forward() * 4096, StormFox2.Mixer.Get("sun_size",30), _STORMFOX_SUNPIX )
 		end
 	end)
 
@@ -194,7 +194,7 @@ StormFox.Sky = {}
 	SF_OLD_SUNINFO = SF_OLD_SUNINFO or util.GetSunInfo() -- Just in case
 	--<Ignore>
 	function util.GetSunInfo()
-		if not StormFox.Loaded then -- In case we mess up
+		if not StormFox2.Loaded then -- In case we mess up
 			if SF_OLD_SUNINFO then
 				return SF_OLD_SUNINFO()
 			else
@@ -202,8 +202,8 @@ StormFox.Sky = {}
 			end
 		end
 		local tab = {["direction"] = Vector(0,0,0),["obstruction"] = 0}
-			tab.direction = StormFox.Sun.GetAngle():Forward()
-			tab.obstruction = sunVisible * (StormFox.Sun.GetColor().a / 255)
+			tab.direction = StormFox2.Sun.GetAngle():Forward()
+			tab.obstruction = sunVisible * (StormFox2.Sun.GetColor().a / 255)
 		return tab
 	end
 
@@ -222,9 +222,9 @@ StormFox.Sky = {}
 	--[[-------------------------------------------------------------------------
 		Returns the moon phase for the current day
 	---------------------------------------------------------------------------]]
-	function StormFox.Moon.GetPhase()
-		local mp = StormFox.Data.Get("moon_phase",SF_MOON_FULL)
-		local yd = StormFox.Date.GetYearDay()
+	function StormFox2.Moon.GetPhase()
+		local mp = StormFox2.Data.Get("moon_phase",SF_MOON_FULL)
+		local yd = StormFox2.Date.GetYearDay()
 		return yd - mp
 	end
 
@@ -233,25 +233,25 @@ StormFox.Sky = {}
 	---------------------------------------------------------------------------]]
 	local tf = 0
 	local a = 7 / 7.4
-	function StormFox.Moon.GetAngle(nTime)
-		--if true then return Angle(200,StormFox.Data.Get("sun_yaw",90),0) end
-		local day_f = (nTime or StormFox.Time.Get()) / 1440
+	function StormFox2.Moon.GetAngle(nTime)
+		--if true then return Angle(200,StormFox2.Data.Get("sun_yaw",90),0) end
+		local day_f = (nTime or StormFox2.Time.Get()) / 1440
 		tf = math.max(tf, day_f)
-		local day_n = tf + StormFox.Date.GetYearDay()
-		local p_c = ((day_n * a) % 8) * 360 + StormFox.Data.Get("magic_moonnumber",0)
-		return Angle(-p_c % 360,StormFox.Data.Get("sun_yaw",90),0)
+		local day_n = tf + StormFox2.Date.GetYearDay()
+		local p_c = ((day_n * a) % 8) * 360 + StormFox2.Data.Get("magic_moonnumber",0)
+		return Angle(-p_c % 360,StormFox2.Data.Get("sun_yaw",90),0)
 	end
 	-- It might take a bit for the server to tell us the day changed.
-	hook.Add("stormfox.data.change", "stormfox.moon.datefix", function(sKey, nDay)
+	hook.Add("StormFox2.data.change", "StormFox2.moon.datefix", function(sKey, nDay)
 		if sKey ~= "day" then return end
 		tf = 0
 	end)
 	--[[-------------------------------------------------------------------------
 		Returns true if the moon is up.
 	---------------------------------------------------------------------------]]
-	function StormFox.Moon.IsUp()
-		local t = StormFox.Moon.GetAngle().p
-		local s = StormFox.Mixer.Get("moonSize",20) / 6.9
+	function StormFox2.Moon.IsUp()
+		local t = StormFox2.Moon.GetAngle().p
+		local s = StormFox2.Mixer.Get("moonSize",20) / 6.9
 		return t > 180 - s or t < s
 	end
 	--[[-------------------------------------------------------------------------
@@ -261,10 +261,10 @@ StormFox.Sky = {}
 			0 = New moon
 		Seconary returns the angle towards the sun from the moon.
 	---------------------------------------------------------------------------]]
-	function StormFox.Moon.GetPhase(nTime)
+	function StormFox2.Moon.GetPhase(nTime)
 		-- Calculate the distance between the two (Somewhat real scale)
-		local mAng = StormFox.Moon.GetAngle(nTime)
-		local sAng = StormFox.Sun.GetAngle(nTime)
+		local mAng = StormFox2.Moon.GetAngle(nTime)
+		local sAng = StormFox2.Sun.GetAngle(nTime)
 		local A = sAng:Forward() * 14975
 		local B = mAng:Forward() * 39
 		-- Get the angle towards the sun from the moon
@@ -280,9 +280,9 @@ StormFox.Sky = {}
 	--[[-------------------------------------------------------------------------
 		Returns the moon phase name
 	---------------------------------------------------------------------------]]
-	function StormFox.Moon.GetPhaseName(nTime)
-		local n = StormFox.Moon.GetPhase(nTime)
-		local pDif = math.AngleDifference(StormFox.Moon.GetAngle(nTime).p, StormFox.Sun.GetAngle(nTime).p)
+	function StormFox2.Moon.GetPhaseName(nTime)
+		local n = StormFox2.Moon.GetPhase(nTime)
+		local pDif = math.AngleDifference(StormFox2.Moon.GetAngle(nTime).p, StormFox2.Sun.GetAngle(nTime).p)
 		if n >= 4.9 then
 			return "Full Moon"
 		elseif n <= 0.1 then
@@ -304,31 +304,31 @@ StormFox.Sky = {}
 			CloudBox (Like a skybox, just with transparency. Will fade between states)
 			CloudLayer (Moving clouds)
 	---------------------------------------------------------------------------]]
-	hook.Add("PostDraw2DSkyBox", "StormFox.SkyBoxRender", function()
-		if not StormFox then return end
-		if not StormFox.Loaded then return end
+	hook.Add("PostDraw2DSkyBox", "StormFox2.SkyBoxRender", function()
+		if not StormFox2 then return end
+		if not StormFox2.Loaded then return end
 		-- Just to be sure. I hate errors in render hooks.
-			if not StormFox.util then return end
-			if not StormFox.Sun then return end
-			if not StormFox.Moon then return end
-			if not StormFox.Moon.GetAngle then return end
-		local c_pos = StormFox.util.RenderPos()
-		local use_2d = StormFox.Setting.GetCache("use_2dskybox",false)
+			if not StormFox2.util then return end
+			if not StormFox2.Sun then return end
+			if not StormFox2.Moon then return end
+			if not StormFox2.Moon.GetAngle then return end
+		local c_pos = StormFox2.util.RenderPos()
+		local use_2d = StormFox2.Setting.GetCache("use_2dskybox",false)
 		cam.Start3D( Vector( 0, 0, 0 ), EyeAngles() ,nil,nil,nil,nil,nil,1,32000)  -- 2d maps fix
 			render.OverrideDepthEnable( false,false )
 			render.SuppressEngineLighting(true)
 			render.SetLightingMode( 2 )
 			if not use_2d then
-				hook.Run("StormFox.2DSkybox.StarRender",	c_pos)
+				hook.Run("StormFox2.2DSkybox.StarRender",	c_pos)
 
-				-- hook.Run("StormFox.2DSkybox.BlockStarRender",c_pos)
-				hook.Run("StormFox.2DSkybox.SunRender",		c_pos) -- No need to block, shrink the sun.		
+				-- hook.Run("StormFox2.2DSkybox.BlockStarRender",c_pos)
+				hook.Run("StormFox2.2DSkybox.SunRender",		c_pos) -- No need to block, shrink the sun.		
 
-				hook.Run("StormFox.2DSkybox.Moon",			c_pos)
+				hook.Run("StormFox2.2DSkybox.Moon",			c_pos)
 			end
-			hook.Run("StormFox.2DSkybox.CloudBox",		c_pos)
-			hook.Run("StormFox.2DSkybox.CloudLayer",	c_pos)
-			hook.Run("StormFox.2DSkybox.FogLayer",	c_pos)
+			hook.Run("StormFox2.2DSkybox.CloudBox",		c_pos)
+			hook.Run("StormFox2.2DSkybox.CloudLayer",	c_pos)
+			hook.Run("StormFox2.2DSkybox.FogLayer",	c_pos)
 			render.SuppressEngineLighting(false)
 			render.SetLightingMode( 0 )
 			render.OverrideDepthEnable( false, false )
@@ -339,10 +339,10 @@ StormFox.Sky = {}
 
 -- Render Sun
 	local sunMat = Material("stormfox2/effects/moon/moon_glow")
-	hook.Add("StormFox.2DSkybox.SunRender","StormFox.RenderSun",function(c_pos)
-		local SunN = -StormFox.Sun.GetAngle():Forward()
-		local s_size = StormFox.Sun.GetSize()
-		local c_c = StormFox.Sun.GetColor() or color_white
+	hook.Add("StormFox2.2DSkybox.SunRender","StormFox2.RenderSun",function(c_pos)
+		local SunN = -StormFox2.Sun.GetAngle():Forward()
+		local s_size = StormFox2.Sun.GetSize()
+		local c_c = StormFox2.Sun.GetColor() or color_white
 		local c = Color(c_c.r,c_c.g,c_c.b,c_c.a)
 		render.SetMaterial(sunMat)
 		render.DrawQuadEasy( SunN * -200, SunN, s_size, s_size, c, 0 )
@@ -365,7 +365,7 @@ StormFox.Sky = {}
 			--currentPhase = SF_MOON_FIRST_QUARTER - 0.01
 			if currentPhase == SF_MOON_NEW then return end -- New moon. No need to render.
 			-- Check if there is a need to re-render
-				local moonMat = StormFox.Data.Get("moonTexture",lastMoonMat)
+				local moonMat = StormFox2.Data.Get("moonTexture",lastMoonMat)
 				if type(moonMat) ~= "IMaterial" then return end -- Something went wrong. Lets wait.
 				if lastCurrentPhase == currentPhase and lastMoonMat and lastMoonMat == moonMat then
 					-- Already rendered
@@ -449,24 +449,24 @@ StormFox.Sky = {}
 			render.PopRenderTarget()
 			CurrentMoonTexture:SetTexture("$basetexture",RTMoonTexture)
 		end
-	hook.Add("StormFox.2DSkybox.Moon","StormFox.RenderMoon",function(c_pos)
-		local moonScale = StormFox.Mixer.Get("moonSize",20)
-		local moonAng = StormFox.Moon.GetAngle()
+	hook.Add("StormFox2.2DSkybox.Moon","StormFox2.RenderMoon",function(c_pos)
+		local moonScale = StormFox2.Mixer.Get("moonSize",20)
+		local moonAng = StormFox2.Moon.GetAngle()
 		local N = moonAng:Forward()
 		local NN = -N
 		local sa = moonAng.y
 		-- Render texture
 			-- Calc moonphase from pos
-			local currentPhase,moonTowardSun = StormFox.Moon.GetPhase()
-			local C = StormFox.Moon.GetAngle()
+			local currentPhase,moonTowardSun = StormFox2.Moon.GetPhase()
+			local C = StormFox2.Moon.GetAngle()
 				C.r = 0
 			-- currentYaw
 				local v,ang = WorldToLocal(moonTowardSun:Forward(),Angle(0,0,0),Vector(0,0,0),C)
 				ang = v:AngleEx(C:Forward()):Forward()
 				local roll = math.deg(math.atan2(ang.z,ang.y))
 			RenderMoonPhase( -sa - roll + ((moonAng.p < 270 and moonAng.p > 90) and 180 or 0)   ,currentPhase)
-		local c = StormFox.Mixer.Get("moonColor",Color(205,205,205))
-		local a = StormFox.Mixer.Get("skyVisibility",100)
+		local c = StormFox2.Mixer.Get("moonColor",Color(205,205,205))
+		local a = StormFox2.Mixer.Get("skyVisibility",100)
 		if moonAng.p > 190 then
 			gda = clamp((moonAng.p - 190) / 10,0,1)
 		elseif moonAng.p < 350 then

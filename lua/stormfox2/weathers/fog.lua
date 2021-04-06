@@ -1,14 +1,14 @@
 -- Rain and cloud is nearly the same.
-local fog = StormFox.Weather.Add( "Fog" )
+local fog = StormFox2.Weather.Add( "Fog" )
 fog:Set("fogDistance", 150)
 if CLIENT then
 	function fog.Think()
-		local p = StormFox.Weather.GetPercent()
+		local p = StormFox2.Weather.GetPercent()
 		if p < 0.5 then return end
 		// tTemplate, nMinDistance, nMaxDistance, nAimAmount, traceSize, vNorm, fFunc )
-		local fc = StormFox.Fog.GetColor()
+		local fc = StormFox2.Fog.GetColor()
 		local c = Color(fc.r,fc.g,fc.b, 0)
-		for _,v in ipairs( StormFox.DownFall.SmartTemplate(StormFox.Misc.fog_template, 200, 900, 45 * p - 15, 250, vNorm ) or {} ) do
+		for _,v in ipairs( StormFox2.DownFall.SmartTemplate(StormFox2.Misc.fog_template, 200, 900, 45 * p - 15, 250, vNorm ) or {} ) do
 			v:SetColor( c )
 		end
 	end

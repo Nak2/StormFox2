@@ -7,7 +7,7 @@ Tested from HL1 to CS:GO maps.
 
 Remember to read StormFox2's license before using this.
 ---------------------------------------------------------------------------]]
-StormFox.Map = {}
+StormFox2.Map = {}
 -- Local vars
 	local file = table.Copy(file)
 	local Vector = Vector
@@ -192,11 +192,11 @@ StormFox.Map = {}
 		for s in string.gmatch( data, "scripts\\soundscapes_.-txt.-PK" ) do
 			if not found then
 				found = true
-				StormFox.Msg("Found custom soundscapes:")
+				StormFox2.Msg("Found custom soundscapes:")
 			end
 			local fil = string.match(s,"scripts\\soundscapes_.-txt")
 			local file_name = string.GetFileFromFilename(fil or "") or ""
-			StormFox.Msg(file_name)
+			StormFox2.Msg(file_name)
 			if #file_name > 0 then
 				_STORMFOX_MAP__SoundScapes = _STORMFOX_MAP__SoundScapes or {}
 				_STORMFOX_MAP__SoundScapes[file_name] = s:sub(#fil + 1,#s - 4)
@@ -213,19 +213,19 @@ StormFox.Map = {}
 		end
 		local fil = "maps/" .. str
 		if not file.Exists(fil,"GAME") then
-			StormFox.Warning("Unable to located mapfile!")
+			StormFox2.Warning("Unable to located mapfile!")
 			return false
 		end
 		local f = file.Open(fil,"rb","GAME")
 		-- BSP file header
 			if f:Read(4) ~= "VBSP" then -- Invalid
-				StormFox.Warning("Mapfile is not a source map!")
+				StormFox2.Warning("Mapfile is not a source map!")
 				f:Close()
 				return false
 			end
 			SF_BSPDATA.version = ReadBits(f,4)
 			if SF_BSPDATA.version > 21 then
-				StormFox.Warning("What year is it? SF is too old to read those maps.")
+				StormFox2.Warning("What year is it? SF is too old to read those maps.")
 				f:Close()
 				return false
 			end
@@ -240,7 +240,7 @@ StormFox.Map = {}
 				local len = SetToLump(f,lumps[1])
 				local de_data = lzma_decode(f)
 				if type(de_data) ~= "string" then
-					StormFox.Warning("Map is LZMA compressed and SF wasn't able to load the map.")
+					StormFox2.Warning("Map is LZMA compressed and SF wasn't able to load the map.")
 					f:Close()
 					return false
 				end
@@ -257,7 +257,7 @@ StormFox.Map = {}
 					table.insert(SF_BSPDATA.Entities,t)
 				end
 			else
-				StormFox.Warning("Invalid BSP data. SF is unable to process the file.")
+				StormFox2.Warning("Invalid BSP data. SF is unable to process the file.")
 				f:Close()
 				return false
 			end
@@ -302,7 +302,7 @@ StormFox.Map = {}
 							m[i] = model
 						end
 					else
-						StormFox.Warning("Can't read the maps static props.")
+						StormFox2.Warning("Can't read the maps static props.")
 					end
 				-- Locate the leafs
 					if #m > 0 then
@@ -319,7 +319,7 @@ StormFox.Map = {}
 						local staticStart = f:Tell()
 						local staticUsed = 0
 						if count > 16385 then
-							StormFox.Warning("Can't read the maps static props. [Crazy amount]")
+							StormFox2.Warning("Can't read the maps static props. [Crazy amount]")
 						else
 							for i = 0, count - 1 do
 								-- This is to try and get as much valid data we can.
@@ -333,7 +333,7 @@ StormFox.Map = {}
 						if staticUsed == staticSize then
 							--print("StaticMatch: ",staticSize)
 						else
-							StormFox.Warning("Static props doesn't match version! Size[" .. staticSize .. " bytes]")
+							StormFox2.Warning("Static props doesn't match version! Size[" .. staticSize .. " bytes]")
 							if staticUsed < staticSize then
 								--print("Bytes unread: ", staticSize - staticUsed)
 							else
@@ -354,7 +354,7 @@ StormFox.Map = {}
 				SetToLump(f,lumps[44])
 				local de_data = lzma_decode(f)
 				if not de_data then
-					StormFox.Warning("Failed to decompress LZMA map-data. SF couldn't load the mapfile!")
+					StormFox2.Warning("Failed to decompress LZMA map-data. SF couldn't load the mapfile!")
 					f:Close()
 					return false
 				else
@@ -398,7 +398,7 @@ StormFox.Map = {}
 		-- PAK search
 			local len = SetToLump(f,lumps[41])
 			--if len > 10 then
-				--StormFox.Msg("Found mapdata, might take a few more seconds.") -- Ignore this for now
+				--StormFox2.Msg("Found mapdata, might take a few more seconds.") -- Ignore this for now
 				--PAKSearch(f,len)
 			--end
 			--pak_data = f:Read(len)
@@ -416,38 +416,38 @@ StormFox.Map = {}
 		--	end
 		--	print("PLANES LENGH", len % 20)
 		f:Close()
-		StormFox.Msg("Took " .. (SysTime() - s) .. " seconds to load the mapdata.")
+		StormFox2.Msg("Took " .. (SysTime() - s) .. " seconds to load the mapdata.")
 		return true
 	end
 -- MAP functions
 	--[[-------------------------------------------------------------------------
 	Returns the mapversion.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.Version()
+	function StormFox2.Map.Version()
 		return SF_BSPDATA.version or -1
 	end
 	--[[-------------------------------------------------------------------------
 	Returns the entities from the mapfile.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.Entities()
+	function StormFox2.Map.Entities()
 		return SF_BSPDATA.Entities or {}
 	end
 	--[[-------------------------------------------------------------------------
 	Returns the staticprops from the mapfile.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.StaticProps()
+	function StormFox2.Map.StaticProps()
 		return SF_BSPDATA.StaticProps or {}
 	end
 	--[[-------------------------------------------------------------------------
 	Returns all textures from the mapfile.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.AllTextures()
+	function StormFox2.Map.AllTextures()
 		return SF_BSPDATA.TextureArray or {}
 	end
 	--[[-------------------------------------------------------------------------
 	Returns the filtered textures from the mapfile.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.Textures()
+	function StormFox2.Map.Textures()
 		return SF_BSPDATA.Textures or {}
 	end
 -- Type Guesser function
@@ -473,12 +473,12 @@ StormFox.Map = {}
 		return NO_TYPE
 	end
 --[[-------------------------------------------------------------------------
-Generates the texture-table used by StormFox.
+Generates the texture-table used by StormFox2.
 ---------------------------------------------------------------------------]]
 	local function GenerateTextureTree()
 		local tree = {}
 		-- Load all textures
-			for _,tex_string in ipairs(StormFox.Map.AllTextures()) do
+			for _,tex_string in ipairs(StormFox2.Map.AllTextures()) do
 				if tree[tex_string:lower()] then continue end
 				local mat = Material(tex_string)
 				if not mat then continue end
@@ -510,13 +510,13 @@ Returns a list of map-textures that should be replaced.
 	ROAD_TYPE = 2
 	PAVEMENT_TYPE = 3
 ---------------------------------------------------------------------------]]
-	function StormFox.Map.GetTextureTree()
+	function StormFox2.Map.GetTextureTree()
 		return SF_TEXTDATA or {}
 	end
 --[[-------------------------------------------------------------------------
 Gets all entities with the given class from the mapfile. 
 ---------------------------------------------------------------------------]]
-	function StormFox.Map.FindClass(sClass)
+	function StormFox2.Map.FindClass(sClass)
 		local t = {}
 		for k,v in pairs(SF_BSPDATA.Entities) do
 			if string.match(v.classname,sClass) then
@@ -528,7 +528,7 @@ Gets all entities with the given class from the mapfile.
 --[[-------------------------------------------------------------------------
 Gets all entities with the given name from the mapfile. 
 ---------------------------------------------------------------------------]]
-	function StormFox.Map.FindTargetName(sTargetName)
+	function StormFox2.Map.FindTargetName(sTargetName)
 		local t = {}
 		for k,v in pairs(SF_BSPDATA.Entities) do
 			if string.match(v.targetname or "",sTargetName) then
@@ -540,7 +540,7 @@ Gets all entities with the given name from the mapfile.
 --[[-------------------------------------------------------------------------
 Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
 ---------------------------------------------------------------------------]]
-	function StormFox.Map.FindEntity(eEnt)
+	function StormFox2.Map.FindEntity(eEnt)
 		local c = eEnt:GetClass()
 		local h_id = eEnt:GetKeyValues().hammerid
 		if not h_id then return end
@@ -554,7 +554,7 @@ Returns the mapdata for the given entity. Will be nil if isn't a map-created ent
 --[[-------------------------------------------------------------------------
 Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
 ---------------------------------------------------------------------------]]
-	function StormFox.Map.FindEntsInSphere(vPos,nRadius)
+	function StormFox2.Map.FindEntsInSphere(vPos,nRadius)
 		local t = {}
 		nRadius = nRadius^2
 		for i,v in ipairs(SF_BSPDATA.Entities) do
@@ -567,7 +567,7 @@ Returns the mapdata for the given entity. Will be nil if isn't a map-created ent
 --[[-------------------------------------------------------------------------
 Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
 ---------------------------------------------------------------------------]]
-	function StormFox.Map.FindStaticsInSphere(vPos,nRadius)
+	function StormFox2.Map.FindStaticsInSphere(vPos,nRadius)
 		local t = {}
 		nRadius = nRadius^2
 		for i,v in ipairs(SF_BSPDATA.StaticProps) do
@@ -580,7 +580,7 @@ Returns the mapdata for the given entity. Will be nil if isn't a map-created ent
 --[[-------------------------------------------------------------------------
 Locates an entity with the given hammer_id from the mapfile. 
 ---------------------------------------------------------------------------]]
-	function StormFox.Map.FindHammerid(nHammerID)
+	function StormFox2.Map.FindHammerid(nHammerID)
 		for k,v in pairs(ents.GetAll()) do
 			local h_id = v:GetKeyValues().hammerid
 			if not h_id then return end
@@ -595,25 +595,25 @@ Locates an entity with the given hammer_id from the mapfile.
 	--[[-------------------------------------------------------------------------
 	Returns the maxsize of the map.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.MaxSize()
+	function StormFox2.Map.MaxSize()
 		return max
 	end
 	--[[-------------------------------------------------------------------------
 	Returns the minsize of the map.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.MinSize()
+	function StormFox2.Map.MinSize()
 		return min
 	end
 	--[[-------------------------------------------------------------------------
 	Returns the true center of the map. Often Vector( 0, 0, 0 )
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.GetCenter()
-		return (StormFox.Map.MaxSize() + StormFox.Map.MinSize()) / 2
+	function StormFox2.Map.GetCenter()
+		return (StormFox2.Map.MaxSize() + StormFox2.Map.MinSize()) / 2
 	end
 	--[[-------------------------------------------------------------------------
 	Returns true if the position is within the map
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.IsInside(vec)
+	function StormFox2.Map.IsInside(vec)
 		if vec.x > max.x then return false end
 		if vec.y > max.y then return false end
 		if vec.z > max.z then return false end
@@ -625,54 +625,54 @@ Locates an entity with the given hammer_id from the mapfile.
 	--[[-------------------------------------------------------------------------
 	Returns the skybox-position.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.GetSkyboxPos()
+	function StormFox2.Map.GetSkyboxPos()
 		return sky
 	end
 	--[[-------------------------------------------------------------------------
 	Returns the skybox-scale.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.GetSkyboxScale()
+	function StormFox2.Map.GetSkyboxScale()
 		return sky_scale
 	end
 	--[[-------------------------------------------------------------------------
 	Returns true if the map has a 3D skybox.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.Has3DSkybox()
+	function StormFox2.Map.Has3DSkybox()
 		return has_Sky
 	end
 	--[[-------------------------------------------------------------------------
 	Converts the given position to skybox.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.SkyboxToWorld(vPosition)
+	function StormFox2.Map.SkyboxToWorld(vPosition)
 		return (vPosition - sky) * sky_scale
 	end
 	--[[-------------------------------------------------------------------------
 	Converts the given skybox position to world.
 	---------------------------------------------------------------------------]]
-	function StormFox.Map.WorldtoSkybox(vPosition)
+	function StormFox2.Map.WorldtoSkybox(vPosition)
 		return (vPosition / sky_scale) + sky
 	end
 	--[[-------------------------------------------------------------------------
 	Checks if the mapfile has the entity-class.
 	---------------------------------------------------------------------------]]
 	local list = {}
-	function StormFox.Map.HadClass(sClass)
+	function StormFox2.Map.HadClass(sClass)
 		if list[sClass] ~= nil then return list[sClass] end
-		list[sClass] = #StormFox.Map.FindClass(sClass) > 0
+		list[sClass] = #StormFox2.Map.FindClass(sClass) > 0
 		return list[sClass]
 	end
 	--[[<Shared>-----------------------------------------------------------------
 	Returns true if it is a cold map
 	---------------------------------------------------------------------------]]
 	local bCold = false
-	function StormFox.Map.IsCold()
+	function StormFox2.Map.IsCold()
 		return bCold
 	end
 	--[[<Shared>------------------------------------------------------------------
 	Returns true if the map has a snow-texture
 	---------------------------------------------------------------------------]]
 	local bSnow = false
-	function StormFox.Map.HasSnow()
+	function StormFox2.Map.HasSnow()
 		return bSnow
 	end
 	-- Parse and load the mapfile (Only once)
@@ -686,7 +686,7 @@ Locates an entity with the given hammer_id from the mapfile.
 		dawn = day_events
 	---------------------------------------------------------------------------]]
 	local relay = {}
-	hook.Add("StormFox.PreInit", "StormFox.MapInteractions.Init", function()
+	hook.Add("StormFox2.PreInit", "StormFox2.MapInteractions.Init", function()
 		-- Locate all logic_relays on the map
 		for _,ent in ipairs( ents.FindByClass("logic_relay") ) do
 			local name = ent:GetName()
@@ -697,7 +697,7 @@ Locates an entity with the given hammer_id from the mapfile.
 		end
 	end)
 	if SERVER then
-		function StormFox.Map.CallLogicRelay(sName,b)
+		function StormFox2.Map.CallLogicRelay(sName,b)
 			if b ~= nil and b == false then
 				sName = sName .. "_off"
 			end
@@ -708,21 +708,21 @@ Locates an entity with the given hammer_id from the mapfile.
 			end
 		end
 		local l_w
-		function StormFox.Map.w_CallLogicRelay( name )
+		function StormFox2.Map.w_CallLogicRelay( name )
 			name = string.lower( name )
 			if l_w then
 				if l_w == name then 
 					return
 				else -- Turn "off" the last logic relay
-					StormFox.Map.CallLogicRelay("weather_" .. l_w, false)
+					StormFox2.Map.CallLogicRelay("weather_" .. l_w, false)
 				end
 			end
-			StormFox.Map.CallLogicRelay("weather_onchange")
+			StormFox2.Map.CallLogicRelay("weather_onchange")
 			l_w = name
-			StormFox.Map.CallLogicRelay("weather_" .. name, true)
+			StormFox2.Map.CallLogicRelay("weather_" .. name, true)
 		end
 	end
-	function StormFox.Map.HasLogicRelay(sName,b)
+	function StormFox2.Map.HasLogicRelay(sName,b)
 		if b ~= nil and b == false then
 			sName = sName .. "_off"
 		end
@@ -733,16 +733,16 @@ Locates an entity with the given hammer_id from the mapfile.
 		SF_TEXTDATA = GenerateTextureTree()
 	end
 -- Find some useful variables we can use
-	max = util.StringToType( StormFox.Map.Entities()[1]["world_maxs"], "Vector" )
-	min = util.StringToType( StormFox.Map.Entities()[1]["world_mins"], "Vector" )
-	local sky_cam = StormFox.Map.FindClass("sky_camera")[1]
+	max = util.StringToType( StormFox2.Map.Entities()[1]["world_maxs"], "Vector" )
+	min = util.StringToType( StormFox2.Map.Entities()[1]["world_mins"], "Vector" )
+	local sky_cam = StormFox2.Map.FindClass("sky_camera")[1]
 	if sky_cam then
 		has_Sky = true
 		sky = util.StringToType( sky_cam.origin, "Vector" )
 		sky_scale = tonumber(sky_cam.scale) or 1
 	end
-	bCold = StormFox.Map.Entities()[1]["coldworld"] and true or false
-	for _,tab in pairs(StormFox.Map.Textures()) do
+	bCold = StormFox2.Map.Entities()[1]["coldworld"] and true or false
+	for _,tab in pairs(StormFox2.Map.Textures()) do
 		if string.find(tab.texture:lower(), "snow") then
 			bSnow = true
 			break

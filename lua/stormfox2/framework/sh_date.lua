@@ -1,34 +1,34 @@
 --[[
 	Date
 
-	SV	StormFox.Date.SetYearDay( nDay )		Sets the yearday.
-	SH	StormFox.Date.GetYearDay()				Gets the yearday.
-	SH	StormFox.Date.GetWeekDay( bNumbers )	Returns the weekday. Returns a number if bNumbers is true.
-	SH	StormFox.Date.GetMonth( bNumbers )		Returns the month. Returns a number if bNumbers is true.
-	SH	StormFox.Date.GetShortMonth()			Returns the month in a 3-letter string.
-	Sh	StormFox.Date.GetDay()					Returns the day within the month.
-	Sh	StormFox.Date.Get( bNumbers )			Returns the date in string format. MM/DD or DD/MM depending on location and settings. Returns in numbers if bNumbers is true.
+	SV	StormFox2.Date.SetYearDay( nDay )		Sets the yearday.
+	SH	StormFox2.Date.GetYearDay()				Gets the yearday.
+	SH	StormFox2.Date.GetWeekDay( bNumbers )	Returns the weekday. Returns a number if bNumbers is true.
+	SH	StormFox2.Date.GetMonth( bNumbers )		Returns the month. Returns a number if bNumbers is true.
+	SH	StormFox2.Date.GetShortMonth()			Returns the month in a 3-letter string.
+	Sh	StormFox2.Date.GetDay()					Returns the day within the month.
+	Sh	StormFox2.Date.Get( bNumbers )			Returns the date in string format. MM/DD or DD/MM depending on location and settings. Returns in numbers if bNumbers is true.
 ]]
 
-StormFox.Setting.AddSV("real_time",false)
-StormFox.Date = {}
+StormFox2.Setting.AddSV("real_time",false)
+StormFox2.Date = {}
 
 if SERVER then
 	-- Sets the yearday.
-	function StormFox.Date.SetYearDay( nDay )
-		StormFox.Network.Set("day", nDay % 365)
+	function StormFox2.Date.SetYearDay( nDay )
+		StormFox2.Network.Set("day", nDay % 365)
 	end
 
 	concommand.Add("stormfox2_setyearday", function(ply, _, _, argStr)
-		StormFox.Permission.EditAccess(ply, function()
-			StormFox.Date.SetYearDay( tonumber(argStr) or 0 )
+		StormFox2.Permission.EditAccess(ply, function()
+			StormFox2.Date.SetYearDay( tonumber(argStr) or 0 )
 		end)
 	end)
 end
 
 -- Returns the day within the year. [0 - 364]
-function StormFox.Date.GetYearDay()
-	return StormFox.Data.Get("day",0)
+function StormFox2.Date.GetYearDay()
+	return StormFox2.Data.Get("day",0)
 end
 
 local day, month, weekday = -1,-1,-1
@@ -36,7 +36,7 @@ local function calcDate( nDay )
 	local t = string.Explode("-", os.date( "%d-%m-%w", nDay * 86400 ), false)
 	return tonumber(t[1]),tonumber(t[2]),tonumber(t[3])
 end
-hook.Add("stormfox.data.change", "stormfox.date.update", function(sKey, nDay)
+hook.Add("StormFox2.data.change", "StormFox2.date.update", function(sKey, nDay)
 	if sKey ~= "day" then return end
 	day,month,weekday = calcDate( nDay )
 end)
@@ -51,7 +51,7 @@ do
 		[6] = "Saturday"
 	}
 	-- Returns the weekday ["Monday" - "Sunday"]
-	function StormFox.Date.GetWeekDay( bNumbers )
+	function StormFox2.Date.GetWeekDay( bNumbers )
 		if bNumbers then
 			return weekday
 		end
@@ -74,7 +74,7 @@ do
 		[12] = "December"
 	}
 	-- Returns the month ["January" - "December"].
-	function StormFox.Date.GetMonth( bNumbers )
+	function StormFox2.Date.GetMonth( bNumbers )
 		if bNumbers then
 			return month
 		end
@@ -82,12 +82,12 @@ do
 	end
 end
 -- Returns the month in short ["Jan" - "Dec"]
-function StormFox.Date.GetShortMonth()
-	return string.sub(StormFox.Date.GetMonth(),0,3)
+function StormFox2.Date.GetShortMonth()
+	return string.sub(StormFox2.Date.GetMonth(),0,3)
 end
 
 -- Returns the day of the month
-function StormFox.Date.GetDay()
+function StormFox2.Date.GetDay()
 	return day
 end
 
@@ -97,7 +97,7 @@ local country = system.GetCountry() or "UK"
 local crazy_countries = {"AS", "BT", "CN", "FM", "GU", "HU", "JP", "KP", "KR", "LT", "MH", "MN", "MP", "TW", "UM", "US", "VI"}
 local default = table.HasValue(crazy_countries, country)
 if CLIENT then
-	StormFox.Setting.AddCL("use_monthday",default,"Display MM/DD instead of DD/MM.")
+	StormFox2.Setting.AddCL("use_monthday",default,"Display MM/DD instead of DD/MM.")
 end
 
 local tOrdinal = {"st", "nd", "rd"}
@@ -111,9 +111,9 @@ local function ordinal(n)
 	end
 end
 
-function StormFox.Date.Get( bNumbers )
-	local m = StormFox.Date.GetMonth( bNumbers )
-	local d = StormFox.Date.GetDay()
+function StormFox2.Date.Get( bNumbers )
+	local m = StormFox2.Date.GetMonth( bNumbers )
+	local d = StormFox2.Date.GetDay()
 	if bNumbers and m < 10 then
 		m = "0" .. m
 	elseif not bNumbers then
@@ -121,7 +121,7 @@ function StormFox.Date.Get( bNumbers )
 	end
 	local rev
 	if CLIENT then
-		rev = StormFox.Setting.GetCache("use_monthday",default)
+		rev = StormFox2.Setting.GetCache("use_monthday",default)
 	else
 		rev = default
 	end
@@ -136,23 +136,23 @@ end
 
 if SERVER then
 	-- Sets the starting day.
-	if StormFox.Setting.Get("real_time", false) then
-		StormFox.Network.Set("day", tonumber(os.date("%j")))
+	if StormFox2.Setting.Get("real_time", false) then
+		StormFox2.Network.Set("day", tonumber(os.date("%j")))
 	else
-		StormFox.Network.Set("day", cookie.GetNumber("sf_date", math.random(0,364)))
+		StormFox2.Network.Set("day", cookie.GetNumber("sf_date", math.random(0,364)))
 	end
 	-- Saves the day for next start.
-	hook.Add("ShutDown","StormFox.Day.Save",function()
-		cookie.Set("sf_date",StormFox.Date.GetYearDay())
+	hook.Add("ShutDown","StormFox2.Day.Save",function()
+		cookie.Set("sf_date",StormFox2.Date.GetYearDay())
 	end)
 	-- Sets the day to the current day, if real_time gets switched on.
-	StormFox.Setting.Callback("real_time",function(switch)
+	StormFox2.Setting.Callback("real_time",function(switch)
 		if not switch then return end
-		StormFox.Network.Set("day", os.date("%j"))
+		StormFox2.Network.Set("day", os.date("%j"))
 	end,"sf_convar_data")
 	-- Next day
-	hook.Add("StormFox.Time.NextDay", "StormFox.Data.NextDay", function(nDaysPast)
-		local nDay = StormFox.Date.GetYearDay() + nDaysPast
-		StormFox.Date.SetYearDay( nDay )
+	hook.Add("StormFox2.Time.NextDay", "StormFox2.Data.NextDay", function(nDaysPast)
+		local nDay = StormFox2.Date.GetYearDay() + nDaysPast
+		StormFox2.Date.SetYearDay( nDay )
 	end) 
 end

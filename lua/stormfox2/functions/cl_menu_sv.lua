@@ -19,33 +19,33 @@ do
 end
 
 
-StormFox.Menu = StormFox.Menu or {}
+StormFox2.Menu = StormFox2.Menu or {}
 
 local mapPoint = 0
 local maxMapPoint = 60 + 12 + 7 + 7 + 12
-if StormFox.Ent.light_environments then	-- Without this, the map will lag doing lightchanges
+if StormFox2.Ent.light_environments then	-- Without this, the map will lag doing lightchanges
 	mapPoint = mapPoint + 60
 end
-if StormFox.Ent.env_winds then	-- Allows windgust and a bit more "alive" wind
+if StormFox2.Ent.env_winds then	-- Allows windgust and a bit more "alive" wind
 	mapPoint = mapPoint + 12
 end
-if StormFox.Ent.shadow_controls then	-- Allows modifying shadows
+if StormFox2.Ent.shadow_controls then	-- Allows modifying shadows
 	mapPoint = mapPoint + 7
 end
-if StormFox.Ent.env_tonemap_controllers then	-- Allows to "tone down" the exposure of light
+if StormFox2.Ent.env_tonemap_controllers then	-- Allows to "tone down" the exposure of light
 	mapPoint = mapPoint + 7
 end
-local hlR = StormFox.Map.HasLogicRelay
+local hlR = StormFox2.Map.HasLogicRelay
 local hasMapLogic = (hlR("dusk") or hlR("night_events")) and (hlR("dawn") or hlR("day_events"))
 if hasMapLogic then
 	mapPoint = mapPoint + 12
 end
 
 local mapPointList = {
-	{"light_environment", 		StormFox.Ent.light_environments,		["check"] ="#sf_map.light_environment.check",["problem"] = "#sf_map.light_environment.problem"},
-	{"env_wind", 				StormFox.Ent.env_winds,					["none"]  ="#sf_map.env_wind.none"},
-	{"shadow_control", 			StormFox.Ent.shadow_controls},
-	{"env_tonemap_controllers", StormFox.Ent.env_tonemap_controllers},
+	{"light_environment", 		StormFox2.Ent.light_environments,		["check"] ="#sf_map.light_environment.check",["problem"] = "#sf_map.light_environment.problem"},
+	{"env_wind", 				StormFox2.Ent.env_winds,					["none"]  ="#sf_map.env_wind.none"},
+	{"shadow_control", 			StormFox2.Ent.shadow_controls},
+	{"env_tonemap_controllers", StormFox2.Ent.env_tonemap_controllers},
 	{"logic_relay", 			hasMapLogic,							["check"] = "#sf_map.logic_relay.check", ["none"] = "#sf_map.logic_relay.none"}
 }
 
@@ -67,7 +67,7 @@ local function CheckSetAPI(self, str )
 			self:SetPlaceholderText("INVALID CODE")
 		else
 			self:SetPlaceholderText("********************************")
-			StormFox.Permission.RequestSetting( "sf_openweathermap_key", str )
+			StormFox2.Permission.RequestSetting( "sf_openweathermap_key", str )
 		end
 		self:SetText("")
 	end)
@@ -146,12 +146,12 @@ local tabs = {
 		local wmap = vgui.Create("SF_WorldMap", wmap_board)
 		wmap:Dock(FILL)
 
-		local b = not StormFox.Setting.Get("openweathermap_enabled", false)
+		local b = not StormFox2.Setting.Get("openweathermap_enabled", false)
 		wmap_board:SetDisabled(b)
 		if b then
 			wmap_board:Hide()
 		end
-		StormFox.Setting.Callback("openweathermap_enabled",function(vVar,_,_, self)
+		StormFox2.Setting.Callback("openweathermap_enabled",function(vVar,_,_, self)
 			wmap_board:SetDisabled(not vVar)
 			if vVar then
 				wmap_board:Show()
@@ -216,7 +216,7 @@ local tabs = {
 			function api_key:OnEnter( str )
 				CheckSetAPI( self, str )
 			end
-			local b = StormFox.Setting.Get("openweathermap_enabled", false)
+			local b = StormFox2.Setting.Get("openweathermap_enabled", false)
 			if b then
 				api_key:SetPlaceholderText("********************************")
 			else
@@ -235,14 +235,14 @@ local tabs = {
 			l_t:SetDark(true)
 			l_t:SetText("lon: ")
 			lon:SetPos( 40, 30)
-			lon:SetText(StormFox.Setting.Get("openweathermap_lon","lon"))
+			lon:SetText(StormFox2.Setting.Get("openweathermap_lon","lon"))
 			-- Lat
 			local l_t = vgui.Create("DLabel", apiboard)
 			l_t:SetPos( 115, 30)
 			l_t:SetDark(true)
 			l_t:SetText("lon: ")
 			lat:SetPos( 140, 30)
-			lat:SetText(StormFox.Setting.Get("openweathermap_lat","lat"))
+			lat:SetText(StormFox2.Setting.Get("openweathermap_lat","lat"))
 			local l_t = vgui.Create("DLabel", apiboard)
 			l_t:SetPos( 215, 30)
 			l_t:SetDark(true)
@@ -260,7 +260,7 @@ local tabs = {
 				city:SetDisabled( true )
 			end
 			local apienable = vgui.Create("DCheckBox", apiboard)
-			StormFox.Setting.Callback("openweathermap_enabled",function(b,_,_, self)
+			StormFox2.Setting.Callback("openweathermap_enabled",function(b,_,_, self)
 				if b then
 					api_key:SetText("********************************")
 				else
@@ -272,26 +272,26 @@ local tabs = {
 				apienable:SetChecked( b )
 			end,apiboard)
 
-			StormFox.Setting.Callback("openweathermap_lon",function(str,_,_, self)
+			StormFox2.Setting.Callback("openweathermap_lon",function(str,_,_, self)
 				lon:SetText(str)
 			end,lon)
-			StormFox.Setting.Callback("openweathermap_lat",function(str,_,_, self)
+			StormFox2.Setting.Callback("openweathermap_lat",function(str,_,_, self)
 				lat:SetText(str)
 			end,lat)
 			apienable:SetChecked( b )
 			function apienable:OnChange(b)
-				StormFox.Setting.Set("openweathermap_enabled", b)
+				StormFox2.Setting.Set("openweathermap_enabled", b)
 			end
 			apienable:SetPos(248, 5)
 			-- Lat. Lon
 			function lat:OnEnter( str )
-				StormFox.Permission.RequestSetting("sf_openweathermap_real_lat", str)
+				StormFox2.Permission.RequestSetting("sf_openweathermap_real_lat", str)
 			end
 			function lon:OnEnter( str )
-				StormFox.Permission.RequestSetting("sf_openweathermap_real_lon", str)
+				StormFox2.Permission.RequestSetting("sf_openweathermap_real_lon", str)
 			end
 			function city:OnEnter( str )
-				StormFox.Permission.RequestSetting("sf_openweathermap_real_city", str)
+				StormFox2.Permission.RequestSetting("sf_openweathermap_real_city", str)
 			end
 		board:MarkUsed("openweathermap_enabled")
 		board:MarkUsed("openweathermap_lat")
@@ -392,11 +392,11 @@ local function addSetting(sName, pPanel, _type)
 	elseif _type == "temp" or _type == "temperature" then
 		setting = vgui.Create("SFConVar_Temp", pPanel)
 	else
-		StormFox.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
+		StormFox2.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
 		return
 	end
 	if not setting then
-		StormFox.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
+		StormFox2.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
 		return
 	end
 	--local setting = _type == "boolean" and vgui.Create("SFConVar_Bool", board) or  vgui.Create("SFConVar", board)
@@ -407,8 +407,8 @@ end
 local t_mat = "icon16/font.png"
 local s_mat = "icon16/cog.png"
 
-function StormFox.Menu._OpenSV()
-	if not StormFox.Loaded then return end
+function StormFox2.Menu._OpenSV()
+	if not StormFox2.Loaded then return end
 	if _SFMENU and IsValid(_SFMENU) then
 		_SFMENU:Remove()
 		_SFMENU = nil
@@ -416,15 +416,15 @@ function StormFox.Menu._OpenSV()
 	local p = vgui.Create("SF_Menu")
 	_SFMENU = p
 	p:SetTitle("StormFox " .. niceName(language.GetPhrase("#spawnmenu.utilities.server_settings")))
-	p:CreateLayout(tabs, StormFox.Setting.GetAllServer())
+	p:CreateLayout(tabs, StormFox2.Setting.GetAllServer())
 	p:SetCookie("sf2_lastmenusv")
 	_SFMENU:MakePopup()
 end
 
-function StormFox.Menu.OpenSV()
-	net.Start("stormfox.menu")
+function StormFox2.Menu.OpenSV()
+	net.Start("StormFox2.menu")
 		net.WriteBool(true)
 	net.SendToServer()
 end
 -- Request the server if we're allowed
-concommand.Add('stormfox2_svmenu', StormFox.Menu.OpenSV, nil, "Opens SF serverside menu")
+concommand.Add('stormfox2_svmenu', StormFox2.Menu.OpenSV, nil, "Opens SF serverside menu")

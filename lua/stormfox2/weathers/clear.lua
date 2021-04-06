@@ -1,14 +1,14 @@
 
 -- Clear weather. This is the default weather
 
-local clear = StormFox.Weather.Add( "Clear" )
+local clear = StormFox2.Weather.Add( "Clear" )
 
 local windy = 8
 
 -- Description
 if CLIENT then
 	function clear:GetName(nTime, nTemp, nWind, bThunder, nFraction )
-		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= windy
+		local b_windy = StormFox2.Wind.GetBeaufort(nWind) >= windy
 		if b_windy then
 			return language.GetPhrase("#sf_weather.clear.windy")
 		end
@@ -16,7 +16,7 @@ if CLIENT then
 	end
 else
 	function clear:GetName(nTime, nTemp, nWind, bThunder, nFraction )
-		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= windy
+		local b_windy = StormFox2.Wind.GetBeaufort(nWind) >= windy
 		if b_windy then
 			return "Windy"
 		end
@@ -30,9 +30,9 @@ function clear.GetSymbol( nTime ) -- What the menu should show
 end
 
 function clear.GetIcon( nTime, nTemp, nWind, bThunder, nFraction) -- What symbol the weather should show
-	local b_day = StormFox.Time.IsDay(nTime)
+	local b_day = StormFox2.Time.IsDay(nTime)
 	local b_cold = nTemp < -2
-	local b_windy = StormFox.Wind.GetBeaufort(nWind) >= windy
+	local b_windy = StormFox2.Wind.GetBeaufort(nWind) >= windy
 	if b_windy then
 		return m3
 	elseif b_cold then
@@ -122,7 +122,7 @@ if SERVER then
 	t_night = {"sky_day01_09", "sky_black_nofog"}
 
 	-- IF CSGO
-	if StormFox.Setting.Get("csgo_2dskybox", false) then
+	if StormFox2.Setting.Get("csgo_2dskybox", false) then
 		table.insert(t_night, "sky_csgo_night_flat")
 		table.insert(t_day, "vertigoblue_hdr")
 	end

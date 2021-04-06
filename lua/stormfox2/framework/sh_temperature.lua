@@ -6,10 +6,10 @@ so we need another function to display the temperature correctly.
 StormFox runs on celsius, but can convert the temperature to whatever you wish.
 
 Clients have to use these functions:
-	StormFox.Temperature.GetDisplay() 			-- Returns the temperature in what their setting is set to.
-	StormFox.Temperature.GetDisplaySymbol() 	-- Returns the temperature symbol for their setting.
-	StormFox.Temperature.GetDisplayDefault() 	-- Returns the default temperature setting for their country.
-	StormFox.Temperature.GetDisplayType() 		-- Returns the temperature setting clients have set to.
+	StormFox2.Temperature.GetDisplay() 			-- Returns the temperature in what their setting is set to.
+	StormFox2.Temperature.GetDisplaySymbol() 	-- Returns the temperature symbol for their setting.
+	StormFox2.Temperature.GetDisplayDefault() 	-- Returns the default temperature setting for their country.
+	StormFox2.Temperature.GetDisplayType() 		-- Returns the temperature setting clients have set to.
 
 Fun facts:
 	At -90C, we need specialized air or our brain "forgets" to breathe.
@@ -18,7 +18,7 @@ Fun facts:
 	Coldest recorded temp on Earth is -90C
 
 ---------------------------------------------------------------------------]]
-StormFox.Temperature = {}
+StormFox2.Temperature = {}
 local convert_from,convert_to = {},{}
 local p1,p2,p3,p4,p5 = 3 / 2, 33 / 100, 4 / 5, 21 / 40,240 / 54
 	convert_to["fahrenheit"] = function(nC) return nC * 1.8 + 32 end
@@ -83,11 +83,11 @@ Returns the current temperature. Valid temperatures:
 	- rømer
 ---------------------------------------------------------------------------]]
 local tempOverwrite
-function StormFox.Temperature.Get(sType)
-	local n = tempOverwrite or StormFox.Data.Get( "Temp", 20 )
+function StormFox2.Temperature.Get(sType)
+	local n = tempOverwrite or StormFox2.Data.Get( "Temp", 20 )
 	if not sType or sType == "celsius" then return n end
 	if not convert_to[sType] then
-		StormFox.Warning("Invalid temperature type [" .. tostring(sType) .. "].", true)
+		StormFox2.Warning("Invalid temperature type [" .. tostring(sType) .. "].", true)
 	end
 	return convert_to[sType](n)
 end
@@ -102,7 +102,7 @@ Returns the list of valid temperatures.
 	- réaumur
 	- rømer
 ---------------------------------------------------------------------------]]
-function StormFox.Temperature.GetTypes()
+function StormFox2.Temperature.GetTypes()
 	local t = table.GetKeys(convert_to)
 	table.insert(t,"celsius")
 	return t
@@ -120,7 +120,7 @@ Valid temperatures:
 	- rømer
 	- wedgwood
 ---------------------------------------------------------------------------]]
-function StormFox.Temperature.Convert(sTypeFrom,sTypeTo,nNumber)
+function StormFox2.Temperature.Convert(sTypeFrom,sTypeTo,nNumber)
 	if sTypeFrom and sTypeFrom ~= "celsius" then
 		if not convert_from[sTypeFrom] then
 			error("Invalid temperature type [" .. sTypeFrom .. "].")
@@ -140,11 +140,11 @@ if SERVER then
 	--[[<Server>-------------------------------------------------------------------------
 	Sets the temperature in ceilsius. Second argument is the smooth-time in seconds.
 	---------------------------------------------------------------------------]]
-	function StormFox.Temperature.Set(nCelsius,nLerpTime)
+	function StormFox2.Temperature.Set(nCelsius,nLerpTime)
 		if nCelsius < -273.15 then --  ( In space, there are 270.45 C )
 			nCelsius = -273.15
 		end
-		StormFox.Network.Set("Temp",nCelsius,nLerpTime or 2 * StormFox.Time.GetSpeed())
+		StormFox2.Network.Set("Temp",nCelsius,nLerpTime or 2 * StormFox2.Time.GetSpeed())
 	end
 else
 	local country = system.GetCountry() or "UK"
@@ -166,8 +166,8 @@ else
 		- réaumur
 		- rømer
 	---------------------------------------------------------------------------]]
-	function StormFox.Temperature.SetDisplayType(sType)
-		StormFox.Setting.Set("display_temperature",convert_to[sType] and sType or "celsius")
+	function StormFox2.Temperature.SetDisplayType(sType)
+		StormFox2.Setting.Set("display_temperature",convert_to[sType] and sType or "celsius")
 		if convert_to[sType] then
 			return true
 		end
@@ -176,52 +176,52 @@ else
 	--[[<Client>-----------------------------------------------------------------
 	Returns the display temperature type.
 	---------------------------------------------------------------------------]]
-	function StormFox.Temperature.GetDisplayType()
+	function StormFox2.Temperature.GetDisplayType()
 		return temp_type
 	end
 	--[[<Client>------------------------------------------------------------------
 	Returns the display temperature.
 	---------------------------------------------------------------------------]]
-	function StormFox.Temperature.GetDisplay(nCelcius)
+	function StormFox2.Temperature.GetDisplay(nCelcius)
 		if nCelcius then
-			return StormFox.Temperature.Convert(nil,temp_type,nCelcius)
+			return StormFox2.Temperature.Convert(nil,temp_type,nCelcius)
 		end
-		return StormFox.Temperature.Get(temp_type)
+		return StormFox2.Temperature.Get(temp_type)
 	end
 	--[[<Client>------------------------------------------------------------------
 	Returns the display temperature symbol. ("°C", "°F" ..)
 	---------------------------------------------------------------------------]]
-	function StormFox.Temperature.GetDisplaySymbol()
+	function StormFox2.Temperature.GetDisplaySymbol()
 		return symbol[temp_type] or "°C"
 	end
 	--[[<Client>------------------------------------------------------------------
 	Returns the default temperature, based on client-country.
 	---------------------------------------------------------------------------]]
-	function StormFox.Temperature.GetDisplayDefault()
+	function StormFox2.Temperature.GetDisplayDefault()
 		return default_temp
 	end
 	-- Load the temperature settings.
 	-- Setup setting
-	StormFox.Setting.AddCL("display_temperature",default_temp)
+	StormFox2.Setting.AddCL("display_temperature",default_temp)
 	local t = {}
 	for k, v in pairs(symbol) do
 		if t[k] then continue end
 		t[k] = string.upper(k[1]) .. string.sub(k, 2) .. " " .. v
 	end
-	StormFox.Setting.SetType( "display_temperature", t, {"celsius", "fahrenheit", "kelvin"} )
-	StormFox.Setting.Callback("display_temperature",function(sType)
+	StormFox2.Setting.SetType( "display_temperature", t, {"celsius", "fahrenheit", "kelvin"} )
+	StormFox2.Setting.Callback("display_temperature",function(sType)
 		temp_type = convert_to[sType] and sType or "celsius"
-	end,"stormfox.temp.type")
+	end,"StormFox2.temp.type")
 	-- Load setting
-	local sType = StormFox.Setting.Get("display_temperature",default_temp)
+	local sType = StormFox2.Setting.Get("display_temperature",default_temp)
 	temp_type = convert_to[sType] and sType or "celsius"
 
-	hook.Remove("stormfox2.postlib", "StormFox.TemperatureSettings")
+	hook.Remove("stormfox2.postlib", "StormFox2.TemperatureSettings")
 
 	--[[<Client>
 	Local temp
 	]]
-	function StormFox.Temperature.SetLocal( n )
+	function StormFox2.Temperature.SetLocal( n )
 		tempOverwrite = n
 	end
 	

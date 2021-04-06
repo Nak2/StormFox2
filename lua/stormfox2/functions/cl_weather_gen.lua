@@ -1,18 +1,18 @@
-StormFox.Setting.AddSV("temp_acc",5,nil,"Weather",0,20)
-StormFox.Setting.AddSV("min_temp",-10,nil,"Weather")
-StormFox.Setting.SetType( "min_temp", "temp" )
-StormFox.Setting.AddSV("max_temp",20,nil, "Weather")
-StormFox.Setting.SetType( "max_temp", "temp" )
-StormFox.Setting.AddSV("auto_weather",true,nil, "Weather", 0, 1)
-StormFox.Setting.AddSV("max_weathers_prweek",3,nil, "Weather", 1, 8)
+StormFox2.Setting.AddSV("temp_acc",5,nil,"Weather",0,20)
+StormFox2.Setting.AddSV("min_temp",-10,nil,"Weather")
+StormFox2.Setting.SetType( "min_temp", "temp" )
+StormFox2.Setting.AddSV("max_temp",20,nil, "Weather")
+StormFox2.Setting.SetType( "max_temp", "temp" )
+StormFox2.Setting.AddSV("auto_weather",true,nil, "Weather", 0, 1)
+StormFox2.Setting.AddSV("max_weathers_prweek",3,nil, "Weather", 1, 8)
 
-StormFox.Setting.AddSV("openweathermap_enabled",false,nil,"Weather")
-StormFox.Setting.AddSV("openweathermap_lat","52",nil,"Weather",-180,180)
-StormFox.Setting.AddSV("openweathermap_lon","-2",nil,"Weather",-90,90)
-StormFox.Setting.SetType( "openweathermap_lat", "number" )
-StormFox.Setting.SetType( "openweathermap_lon", "number" )
+StormFox2.Setting.AddSV("openweathermap_enabled",false,nil,"Weather")
+StormFox2.Setting.AddSV("openweathermap_lat","52",nil,"Weather",-180,180)
+StormFox2.Setting.AddSV("openweathermap_lon","-2",nil,"Weather",-90,90)
+StormFox2.Setting.SetType( "openweathermap_lat", "number" )
+StormFox2.Setting.SetType( "openweathermap_lon", "number" )
 
-StormFox.WeatherGen = {}
+StormFox2.WeatherGen = {}
 
 local function search(tab, time)
 	local last, next
@@ -42,7 +42,7 @@ end
 
 local weekdata = {}
 SF_WEEKWEATHER = SF_WEEKWEATHER or {}
-net.Receive("stormfox.weekweather", function(len)
+net.Receive("StormFox2.weekweather", function(len)
 	for i = 1, net.ReadUInt(3) do
 		weekdata[i] = {}
 		weekdata[i].temp = net.ReadTable()
@@ -119,6 +119,6 @@ net.Receive("stormfox.weekweather", function(len)
 	end
 end)
 
-function StormFox.WeatherGen.GetData()
+function StormFox2.WeatherGen.GetData()
 	return SF_WEEKWEATHER
 end

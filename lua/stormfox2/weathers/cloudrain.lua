@@ -1,6 +1,6 @@
 -- Rain and cloud is nearly the same.
-local cloudy = StormFox.Weather.Add( "Cloud" )
-local rain = StormFox.Weather.Add( "Rain", "Cloud" )
+local cloudy = StormFox2.Weather.Add( "Cloud" )
+local rain = StormFox2.Weather.Add( "Rain", "Cloud" )
 	-- cloudy.spawnable = true Cloud is not spawnable. Since it is a "default" when it is cloudy
 	rain.spawnable = true
 	rain.thunder = function(percent) -- The amount of strikes pr minute
@@ -11,7 +11,7 @@ do
 	-- Description
 	if CLIENT then
 		function cloudy:GetName(nTime, nTemp, nWind, bThunder, nFraction )
-			if StormFox.Wind.GetBeaufort(nWind) >= 10 then
+			if StormFox2.Wind.GetBeaufort(nWind) >= 10 then
 				return language.GetPhrase('sf_weather.cloud.storm')
 			elseif bThunder then
 				return language.GetPhrase('sf_weather.cloud.thunder')
@@ -21,7 +21,7 @@ do
 		end
 	else
 		function cloudy:GetName(nTime, nTemp, nWind, bThunder, nFraction )
-			if StormFox.Wind.GetBeaufort(nWind) >= 10 then
+			if StormFox2.Wind.GetBeaufort(nWind) >= 10 then
 				return "Storm"
 			elseif bThunder then
 				return "Thunder"
@@ -39,9 +39,9 @@ do
 		return m_def
 	end
 	function cloudy.GetIcon( nTime, nTemp, nWind, bThunder, nFraction) -- What symbol the weather should show
-		local b_day = StormFox.Time.IsDay(nTime)
+		local b_day = StormFox2.Time.IsDay(nTime)
 		local b_cold = nTemp < -2
-		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 7
+		local b_windy = StormFox2.Wind.GetBeaufort(nWind) >= 7
 		local b_H = nFraction > 0.5
 		if bThunder then
 			return m_thunder
@@ -60,7 +60,7 @@ do
 	-- Description
 	if CLIENT then
 		function rain:GetName(nTime, nTemp, nWind, bThunder, nFraction )
-			if StormFox.Wind.GetBeaufort(nWind) >= 10 then
+			if StormFox2.Wind.GetBeaufort(nWind) >= 10 then
 				return language.GetPhrase('sf_weather.cloud.storm')
 			elseif bThunder then
 				return language.GetPhrase('sf_weather.cloud.thunder')
@@ -74,7 +74,7 @@ do
 		end
 	else
 		function rain:GetName(nTime, nTemp, nWind, bThunder, nFraction )
-			if StormFox.Wind.GetBeaufort(nWind) >= 10 then
+			if StormFox2.Wind.GetBeaufort(nWind) >= 10 then
 				return 'Storm'
 			elseif bThunder then
 				return 'Thunder'
@@ -101,7 +101,7 @@ do
 		return m_def
 	end
 	function rain.GetIcon( _, nTemp, nWind, bThunder, nFraction) -- What symbol the weather should show
-		local b_windy = StormFox.Wind.GetBeaufort(nWind) >= 7
+		local b_windy = StormFox2.Wind.GetBeaufort(nWind) >= 7
 		if bThunder then
 			return m_thunder
 		elseif b_windy and nTemp > -4 then
@@ -119,7 +119,7 @@ do
 		end
 	end
 	function rain.LogicRelay()
-		if StormFox.Temperature.Get() < -1 then
+		if StormFox2.Temperature.Get() < -1 then
 			return "snow"
 		end
 		return "rain"
@@ -163,15 +163,15 @@ do
 	--rain:Set("fogColor", Color(135, 166, 175))
 end
 -- Window render
-local rain_t = StormFox.Terrain.Create("rain")
+local rain_t = StormFox2.Terrain.Create("rain")
 do
 	local raindrops = {}
 	local raindrops_mat = {(Material("stormfox2/effects/window/raindrop_normal")),(Material("stormfox2/effects/window/raindrop_normal2")),(Material("stormfox2/effects/window/raindrop_normal3"))}
 	local s = 2
 	rain:RenderWindowRefract64x64(function(w, h)
-		if StormFox.Temperature.Get() < -1 then return false end
-		local QT = StormFox.Client.GetQualityNumber()
-		local P = StormFox.Weather.GetPercent()
+		if StormFox2.Temperature.Get() < -1 then return false end
+		local QT = StormFox2.Client.GetQualityNumber()
+		local P = StormFox2.Weather.GetPercent()
 		-- Base
 		surface.SetMaterial(Material("stormfox2/effects/window/rain_normal"))
 		local c = (-SysTime() / 1000) % 1
@@ -209,28 +209,28 @@ do
 end
 -- Snow Terrain and footsteps
 do
-	local snow = StormFox.Terrain.Create("snow")
+	local snow = StormFox2.Terrain.Create("snow")
 	
 	-- Make the snow terrain apply, if temp is low
 	rain:SetTerrain( function() 
 		if SERVER then
-			StormFox.Map.w_CallLogicRelay(rain.LogicRelay())
+			StormFox2.Map.w_CallLogicRelay(rain.LogicRelay())
 		end
-		return StormFox.Temperature.Get() < -3 and snow or rain_t
+		return StormFox2.Temperature.Get() < -3 and snow or rain_t
 	end)
 
 	-- Make the snow stay, until temp is high or it being replaced.
 	snow:LockUntil(function()
-		return StormFox.Temperature.Get() > -2
+		return StormFox2.Temperature.Get() > -2
 	end)
 
 	-- Snow window
 	local mat = Material("stormfox2/effects/window/snow")
 	local function RenderSnow(w, h)
-		if StormFox.Temperature.Get() > -2 then return false end
-		local P = 1 - StormFox.Weather.GetPercent()
+		if StormFox2.Temperature.Get() > -2 then return false end
+		local P = 1 - StormFox2.Weather.GetPercent()
 		surface.SetMaterial(mat)
-		local lum = math.max(math.min(25 + StormFox.Weather.GetLuminance(), 255),70)
+		local lum = math.max(math.min(25 + StormFox2.Weather.GetLuminance(), 255),70)
 		surface.SetDrawColor(Color(lum,lum,lum))
 		surface.DrawTexturedRect(0,h * 0.12 * P,w,h)
 	end
@@ -293,14 +293,14 @@ end
 -- Rain particles and sound
 if CLIENT then
 	-- Sound
-	local rain_light = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_light.ogg", SF_AMB_OUTSIDE, 1 )
-	local rain_window = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_glass.ogg", SF_AMB_WINDOW, 0.1 )
-	local rain_outside = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_outside.ogg", SF_AMB_NEAR_OUTSIDE, 0.1 )
-	--local rain_underwater = StormFox.Ambience.CreateAmbienceSnd( "", SF_AMB_UNDER_WATER, 0.1 ) Unused
-	local rain_watersurf = StormFox.Ambience.CreateAmbienceSnd( "ambient/water/water_run1.wav", SF_AMB_UNDER_WATER_Z, 0.1 )
-	local rain_roof_wood = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_roof.ogg", SF_AMB_ROOF_WOOD, 0.1 )
-	local rain_roof_metal = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_roof_metal.ogg", SF_AMB_ROOF_METAL, 0.1 )
-	local rain_glass = StormFox.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_glass.ogg", SF_AMB_ROOF_GLASS, 0.1 )
+	local rain_light = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_light.ogg", SF_AMB_OUTSIDE, 1 )
+	local rain_window = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_glass.ogg", SF_AMB_WINDOW, 0.1 )
+	local rain_outside = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_outside.ogg", SF_AMB_NEAR_OUTSIDE, 0.1 )
+	--local rain_underwater = StormFox2.Ambience.CreateAmbienceSnd( "", SF_AMB_UNDER_WATER, 0.1 ) Unused
+	local rain_watersurf = StormFox2.Ambience.CreateAmbienceSnd( "ambient/water/water_run1.wav", SF_AMB_UNDER_WATER_Z, 0.1 )
+	local rain_roof_wood = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_roof.ogg", SF_AMB_ROOF_WOOD, 0.1 )
+	local rain_roof_metal = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_roof_metal.ogg", SF_AMB_ROOF_METAL, 0.1 )
+	local rain_glass = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_glass.ogg", SF_AMB_ROOF_GLASS, 0.1 )
 	rain:AddAmbience( rain_light )
 	rain:AddAmbience( rain_window )
 	rain:AddAmbience( rain_outside )
@@ -336,10 +336,10 @@ if CLIENT then
 	
 	-- Update the rain templates every 10th second
 	function rain.TickSlow()
-		local P = StormFox.Weather.GetPercent()
-		local L = StormFox.Weather.GetLuminance()
-		local T = StormFox.Temperature.Get() + 2
-		local TL = StormFox.Thunder.GetLight()
+		local P = StormFox2.Weather.GetPercent()
+		local L = StormFox2.Weather.GetLuminance()
+		local T = StormFox2.Temperature.Get() + 2
+		local TL = StormFox2.Thunder.GetLight()
 		local TP = math.Clamp(T / 4,0,1)
 
 		rain_outside:SetVolume( P * 1 )
@@ -349,10 +349,10 @@ if CLIENT then
 		rain_roof_metal:SetVolume( P * 1 * TP )
 		rain_glass:SetVolume( P * 0.5 * TP )
 
-		local P = StormFox.Weather.GetPercent()
+		local P = StormFox2.Weather.GetPercent()
 		local speed = 0.72 + 0.36 * P
-		StormFox.Misc.rain_template:SetSpeed( speed )
-		StormFox.Misc.rain_template_medium:SetSpeed( speed )
+		StormFox2.Misc.rain_template:SetSpeed( speed )
+		StormFox2.Misc.rain_template_medium:SetSpeed( speed )
 
 		
 	end
@@ -360,20 +360,20 @@ if CLIENT then
 	local multi_dis = 1200
 	local m2 = Material("particle/particle_smokegrenade1")
 	function rain.Think()
-		local P = StormFox.Weather.GetPercent()
-		local L = StormFox.Weather.GetLuminance()
-		local W = StormFox.Wind.GetForce()
-		if StormFox.DownFall.GetGravity() < 0 then return end -- Rain can't come from the ground.
-		local T = StormFox.Temperature.Get() + 2
+		local P = StormFox2.Weather.GetPercent()
+		local L = StormFox2.Weather.GetLuminance()
+		local W = StormFox2.Wind.GetForce()
+		if StormFox2.DownFall.GetGravity() < 0 then return end -- Rain can't come from the ground.
+		local T = StormFox2.Temperature.Get() + 2
 		if T > 0 or T > math.random(-3, 0) then -- Spawn rain particles
 			-- Set alpha
 			local s = 1.22 + 1.56 * P
-			StormFox.Misc.rain_template:SetSize( s , 5.22 + 7.56 * P)
-			StormFox.Misc.rain_template:SetColor(Color(150,150,150))
-			StormFox.Misc.rain_template:SetAlpha(math.min(15 + 4 * P + L,255))
-			StormFox.Misc.rain_template_medium:SetAlpha(math.min(15 + 4 * P + L,255)  /3)
+			StormFox2.Misc.rain_template:SetSize( s , 5.22 + 7.56 * P)
+			StormFox2.Misc.rain_template:SetColor(Color(150,150,150))
+			StormFox2.Misc.rain_template:SetAlpha(math.min(15 + 4 * P + L,255))
+			StormFox2.Misc.rain_template_medium:SetAlpha(math.min(15 + 4 * P + L,255)  /3)
 			-- Spawn rain particles
-			for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template, 10, 700, 10 + P * 900, 5, vNorm ) or {} ) do
+			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template, 10, 700, 10 + P * 900, 5, vNorm ) or {} ) do
 				v:SetSize(  1.22 + 1.56 * P * math.Rand(1,2), 5.22 + 7.56 * P )
 				if math.random(0,1) == 0 then
 					--v:SetMaterial(m_rain2)
@@ -383,7 +383,7 @@ if CLIENT then
 
 			-- Spawn distant rain
 			if P > 0.15 then
-				for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template_medium, 250, 700, 10 + P * 500, 250, vNorm ) or {} ) do
+				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, 250, 700, 10 + P * 500, 250, vNorm ) or {} ) do
 					local a = math.random(0,2)
 					if a > 0 then
 						if a > 1 then
@@ -405,9 +405,9 @@ if CLIENT then
 				local d = math.max(dis / multi_dis, 0.5)
 				local s = math.Rand(0.5,1) * math.max(0.7,P) * 300 * d
 
-				--StormFox.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * .2)
+				--StormFox2.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * .2)
 
-				for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template_multi, dis, multi_dis * 2, (90 + P * (250 + W)) / 2, s, vNorm ) or {} ) do
+				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_multi, dis, multi_dis * 2, (90 + P * (250 + W)) / 2, s, vNorm ) or {} ) do
 					local d = v:GetDistance()
 					if not d or d < 500 then 
 						v:SetSize(  225, 500 )
@@ -425,12 +425,12 @@ if CLIENT then
 			local dis = math.random(40,500)
 			local d = math.min(dis / 500, 1)
 			local s = math.Rand(3,5) * d * math.max(0.7,P)
-			StormFox.Misc.snow_template:SetSpeed( 1 * 0.15)
+			StormFox2.Misc.snow_template:SetSpeed( 1 * 0.15)
 			local n = math.max(math.min(L * 3, 255), 100)
 			local sC = Color(n,n,n)
-			StormFox.Misc.snow_template:SetColor(sC)
-			StormFox.Misc.snow_template_multi:SetColor(sC)
-			for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.snow_template, 500, dis, 400 + P * 4600, 5, vNorm ) or {} ) do
+			StormFox2.Misc.snow_template:SetColor(sC)
+			StormFox2.Misc.snow_template_multi:SetColor(sC)
+			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template, 500, dis, 400 + P * 4600, 5, vNorm ) or {} ) do
 				v:SetSize(  s, s )
 				v:SetSpeed( math.Rand(1, 2) * 0.15)
 			--	v:SetMaterial(Material("particle/warp3_warp_noz"))
@@ -440,7 +440,7 @@ if CLIENT then
 				local dis = math.random(300,900)
 				local d = math.max(dis / 900, 0.5)
 				local s = math.Rand(0.5,1) * math.max(0.7,P) * 500 * d
-				for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.snow_template_multi, 900, dis, 190 + P * 550, s, vNorm ) or {} ) do
+				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template_multi, 900, dis, 190 + P * 550, s, vNorm ) or {} ) do
 					v:SetSize(  s, s * math.random(1,1.5) )
 					v:SetSpeed( math.Rand(1, 2) * 0.50 * d)
 					v:SetRoll( math.Rand(0, 360))
@@ -450,7 +450,7 @@ if CLIENT then
 				--	v:SetMaterial(Material("particle/warp3_warp_noz"))
 				end
 			end
-			for _,v in ipairs( StormFox.DownFall.SmartTemplate( StormFox.Misc.rain_template_medium, dis * 2, multi_dis * 2 , (90 + P * (20 + W)) / 2, s, vNorm ) or {} ) do
+			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, dis * 2, multi_dis * 2 , (90 + P * (20 + W)) / 2, s, vNorm ) or {} ) do
 				local d = v:GetDistance()
 				if not d or d < 500 then 
 					v:SetSize(  225, 500 )
@@ -475,7 +475,7 @@ if SERVER then
 	t_night = {"sky_day01_09"}
 
 	-- IF CSGO
-	if StormFox.Setting.Get("csgo_2dskybox", false) then
+	if StormFox2.Setting.Get("csgo_2dskybox", false) then
 		t_night = {"sky_csgo_cloudy01"}
 		table.insert(day, "italy")
 		table.insert(day, "jungle")

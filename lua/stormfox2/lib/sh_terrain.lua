@@ -6,8 +6,8 @@
 	Terrain.Get( sName )		Returns the terrain.
 	Terrain.Set( sName )		Sets the terrain. (This should only be done serverside)
 	Terrain.GetCurrent()		Returns the terrain obj or nil.
-	StormFox.Terrain.Reset()	Resets the terrain to default.
-	StormFox.Terrain.HasMaterialChanged( iMaterial )	Returns true if the terrain has changed the material.
+	StormFox2.Terrain.Reset()	Resets the terrain to default.
+	StormFox2.Terrain.HasMaterialChanged( iMaterial )	Returns true if the terrain has changed the material.
 
 	Terrain Meta:
 		:LockUntil( fFunc )										Makes the terrian
@@ -20,7 +20,7 @@
 		:Apply													Applies the terrain (This won't reset old terrain)
 
 	Hooks:
-		stormFox.terrain.footstep 	Entity 	foot[0 = left,1 = right] 	sTexture 	bTerrainTexture
+		StormFox2.terrain.footstep 	Entity 	foot[0 = left,1 = right] 	sTexture 	bTerrainTexture
 ]]
 
 local meta = {}
@@ -32,9 +32,9 @@ meta.__eq = function(self, other)
 	return other.Name == self.Name
 end
 local terrains = {}
-StormFox.Terrain = {}
+StormFox2.Terrain = {}
 -- Creates a new terrain type and stores it
-function StormFox.Terrain.Create( sName )
+function StormFox2.Terrain.Create( sName )
 	local t = {}
 	t.Name = sName
 	setmetatable(t, meta)
@@ -44,15 +44,15 @@ function StormFox.Terrain.Create( sName )
 end
 -- Cur terrain
 local CURRENT_TERRAIN
-function StormFox.Terrain.GetCurrent()
+function StormFox2.Terrain.GetCurrent()
 	return CURRENT_TERRAIN
 end
 -- Terrain is an object that changes the map e.g; Snow
 if SERVER then
-	util.AddNetworkString("stormfox.terrain")
+	util.AddNetworkString("StormFox2.terrain")
 end
 -- Returns the terrain.
-function StormFox.Terrain.Get( sName )
+function StormFox2.Terrain.Get( sName )
 	if not sName then return end
 	return terrains[sName]
 end
@@ -115,7 +115,7 @@ local function HasChanged( self, materialTexture )
 	return _STORMFOX_TEXCHANGES[mat] and _STORMFOX_TEXCHANGES[mat][b] or false
 end
 
-function StormFox.Terrain.HasMaterialChanged( iMaterial )
+function StormFox2.Terrain.HasMaterialChanged( iMaterial )
 	local mat = iMaterial:GetName() or iMaterial
 	return _STORMFOX_TEXCHANGES[mat] and _STORMFOX_TEXCHANGES[mat]
 end
@@ -186,14 +186,14 @@ local function SetMat(self, tex1, tex2)
 end
 
 -- Resets the terrain to default.
-function StormFox.Terrain.Reset( bNoUpdate )
+function StormFox2.Terrain.Reset( bNoUpdate )
 	--print("Reset")
 	if SERVER and not bNoUpdate then
-		StormFox.Map.CallLogicRelay("terrain_clear")
+		StormFox2.Map.CallLogicRelay("terrain_clear")
 	end
 	CURRENT_TERRAIN = nil
 	if SERVER and not bNoUpdate then
-		net.Start("stormfox.terrain")
+		net.Start("StormFox2.terrain")
 			net.WriteString( "" )
 		net.Broadcast()
 	end
@@ -201,24 +201,24 @@ function StormFox.Terrain.Reset( bNoUpdate )
 	for tex,_ in pairs( _STORMFOX_TEXCHANGES ) do
 		local mat = Material( tex )
 		if not ResetMaterial( mat ) then
-			StormFox.Warning( "Can't reset [" .. tostring( mat ) .. "]." )
+			StormFox2.Warning( "Can't reset [" .. tostring( mat ) .. "]." )
 		end
 	end
 	_STORMFOX_TEXCHANGES = {}
 end
 
 -- Sets the terrain. (This should only be done serverside)
-function StormFox.Terrain.Set( sName )
+function StormFox2.Terrain.Set( sName )
 	-- Apply terrain.
-	local t = StormFox.Terrain.Get( sName )
+	local t = StormFox2.Terrain.Get( sName )
 	if not t then
-		StormFox.Terrain.Reset()
+		StormFox2.Terrain.Reset()
 		return false
 	end
-	StormFox.Terrain.Reset( true )
+	StormFox2.Terrain.Reset( true )
 	t:Apply()
 	if SERVER then
-		StormFox.Map.CallLogicRelay( "terrain_" .. string.lower(sName) )
+		StormFox2.Map.CallLogicRelay( "terrain_" .. string.lower(sName) )
 	end
 	return true
 end
@@ -227,7 +227,7 @@ end
 function meta:Apply()
 	CURRENT_TERRAIN = self
 	if SERVER then
-		net.Start("stormfox.terrain")
+		net.Start("StormFox2.terrain")
 			net.WriteString( CURRENT_TERRAIN.Name )
 		net.Broadcast()
 	end
@@ -239,7 +239,7 @@ function meta:Apply()
 	end
 	-- Set ground
 	if self.ground then
-		for materialName,tab in pairs( StormFox.Map.GetTextureTree() ) do
+		for materialName,tab in pairs( StormFox2.Map.GetTextureTree() ) do
 			local mat = Material( materialName )
 			SetMat( mat, tab[1] and self.ground, tab[2] and self.ground )
 		end
@@ -249,22 +249,22 @@ end
 
 -- NET
 if SERVER then
-	net.Receive("stormfox.terrain", function(len, ply) -- OI, what terrain?
-		net.Start("stormfox.terrain")
+	net.Receive("StormFox2.terrain", function(len, ply) -- OI, what terrain?
+		net.Start("StormFox2.terrain")
 			net.WriteString( CURRENT_TERRAIN and CURRENT_TERRAIN.Name or "" )
 		net.Send(ply)
 	end)
 else
-	net.Receive("stormfox.terrain", function(len)
+	net.Receive("StormFox2.terrain", function(len)
 		local sName = net.ReadString()
-		local b = StormFox.Terrain.Set( sName )
+		local b = StormFox2.Terrain.Set( sName )
 	--"Terrain Recived: ", sName, b)
 		
 	end)
 	-- Ask the server
-	hook.Add("stormfox.InitPostEntity", "stormfox.terrain.init", function()
+	hook.Add("StormFox2.InitPostEntity", "StormFox2.terrain.init", function()
 		timer.Simple(1, function()
-			net.Start("stormfox.terrain")
+			net.Start("StormFox2.terrain")
 				net.WriteBit(1)
 			net.SendToServer()
 		end)

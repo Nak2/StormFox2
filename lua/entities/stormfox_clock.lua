@@ -28,9 +28,9 @@ function ENT:Initialize()
 			"Clock_12 [STRING]",
 			"Clock_raw"
 		})
-		Wire_TriggerOutput(self, "Clock_raw", StormFox.Time.Get(true))
-		Wire_TriggerOutput(self, "Clock_24", StormFox.Time.TimeToString(nil))
-		Wire_TriggerOutput(self, "Clock_12", StormFox.Time.TimeToString(nil,true))
+		Wire_TriggerOutput(self, "Clock_raw", StormFox2.Time.Get(true))
+		Wire_TriggerOutput(self, "Clock_24", StormFox2.Time.TimeToString(nil))
+		Wire_TriggerOutput(self, "Clock_12", StormFox2.Time.TimeToString(nil,true))
 	end
 end
 
@@ -45,9 +45,9 @@ if SERVER then
 			if not WireAddon then return end
 			if (self._l or 0) > SysTime() then return end
 				self._l = SysTime() + 1
-			SetWire(self, "Clock_raw", StormFox.Time.Get(true))
-			SetWire(self, "Clock_24", StormFox.Time.TimeToString(nil))
-			SetWire(self, "Clock_12", StormFox.Time.TimeToString(nil,true))
+			SetWire(self, "Clock_raw", StormFox2.Time.Get(true))
+			SetWire(self, "Clock_24", StormFox2.Time.TimeToString(nil))
+			SetWire(self, "Clock_12", StormFox2.Time.TimeToString(nil,true))
 		end
 	end
 	function ENT:SpawnFunction( ply, tr, ClassName )
@@ -72,11 +72,11 @@ else
 		self:DrawModel()
 		render.MaterialOverrideByIndex( )
 		if ( halo.RenderedEntity() == self ) then return end
-		if not StormFox then return end
-		if not StormFox.Time then return end
+		if not StormFox2 then return end
+		if not StormFox2.Time then return end
 
 		local a = self:GetAngles()
-		local t = StormFox.Time.Get()
+		local t = StormFox2.Time.Get()
 		local h = math.floor(t / 60) -- 0 - 24
 		local m = t - h * 60 -- 0 - 60
 

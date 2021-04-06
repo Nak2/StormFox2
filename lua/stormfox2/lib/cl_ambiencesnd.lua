@@ -1,7 +1,7 @@
 SF_AMB_SND = SF_AMB_SND or {}
 SF_AMB_CHANNEL = SF_AMB_CHANNEL or {} -- [snd]{station, target_vol, current_vol}
 
-StormFox.Ambience = {}
+StormFox2.Ambience = {}
 
 --[[
 	- Outside		Constant
@@ -33,7 +33,7 @@ SF_AMB_ROOF_GROUND		= 10-- Z-DISTANCE (Default roof)
 SF_AMB_ROOF_WATER		= 11-- Z-DISTANCE
 
 -- Smooth the volume of SF_AMB_CHANNEL
-hook.Add("Think", "StormFox.Ambiences.Smooth", function()
+hook.Add("Think", "StormFox2.Ambiences.Smooth", function()
 	for snd,t in pairs( SF_AMB_CHANNEL ) do
 		if not IsValid( t[1] ) then -- In case something goes wrong. Delete the channel
 			SF_AMB_CHANNEL[snd] = nil
@@ -73,11 +73,11 @@ local function RequestChannel( snd )
 			AMB_LOAD[snd] = nil -- Allow it to be loaded again
 		else
 			if errCode == 1 then
-				StormFox.Warning("Sound Error! [1] Memory error.")
+				StormFox2.Warning("Sound Error! [1] Memory error.")
 			elseif errCode == 2 then
-				StormFox.Warning("Sound Error! [2] Unable to locate or open: " .. snd .. ".")
+				StormFox2.Warning("Sound Error! [2] Unable to locate or open: " .. snd .. ".")
 			else
-				StormFox.Warning("Sound Error! [" .. errCode .. "] " .. errStr .. ".")
+				StormFox2.Warning("Sound Error! [" .. errCode .. "] " .. errStr .. ".")
 			end
 		end
 	end)
@@ -86,7 +86,7 @@ end
 local snd_meta = {}
 snd_meta.__index = snd_meta
 -- Creates an ambience soudn
-function StormFox.Ambience.CreateAmbienceSnd( snd, SF_AMB_TYPE, vol_scale, min, max, playrate )
+function StormFox2.Ambience.CreateAmbienceSnd( snd, SF_AMB_TYPE, vol_scale, min, max, playrate )
 	local t = {}
 	t.snd = "sound/" .. snd
 	t.m_vol = vol_scale or 1
@@ -98,7 +98,7 @@ function StormFox.Ambience.CreateAmbienceSnd( snd, SF_AMB_TYPE, vol_scale, min, 
 	return t
 end
 -- Returns the channels
-function StormFox.Ambience.DebugList()
+function StormFox2.Ambience.DebugList()
 	return SF_AMB_CHANNEL
 end
 -- Sets the scale of the sound
@@ -115,7 +115,7 @@ function snd_meta:SetPlaybackRate( n )
 	self.playbackrate = n or 1
 end
 -- Adds ambience for weather
-hook.Add("stormfox2.preloadweather", "StormFox.Amb.Create", function( w_meta )
+hook.Add("stormfox2.preloadweather", "StormFox2.Amb.Create", function( w_meta )
 	function w_meta:AddAmbience( amb_object )
 		if not self.ambience_tab then self.ambience_tab = {} end
 		table.insert(self.ambience_tab, amb_object)
@@ -123,7 +123,7 @@ hook.Add("stormfox2.preloadweather", "StormFox.Amb.Create", function( w_meta )
 	function w_meta:ClearAmbience()
 		self.ambience_tab = {}
 	end
-	hook.Remove("stormfox2.preloadweather", "StormFox.Amb.Create")
+	hook.Remove("stormfox2.preloadweather", "StormFox2.Amb.Create")
 end)
 -- Applies the ambience sound
 local function check(SF_AMB_TYPE, env)
@@ -134,17 +134,17 @@ end
 local p_br = {}
 -- Forces a sound to play
 local fP
-function StormFox.Ambience.ForcePlay( snd, nVolume, playbackSpeed )
+function StormFox2.Ambience.ForcePlay( snd, nVolume, playbackSpeed )
 	if string.sub(snd, 0, 6) ~= "sound/" then
 		snd = "sound/" .. snd 
 	end
 	fP[snd] = nVolume
 	p_br[snd] = playbackSpeed or 1
 end
-hook.Add("Think", "StormFox.Ambiences.Logic", function()
-	local c = StormFox.Weather.GetCurrent()
-	local v_pos = StormFox.util.GetCalcView().pos
-	local env = StormFox.Environment.Get()
+hook.Add("Think", "StormFox2.Ambiences.Logic", function()
+	local c = StormFox2.Weather.GetCurrent()
+	local v_pos = StormFox2.util.GetCalcView().pos
+	local env = StormFox2.Environment.Get()
 	-- Set all target volume to 0
 	for _,t2 in pairs( SF_AMB_CHANNEL ) do
 		t2[2] = 0
@@ -226,7 +226,7 @@ hook.Add("Think", "StormFox.Ambiences.Logic", function()
 		end
 	end
 	fP = t
-	hook.Run("StormFox.Ambiences.OnSound")
+	hook.Run("StormFox2.Ambiences.OnSound")
 	-- Set the target volume
 	for snd, vol in pairs( t ) do
 		if not SF_AMB_CHANNEL[snd] then -- Request to create the sound channel

@@ -34,9 +34,9 @@ function ENT:SetupDataTables()
 	else
 		weathers["None"] = "one"
 	end
-	for _, str in ipairs( StormFox.Weather.GetAll() ) do
+	for _, str in ipairs( StormFox2.Weather.GetAll() ) do
 		if str == "BlueMoon" then continue end -- Shhh
-		weathers[StormFox.Weather.Get(str).Name] = str
+		weathers[StormFox2.Weather.Get(str).Name] = str
 	end
 	self:NetworkVar( "String", 	0, 	"WeatherName", { KeyName = "Weather",	Edit = { type = "Combo", order = 1, values = weathers } } )
 	self:NetworkVar( "Float", 	0, 	"Percent", { KeyName = "Percent",	Edit = { type = "Float", order = 2, min = 0, max = 1 } } )
@@ -81,12 +81,12 @@ else
 	function ENT:Draw()
 		local w,p = self:GetWeatherName(),self:GetPercent()
 		local r = self:GetRange()
-		local we = StormFox.Weather.Get(w)
+		local we = StormFox2.Weather.Get(w)
 		if IsValid( we ) then
 			local c = CurTime()
 			local p = self:GetPos()
 			local np = p + Vector(0,0,math.sin( 3 * c))
-			local in_v = StormFox.util.RenderPos():Distance( p ) < r
+			local in_v = StormFox2.util.RenderPos():Distance( p ) < r
 			self:SetRenderBounds( v1 * -r, v1 )
 			self:SetRenderOrigin( np )
 			render.MaterialOverrideByIndex(0,Material("stormfox2/entities/env_weatherball_on"))
@@ -99,7 +99,7 @@ else
 				render.DrawSphere( p, r, 30, 30, col1)
 			end
 			--						 (nTime,				nTemp,												nWind,						bThunder,nFraction)
-			local symbol = we.GetIcon( StormFox.Time.Get(), self:GetTemperature() or StormFox.Temperature.Get(), StormFox.Wind.GetForce(), StormFox.Thunder.IsThundering(), self:GetPercent() )
+			local symbol = we.GetIcon( StormFox2.Time.Get(), self:GetTemperature() or StormFox2.Temperature.Get(), StormFox2.Wind.GetForce(), StormFox2.Thunder.IsThundering(), self:GetPercent() )
 			render.SetMaterial( symbol )
 			render.DrawSprite( np , 8, 8, color_white)
 			self:SetRenderAngles( Angle(0,c * 40 % 360,0) )
@@ -108,27 +108,27 @@ else
 		end
 	end
 
-	hook.Add("Think", "StormFox.Weather.EController", function()
-		if not StormFox or StormFox.Version < 2 then return end
-		if not StormFox.Weather or not StormFox.Weather.RemoveLocal then return end
+	hook.Add("Think", "StormFox2.Weather.EController", function()
+		if not StormFox2 or StormFox2.Version < 2 then return end
+		if not StormFox2.Weather or not StormFox2.Weather.RemoveLocal then return end
 		local t = {}
 		for _, ent in ipairs( ents.FindByClass("env_atmosphere") ) do
 			local p = ent:GetPos()
 			local r = ent:GetRange()
-			local dis = StormFox.util.RenderPos():Distance( p )
-			local in_v = StormFox.util.RenderPos():Distance( p ) < r
-			if in_v and IsValid(StormFox.Weather.Get(ent:GetWeatherName() or "")) then table.insert(t, {ent, dis}) end
+			local dis = StormFox2.util.RenderPos():Distance( p )
+			local in_v = StormFox2.util.RenderPos():Distance( p ) < r
+			if in_v and IsValid(StormFox2.Weather.Get(ent:GetWeatherName() or "")) then table.insert(t, {ent, dis}) end
 		end
 		if #t < 1 then 
-			StormFox.Weather.RemoveLocal()
+			StormFox2.Weather.RemoveLocal()
 			return 
 		end
 		table.sort(t,function(a,b) return a[2] < b[2] end)
 		local ent = t[1][1]
 		if ent:GetPercent() <= 0 then
-			StormFox.Weather.RemoveLocal()
+			StormFox2.Weather.RemoveLocal()
 		else
-			StormFox.Weather.SetLocal( ent:GetWeatherName(), ent:GetPercent(), 4, ent:GetTemperature())
+			StormFox2.Weather.SetLocal( ent:GetWeatherName(), ent:GetPercent(), 4, ent:GetTemperature())
 		end
 	end)
 end

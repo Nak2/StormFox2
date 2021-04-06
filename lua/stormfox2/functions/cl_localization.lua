@@ -2,7 +2,7 @@
 if not file.Exists("resource/localization/en/stormfox.properties", "GAME") then return end
 local str = [[
 
-	#stormfox.weather = weather
+	#StormFox2.weather = weather
 	# https://github.com/Facepunch/garrysmod/blob/master/garrysmod/resource/localization/en/community.properties Check this first
 	# weather, day, night, sun, lightning, snow, cloud
 	
@@ -37,11 +37,14 @@ local str = [[
 	sf_setwind=Sets the windspeed in m/s
 	sf_wcontoller=SF Controller
 	sf_map.light_environment.check=This map support fast lightchanges.
-	sf_map.light_environment.problem=This map will cause lagspikes for clients when the light changes.
+	sf_map.light_environment.problem=This map will cause lagspikes for clients, when the light changes.
 	sf_map.env_wind.none=This map doesn't support windgusts.
 	sf_map.logic_relay.check=This map has custome day/night relays.
 	sf_map.logic_relay.none=This map doens't have custome day/night relays.
-	
+	sf_windmove_players=Affect players
+	sf_windmove_players.desc=Affect player movment in strong wind.
+	sf_enable_fogz=Overwrite farZ fog
+	sf_enable_fogz.desc=Overwrites the maps farZ fog. This might look bad on some maps.
 	
 	
 	#Details
@@ -128,7 +131,7 @@ local str = [[
 	sf_overwrite_extra_darkness=Overwrite Extra Darkness
 	sf_overwrite_extra_darkness.desc=Overwrites the players sf_extra_darkness.
 	sf_footprint_enablelogic=Enables Serverside Footprints
-	sf_overwrite_extra_darkness.desc=Disables the logic to handle server-side footprints.
+	sf_footprint_enablelogic.desc=Enables server-side footprints.
 	
 	sf_window_enable=Enable window effects
 	sf_window_enable.desc=Enables window weather effects.

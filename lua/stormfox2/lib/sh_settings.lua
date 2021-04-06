@@ -2,9 +2,9 @@
 StormFox Settings
 Handle settings and convert convars.
 
-	- Hooks: StormFox.Setting.Change 		sName, vVarable
+	- Hooks: StormFox2.Setting.Change 		sName, vVarable
 ---------------------------------------------------------------------------]]
-StormFox.Setting = {}
+StormFox2.Setting = {}
 local settings = {}
 local settings_ov = {}
 local settings_env = {}
@@ -52,7 +52,7 @@ local callBack = function(sName,oldvar,newvar)
 	end
 end
 if SERVER then
-	util.AddNetworkString("stormfox.setting")
+	util.AddNetworkString("StormFox2.setting")
 end
 
 --[[<Shared>-----------------------------------------------------------------
@@ -61,7 +61,7 @@ vDefaultVar is the default setting, do note that the Get function will convert t
 
 Note: This has to be called on the clients too.
 ---------------------------------------------------------------------------]]
-function StormFox.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nMax)
+function StormFox2.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nMax)
 	settings[sName] = type(vDefaultVar)
 	settings_env[sName] = true
 	settings_group[sName] = sGroup and string.lower(sGroup)
@@ -82,7 +82,7 @@ function StormFox.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nMa
 	if SERVER then
 		cvars.RemoveChangeCallback( "sf_" .. sName,"sf_networkcall" )
 		cvars.AddChangeCallback("sf_" .. sName,function(convar,oldvar,newvar)
-			net.Start("stormfox.setting")
+			net.Start("StormFox2.setting")
 				net.WriteString(sName)
 				net.WriteString(newvar)
 				net.WriteString(oldvar)
@@ -95,7 +95,7 @@ if CLIENT then
 	Adds a client setting.
 	vDefaultVar is the default setting, do note that the Get function will convert to the type given.
 	---------------------------------------------------------------------------]]
-	function StormFox.Setting.AddCL(sName,vDefaultVar,sDescription, sGroup, nMin, nMax)
+	function StormFox2.Setting.AddCL(sName,vDefaultVar,sDescription, sGroup, nMin, nMax)
 		settings[sName] = type(vDefaultVar)
 		settings_env[sName] = false
 		settings_group[sName] = sGroup and string.lower(sGroup)
@@ -117,7 +117,7 @@ end
 Tries to onvert to the given defaultvar to match the setting.
 ---------------------------------------------------------------------------]]
 local w_list = {"float","int","vector","angle","bool","string","entity"}
-function StormFox.Setting.StringToType( sName, sString )
+function StormFox2.Setting.StringToType( sName, sString )
 	if type(sString) == "boolean" then
 		sString = sString and "1" or "0"
 	end
@@ -143,7 +143,7 @@ end
 --[[<Shared>-----------------------------------------------------------------
 Returns a setting and will try to convert to the given defaultvar type.
 ---------------------------------------------------------------------------]]
-function StormFox.Setting.Get(sName,vDefaultVar)
+function StormFox2.Setting.Get(sName,vDefaultVar)
 	local con = GetConVar("sf_" .. sName)
 	if not con then return vDefaultVar end
 	if settings[sName] == "number" then
@@ -173,20 +173,20 @@ settings["openweathermap_key"] = "string"
 settings["openweathermap_real_lat"] = "string"
 settings["openweathermap_real_lon"] = "string"
 
-function StormFox.Setting.Set(sName,vVar)
+function StormFox2.Setting.Set(sName,vVar)
 	if string.sub(sName, 0, 3) == "sf_" then
 		sName = string.sub(sName, 4)
 	end
 	if sName == "openweathermap_real_city" then
-		StormFox.WeatherGen.APISetCity( vVar )
+		StormFox2.WeatherGen.APISetCity( vVar )
 		return
 	end
 	if not table.HasValue(w_list, sName) and not settings[sName] then return false,"Not a stormfox setting" end -- Not a stormfox setting
 	local con = GetConVar("sf_" .. sName)
 	if not con then return false,"IS not a convar" end
 	if CLIENT and settings_env[sName]then -- Ask the server
-		if StormFox.Permission then
-			StormFox.Permission.RequestSetting(sName, vVar)
+		if StormFox2.Permission then
+			StormFox2.Permission.RequestSetting(sName, vVar)
 		end
 		return false
 	end
@@ -203,7 +203,7 @@ function StormFox.Setting.Set(sName,vVar)
 	Gets called when a StormFox setting changes.
 	Note that this hook will not run on clients, if the variable is changed serverside.
 	---------------------------------------------------------------------------]]
-	hook.Run("StormFox.Setting.Change",sName,vVar)
+	hook.Run("StormFox2.Setting.Change",sName,vVar)
 	return true
 end
 --[[<Shared>-----------------------------------------------------------------
@@ -213,7 +213,7 @@ fFunc will be called with: vNewVariable, vOldVariable, ConVarName, sID
 Unlike convars, this will also be triggered on the clients too.
 Note: Variables get converted automatically 
 ---------------------------------------------------------------------------]]
-function StormFox.Setting.Callback(sName,fFunc,sID)
+function StormFox2.Setting.Callback(sName,fFunc,sID)
 	if not sID then sID = "default" end
 	if not callback_func[sName] then callback_func[sName] = {} end
 	callback_func[sName][sID] = fFunc
@@ -222,7 +222,7 @@ function StormFox.Setting.Callback(sName,fFunc,sID)
 end
 -- Fix clients not calling callbacks when servervars change.
 if CLIENT then
-	net.Receive("stormfox.setting",function(len)
+	net.Receive("StormFox2.setting",function(len)
 		local sName = net.ReadString()
 		local newvar = net.ReadString()
 		local oldvar = net.ReadString()
@@ -231,23 +231,23 @@ if CLIENT then
 	end)
 end
 --[[<Shared>------------------------------------------------------------------
-Same as StormFox.Setting.Get, however this will cache the result.
+Same as StormFox2.Setting.Get, however this will cache the result.
 This is faster than looking it up constantly.
 ---------------------------------------------------------------------------]]
 local cache = {}
-function StormFox.Setting.GetCache(sName,vDefaultVar)
+function StormFox2.Setting.GetCache(sName,vDefaultVar)
 	if cache[sName] ~= nil then return cache[sName] end
-	StormFox.Setting.Callback(sName,function(vVar)
+	StormFox2.Setting.Callback(sName,function(vVar)
 		cache[sName] = vVar
 	end,"cache")
-	cache[sName] = StormFox.Setting.Get(sName,vDefaultVar) or vDefaultVar
+	cache[sName] = StormFox2.Setting.Get(sName,vDefaultVar) or vDefaultVar
 	return cache[sName]
 end
 
-function StormFox.Setting.GetAll()
+function StormFox2.Setting.GetAll()
 	return table.GetKeys( settings )
 end
-function StormFox.Setting.GetAllServer()
+function StormFox2.Setting.GetAllServer()
 	if SERVER then
 		return table.GetKeys( settings )
 	end
@@ -259,7 +259,7 @@ function StormFox.Setting.GetAllServer()
 	return t
 end
 if CLIENT then
-	function StormFox.Setting.GetAllClient()
+	function StormFox2.Setting.GetAllClient()
 		local t = {}
 		for k,v in pairs(settings_env) do
 			if v then continue end
@@ -270,7 +270,7 @@ if CLIENT then
 end
 
 -- Returns the valuetype of the setting
-function StormFox.Setting.GetType( sName )
+function StormFox2.Setting.GetType( sName )
 	return settings_ov[sName] or settings[sName], settings_group[sName]
 end
 --[[ Type:
@@ -285,9 +285,9 @@ end
 	- temp / temperature
 	- Time_toggle
 ]]
-function StormFox.Setting.SetType( sName, sType, tSortOrter )
+function StormFox2.Setting.SetType( sName, sType, tSortOrter )
 	if type(sType) == "nil" then
-		StormFox.Warning("Can't make ConVar a nil-type!")
+		StormFox2.Warning("Can't make ConVar a nil-type!")
 	end
 	if type(sType) == "boolean" then
 		settings_ov[sName] = "boolean"

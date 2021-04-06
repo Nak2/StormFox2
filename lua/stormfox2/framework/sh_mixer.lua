@@ -1,7 +1,7 @@
 
 --	Weather mixed updates the variables live, unlike the Data.
 --	This can't be set tho.
-StormFox.Mixer = {}
+StormFox2.Mixer = {}
 
 -- Local function
 local function isColor(t)
@@ -19,7 +19,7 @@ local function Blender(nFraction, vFrom, vTo) -- Will it blend?
 	if vTo == vFrom then return vTo end
 	-- In case of two diffrent variables.
 	if type(vFrom) ~= type(vTo) then
-		StormFox.Warning("Mixer called with values of two different types[" .. type(vFrom) .. "," .. type(vTo) .. "]")
+		StormFox2.Warning("Mixer called with values of two different types[" .. type(vFrom) .. "," .. type(vTo) .. "]")
 		debug.Trace()
 		return vFrom
 	elseif type(vTo) == "string" or type(vTo) == "IMaterial" or type(vTo) == "boolean" then -- String, material or bool. Return vTo.
@@ -33,7 +33,7 @@ local function Blender(nFraction, vFrom, vTo) -- Will it blend?
 		local a = Lerp( nFraction, vFrom.a or 255, vTo.a )
 		return Color( r, g, b, a )
 	end
-	--StormFox.Warning("ERROR: Unsupported mix value type[" .. type(vTo) .. "]. Returning original value")
+	--StormFox2.Warning("ERROR: Unsupported mix value type[" .. type(vTo) .. "]. Returning original value")
 	--debug.Trace()
 	return vFrom
 end
@@ -50,24 +50,24 @@ local function GetVar( wWeather, sKey )
 	return v
 end
 
-function StormFox.Mixer.Get( sKey, zDefault, cP )
+function StormFox2.Mixer.Get( sKey, zDefault, cP )
 	if cache[sKey] ~= nil then return cache[sKey] end
-	if not StormFox.Weather then return zDefault end
-	local cW = StormFox.Weather.GetCurrent()
+	if not StormFox2.Weather then return zDefault end
+	local cW = StormFox2.Weather.GetCurrent()
 	if not cW or cW.Name == "Clear" then return GetVar(cW, sKey) or zDefault end
-	cP = cP or StormFox.Weather.GetPercent()
+	cP = cP or StormFox2.Weather.GetPercent()
 	if cP >= 1 then
 		cache[sKey] = GetVar(cW, sKey)
 		return cache[sKey] or zDefault
 	end
-	local clearW = StormFox.Weather.Get( "Clear" )
+	local clearW = StormFox2.Weather.Get( "Clear" )
 	local var1 = GetVar(clearW, sKey)
 	local var2 = GetVar(cW, sKey)
 	cache[sKey] = Blender(cP, var1, var2)
 	return cache[sKey] or zDefault
 end
 
-StormFox.Mixer.Blender = Blender
+StormFox2.Mixer.Blender = Blender
 
 --[[t.Function = {}
 	t.Static = {}
@@ -81,15 +81,15 @@ StormFox.Mixer.Blender = Blender
 local max_frames = 4
 local i = 0
 local tToNext = 0
-hook.Add("Think", "stormfox.mixerreset", function()
+hook.Add("Think", "StormFox2.mixerreset", function()
 	i = i + 1
 	if i < max_frames then return end
 	i = 0
 	cache = {}
 	-- Current Stamp
-	local nTime = StormFox.Time.Get()
-	cStamp,tToNext = StormFox.Sky.GetStamp(nTime)
-	nStamp = StormFox.Sky.GetStamp(nTime + 24)
+	local nTime = StormFox2.Time.Get()
+	cStamp,tToNext = StormFox2.Sky.GetStamp(nTime)
+	nStamp = StormFox2.Sky.GetStamp(nTime + 24)
 	if cStamp == nStamp then
 		nStampFraction = 0
 	else

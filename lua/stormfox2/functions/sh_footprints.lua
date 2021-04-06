@@ -21,12 +21,12 @@ local defaultSnowSnd = {
 }
 
 if SERVER then
-	util.AddNetworkString("stormfox.feetfix")
+	util.AddNetworkString("StormFox2.feetfix")
 end
 
 -- We use this to cache the last foot for the players.
 	local lastFoot = {}
-	hook.Add("PlayerFootstep", "stormfox.lastfootprint", function(ply, pos, foot, sound, volume, filter, ...)
+	hook.Add("PlayerFootstep", "StormFox2.lastfootprint", function(ply, pos, foot, sound, volume, filter, ...)
 		lastFoot[ply] = foot
 	end)
 -- Local functions
@@ -86,18 +86,18 @@ end
 		if mat:IsError() and (ent:IsNPC() or string.find(snd,"grass") or string.find(snd,"dirt")) then -- Used by maps
 			return true, sTexture
 		end
-		if StormFox.Terrain.HasMaterialChanged(mat) then return true, sTexture end
+		if StormFox2.Terrain.HasMaterialChanged(mat) then return true, sTexture end
 		return false,sTexture
 	end
 -- Footstep overwrite and logic
-	hook.Add("EntityEmitSound", "stormFox.footstep.detecter", function(data)
-		if not StormFox.Terrain then return end
-		local cT = StormFox.Terrain.GetCurrent()
+	hook.Add("EntityEmitSound", "StormFox2.footstep.detecter", function(data)
+		if not StormFox2.Terrain then return end
+		local cT = StormFox2.Terrain.GetCurrent()
 		if not cT then return end
 		-- Only enable if we edit or need footsteps.
 			if not (bAlwaysFootstep or (cT and cT.footstepLisen)) then return end		
 		-- Check if the server has disabled the footprint logic on their side.
-			if SERVER and not game.SinglePlayer() and not StormFox.Setting.GetCache("footprint_enablelogic",true) then return end
+			if SERVER and not game.SinglePlayer() and not StormFox2.Setting.GetCache("footprint_enablelogic",true) then return end
 		-- Check if it is a footstep sound of some sort.
 			local foot = GetFootstep(data) -- Returns [-1 = invalid, 0 = left, 1 = right]
 			if not foot or foot < 0 then return end
@@ -118,10 +118,10 @@ end
 				changed = true
 			end
 		-- Call footstep hook
-			hook.Run("stormFox.terrain.footstep", data.Entity, foot, data.SoundName, sTex, bReplace )
+			hook.Run("StormFox2.terrain.footstep", data.Entity, foot, data.SoundName, sTex, bReplace )
 		-- Singleplayer and server-sounds fix
 			if SERVER and (game.SinglePlayer() or table.HasValue(NetL, data.Entity:GetClass())) then
-				net.Start("stormfox.feetfix",true)
+				net.Start("StormFox2.feetfix",true)
 					net.WriteEntity(data.Entity)
 					net.WriteInt(foot or 1,2)
 					net.WriteString(data.SoundName)
@@ -137,8 +137,8 @@ end
 	end)
 	-- Singleplayer and entity fix
 	if CLIENT then
-		net.Receive("stormfox.feetfix",function()
-			local cT = StormFox.Terrain.GetCurrent()
+		net.Receive("StormFox2.feetfix",function()
+			local cT = StormFox2.Terrain.GetCurrent()
 			if not cT then return end
 			local ent = net.ReadEntity()
 			if not IsValid(ent) then return end
@@ -149,7 +149,7 @@ end
 			if cT.footstepFunc then
 				cT.footstepFunc(ent, foot, sndName, sTex, bReplace)
 			end
-			hook.Run("stormFox.terrain.footstep", ent, foot, sndName, sTex, bReplace)
+			hook.Run("StormFox2.terrain.footstep", ent, foot, sndName, sTex, bReplace)
 		end)
 	end
 --[[-------------------------------------------------------------------------
@@ -207,21 +207,21 @@ if CLIENT then
 		if find(ent:GetModel(),"_torso",1,true) then return false end
 		return true
 	end
-	hook.Add("stormFox.terrain.footstep", "stormFox.terrain.makefootprint", function(ent, foot, sSnd, sTexture, bReplace )
+	hook.Add("StormFox2.terrain.footstep", "StormFox2.terrain.makefootprint", function(ent, foot, sSnd, sTexture, bReplace )
 		if foot < 0  then return end -- Invalid foot
 		if not bReplace and bAlwaysFootstep then -- This is a cold map, check for snow
 			if not find(sTexture:lower(),"snow",1,true) then return end
 		elseif bReplace then -- This is terrain
-			local cT = StormFox.Terrain.GetCurrent()
+			local cT = StormFox2.Terrain.GetCurrent()
 			if not cT then return end
 			if not cT.footprints then return end
 		else -- Invalid
 			return
 		end
 		if not CanPrint(ent) then return end
-		if not StormFox.Setting.GetCache("footprint_enabled",true) then return end
-		if StormFox.Setting.GetCache("footprint_playeronly",false) and not ent:IsPlayer() then return end
-		local n_max = StormFox.Setting.GetCache("footprint_max",200)
+		if not StormFox2.Setting.GetCache("footprint_enabled",true) then return end
+		if StormFox2.Setting.GetCache("footprint_playeronly",false) and not ent:IsPlayer() then return end
+		local n_max = StormFox2.Setting.GetCache("footprint_max",200)
 		if #prints > n_max then
 			table.remove(prints, 1)
 		end
@@ -241,12 +241,12 @@ if CLIENT then
 	end
 	local DrawQuadEasy = render.DrawQuadEasy
 	local bC = Color(0,0,0,255)
-	hook.Add("PreDrawOpaqueRenderables","StormFox.Terrain.Footprints",function()
-		if not StormFox.Setting.GetCache("footprint_enabled",true) then return end
+	hook.Add("PreDrawOpaqueRenderables","StormFox2.Terrain.Footprints",function()
+		if not StormFox2.Setting.GetCache("footprint_enabled",true) then return end
 		if #prints < 1 then return end
-		local lp = StormFox.util.RenderPos()
+		local lp = StormFox2.util.RenderPos()
 		local del = {}
-		local footstep_dis = StormFox.Setting.GetCache("footprint_distance",2000,"The renderdistance for footprints") ^ 2
+		local footstep_dis = StormFox2.Setting.GetCache("footprint_distance",2000,"The renderdistance for footprints") ^ 2
 		for k,v in pairs(prints) do
 			local pos,normal,foot,scale,life,lengh,yawoff = v[1],v[2],v[3],v[4],v[5],v[6],v[7]
 			local blend = life - CurTime()
@@ -270,11 +270,11 @@ if CLIENT then
 end
 
 -- If the map is cold or has snow, always check for footsteps.
-	bAlwaysFootstep = StormFox.Map.IsCold() or StormFox.Map.HasSnow() -- This is a cold map.
+	bAlwaysFootstep = StormFox2.Map.IsCold() or StormFox2.Map.HasSnow() -- This is a cold map.
 	if CLIENT then
-		StormFox.Setting.AddCL("footprint_enabled",true) -- Add footprint setting
-		StormFox.Setting.AddCL("footprint_max",200) -- Add footprint setting
-		StormFox.Setting.AddCL("footprint_distance",2000) -- Add footprint setting
-		StormFox.Setting.AddCL("footprint_playeronly",false) -- Add footprint setting
+		StormFox2.Setting.AddCL("footprint_enabled",true) -- Add footprint setting
+		StormFox2.Setting.AddCL("footprint_max",200) -- Add footprint setting
+		StormFox2.Setting.AddCL("footprint_distance",2000) -- Add footprint setting
+		StormFox2.Setting.AddCL("footprint_playeronly",false) -- Add footprint setting
 	end
-	StormFox.Setting.AddSV("footprint_enablelogic",true)
+	StormFox2.Setting.AddSV("footprint_enablelogic",true)

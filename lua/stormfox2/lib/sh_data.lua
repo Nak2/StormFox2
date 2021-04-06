@@ -11,11 +11,11 @@
 	Data.IsLerping( sKey )			Returns true if the data is currently lerping.
 
 	Hooks:
-		- stormfox.data.change		sKey	zVar		Called when data changed or started lerping.
-		- stormfox.data.lerpstart	sKey	zVar		Called when data started lerping
-		- stormfox.data.lerpend		sKey	zVar		Called when data stopped lerping (This will only be called if we check for the variable)
+		- StormFox2.data.change		sKey	zVar		Called when data changed or started lerping.
+		- StormFox2.data.lerpstart	sKey	zVar		Called when data started lerping
+		- StormFox2.data.lerpend		sKey	zVar		Called when data stopped lerping (This will only be called if we check for the variable)
 ]]
-StormFox.Data = {}
+StormFox2.Data = {}
 
 StormFox_DATA = {}		-- Var
 StormFox_AIMDATA = {} 	-- Var, start, end
@@ -24,7 +24,7 @@ StormFox_AIMDATA = {} 	-- Var, start, end
 ]]
 
 -- Returns the final data. This will never lerp.
-function StormFox.Data.GetFinal( sKey, zDefault )
+function StormFox2.Data.GetFinal( sKey, zDefault )
 	if StormFox_AIMDATA[sKey] then
 		if StormFox_AIMDATA[sKey][1] ~= nil then
 			return StormFox_AIMDATA[sKey][1]
@@ -53,7 +53,7 @@ do
 	local function LerpVar(fraction, from, to)
 		local t = type(from)
 		if t ~= type(to) then
-			--StormFox.Warning("Can't lerp " .. type(from) .. " to " .. type(to) .. "!")
+			--StormFox2.Warning("Can't lerp " .. type(from) .. " to " .. type(to) .. "!")
 			return to
 		end
 		if t == "number" then
@@ -82,7 +82,7 @@ do
 	end
 
 	-- Returns data
-	function StormFox.Data.Get( sKey, zDefault )
+	function StormFox2.Data.Get( sKey, zDefault )
 		-- Check if lerping
 		local var1 = StormFox_DATA[sKey]
 		if not StormFox_AIMDATA[sKey] then
@@ -109,13 +109,13 @@ do
 		else -- Fraction end
 			StormFox_DATA[sKey] = var2
 			StormFox_AIMDATA[sKey] = nil
-			hook.Run("stormFox.data.lerpend",sKey,var2)
+			hook.Run("StormFox2.data.lerpend",sKey,var2)
 			return var2 or zDefault
 		end
 	end
 	local n = 0
 	-- Reset cache after 4 frames
-	hook.Add("Think", "stormfox.resetdatalerp", function()
+	hook.Add("Think", "StormFox2.resetdatalerp", function()
 		n = n + 1
 		if n < 4 then return end
 		n = 0
@@ -124,7 +124,7 @@ do
 end
 
 -- Sets data. Will lerp if given delta.
-function StormFox.Data.Set( sKey, zVar, nDelta )
+function StormFox2.Data.Set( sKey, zVar, nDelta )
 	-- Check if vars are the same
 	if StormFox_DATA[sKey] ~= nil and not StormFox_AIMDATA[sKey] then
 		if StormFox_DATA[sKey] == zVar then return end
@@ -138,22 +138,22 @@ function StormFox.Data.Set( sKey, zVar, nDelta )
 		return
 	end
 	-- If delta is 0 or below. (Or no prev data). Set it.
-	if not nDelta or nDelta <= 0 or StormFox_DATA[sKey] == nil or StormFox.Time.GetSpeed() <= 0 then
+	if not nDelta or nDelta <= 0 or StormFox_DATA[sKey] == nil or StormFox2.Time.GetSpeed() <= 0 then
 		StormFox_AIMDATA[sKey] = nil
 		StormFox_DATA[sKey] = zVar
-		hook.Run("stormfox.data.change",sKey,zVar)
+		hook.Run("StormFox2.data.change",sKey,zVar)
 		return
 	end
 	-- Get the current lerping value and set that as a start
 	if StormFox_AIMDATA[sKey] then
-		StormFox_DATA[sKey] = StormFox.Data.Get( sKey )
+		StormFox_DATA[sKey] = StormFox2.Data.Get( sKey )
 	end
-	StormFox_AIMDATA[sKey] = {zVar, CurTime(), CurTime() + nDelta, StormFox.Time.GetSpeed()}
-	hook.Run("stormfox.data.lerpstart",sKey,zVar, nDelta)
-	hook.Run("stormfox.data.change", sKey, zVar, nDelta)
+	StormFox_AIMDATA[sKey] = {zVar, CurTime(), CurTime() + nDelta, StormFox2.Time.GetSpeed()}
+	hook.Run("StormFox2.data.lerpstart",sKey,zVar, nDelta)
+	hook.Run("StormFox2.data.change", sKey, zVar, nDelta)
 end
 
-function StormFox.Data.IsLerping( sKey )
+function StormFox2.Data.IsLerping( sKey )
 	if not StormFox_AIMDATA[sKey] then return false end
 	-- Check and see if we're done lerping
 	local fraction = calcFraction(StormFox_AIMDATA[sKey][2],StormFox_AIMDATA[sKey][3])
@@ -161,21 +161,21 @@ function StormFox.Data.IsLerping( sKey )
 		return true
 	end
 	-- We're done lerping.
-	StormFox_DATA[sKey] = StormFox.Data.GetFinal( sKey )
+	StormFox_DATA[sKey] = StormFox2.Data.GetFinal( sKey )
 	StormFox_AIMDATA[sKey] = nil
 	lerpCache[sKey] = nil
-	hook.Run("stormFox.data.lerpend",sKey,zVar)
+	hook.Run("StormFox2.data.lerpend",sKey,zVar)
 	return true
 end
 
 -- If time changes, we need to update the lerp values
-hook.Add("StormFox.Time.Set", "stormfox.datatimefix", function()
-	local nT = StormFox.Time.GetSpeed()
+hook.Add("StormFox2.Time.Set", "StormFox2.datatimefix", function()
+	local nT = StormFox2.Time.GetSpeed()
 	local c = CurTime()
 	if nT <= 0.001 then return end
 	for k,v in pairs( StormFox_AIMDATA ) do
 		if not v[4] or v[4] == nT then continue end
-		local now_value = StormFox.Data.Get( k )
+		local now_value = StormFox2.Data.Get( k )
 		if not StormFox_AIMDATA[k] then continue end -- After checking the value, it is now gone.
 		if now_value then
 			StormFox_DATA[k] = now_value

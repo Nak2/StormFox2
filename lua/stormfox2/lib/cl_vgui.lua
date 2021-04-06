@@ -32,7 +32,7 @@ local function makeTempDisplay( panel )
 	panel._DrawTextEntryText = panel.DrawTextEntryText
 	function panel:DrawTextEntryText( ... )
 		local s = self:GetText()
-		self:SetText(s .. StormFox.Temperature.GetDisplaySymbol())
+		self:SetText(s .. StormFox2.Temperature.GetDisplaySymbol())
 		self:_DrawTextEntryText( ... )
 		self:SetText(s)
 	end
@@ -56,8 +56,8 @@ local function SetSFConVar( convar, str )
 	if string.sub(convar, 0, 3) == "sf_" then
 		convar = string.sub(convar, 4)
 	end
-	local var = StormFox.Setting.StringToType( convar, str )
-	StormFox.Setting.Set(convar, var)
+	local var = StormFox2.Setting.StringToType( convar, str )
+	StormFox2.Setting.Set(convar, var)
 end
 
 local function ConVarChanged( PANEL, strNewValue )
@@ -115,7 +115,7 @@ do
 		function self._b:OnEnter( str )
 			SetSFConVar(sName, tostring(str))
 		end
-		StormFox.Setting.Callback(sName,function(vVar,vOldVar,_, self)
+		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, self)
 			self._b:SetText(vVar)
 		end,self)
 		self:InvalidateLayout(true)
@@ -218,7 +218,7 @@ do
 		end
 		local text = tab[con:GetString()] or tab[con:GetFloat()] or tab[con:GetBool()] or con:GetString()
 		self._b:SetText(niceName( language.GetPhrase(sDesc or text)))
-		StormFox.Setting.Callback(sName,function(vVar,vOldVar,_, self)
+		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, self)
 			if type(vVar) == "boolean" then
 				vVar = vVar and 1 or 0
 			end
@@ -500,7 +500,7 @@ do
 		self:DockMargin(5,0,10,0)
 		self.trigger = true
 		--self.Paint = empty
-		local use_12 = StormFox.Setting.GetCache("12h_display",default_12)
+		local use_12 = StormFox2.Setting.GetCache("12h_display",default_12)
 		local l = vgui.Create( "DLabel", self )
 		local hour = vgui.Create("DNumberWang", self)
 		local dot = vgui.Create("DPanel", self)
@@ -551,7 +551,7 @@ do
 			if IsValid(ampm) then
 				t = t .. " " .. ((ampm:GetSelected() or ampm:GetText()) == "AM" and "AM" or "PM")
 			end
-			local num = StormFox.Time.StringToTime(t)
+			local num = StormFox2.Time.StringToTime(t)
 			if num and self.sName then
 				SetSFConVar(self.sName, num)
 			end
@@ -617,7 +617,7 @@ do
 				end
 				self:SetDisabled(true)		
 			end
-			local time_str = StormFox.Time.GetDisplay(n)
+			local time_str = StormFox2.Time.GetDisplay(n)
 			local h,m = string.match(time_str, "(%d+):(%d+)")
 			local am = string.find(time_str, "AM") and true or false
 			self.hour:SetValue(tonumber(h))
@@ -627,7 +627,7 @@ do
 			end
 		self.trigger = true
 
-		StormFox.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
+		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
 			pln.trigger = false
 			if tonumber(vVar) < 0 then
 				n = 0
@@ -645,7 +645,7 @@ do
 				end
 				self:SetDisabled(false)
 			end
-			local time_str = StormFox.Time.GetDisplay(vVar)
+			local time_str = StormFox2.Time.GetDisplay(vVar)
 			local h,m,am = string.match(time_str, "(%d+):(%d+)%s?([PA]M)")
 			pln.hour:SetValue(tonumber(h))
 			local n = tonumber(m)
@@ -691,7 +691,7 @@ do
 		self.trigger = true
 		self._enabled = true
 		--self.Paint = empty
-		local use_12 = StormFox.Setting.GetCache("12h_display",default_12)
+		local use_12 = StormFox2.Setting.GetCache("12h_display",default_12)
 		local l = vgui.Create( "DLabel", self )
 		local hour = vgui.Create("DNumberWang", self)
 		local dot = vgui.Create("DPanel", self)
@@ -739,7 +739,7 @@ do
 			if ampm then
 				t = t .. " " .. (ampm:GetSelected() or ampm:GetText() == "AM" and 0 or 1)
 			end
-			local num = StormFox.Time.StringToTime(t)
+			local num = StormFox2.Time.StringToTime(t)
 			if num and self.sName then
 				SetSFConVar(self.sName, num)
 			end
@@ -807,7 +807,7 @@ do
 			else
 				self._t:SetChecked( true )
 			end
-			local time_str = StormFox.Time.GetDisplay(n)
+			local time_str = StormFox2.Time.GetDisplay(n)
 			local h,m = string.match(time_str, "(%d+):(%d+)")
 			local am = string.find(time_str, "AM") and true or false
 			self.hour:SetValue(tonumber(h))
@@ -823,7 +823,7 @@ do
 				SetSFConVar(sName, -1)
 			end
 		end
-		StormFox.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
+		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
 			pln.trigger = false
 			if tonumber(vVar) < 0 then
 				n = 0
@@ -843,7 +843,7 @@ do
 				self._enabled = true
 				self._t:SetChecked( true )
 			end
-			local time_str = StormFox.Time.GetDisplay(vVar)
+			local time_str = StormFox2.Time.GetDisplay(vVar)
 			local h,m,am = string.match(time_str, "(%d+):(%d+)%s?([PA]M)")
 			pln.hour:SetValue(tonumber(h))
 			local n = tonumber(m)
@@ -905,7 +905,7 @@ do
 		d:SizeToContents()
 		l:InvalidateLayout(true)
 		l:Dock(TOP)
-		s:SetText(StormFox.Temperature.GetDisplaySymbol())
+		s:SetText(StormFox2.Temperature.GetDisplaySymbol())
 		s:SetPos(70,l:GetTall() + 2)
 		s:SetColor(color_black)
 		s:SizeToContents()
@@ -931,16 +931,16 @@ do
 
 		if nMax then self._b:SetMax( nMax ) else self._b.m_numMax = nil	end
 		if nMin then self._b:SetMin( nMin )	else self._b.m_numMin = nil	end
-		local val = StormFox.Temperature.Convert(nil,StormFox.Temperature.GetDisplayType(),con:GetInt())
+		local val = StormFox2.Temperature.Convert(nil,StormFox2.Temperature.GetDisplayType(),con:GetInt())
 		self._b:SetValue( val )
 
 		function self._b:OnLoseFocus( )
 			local num = tonumber(self:GetText()) or 0
-			num = StormFox.Temperature.Convert(StormFox.Temperature.GetDisplayType(),nil,num)
+			num = StormFox2.Temperature.Convert(StormFox2.Temperature.GetDisplayType(),nil,num)
 			SetSFConVar( sName, num )
 		end
-		StormFox.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
-			local val = StormFox.Temperature.Convert(nil,StormFox.Temperature.GetDisplayType(),tonumber(vVar) or 0)
+		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
+			local val = StormFox2.Temperature.Convert(nil,StormFox2.Temperature.GetDisplayType(),tonumber(vVar) or 0)
 			pln:SetValue(val)
 		end,self._b)
 	end
@@ -1134,10 +1134,10 @@ do
 		self:SetMinVar( conMi:GetFloat() )
 		
 		self.OnValueChanged = conFunc	
-		StormFox.Setting.Callback(sMinName,function(vVar,vOldVar,_, pln)
+		StormFox2.Setting.Callback(sMinName,function(vVar,vOldVar,_, pln)
 			pln:SetMinVar( vVar )
 		end,self)
-		StormFox.Setting.Callback(sMaxName,function(vVar,vOldVar,_, pln)
+		StormFox2.Setting.Callback(sMaxName,function(vVar,vOldVar,_, pln)
 			pln:SetMaxVar(vVar)
 		end,self)
 	end
@@ -1212,13 +1212,13 @@ do
 	end
 	function PANEL:GetMinVar()
 		if self._temp then
-			return StormFox.Temperature.Convert(nil, StormFox.Temperature.GetDisplayType(),self._b:GetMinVar())
+			return StormFox2.Temperature.Convert(nil, StormFox2.Temperature.GetDisplayType(),self._b:GetMinVar())
 		end
 		return self._b:GetMinVar()
 	end
 	function PANEL:GetMaxVar()
 		if self._temp then
-			return StormFox.Temperature.Convert(nil, StormFox.Temperature.GetDisplayType(),self._b:GetMaxVar())
+			return StormFox2.Temperature.Convert(nil, StormFox2.Temperature.GetDisplayType(),self._b:GetMaxVar())
 		end
 		return self._b:GetMaxVar()
 	end
@@ -1259,8 +1259,8 @@ do
 		local minVal = minCon:GetFloat()
 		local maxVal = maxCon:GetFloat()
 		if self._temp then
-			minVal = StormFox.Temperature.Convert(nil,StormFox.Temperature.GetDisplayType(),minVal)
-			maxVal = StormFox.Temperature.Convert(nil,StormFox.Temperature.GetDisplayType(),maxVal)
+			minVal = StormFox2.Temperature.Convert(nil,StormFox2.Temperature.GetDisplayType(),minVal)
+			maxVal = StormFox2.Temperature.Convert(nil,StormFox2.Temperature.GetDisplayType(),maxVal)
 		end
 		self.n_min:SetText(math.Round(minVal, self:GetDecimals()))
 		self.n_max:SetText(math.Round(maxVal, self:GetDecimals()))
@@ -1270,25 +1270,25 @@ do
 		self._b.ConVarChanged = ConVarChanged
 		self.n_min.OnValueChange = function( self, val )
 			if self._temp then
-				val = StormFox.Temperature.Convert(StormFox.Temperature.GetDisplayType(),nil,val)
+				val = StormFox2.Temperature.Convert(StormFox2.Temperature.GetDisplayType(),nil,val)
 			end
 			SetSFConVar(self._con:GetName(), val)
 		end
 		self.n_max.OnValueChange = function( self, val )
 			if self._temp then
-				val = StormFox.Temperature.Convert(StormFox.Temperature.GetDisplayType(),nil,val)
+				val = StormFox2.Temperature.Convert(StormFox2.Temperature.GetDisplayType(),nil,val)
 			end
 			SetSFConVar(self._con:GetName(), val)
 		end
-		StormFox.Setting.Callback(sMinName,function(vVar,vOldVar,_, pln)
+		StormFox2.Setting.Callback(sMinName,function(vVar,vOldVar,_, pln)
 			if self._temp then
-				vVar = StormFox.Temperature.Convert(nil, StormFox.Temperature.GetDisplayType(),vVar)
+				vVar = StormFox2.Temperature.Convert(nil, StormFox2.Temperature.GetDisplayType(),vVar)
 			end
 			pln:SetText(math.Round(vVar, pln.sl:GetDecimals()))
 		end,self.n_min)
-		StormFox.Setting.Callback(sMaxName,function(vVar,vOldVar,_, pln)
+		StormFox2.Setting.Callback(sMaxName,function(vVar,vOldVar,_, pln)
 			if self._temp then
-				vVar = StormFox.Temperature.Convert(nil, StormFox.Temperature.GetDisplayType(),vVar)
+				vVar = StormFox2.Temperature.Convert(nil, StormFox2.Temperature.GetDisplayType(),vVar)
 			end
 			pln:SetText(math.Round(vVar, pln.sl:GetDecimals()))
 		end,self.n_max)
@@ -1307,8 +1307,8 @@ do
 	local c = Color(0,0,0,55)
 	function PANEL:Init()
 		self._map = vgui.Create("DPanel", self)
-		self:SetLat(StormFox.Setting.Get("openweathermap_lat", 52.6139095))
-		self:SetLon(StormFox.Setting.Get("openweathermap_lon", -2.0059601))
+		self:SetLat(StormFox2.Setting.Get("openweathermap_lat", 52.6139095))
+		self:SetLon(StormFox2.Setting.Get("openweathermap_lon", -2.0059601))
 		self:SetSize(400, 300)
 		self:SetZoom(3)
 		self._range = 1
@@ -1338,11 +1338,11 @@ do
 			surface.DrawRect(xx + ws * 0.5 - yT / 2, yy + hs, xT, h - yy - hs)
 		end
 		self:SetMouseInputEnabled( true )
-		StormFox.Setting.Callback("openweathermap_lat",function(vVar,_,_, self)
+		StormFox2.Setting.Callback("openweathermap_lat",function(vVar,_,_, self)
 			self:SetLat( tonumber(vVar) )
 			self:ReSize()
 		end,self)
-		StormFox.Setting.Callback("openweathermap_lon",function(vVar,_,_, self)
+		StormFox2.Setting.Callback("openweathermap_lon",function(vVar,_,_, self)
 			self:SetLon( tonumber(vVar) )
 			self:ReSize()
 		end,self)
@@ -1392,7 +1392,7 @@ end
 do
 	local function displayLayout(self, width, height )
 		-- Temp changes
-		local tmin,tmax = StormFox.Setting.Get("min_temp",-10), StormFox.Setting.Get("max_temp",20)
+		local tmin,tmax = StormFox2.Setting.Get("min_temp",-10), StormFox2.Setting.Get("max_temp",20)
 		local tsize = (tmax - tmin)
 		self.temp_size = height / 20
 		self.temp_y = FindPercent(0, tmax, tmin)
@@ -1474,15 +1474,15 @@ do
 	end
 	function PANEL:SetData(time, last_data, data, next_data )
 		self.data = data
-		self.temp.text = StormFox.Temperature.GetDisplay(data.temp) .. StormFox.Temperature.GetDisplaySymbol()
+		self.temp.text = StormFox2.Temperature.GetDisplay(data.temp) .. StormFox2.Temperature.GetDisplaySymbol()
 		
 		self.display.last_temp 	= last_data and last_data.temp or 0
 		self.display.next_temp 	= next_data and next_data.temp or data.temp
 		self.display.temp 		= data.temp
 
-		self.time.text = StormFox.Time.GetDisplay(time)
+		self.time.text = StormFox2.Time.GetDisplay(time)
 		self.wind.text = (data.wind or 0) .. " m/s"
-		self.weather = StormFox.Weather.Get( data.weather and data.weather[2] or "Clear" )
+		self.weather = StormFox2.Weather.Get( data.weather and data.weather[2] or "Clear" )
 		self.display.weather = self.weather
 		self.display.weather_a = data.weather[1]
 		if self.weather then
@@ -1509,7 +1509,7 @@ do
 	local col = Color(26,41,72, 255)
 	local mat = Material("vgui/loading-rotate")
 	function PANEL:Init()
-		-- StormFox.WeatherGen.GetData()
+		-- StormFox2.WeatherGen.GetData()
 		self:SetSize( 400, 300 )
 		self._Generated = false
 		
@@ -1519,12 +1519,12 @@ do
 		self:Update()
 	end
 	function PANEL:Update()
-		if not StormFox.WeatherGen then return end
-		if table.Count(StormFox.WeatherGen.GetData()) < 1 then return end
-		self.data = StormFox.WeatherGen.GetData()
+		if not StormFox2.WeatherGen then return end
+		if table.Count(StormFox2.WeatherGen.GetData()) < 1 then return end
+		self.data = StormFox2.WeatherGen.GetData()
 		local key = table.GetKeys( self.data )
 		table.sort(key, function(a,b) return b > a end)
-		local time = StormFox.Time.Get()
+		local time = StormFox2.Time.Get()
 		for _, v in ipairs( self._board.Panels ) do
 			v:Remove()
 		end
@@ -1542,7 +1542,7 @@ do
 	function PANEL:Think()
 		if not self.data then
 			self:Update()
-		elseif self.firstUp and self.firstUp + 60 <= StormFox.Time.Get() then
+		elseif self.firstUp and self.firstUp + 60 <= StormFox2.Time.Get() then
 			self.firstUp = nil
 			self:Update()
 		end
@@ -1626,11 +1626,11 @@ do
 			setting:SetConvar(sName[1],sName[2], _type, _desc)
 			return setting
 		else
-			StormFox.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
+			StormFox2.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
 			return
 		end
 		if not setting then
-			StormFox.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
+			StormFox2.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
 			return
 		end
 		--local setting = _type == "boolean" and vgui.Create("SFConVar_Bool", board) or  vgui.Create("SFConVar", board)
@@ -1863,16 +1863,16 @@ do
 		b.Paint = side_button
 		p_left.buttons["workshop"] = b
 		function b:DoClick()
-			gui.OpenURL( StormFox.WorkShopURL )
+			gui.OpenURL( StormFox2.WorkShopURL )
 		end
-		if not StormFox.WorkShopURL then
+		if not StormFox2.WorkShopURL then
 			b:SetDisabled(true)
 		end
 	
 		local used = {}
 		function p:AddSetting( sName, group, _type, sDesc )
 			if not group then 
-				group = select(2, StormFox.Setting.GetType(sName))
+				group = select(2, StormFox2.Setting.GetType(sName))
 			end
 			if not group then
 				group = "misc"
@@ -1895,7 +1895,7 @@ do
 				end
 				local mul = type( sName ) == "table"
 				if not _type then
-					_type = StormFox.Setting.GetType(mul and sName[1] or sName)
+					_type = StormFox2.Setting.GetType(mul and sName[1] or sName)
 				end
 				local setting = addSetting(sName, self, _type, sDesc)
 				if not setting then return end
@@ -1987,6 +1987,6 @@ do
 end
 
 
-if StormFox.Menu and StormFox.Menu.OpenSV then
-	StormFox.Menu.OpenSV()
+if StormFox2.Menu and StormFox2.Menu.OpenSV then
+	StormFox2.Menu.OpenSV()
 end

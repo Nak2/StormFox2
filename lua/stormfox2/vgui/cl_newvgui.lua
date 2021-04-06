@@ -6,10 +6,10 @@ do
 	AccessorFunc( PANEL, "m_bTemp", "Temperature" )
 	AccessorFunc( PANEL, "m_sUnity", "Unit" )
 	local function convFromClient( val )
-		return StormFox.Temperature.Convert(StormFox.Temperature.GetDisplayType(),nil ,tonumber(val))
+		return StormFox2.Temperature.Convert(StormFox2.Temperature.GetDisplayType(),nil ,tonumber(val))
 	end
 	local function convToClient( val )
-		return StormFox.Temperature.Convert(nil, StormFox.Temperature.GetDisplayType() ,tonumber(val))
+		return StormFox2.Temperature.Convert(nil, StormFox2.Temperature.GetDisplayType() ,tonumber(val))
 	end
 	-- Hacky solution to units.
 	local _oldDTET = vgui.GetControlTable("DTextEntry").DrawTextEntryText
@@ -26,7 +26,7 @@ do
 	function PANEL:SetTemperature( b )
 		self.m_bTemp = b
 		if b then
-			self:SetUnit( StormFox.Temperature.GetDisplaySymbol() )
+			self:SetUnit( StormFox2.Temperature.GetDisplaySymbol() )
 		else
 			self:SetUnit(nil)
 		end

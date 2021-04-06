@@ -204,9 +204,9 @@ local eye_mult = -.0001
 		return Color( Lerp(f, col1.r, col2.r), Lerp(f, col1.g, col2.g), Lerp(f, col1.b, col2.b) )
 	end
 -- Cloud movement
-	hook.Add("PreRender","StormFox.Client.CloudMove",function()
-		local w_ang = rad(StormFox.Wind.GetYaw())
-		local w_force = max(StormFox.Wind.GetForce(),0.1) * 0.08 * RealFrameTime()
+	hook.Add("PreRender","StormFox2.Client.CloudMove",function()
+		local w_ang = rad(StormFox2.Wind.GetYaw())
+		local w_force = max(StormFox2.Wind.GetForce(),0.1) * 0.08 * RealFrameTime()
 		local x_w,y_w = cos(w_ang) * w_force,sin(w_ang) * w_force
 		for i = 1,layers do
 			local ri = (layers - i + 1)
@@ -215,19 +215,19 @@ local eye_mult = -.0001
 		end
 	end)
 
-hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function(eye)
-	if not StormFox then return end
-	if not StormFox.Mixer then return end
-	local cl_amd = StormFox.Mixer.Get("clouds",0)
+hook.Add("StormFox2.2DSkybox.CloudLayer","StormFox2.Client.Clouds",function(eye)
+	if not StormFox2 then return end
+	if not StormFox2.Mixer then return end
+	local cl_amd = StormFox2.Mixer.Get("clouds",0)
 	--if cl_amd <= 0 then return end
 		-- Update material-color
-		local c = StormFox.Mixer.Get("bottomColor") or Color(204, 255, 255)
+		local c = StormFox2.Mixer.Get("bottomColor") or Color(204, 255, 255)
 		-- Render sideclouds
 		local vec = Vector(c.r,c.g,c.b) / 255
 		for k,v in ipairs(side_clouds) do
 			v[1]:SetVector("$color",vec)
 		end
-		local cloud_speed = StormFox.Time.GetSpeed() * 0.1
+		local cloud_speed = StormFox2.Time.GetSpeed() * 0.1
 		local sideclouds = 10 * cl_amd
 		for i = 1,sideclouds do
 			local a = 1
@@ -244,8 +244,8 @@ hook.Add("StormFox.2DSkybox.CloudLayer","StormFox.Client.Clouds",function(eye)
 		local up = Vector(0,0,1)
 		local n = max(0,min(math.ceil(layers * cl_amd),layers))
 		local thunder = 0
-		if StormFox.Thunder then
-			thunder = min(255,StormFox.Thunder.GetLight() or 0) / 25
+		if StormFox2.Thunder then
+			thunder = min(255,StormFox2.Thunder.GetLight() or 0) / 25
 		end
 		for i = 1,n do
 			local ri = n - i + layers

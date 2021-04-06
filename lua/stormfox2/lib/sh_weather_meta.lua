@@ -1,5 +1,5 @@
 
-StormFox.Weather = {}
+StormFox2.Weather = {}
 local Weathers = {}
 -- Diffrent stamps on where the sun are. (Remember, SF goes after sunrise/set)
 	SF_SKY_DAY = 0
@@ -33,7 +33,7 @@ function w_meta:IsValid()
 	return true
 end
 
-function StormFox.Weather.Add( sName, sInherit )
+function StormFox2.Weather.Add( sName, sInherit )
 	if Weathers[sName] then return Weathers[sName] end
 	local t = {}
 	t.ID = table.Count(Weathers) + 1
@@ -47,19 +47,19 @@ function StormFox.Weather.Add( sName, sInherit )
 	t.Static = {}
 	t.Dynamic = {}
 	t.SunStamp = {}
-	StormFox.Msg("Weather added: " .. sName)
+	StormFox2.Msg("Weather added: " .. sName)
 	return t
 end
 
-function StormFox.Weather.Get( sName )
+function StormFox2.Weather.Get( sName )
 	return Weathers[sName]
 end
 
-function StormFox.Weather.GetAll()
+function StormFox2.Weather.GetAll()
 	return table.GetKeys( Weathers )
 end
 
-function StormFox.Weather.GetAllSpawnable()
+function StormFox2.Weather.GetAllSpawnable()
 	local t = {}
 	for w, v in pairs( Weathers ) do
 		if v.spawnable and w ~= "Clear" then -- clear is default
@@ -85,7 +85,7 @@ function w_meta:Set(sKey,zVariable, bStatic)
 end
 
 local r_list = {"Terrain", "windRender", "windRenderRef", "windRender64", "windRenderRef64"}
-function StormFox.Weather.GetKeys()
+function StormFox2.Weather.GetKeys()
 	if l_c == l_e then
 		return c_c
 	end
@@ -151,7 +151,7 @@ do
 		if not self.Inherit then return nil end
 		if not Weathers[self.Inherit] then return nil end -- Inherit is invalid
 		if table.HasValue(in_list, self.Inherit) then -- Loop detected
-			StormFox.Warning("WeatherData loop detected! [" .. table.concat(in_list, "]->[") .. "]->[" .. self.Inherit .. "]")
+			StormFox2.Warning("WeatherData loop detected! [" .. table.concat(in_list, "]->[") .. "]->[" .. self.Inherit .. "]")
 			return
 		end
 		table.insert(in_list, self.Name)
@@ -186,8 +186,8 @@ end
 --[[<Shared>------------------------------------------------------------------
 	Returns the "lightlevel" of the skybox in a range of 0-255.
 ---------------------------------------------------------------------------]]
-function StormFox.Weather.GetLuminance()
-	local Col = StormFox.Mixer.Get("bottomColor") or Color(255,255,255)
+function StormFox2.Weather.GetLuminance()
+	local Col = StormFox2.Mixer.Get("bottomColor") or Color(255,255,255)
 	return 0.2126 * Col.r + 0.7152 * Col.g + 0.0722 * Col.b
 end
 

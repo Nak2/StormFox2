@@ -92,9 +92,9 @@ else
 			end
 		-- Render checks
 			if ( halo.RenderedEntity() == self ) then return end
-			if not StormFox then return end
-			if not StormFox.Time then return end
-			if not StormFox.Weather then return end
+			if not StormFox2 then return end
+			if not StormFox2.Time then return end
+			if not StormFox2.Weather then return end
 		-- Draw holo-light
 			local a = self:GetAngles()
 			local f = math.random(78,80)
@@ -122,10 +122,10 @@ else
 			end
 			if _showWeather and mode ~= 1 or mode == 2 then
 				surface.SetDrawColor(col)
-				surface.SetMaterial(StormFox.Weather.GetIcon())
+				surface.SetMaterial(StormFox2.Weather.GetIcon())
 				surface.SetTextColor(col)
 				surface.SetFont("SkyFox-DigitalClock")
-				local temp = round(StormFox.Temperature.GetDisplay() ,1) .. StormFox.Temperature.GetDisplaySymbol()
+				local temp = round(StormFox2.Temperature.GetDisplay() ,1) .. StormFox2.Temperature.GetDisplaySymbol()
 
 				text_length = surface.GetTextSize(temp)
 				surface.SetTextPos(-text_length / 2,-30)
@@ -134,7 +134,7 @@ else
 			else
 				surface.SetTextColor(col)
 				surface.SetFont("SkyFox-DigitalClock")
-				local text = StormFox.Time.GetDisplay()
+				local text = StormFox2.Time.GetDisplay()
 				local text_length = surface.GetTextSize(text)
 				surface.SetTextPos(-text_length / 2,-30)
 				surface.DrawText(text)

@@ -1,31 +1,31 @@
 --[[-------------------------------------------------------------------------
 	My god, look at the time.
 
-	StormFox.Time.GetTime(bNearestSecond) 						[nTime] 		-- Returns the time number. Between 0 and 1440
-	StormFox.Time.TimeToString(nTime = current time,bUse12Hour) [sTime] 		-- Returns the time as a string.
-	StormFox.Time.IsDay()										[bIsDay] 		-- Returns true if its day
-	StormFox.Time.IsNight()										[bIsNight] 		-- Returns true if its night
-	StormFox.Time.GetStamp(nTime = current time)				[nTimeStamp] 	-- Returns a timestamp.
+	StormFox2.Time.GetTime(bNearestSecond) 						[nTime] 		-- Returns the time number. Between 0 and 1440
+	StormFox2.Time.TimeToString(nTime = current time,bUse12Hour) [sTime] 		-- Returns the time as a string.
+	StormFox2.Time.IsDay()										[bIsDay] 		-- Returns true if its day
+	StormFox2.Time.IsNight()										[bIsNight] 		-- Returns true if its night
+	StormFox2.Time.GetStamp(nTime = current time)				[nTimeStamp] 	-- Returns a timestamp.
 
 	SERVER
-		StormFox.Time.Set(nTime or string)			-- Sets the time. Also supports a string "12:00" or "5:00 AM".		
-		StormFox.Time.SetSpeed(nSpeed) 			-- Sets the timespeed.
+		StormFox2.Time.Set(nTime or string)			-- Sets the time. Also supports a string "12:00" or "5:00 AM".		
+		StormFox2.Time.SetSpeed(nSpeed) 			-- Sets the timespeed.
 
 	Hooks:
-		StormFox.Time.Set 									-- Called when the time gets set.
-		StormFox.Time.NewStamp 		NewStamp 	OldStamp	-- Callend when the time matches a new stamp
+		StormFox2.Time.Set 									-- Called when the time gets set.
+		StormFox2.Time.NewStamp 		NewStamp 	OldStamp	-- Callend when the time matches a new stamp
 
 	BASE_TIME is CurTime + StartTime
 ---------------------------------------------------------------------------]]
-StormFox.Time = StormFox.Time or {}
+StormFox2.Time = StormFox2.Time or {}
 -- Settings
-	StormFox.Setting.AddSV("start_time",-1,nil,"Time")
-	StormFox.Setting.SetType("start_time","Time_toggle")
+	StormFox2.Setting.AddSV("start_time",-1,nil,"Time")
+	StormFox2.Setting.SetType("start_time","Time_toggle")
 
-	StormFox.Setting.AddSV("time_speed",60,nil,"Time",0, 3600)
-	StormFox.Setting.SetType( "time_speed", "Float")
+	StormFox2.Setting.AddSV("time_speed",60,nil,"Time",0, 3600)
+	StormFox2.Setting.SetType( "time_speed", "Float")
 
-	StormFox.Setting.AddSV("real_time",false,nil,"Time")
+	StormFox2.Setting.AddSV("real_time",false,nil,"Time")
 
 
 -- Time stamps
@@ -54,7 +54,7 @@ StormFox.Time = StormFox.Time or {}
 	--[[-------------------------------------------------------------------------
 	Returns the given time as a number. Supports both "13:00" and "1:00 PM"
 	---------------------------------------------------------------------------]]
-	function StormFox.Time.StringToTime(sTime)
+	function StormFox2.Time.StringToTime(sTime)
 		str = thinkingBox(sTime)
 		if not str then return end
 		local a = string.Explode( ":", str )
@@ -76,12 +76,12 @@ StormFox.Time = StormFox.Time or {}
 	end
 
 -- Get the start time.
-	local start = StormFox.Setting.Get("start_time",-1)
-	local TIME_SPEED = (StormFox.Setting.Get("time_speed",60) or 60) / 60
+	local start = StormFox2.Setting.Get("start_time",-1)
+	local TIME_SPEED = (StormFox2.Setting.Get("time_speed",60) or 60) / 60
 	if SERVER then
 		-- Use server time
-		if StormFox.Setting.Get("real_time",false) then
-			StormFox.Setting.Set("time_speed",1)
+		if StormFox2.Setting.Get("real_time",false) then
+			StormFox2.Setting.Set("time_speed",1)
 			TIME_SPEED = 1 / 60
 			local dt = string.Explode(":",os.date("%H:%M:%S"))
 			start = tonumber(dt[1]) * 60 + tonumber(dt[2]) + tonumber(dt[3]) / 60
@@ -89,20 +89,20 @@ StormFox.Time = StormFox.Time or {}
 			start = cookie.GetNumber("sf_lasttime",math.random(1300))
 		end
 
-		StormFox.Setting.Callback("real_time",function(vVar,vOldVar,sName, sID)
+		StormFox2.Setting.Callback("real_time",function(vVar,vOldVar,sName, sID)
 			if not vVar then return end
-			StormFox.Setting.Set("time_speed",1)
+			StormFox2.Setting.Set("time_speed",1)
 			TIME_SPEED = 1 / 60
-			StormFox.Setting.Set("start_time",-1)
+			StormFox2.Setting.Set("start_time",-1)
 			local dt = string.Explode(":",os.date("%H:%M:%S"))
 			local n = dt[1] * 60 + dt[2] + dt[3] / 60
-			StormFox.Time.Set(n)
+			StormFox2.Time.Set(n)
 		end,"sf_rttrigger")
 
-		StormFox.Setting.Callback("start_time",function(vVar,vOldVar,sName, sID)
+		StormFox2.Setting.Callback("start_time",function(vVar,vOldVar,sName, sID)
 			if not vVar then return end
 			if vVar < 0 then return end
-			StormFox.Setting.Set("real_time",false)
+			StormFox2.Setting.Set("real_time",false)
 		end,"sf_sttrigger")
 	end
 
@@ -115,16 +115,16 @@ StormFox.Time = StormFox.Time or {}
 	end
 -- Functions
 	--[[-------------------------------------------------------------------------
-	A syncronised number used by the client to calculate the time. Use instead StormFox.Time.Get
+	A syncronised number used by the client to calculate the time. Use instead StormFox2.Time.Get
 	---------------------------------------------------------------------------]]
-	function StormFox.Time.GetBASE_TIME()
+	function StormFox2.Time.GetBASE_TIME()
 		return BASETIME
 	end
 	--[[-------------------------------------------------------------------------
 	Returns a number between 0 and 1400. Where 0 and 1400 is midnight.
 	---------------------------------------------------------------------------]]
 	local c
-	function StormFox.Time.Get(bNearestSecond)
+	function StormFox2.Time.Get(bNearestSecond)
 		if bNearestSecond and c then
 			return c
 		end
@@ -141,12 +141,12 @@ StormFox.Time = StormFox.Time or {}
 		if bNearestSecond then return c end
 		return n % 1440
 	end
-	timer.Create("stormfox.time.cache", 0, 0, function() c = nil end)
+	timer.Create("StormFox2.time.cache", 0, 0, function() c = nil end)
 	--[[-------------------------------------------------------------------------
 	Returns the given or current time in a string format.
 	---------------------------------------------------------------------------]]
-	function StormFox.Time.TimeToString(nTime,bUse12Hour)
-		if not nTime then nTime = StormFox.Time.Get(true) end
+	function StormFox2.Time.TimeToString(nTime,bUse12Hour)
+		if not nTime then nTime = StormFox2.Time.Get(true) end
 		local h = math.floor(nTime / 60)
 		local m = math.floor(nTime - (h * 60))
 		if not bUse12Hour then return h .. ":" .. (m < 10 and "0" or "") .. m end
@@ -164,7 +164,7 @@ StormFox.Time = StormFox.Time or {}
 	--[[-------------------------------------------------------------------------
 	Returns the timespeed (1 = 60 ingame-seconds)
 	---------------------------------------------------------------------------]]
-	function StormFox.Time.GetSpeed()
+	function StormFox2.Time.GetSpeed()
 		return TIME_SPEED
 	end
 -- Easy functions
@@ -172,27 +172,27 @@ StormFox.Time = StormFox.Time or {}
 	Returns true if the current or given time is doing the day.
 
 	Do note that this won’t be affected by custom sunset/rises. 
-	Use StormFox.Sun.IsUp if you want to check if the sun is on the sky.
+	Use StormFox2.Sun.IsUp if you want to check if the sun is on the sky.
 	---------------------------------------------------------------------------]]
-	function StormFox.Time.IsDay(nTime)
-		local t = nTime or StormFox.Time.Get()
+	function StormFox2.Time.IsDay(nTime)
+		local t = nTime or StormFox2.Time.Get()
 		return t > 360 and t < 1080
 	end
 	--[[-------------------------------------------------------------------------
 	Returns true if the current or given time is doing the night.
 
 	Do note that this won’t be affected by custom sunset/rises.
-	Use StormFox.Sun.IsUp if you want to check if the sun is on the sky.
+	Use StormFox2.Sun.IsUp if you want to check if the sun is on the sky.
 	---------------------------------------------------------------------------]]
-	function StormFox.Time.IsNight(nTime)
-		return not StormFox.Time.IsDay(nTime)
+	function StormFox2.Time.IsNight(nTime)
+		return not StormFox2.Time.IsDay(nTime)
 	end
 	--[[-------------------------------------------------------------------------
 	Returns true if the current or given time is between FromTime to ToTime.
-	E.g Dinner = StormFox.Time.IsBetween(700,740)
+	E.g Dinner = StormFox2.Time.IsBetween(700,740)
 	---------------------------------------------------------------------------]]
-	function StormFox.Time.IsBetween(nFromTime,nToTime,nCurrentTime)
-		if not nCurrentTime then nCurrentTime = StormFox.Time.Get() end
+	function StormFox2.Time.IsBetween(nFromTime,nToTime,nCurrentTime)
+		if not nCurrentTime then nCurrentTime = StormFox2.Time.Get() end
 		if nFromTime < nToTime then
 			return nTime <= nCurrentTime and nToTime >= nCurrentTime
 		end
@@ -201,7 +201,7 @@ StormFox.Time = StormFox.Time or {}
 	--[[-------------------------------------------------------------------------
 	Returns the time between Time and Time2 in numbers.
 	---------------------------------------------------------------------------]]
-	function StormFox.Time.DeltaTime(nTime,nTime2)
+	function StormFox2.Time.DeltaTime(nTime,nTime2)
 		if nTime2 >= nTime then return nTime2 - nTime end
 		return (1440 - nTime) + nTime2
 	end
@@ -219,36 +219,36 @@ StormFox.Time = StormFox.Time or {}
 		return SF_NIGHT
 	end
 	local num = 0
-	timer.Create("StormFox.Time.StampCreator",0.5,0,function()
-		local nTime = StormFox.Time.Get()
+	timer.Create("StormFox2.Time.StampCreator",0.5,0,function()
+		local nTime = StormFox2.Time.Get()
 		local lastStamp = currentStamp
 		currentStamp = timeToStamp(nTime)
 		if nTime <  num or TIME_SPEED > 2880 then
 			--[[-------------------------------------------------------------------------
 			Gets called on a new day.
 			---------------------------------------------------------------------------]]
-			hook.Run("StormFox.Time.NextDay", 1 + math.floor(TIME_SPEED / 2880))
+			hook.Run("StormFox2.Time.NextDay", 1 + math.floor(TIME_SPEED / 2880))
 			num = nTime
 		else
 			num = nTime
 		end
 		if not lastStamp then return end -- No last stamp.
 		if lastStamp == currentStamp then return end -- No change
-			hook.Run("StormFox.Time.NewStamp",currentStamp,lastStamp)
+			hook.Run("StormFox2.Time.NewStamp",currentStamp,lastStamp)
 	end)
 	--[[-------------------------------------------------------------------------
 	Returns the timestamp
 	(This will be removed, as sun is now dynamic)
 	---------------------------------------------------------------------------]]
-	function StormFox.Time.GetStamp(nTime)
-		if not nTime then nTime = StormFox.Time.Get() end
+	function StormFox2.Time.GetStamp(nTime)
+		if not nTime then nTime = StormFox2.Time.Get() end
 		return timeToStamp(nTime)
 	end
 
 -- Network
 	if SERVER then
 		local function UpdateTime(ply)
-			net.Start( "StormFox.SetTimeData" )
+			net.Start( "StormFox2.SetTimeData" )
 				net.WriteFloat( BASETIME )
 				net.WriteFloat( TIME_SPEED )
 			if ply then
@@ -259,16 +259,16 @@ StormFox.Time = StormFox.Time or {}
 			--[[-------------------------------------------------------------------------
 			This gets called when the user changes the time or timespeed. Used to recalculate things.
 			---------------------------------------------------------------------------]]
-			hook.Run("StormFox.Time.Changed")
+			hook.Run("StormFox2.Time.Changed")
 		end
-		util.AddNetworkString( "StormFox.SetTimeData" )
-		hook.Add( "stormFox.data.initspawn", "stormfox.settimedata",UpdateTime )
+		util.AddNetworkString( "StormFox2.SetTimeData" )
+		hook.Add( "StormFox2.data.initspawn", "StormFox2.settimedata",UpdateTime )
 		--[[<Server>-------------------------------------------------------------------------
 			Sets the time. Also supports a string "12:00" or "5:00 AM".
 		---------------------------------------------------------------------------]]
-		function StormFox.Time.Set(nsTime)
+		function StormFox2.Time.Set(nsTime)
 			if type(nsTime) == "string" then
-				nsTime = StormFox.Time.StringToTime(nsTime)
+				nsTime = StormFox2.Time.StringToTime(nsTime)
 			end
 			if TIME_SPEED <= 0 then
 				BASETIME = nsTime
@@ -280,50 +280,50 @@ StormFox.Time = StormFox.Time or {}
 		--[[<Server>---------------------------------------------------------------------
 		Sets the timespeed.
 		---------------------------------------------------------------------------]]
-		function StormFox.Time.SetSpeed(nSpeed)
-			local cur = StormFox.Time.Get()
+		function StormFox2.Time.SetSpeed(nSpeed)
+			local cur = StormFox2.Time.Get()
 			TIME_SPEED = nSpeed / 60
-			StormFox.Time.Set(cur)
-			hook.Run( "StormFox.Time.Set")
+			StormFox2.Time.Set(cur)
+			hook.Run( "StormFox2.Time.Set")
 		end
-		StormFox.Setting.Callback("time_speed",function(nSpeed)
-			StormFox.Time.SetSpeed(nSpeed)
+		StormFox2.Setting.Callback("time_speed",function(nSpeed)
+			StormFox2.Time.SetSpeed(nSpeed)
 		end,"sf_convar_ts")
 		UpdateTime() -- In case of reloads.
 	else
-		net.Receive("StormFox.SetTimeData",function(len)
+		net.Receive("StormFox2.SetTimeData",function(len)
 			BASETIME = net.ReadFloat()
 			TIME_SPEED = net.ReadFloat()
-			hook.Run( "StormFox.Time.Set")
-			hook.Run("StormFox.Time.Changed")
+			hook.Run( "StormFox2.Time.Set")
+			hook.Run("StormFox2.Time.Changed")
 		end)
 	end
 
 -- Settings update
 	if SERVER then
-		hook.Add("StormFox.Settings.Update","StormFox.Time.UpdateSetting",function(key,_)
+		hook.Add("StormFox2.Settings.Update","StormFox2.Time.UpdateSetting",function(key,_)
 			if key == "time_speed" then
-				local n_s = StormFox.Settings.GetNumber("time_speed",1)
+				local n_s = StormFox2.Settings.GetNumber("time_speed",1)
 				if n_s == TIME_SPEED then return end -- No change
-				StormFox.Time.SetSpeed(TIME_SPEED)
+				StormFox2.Time.SetSpeed(TIME_SPEED)
 			elseif key == "real_time" then
-				if not StormFox.Settings.IsTrue("real_time") then return end
+				if not StormFox2.Settings.IsTrue("real_time") then return end
 				TIME_SPEED = 1 / 60
 				local dt = string.Explode(":",os.date("%H:%M:%S"))
-				StormFox.Time.Set(dt[1] * 60 + dt[2] + dt[3] / 60)
+				StormFox2.Time.Set(dt[1] * 60 + dt[2] + dt[3] / 60)
 			end
 		end)
 		-- Cookie save. 
-		hook.Add("ShutDown","StormFox.Time.Save",function()
-			StormFox.Msg("Saving time | " .. StormFox.Time.TimeToString())
-			cookie.Set("sf_lasttime",StormFox.Time.Get(true))
+		hook.Add("ShutDown","StormFox2.Time.Save",function()
+			StormFox2.Msg("Saving time | " .. StormFox2.Time.TimeToString())
+			cookie.Set("sf_lasttime",StormFox2.Time.Get(true))
 		end)
 		cookie.Delete("sf_lasttime") -- Always delete this at launch.
 		-- Loading things sometimes desync
-		if StormFox.Setting.Get("real_time",false) then
+		if StormFox2.Setting.Get("real_time",false) then
 			timer.Simple(1, function()
 				local dt = string.Explode(":",os.date("%H:%M:%S"))
-				StormFox.Time.Set(tonumber(dt[1]) * 60 + tonumber(dt[2]) + tonumber(dt[3]) / 60)
+				StormFox2.Time.Set(tonumber(dt[1]) * 60 + tonumber(dt[2]) + tonumber(dt[3]) / 60)
 			end)
 		end
 	end
@@ -337,16 +337,16 @@ if CLIENT then
 	Australia, New Zealand, India, Pakistan, Bangladesh, Malaysia, Malta, Egypt, Mexico and the former American colony of the Philippines
 	]]
 	local default_12 = table.HasValue(h12_countries, country)
-	StormFox.Setting.AddCL("12h_display",default_12,"Changes how time is displayed.","Time")
-	StormFox.Setting.SetType( "12h_display", {
+	StormFox2.Setting.AddCL("12h_display",default_12,"Changes how time is displayed.","Time")
+	StormFox2.Setting.SetType( "12h_display", {
 		[0] = "24h clock",
 		[1] = "12h clock"
 	} )
 	--[[-------------------------------------------------------------------------
 	Returns the time in a string, matching the players setting.
 	---------------------------------------------------------------------------]]
-	function StormFox.Time.GetDisplay(nTime)
-		local use_12 = StormFox.Setting.GetCache("12h_display",default_12)
-		return StormFox.Time.TimeToString(nTime,use_12)
+	function StormFox2.Time.GetDisplay(nTime)
+		local use_12 = StormFox2.Setting.GetCache("12h_display",default_12)
+		return StormFox2.Time.TimeToString(nTime,use_12)
 	end
 end

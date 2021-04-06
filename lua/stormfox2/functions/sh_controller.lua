@@ -1,6 +1,6 @@
 
 -- Weather functions
-StormFox.Menu = StormFox.Menu or {}
+StormFox2.Menu = StormFox2.Menu or {}
 local SF_SETWEATHER = 0
 local SF_SETTEMP	= 1
 local SF_SETWIND_A	= 2
@@ -12,52 +12,52 @@ local SF_YEARDAY	= 7
 
 if SERVER then
 	-- Gets called from sh_permission.lua
-	function StormFox.Menu.SetWeatherData(ply, uID, var)
+	function StormFox2.Menu.SetWeatherData(ply, uID, var)
 		if uID == SF_SETWEATHER and type(var) == "table" then
 			if type(var[1]) ~= "string" or type(var[2])~= "number" then return end
-			StormFox.Weather.Set( var[1], var[2] )
+			StormFox2.Weather.Set( var[1], var[2] )
 		elseif uID == SF_SETTEMP and type(var) == "number" then
-			StormFox.Temperature.Set( var )
+			StormFox2.Temperature.Set( var )
 		elseif uID == SF_SETWIND_F and type(var) == "number" then
-			StormFox.Wind.SetForce( var, 3 )
+			StormFox2.Wind.SetForce( var, 3 )
 		elseif uID == SF_SETWIND_A and type(var) == "number" then
-			StormFox.Wind.SetYaw( var, 3 )
+			StormFox2.Wind.SetYaw( var, 3 )
 		elseif uID == SF_SETTIME and type(var) == "number" then
-			StormFox.Time.Set( var )
+			StormFox2.Time.Set( var )
 		elseif uID == SF_SETTIME_S and type(var) == "number" then
-			StormFox.Time.SetSpeed( var )
+			StormFox2.Time.SetSpeed( var )
 		elseif uID == SF_THUNDER and type(var) == "boolean" then
-			StormFox.Thunder.SetEnabled(var)
+			StormFox2.Thunder.SetEnabled(var)
 		elseif uID == SF_YEARDAY and type(var) == "number" then
-			StormFox.Date.SetYearDay( var )
+			StormFox2.Date.SetYearDay( var )
 		end
 	end
 
 	concommand.Add("stormfox2_setweather", function(ply, _, arg, _)
 		if #arg < 1 then return end
 		local s = string.upper(string.sub(arg[1],0,1)) .. string.lower(string.sub(arg[1], 2))
-		StormFox.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
-			StormFox.Weather.Set( s, tonumber( arg[2] or "1" ) or 1)
+		StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
+			StormFox2.Weather.Set( s, tonumber( arg[2] or "1" ) or 1)
 		end)
 	end)
 
 	concommand.Add("stormfox2_setthunder", function(ply, _, _, argS)
-		StormFox.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
+		StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
 			local n = tonumber(argS)
 			if n == 1 then n = 6 end
-			StormFox.Thunder.SetEnabled( n > 0, n )
+			StormFox2.Thunder.SetEnabled( n > 0, n )
 		end)
 	end)
 
 	concommand.Add("stormfox2_settime", function(ply, _, _, argS)
-		StormFox.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
-			StormFox.Time.Set( argS )
+		StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
+			StormFox2.Time.Set( argS )
 		end)
 	end)
 
 	concommand.Add("stormfox2_settimespeed", function(ply, _, _, argS)
-		StormFox.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
-			StormFox.Time.SetSpeed( tonumber(argS) or 60 )
+		StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
+			StormFox2.Time.SetSpeed( tonumber(argS) or 60 )
 		end)
 	end)
 	return
@@ -65,7 +65,7 @@ end
 
 -- Send a request to change the weather
 local function SetWeather( uID, var )
-	net.Start("stormfox.permission")
+	net.Start("StormFox2.permission")
 		net.WriteUInt(1, 1)	-- SF_SERVEREDIT
 		net.WriteUInt(uID, 4)
 		net.WriteType(var)
@@ -233,7 +233,7 @@ local function Init(self)
 		surface.SetDrawColor(side_color)
 		surface.DrawRect(0,0,w,h)
 		-- Top
-		local t = "StormFox " .. (StormFox.Version or "?")
+		local t = "StormFox " .. (StormFox2.Version or "?")
 		surface.SetDrawColor(p_col)
 		surface.DrawRect(0,0,w,24)
 
@@ -269,10 +269,10 @@ local function Init(self)
 		local p = SliderNumber( self )
 		p:SetToolTip('#sf_weatherpercent')
 		p:SetTextSize(40)
-		if StormFox.Weather.GetCurrent() == StormFox.Weather.Get('Clear') then
+		if StormFox2.Weather.GetCurrent() == StormFox2.Weather.Get('Clear') then
 			p:SetVal(85)
 		else
-			p:SetVal(math.Round(math.Clamp(StormFox.Weather.GetPercent() * 100, 0, 100), 2))
+			p:SetVal(math.Round(math.Clamp(StormFox2.Weather.GetPercent() * 100, 0, 100), 2))
 		end
 		function m_weather:PerformLayout(w, h)
 			w_button:SetWide(w * 0.7)
@@ -288,7 +288,7 @@ local function Init(self)
 				w_select:SetPos(w * 0.05 + (w * 0.9 - wide) / 2 , 32)
 			end
 		end
-		local t = StormFox.Weather.GetAll()
+		local t = StormFox2.Weather.GetAll()
 		for k,v in ipairs(t) do
 			local b = vgui.Create("DButton",w_select)
 			b:SetSize(32,32)
@@ -298,14 +298,14 @@ local function Init(self)
 			b.weather = v
 			b:SetToolTip(v)
 			function b:OnCursorEntered()
-				local w = StormFox.Weather.Get(self.weather)
+				local w = StormFox2.Weather.Get(self.weather)
 				if not IsValid(w) then return end -- Something bad happen
-				b:SetToolTip(w:GetName(StormFox.Time.Get(), StormFox.Temperature.Get(), StormFox.Wind.GetForce(), StormFox.Thunder.IsThundering(), p:GetVal() / 100))
+				b:SetToolTip(w:GetName(StormFox2.Time.Get(), StormFox2.Temperature.Get(), StormFox2.Wind.GetForce(), StormFox2.Thunder.IsThundering(), p:GetVal() / 100))
 			end
 			function b:Paint(w,h)
 				DrawButton(self,w,h)
-				local weather = StormFox.Weather.Get(b.weather)
-				local mat = weather.GetSymbol and weather.GetSymbol(_,StormFox.Temperature.Get())
+				local weather = StormFox2.Weather.Get(b.weather)
+				local mat = weather.GetSymbol and weather.GetSymbol(_,StormFox2.Temperature.Get())
 				if mat then
 					surface.SetDrawColor(255,255,255)
 					surface.SetMaterial(mat)
@@ -339,22 +339,22 @@ local function Init(self)
 			surface.DrawText(self.text)
 		end
 		local tempslider = SliderNumber(self)
-		local function Conv( n ) return math.Round(StormFox.Temperature.Convert(nil,StormFox.Temperature.GetDisplayType(),n), 1) end
+		local function Conv( n ) return math.Round(StormFox2.Temperature.Convert(nil,StormFox2.Temperature.GetDisplayType(),n), 1) end
 		tempslider:DockMargin(padding,0,padding,padding_y)
 		tempslider:Dock(TOP)
 		tempslider:SetMin(Conv(-20))
 		tempslider:SetMax(Conv(40))
 		tempslider:SetTextSize(40)
 		function tempslider:OnVal( num )
-			num = math.Round(StormFox.Temperature.Convert(StormFox.Temperature.GetDisplayType(),nil,num), 1)
+			num = math.Round(StormFox2.Temperature.Convert(StormFox2.Temperature.GetDisplayType(),nil,num), 1)
 			SetWeather(SF_SETTEMP, num)
 		end
 		function tempslider:DrawText( n )
-			return n .. StormFox.Temperature.GetDisplaySymbol()
+			return n .. StormFox2.Temperature.GetDisplaySymbol()
 		end
-		tempslider:SetVal( math.Round(StormFox.Temperature.GetDisplay(),1) )
+		tempslider:SetVal( math.Round(StormFox2.Temperature.GetDisplay(),1) )
 		function tempslider:Think()
-			tempslider:SetVal( math.Round(StormFox.Temperature.GetDisplay(),1) )
+			tempslider:SetVal( math.Round(StormFox2.Temperature.GetDisplay(),1) )
 		end
 	-- Wind Ang
 		local t = vgui.Create("DPanel", self)
@@ -386,8 +386,8 @@ local function Init(self)
 			surface.SetMaterial(m_cir)
 			surface.DrawTexturedRect(0,0,w,h)
 
-			local windang = EyeAngles().y - (StormFox.Wind.GetYaw() or 0)
-			local wind = StormFox.Wind.GetForce() or 0
+			local windang = EyeAngles().y - (StormFox2.Wind.GetYaw() or 0)
+			local wind = StormFox2.Wind.GetForce() or 0
 			local t = {{x = w / 2,y = h / 2, u=0.5,v=0.5}}
 			local l = math.Clamp(wind,0,70) / 3
 			if l < 1 then
@@ -424,8 +424,8 @@ local function Init(self)
 		p:Dock(TOP)
 		p:DockMargin(padding,padding_y,padding,0)
 		function p:Paint(w,h)
-			local f = math.Round(StormFox.Wind.GetForce() or 0, 1)
-			local bf,desc = StormFox.Wind.GetBeaufort(f)
+			local f = math.Round(StormFox2.Wind.GetForce() or 0, 1)
+			local bf,desc = StormFox2.Wind.GetBeaufort(f)
 			local text = f .."m/s : " .. language.GetPhrase(desc)
 			surface.SetFont("DermaDefault")
 			surface.SetTextColor(color_white)
@@ -440,12 +440,12 @@ local function Init(self)
 		windslide:SetMin(0)
 		windslide:SetMax(70)
 		windslide:SetTextSize(0)
-		windslide:SetVal( StormFox.Wind.GetForce() or 0 )
+		windslide:SetVal( StormFox2.Wind.GetForce() or 0 )
 		function windslide:OnVal( num )
 			SetWeather(SF_SETWIND_F, num)
 		end
 		function windslide:Think()
-			windslide:SetVal( StormFox.Wind.GetForce() or 0 )
+			windslide:SetVal( StormFox2.Wind.GetForce() or 0 )
 		end
 	-- Time
 		local t = vgui.Create("DPanel", self)
@@ -461,7 +461,7 @@ local function Init(self)
 			surface.SetTextPos(w / 2 - tw / 2,th / 2 - 2)
 			surface.DrawText(self.text)
 		end
-		local use_12 = StormFox.Setting.GetCache("12h_display",false)
+		local use_12 = StormFox2.Setting.GetCache("12h_display",false)
 		local p = vgui.Create("DButton", self)
 		p:SetText("")
 		p:SetTall(26)
@@ -469,7 +469,7 @@ local function Init(self)
 		p:Dock(TOP)
 		function p:Paint(w,h)
 			DrawButton(self,w,h)
-			local t = StormFox.Time.GetDisplay()
+			local t = StormFox2.Time.GetDisplay()
 			surface.SetFont("SF2.W_Button")
 			local tw,th = surface.GetTextSize(t)
 			surface.SetTextColor(color_white)
@@ -483,7 +483,7 @@ local function Init(self)
 			self._m = vgui.Create("DTextEntry", self)
 			self._m:SetWide( self:GetWide() )
 			self._m:SetTall( self:GetTall() )
-			self._m:SetText( StormFox.Time.GetDisplay() )
+			self._m:SetText( StormFox2.Time.GetDisplay() )
 			self._m._f = false
 			
 			function self._m:Think()
@@ -496,7 +496,7 @@ local function Init(self)
 			self._m:RequestFocus()
 
 			self._m.OnEnter = function( self )
-				local v = StormFox.Time.StringToTime( self:GetValue() )
+				local v = StormFox2.Time.StringToTime( self:GetValue() )
 				if v then
 					SetWeather(SF_SETTIME, v)
 				end
@@ -508,16 +508,16 @@ end
 
 -- Caht status
 local openChat = false
-hook.Add("StartChat","StormFox.Controller.Disable",function()
+hook.Add("StartChat","StormFox2.Controller.Disable",function()
 	openChat = true
 end)
-hook.Add("FinishChat","StormFox.Controller.Enable",function()
+hook.Add("FinishChat","StormFox2.Controller.Enable",function()
 	openChat = false
 end)
 
 local mat = Material("gui/workshop_rocket.png")
 local c = Color(55,55,55)
-function StormFox.Menu._OpenController()
+function StormFox2.Menu._OpenController()
 	if _SF_CONTROLLER then
 		_SF_CONTROLLER:Remove()
 	end
@@ -566,19 +566,19 @@ function StormFox.Menu._OpenController()
 	return _SF_CONTROLLER
 end
 
-function StormFox.Menu.OpenController()
-	net.Start("stormfox.menu")
+function StormFox2.Menu.OpenController()
+	net.Start("StormFox2.menu")
 		net.WriteBool(false)
 	net.SendToServer()
 end
 
-function StormFox.Menu.CloseController()
+function StormFox2.Menu.CloseController()
 	if _SF_CONTROLLER then
 		_SF_CONTROLLER:Remove()
 	end
 end
 
-concommand.Add('stormfox2_controller', StormFox.Menu.OpenController, nil, "Opens SF controller menu")
+concommand.Add('stormfox2_controller', StormFox2.Menu.OpenController, nil, "Opens SF controller menu")
 
 list.Set( "DesktopWindows", "StormFoxController", {
 	title		= "#sf_wcontoller",
@@ -589,7 +589,7 @@ list.Set( "DesktopWindows", "StormFoxController", {
 	init		= function( icon, window )
 		window:Remove()
 		surface.PlaySound("buttons/button14.wav")
-		StormFox.Menu.OpenController()
+		StormFox2.Menu.OpenController()
 	end
 } )
 

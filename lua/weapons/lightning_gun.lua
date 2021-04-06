@@ -71,16 +71,16 @@ local function Strike( self, bAlt )
 	local tr = util.TraceLine( util.GetPlayerTrace( self.Owner ) )
 	if not tr.HitPos then return end
 	if bAlt then
-		StormFox.Thunder.CreateAt( tr.HitPos + vector_up * 4 )
+		StormFox2.Thunder.CreateAt( tr.HitPos + vector_up * 4 )
 	else
-		StormFox.Thunder.Strike( tr.HitPos, true )
+		StormFox2.Thunder.Strike( tr.HitPos, true )
 	end
 end
 local function Rumble( self )
 	if CLIENT then return end
 	local tr = util.TraceLine( util.GetPlayerTrace( self.Owner ) )
 	if not tr.HitPos then return end
-	StormFox.Thunder.Rumble(tr.HitPos,true)
+	StormFox2.Thunder.Rumble(tr.HitPos,true)
 end
 
 function SWEP:CanPrimaryAttack()

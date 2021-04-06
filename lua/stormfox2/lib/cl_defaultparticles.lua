@@ -1,7 +1,7 @@
 
 -- Rain and show particles are a bit large. So we init them here
 
-if not StormFox.Misc then StormFox.Misc = {} end
+if not StormFox2.Misc then StormFox2.Misc = {} end
 local m_snow = Material("particle/snow")
 local m_snow_multi = Material("stormfox2/effects/snow-multi.png")
 local m_rain = Material("stormfox2/effects/raindrop.png")
@@ -14,7 +14,7 @@ local m_fog = Material("particle/smokesprites_0014")
 
 -- Hit particles
 local function MakeRing( vPos, vNormal, L )
-	local p = StormFox.DownFall.AddParticle( rainsplash_w, vPos, true )
+	local p = StormFox2.DownFall.AddParticle( rainsplash_w, vPos, true )
 		p:SetAngles(vNormal:Angle())
 		p:SetStartSize(8)
 		p:SetEndSize(40)
@@ -23,7 +23,7 @@ local function MakeRing( vPos, vNormal, L )
 		p:SetStartAlpha(math.min(255,5 + math.random(7,10) + L))
 end
 local function MakeSplash( vPos, vNormal, L, Part )
-	local p = StormFox.DownFall.AddParticle( rainsplash, vPos, false )
+	local p = StormFox2.DownFall.AddParticle( rainsplash, vPos, false )
 		p:SetAngles(vNormal:Angle())
 		p:SetStartSize(4)
 		local _,s = Part:GetSize()
@@ -33,7 +33,7 @@ local function MakeSplash( vPos, vNormal, L, Part )
 		p:SetStartAlpha(math.min(105, 10 + L))
 end
 local function MakeSnowflake( vPos, vNormal, L, Part )
-	local p = StormFox.DownFall.AddParticle( m_snow, vPos - vNormal, false )
+	local p = StormFox2.DownFall.AddParticle( m_snow, vPos - vNormal, false )
 		p:SetAngles(vNormal:Angle())
 		p:SetStartSize(math.min(2,Part:GetSize()))
 		p:SetEndSize(0)
@@ -43,7 +43,7 @@ local function MakeSnowflake( vPos, vNormal, L, Part )
 end
 
 local pT = function(self)
-	local n = math.min(15, StormFox.Weather.GetLuminance())
+	local n = math.min(15, StormFox2.Weather.GetLuminance())
 	if self:GetLifeTime() < self:GetDieTime() * .25 then
 		self:SetStartAlpha(0)
 		self:SetEndAlpha( n * 8 )
@@ -62,11 +62,11 @@ local vector_zero = Vector(0,0,0)
 local function MakeMist( vPos, L, Part)
 	if LM > CurTime() then return end
 	--LM = CurTime() + 0.1
-	local w = StormFox.Wind.GetVector()
+	local w = StormFox2.Wind.GetVector()
 	local v = Vector(w.x * 8 + math.Rand(-10, 10), w.y * 8 + math.Rand(-10, 10) ,math.Rand(0, 10))
 	local ss = math.Rand(100,250)
 	local es = math.Rand(100,250)
-	local p = StormFox.DownFall.AddParticle( m_rain_multi, vPos + Vector(0,0,math.max(es,ss) / 2), false )
+	local p = StormFox2.DownFall.AddParticle( m_rain_multi, vPos + Vector(0,0,math.max(es,ss) / 2), false )
 		p:SetAirResistance(0)
 		p:SetNextThink( CurTime() )
 		p:SetDieTime( math.random(10, 15))
@@ -87,13 +87,13 @@ end
 -- 	Make big cloud particles size shared, to fix size hitting
 
 local init = function()
-	local fog_template = 		StormFox.DownFall.CreateTemplate(m_fog, 		false)
-	StormFox.Misc.fog_template = fog_template
+	local fog_template = 		StormFox2.DownFall.CreateTemplate(m_fog, 		false)
+	StormFox2.Misc.fog_template = fog_template
 	--fog_template:SetSpeed(0.1)
 	fog_template:SetSize(250, 250)
 	function fog_template:OnHit( vPos, vNormal, nHitType, zPart )
 		if math.random(3) > 1 then return end -- 33% chance to spawn a splash
-		local L = StormFox.Weather.GetLuminance() - 10
+		local L = StormFox2.Weather.GetLuminance() - 10
 		if nHitType == SF_DOWNFALL_HIT_WATER then
 			MakeRing( vPos, vNormal, L )
 		elseif nHitType == SF_DOWNFALL_HIT_GLASS then
@@ -103,18 +103,18 @@ local init = function()
 		end
 	end
 
-	local rain_template = 		StormFox.DownFall.CreateTemplate(m_rain, 		true)
-	local rain_template_medium = StormFox.DownFall.CreateTemplate(m_rain_medium,true)
-	local rain_template_multi = StormFox.DownFall.CreateTemplate(m_rain_multi, 	true)
-	local snow_template = 		StormFox.DownFall.CreateTemplate(m_snow, 		false, false)
-	local snow_template_multi = StormFox.DownFall.CreateTemplate(m_snow_multi, 	true)
-	local fog_template = 		StormFox.DownFall.CreateTemplate(m_rain, 		true)
-	StormFox.Misc.rain_template = rain_template
-	StormFox.Misc.rain_template_multi = rain_template_multi
-	StormFox.Misc.rain_template_medium = rain_template_medium
-	StormFox.Misc.snow_template = snow_template
-	StormFox.Misc.snow_template_multi = snow_template_multi
-	StormFox.Misc.fog_template = fog_template
+	local rain_template = 		StormFox2.DownFall.CreateTemplate(m_rain, 		true)
+	local rain_template_medium = StormFox2.DownFall.CreateTemplate(m_rain_medium,true)
+	local rain_template_multi = StormFox2.DownFall.CreateTemplate(m_rain_multi, 	true)
+	local snow_template = 		StormFox2.DownFall.CreateTemplate(m_snow, 		false, false)
+	local snow_template_multi = StormFox2.DownFall.CreateTemplate(m_snow_multi, 	true)
+	local fog_template = 		StormFox2.DownFall.CreateTemplate(m_rain, 		true)
+	StormFox2.Misc.rain_template = rain_template
+	StormFox2.Misc.rain_template_multi = rain_template_multi
+	StormFox2.Misc.rain_template_medium = rain_template_medium
+	StormFox2.Misc.snow_template = snow_template
+	StormFox2.Misc.snow_template_multi = snow_template_multi
+	StormFox2.Misc.fog_template = fog_template
 
 	--rain_template_multi
 	rain_template_medium:SetFadeIn( true )
@@ -138,14 +138,14 @@ local init = function()
 
 	-- Think functions:
 	function rain_template_multi:Think()
-		local P = StormFox.Weather.GetPercent()
-		local fC = StormFox.Fog.GetColor()
-		local L = StormFox.Weather.GetLuminance()
-		local TL = StormFox.Thunder.GetLight() / 2
+		local P = StormFox2.Weather.GetPercent()
+		local fC = StormFox2.Fog.GetColor()
+		local L = StormFox2.Weather.GetLuminance()
+		local TL = StormFox2.Thunder.GetLight() / 2
 		local speed = 0.162 * P + 0.324
-		StormFox.Misc.rain_template_multi:SetColor( Color(fC.r + TL + 15, fC.g + TL + 15, fC.b + TL + 15) ) 
-		StormFox.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * 25)
-		StormFox.Misc.rain_template_multi:SetSpeed( speed ) 
+		StormFox2.Misc.rain_template_multi:SetColor( Color(fC.r + TL + 15, fC.g + TL + 15, fC.b + TL + 15) ) 
+		StormFox2.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * 25)
+		StormFox2.Misc.rain_template_multi:SetSpeed( speed ) 
 	end
 
 	-- Particle Explosion
@@ -153,7 +153,7 @@ local init = function()
 	function rain_template:OnExplosion( vExPos, nDisPercent, iRange, iMagnetide )
 		local e_ang = (self:GetPos() - vExPos):Angle():Forward()
 		local boost = nDisPercent * 5
-		local p = StormFox.DownFall.AddParticle( "effects/splash1", vExPos + e_ang * iRange *nDisPercent , false )
+		local p = StormFox2.DownFall.AddParticle( "effects/splash1", vExPos + e_ang * iRange *nDisPercent , false )
 			p:SetStartSize(math.random(32, 20))
 			p:SetEndSize(5)
 			p:SetDieTime(2.5)
@@ -173,7 +173,7 @@ local init = function()
 	-- Particle Hit
 	function snow_template:OnHit( vPos, vNormal, nHitType, zPart )
 		if math.random(3) > 1 then return end -- 33% chance to spawn a splash
-		local L = StormFox.Weather.GetLuminance() - 10
+		local L = StormFox2.Weather.GetLuminance() - 10
 		if nHitType == SF_DOWNFALL_HIT_WATER then
 			MakeRing( vPos, vNormal, L )
 		else -- if nHitType == SF_DOWNFALL_HIT_GROUND then
@@ -182,7 +182,7 @@ local init = function()
 	end
 	function rain_template:OnHit( vPos, vNormal, nHitType, zPart )
 		if math.random(3) > 1 then return end -- 33% chance to spawn a splash
-		local L = StormFox.Weather.GetLuminance() - 10
+		local L = StormFox2.Weather.GetLuminance() - 10
 		if nHitType == SF_DOWNFALL_HIT_WATER then
 			MakeRing( vPos, vNormal, L )
 		elseif nHitType == SF_DOWNFALL_HIT_GLASS then
@@ -192,7 +192,7 @@ local init = function()
 		end
 	end
 	function rain_template_multi:OnHit( vPos, vNormal, nHitType, zPart)
-		local L = StormFox.Weather.GetLuminance() - 10
+		local L = StormFox2.Weather.GetLuminance() - 10
 		if math.random(1,3)> 2 then return end
 		MakeMist( vPos, L, zPart)
 	end
@@ -203,7 +203,7 @@ local init = function()
 			return 
 		end
 		i = 0
-		local L = StormFox.Weather.GetLuminance() - 10
+		local L = StormFox2.Weather.GetLuminance() - 10
 		MakeMist( vPos, L, zPart)
 	end
 
@@ -211,12 +211,12 @@ local init = function()
 	fog_template:SetSpeed(5)
 	fog_template:SetAlpha(0)
 	function fog_template:OnHit( vPos, vNormal, nHitType, zPart)
-		local L = StormFox.Weather.GetLuminance() - 10
+		local L = StormFox2.Weather.GetLuminance() - 10
 		MakeMist( vPos, L, zPart)
 	end
 end
 
 hook.Add("stormfox2.postlib", "stormfox2.loadParticles", init)
-if StormFox.DownFall and StormFox.DownFall.CreateTemplate then
+if StormFox2.DownFall and StormFox2.DownFall.CreateTemplate then
 	init()
 end

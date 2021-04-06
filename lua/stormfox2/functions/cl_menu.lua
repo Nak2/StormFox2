@@ -19,7 +19,7 @@ do
 end
 
 
-StormFox.Menu = StormFox.Menu or {}
+StormFox2.Menu = StormFox2.Menu or {}
 
 local function niceName(sName)
 	if sName[1] == "#" then
@@ -49,8 +49,8 @@ local tabs = {
 				if (self.u_t or 0) > SysTime() then return end
 				if not system.HasFocus() then return end
 				self.u_t = SysTime() + 1
-				local t = StormFox.Setting.GetCache("quality_target",144)
-				local _, avgFPS = StormFox.Client.GetQualityNumber()
+				local t = StormFox2.Setting.GetCache("quality_target",144)
+				local _, avgFPS = StormFox2.Client.GetQualityNumber()
 				self:SetValue( avgFPS / t)
 				p:SetText(string.upper(language.GetPhrase("#fps")) .. ": " .. math.floor(avgFPS))
 			end
@@ -64,8 +64,8 @@ local tabs = {
 				if (self.u_t or 0) > SysTime() then return end
 				if not system.HasFocus() then return end
 				self.u_t = SysTime() + 1
-				local max_q = StormFox.Setting.GetCache("quality_ultra",false) and 20 or 7
-				local q, _ = StormFox.Client.GetQualityNumber()
+				local max_q = StormFox2.Setting.GetCache("quality_ultra",false) and 20 or 7
+				local q, _ = StormFox2.Client.GetQualityNumber()
 				local f = q / max_q
 				self:SetValue( f )
 				p:SetText(language.GetPhrase("#effects") .. "\n" .. math.floor(f * 100) .. "%")
@@ -153,12 +153,12 @@ local tabs = {
 		l:SetTall(24)
 		l:Dock(TOP)
 		function l:Paint(w,h)
-			local md = StormFox.Setting.GetCache("use_monthday",false) and os.date( "%m/%d/%Y" ) or os.date( "%d/%m/%Y" )
-			local dt = StormFox.Setting.GetCache("display_temperature")
+			local md = StormFox2.Setting.GetCache("use_monthday",false) and os.date( "%m/%d/%Y" ) or os.date( "%d/%m/%Y" )
+			local dt = StormFox2.Setting.GetCache("display_temperature")
 			local hs = string.Explode(":", os.date( "%H:%M") or "17:23")
 			local n = hs[1] * 60 + hs[2]
-			local str = niceName(language.GetPhrase("#time")) .. ": " .. StormFox.Time.GetDisplay(n) .. "   " .. md
-			str = str .. "   " .. niceName(language.GetPhrase("#temperature")) .. ": " .. math.Round(StormFox.Temperature.Convert(nil,dt,22), 1) .. StormFox.Temperature.GetDisplaySymbol()
+			local str = niceName(language.GetPhrase("#time")) .. ": " .. StormFox2.Time.GetDisplay(n) .. "   " .. md
+			str = str .. "   " .. niceName(language.GetPhrase("#temperature")) .. ": " .. math.Round(StormFox2.Temperature.Convert(nil,dt,22), 1) .. StormFox2.Temperature.GetDisplaySymbol()
 			draw.DrawText(str, "DermaDefaultBold", 0, 0, color_black, TEXT_ALIGN_LEFT)
 		end
 		board:AddSetting("12h_display")
@@ -183,7 +183,7 @@ local tabs = {
 	[4] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png"))}
 }
 
-function StormFox.Menu.Open()
+function StormFox2.Menu.Open()
 	if _SFMENU and IsValid(_SFMENU) then
 		_SFMENU:Remove()
 		_SFMENU = nil
@@ -191,12 +191,12 @@ function StormFox.Menu.Open()
 	local p = vgui.Create("SF_Menu")
 	_SFMENU = p
 	p:SetTitle("StormFox " .. niceName(language.GetPhrase("#client")) .. " ".. language.GetPhrase("#spawnmenu.utilities.settings"))
-	p:CreateLayout(tabs, StormFox.Setting.GetAllClient())
+	p:CreateLayout(tabs, StormFox2.Setting.GetAllClient())
 	p:SetCookie("sf2_lastmenucl")
 	_SFMENU:MakePopup()
 end
 
-concommand.Add('stormfox2_menu', StormFox.Menu.Open, nil, "Opens SF clientside menu")
+concommand.Add('stormfox2_menu', StormFox2.Menu.Open, nil, "Opens SF clientside menu")
 
 list.Set( "DesktopWindows", "StormFoxSetting", {
 	title		= "SF " .. niceName(language.GetPhrase("#spawnmenu.utilities.settings")),
@@ -207,6 +207,6 @@ list.Set( "DesktopWindows", "StormFoxSetting", {
 	init		= function( icon, window )
 		window:Remove()
 		surface.PlaySound("buttons/button14.wav")
-		StormFox.Menu.Open()
+		StormFox2.Menu.Open()
 	end
 } )

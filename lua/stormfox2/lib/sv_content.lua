@@ -1,6 +1,6 @@
 
 -- Adds SF content
-if not StormFox.WorkShopVersion then
+if not StormFox2.WorkShopVersion then
 	local i = 0
 	local function AddDir(dir,dirlen)
 		if not dirlen then dirlen = dir:len() end
@@ -19,9 +19,9 @@ if not StormFox.WorkShopVersion then
 	AddDir("materials/stormfox2")
 	AddDir("sound/stormfox2")
 	AddDir("models/stormfox2")
-	StormFox.Msg("Added " .. i .. " content files.")
+	StormFox2.Msg("Added " .. i .. " content files.")
 -- Add the workshop
 else
-	resource.AddWorkshop(string.match(StormFox.WorkShopURL, "%d+$"))
-	StormFox.Msg("Added content files from workshop.")
+	resource.AddWorkshop(string.match(StormFox2.WorkShopURL, "%d+$"))
+	StormFox2.Msg("Added content files from workshop.")
 end

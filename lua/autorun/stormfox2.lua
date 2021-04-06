@@ -14,18 +14,18 @@ end
 --[[-------------------------------------------------------------------------
 StormFox 2.0
 ---------------------------------------------------------------------------]]
-StormFox = {}
-StormFox.WorkShopVersion = false--game.IsDedicated()
-StormFox.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443"
+StormFox2 = {}
+StormFox2.WorkShopVersion = false--game.IsDedicated()
+StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443"
 --<Var> StormFox's Version number
-	StormFox.Version = 2.01
-	StormFox.Loaded = false
+	StormFox2.Version = 2.02
+	StormFox2.Loaded = false
 
 --[[<Shared>-----------------------------------------------------------------
 	Prints a message in the console.
 ---------------------------------------------------------------------------]]
 	local env_color = SERVER and Color(138,223,255) or Color(230,217,111)
-	function StormFox.Msg(...)
+	function StormFox2.Msg(...)
 		local a = {...}
 		MsgC(Color(155,155,255),"[StormFox2] ",env_color,unpack( a ),"\n")
 	end
@@ -33,13 +33,13 @@ StormFox.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2
 	Prints a warning in the console. Can also cause an error.
 ---------------------------------------------------------------------------]]
 	local red = Color(255,75,75)
-	function StormFox.Warning( sMessage, bError )
+	function StormFox2.Warning( sMessage, bError )
 		MsgC(Color(155,155,255),"[StormFox2]",red," [WARNING] ",env_color,sMessage,"\n")
 		if bError then
 			error(sMessage)
 		end
 	end
-StormFox.Msg("Version: V" .. StormFox.Version .. ".")
+StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 
 -- Local functions
 	local function HandleFile(str)
@@ -48,7 +48,7 @@ StormFox.Msg("Version: V" .. StormFox.Version .. ".")
 			path = string.GetFileFromFilename(str)
 		end
 		if string.sub(path,0,4) == "old_" then
-			StormFox.Warning("Exclude old file: " .. str)
+			StormFox2.Warning("Exclude old file: " .. str)
 			return false
 		end
 		local _type = string.sub(path,0,3)
@@ -75,9 +75,9 @@ StormFox.Msg("Version: V" .. StormFox.Version .. ".")
 		for _,lan in ipairs(folder) do
 			if file.Exists("resource/localization/" .. lan .. "/stormfox.properties", "GAME") then
 				resource.AddSingleFile("resource/localization/" .. lan .. "/stormfox.properties")
-				--print("Added","resource/localization/" .. lan .. "/stormfox.properties")
+				--print("Added","resource/localization/" .. lan .. "/StormFox2.properties")
 			elseif lan == "en" then
-				StormFox.Warning("Missing language file: resource/localization/en/stormfox.properties")
+				StormFox2.Warning("Missing language file: resource/localization/en/stormfox.properties")
 			end
 		end
 	end
@@ -86,7 +86,7 @@ StormFox.Msg("Version: V" .. StormFox.Version .. ".")
 	HandleFolder("stormfox2/lib")
 	-- Check if map-data has loaded
 	if not SF_BSPDATALOADED then
-		StormFox.Warning("unable to load mapdata!", true)
+		StormFox2.Warning("unable to load mapdata!", true)
 	end
 	hook.Run("stormfox2.postlib") -- Gets called after libary is done.
 
@@ -102,14 +102,14 @@ StormFox.Msg("Version: V" .. StormFox.Version .. ".")
 	HandleFolder("stormfox2") -- No idea what should be here.
 	timer.Simple(0,function()
 		--[[<Shared>-------------------------------------------------------------------------
-		Allows addons to initialize their functions before calling StormFox.PostInit.
+		Allows addons to initialize their functions before calling StormFox2.PostInit.
 		---------------------------------------------------------------------------]]
 		hook.Run("stormfox2.preinit") -- For libary files
 		--[[<Shared>-------------------------------------------------------------------------
 		Gets called when StormFox is done loading.
 		---------------------------------------------------------------------------]]
 		hook.Run("stormfox2.postinit")
-		StormFox.Loaded = true
+		StormFox2.Loaded = true
 	end)
 
 -- Hack to stop cleanupmap deleting things.
