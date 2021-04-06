@@ -41,9 +41,9 @@ if CLIENT then
 			view.drawviewer = LocalPlayer():ShouldDrawLocalPlayer()
 			return
 		end
-		view.pos = t.origin
-		view.ang = t.angles
-		view.fov = t.fov
+		view.pos = t.origin or EyePos()
+		view.ang = t.angles or EyeAngles()
+		view.fov = t.fov or view.fov or 90
 		view.drawviewer = t.drawviewer or LocalPlayer():ShouldDrawLocalPlayer()
 	end)
 	--[[<Client>-----------------------------------------------------------------
