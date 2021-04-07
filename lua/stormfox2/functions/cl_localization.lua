@@ -101,7 +101,7 @@ local str = [[
 	#'Maplight
 	sf_maplight_max=Max Maplight
 	sf_maplight_max.desc=The max lightlevel. You can adjust this if the map is too bright/dark.
-	sf_maplight_min=Max Maplight
+	sf_maplight_min=Min Maplight
 	sf_maplight_min.desc=The min lightlevel. You can adjust this if the map is too bright/dark.
 	
 	sf_maplight_smooth=Maplight Lerp.
@@ -141,14 +141,13 @@ local str = [[
 	#Weather
 	sf_auto_weather=Auto weather
 	sf_auto_weather.desc=Automatically change weather over time.
-	sf_max_weathers_prday=Max Weathers Pr Day
-	sf_max_weathers_prday.desc=Max amount of weathers pr day.
+	sf_max_weathers_prweek=Max Weathers Pr Week
+	sf_max_weathers_prweek.desc=Max amount of weathers pr week.
 	sf_temp_range=Temperature range
 	sf_temp_range.desc=The min and max temperature.
 	sf_temp_acc=Temperature change.
 	sf_temp_acc.desc=The max temperature changes pr day.
-	
-]]
+		]]
 
 for k, v in ipairs( string.Explode("\n", str)) do
 	if string.match(v, "%s-#") then continue end
