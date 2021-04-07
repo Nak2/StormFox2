@@ -43,8 +43,7 @@ if SERVER then
 
 	concommand.Add("stormfox2_setthunder", function(ply, _, _, argS)
 		StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
-			local n = tonumber(argS)
-			if n == 1 then n = 6 end
+			local n = tonumber(argS) or (StormFox2.Thunder.IsThundering() and 6 or 0)
 			StormFox2.Thunder.SetEnabled( n > 0, n )
 		end)
 	end)

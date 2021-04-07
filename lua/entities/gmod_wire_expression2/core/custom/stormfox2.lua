@@ -45,7 +45,7 @@ __e2setcost( 3 )
 	end
 
 	e2function number isThundering()
-		return StormFox2.Data.Get("bThunder", false) and 1 or 0
+		return StormFox2.Thunder.IsThundering() and 1 or 0
 	end
 
 	__e2setcost( 10 )
