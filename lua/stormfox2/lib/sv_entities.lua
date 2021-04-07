@@ -42,6 +42,13 @@ CreateConVar("sf_enable_mapsupport","1",{FCVAR_REPLICATED,FCVAR_ARCHIVE},"StormF
 		StormFox2.Ent.shadow_controls = GetOrCreate( "shadow_control", true )
 		StormFox2.Ent.env_tonemap_controllers = GetOrCreate("env_tonemap_controller", true )
 		StormFox2.Ent.env_winds = GetOrCreate("env_wind", true ) -- Can't spawn the wind controller without problems
+
+		-- Kill TF2 sun
+		for k,v in ipairs(ents.FindByModel("models/props_skybox/sunnoon.mdl")) do
+			if v:IsValid() then
+				v:SetNoDraw( true )
+			end
+		end
 		--[[-------------------------------------------------------------------------
 		Gets called when StormFox has handled map-entities.
 		---------------------------------------------------------------------------]]

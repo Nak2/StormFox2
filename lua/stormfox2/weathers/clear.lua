@@ -66,7 +66,8 @@ end
 	clear:SetSunStamp("starFade",100,						SF_SKY_NIGHT)
 	--clear:SetSunStamp("fogDensity",1,						SF_SKY_NIGHT)
 -- Sunset
-	clear:SetSunStamp("topColor",Color(170, 85, 43),	SF_SKY_SUNSET)
+	-- Old Color(170, 85, 43)
+	clear:SetSunStamp("topColor",Color(130.5, 106.25, 149),	SF_SKY_SUNSET)
 	clear:SetSunStamp("bottomColor",Color(204, 98, 5),	SF_SKY_SUNSET)
 	clear:SetSunStamp("fadeBias",1,						SF_SKY_SUNSET)
 	clear:SetSunStamp("duskColor",Color(248, 103, 30),	SF_SKY_SUNSET)
@@ -77,7 +78,7 @@ end
 	clear:SetSunStamp("starFade",30,					SF_SKY_SUNSET)
 	--clear:SetSunStamp("fogDensity",0.8,					SF_SKY_SUNSET)
 -- Sunrise
-	clear:SetSunStamp("topColor",Color(170, 85, 43),	SF_SKY_SUNRISE)
+	clear:SetSunStamp("topColor",Color(130.5, 106.25, 149),	SF_SKY_SUNRISE)
 	clear:SetSunStamp("bottomColor",Color(204, 98, 5),	SF_SKY_SUNRISE)
 	clear:SetSunStamp("fadeBias",1,						SF_SKY_SUNRISE)
 	clear:SetSunStamp("duskColor",Color(248, 103, 30),	SF_SKY_SUNRISE)

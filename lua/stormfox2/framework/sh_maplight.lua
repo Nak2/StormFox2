@@ -84,10 +84,35 @@ if SERVER then
 		end
 	end
 else
+	-- Detail MapLight
+	-- Find map detail material (Just in case)
+		local detailstr = {["detail/detailsprites"] = true}
+	-- Find map detail from BSP 
+		local mE = StormFox2.Map.Entities()[1]
+		if mE and mE["detailmaterial"] then
+			detailstr[mE["detailmaterial"]] = true
+		end
+	-- Add EP2 by default
+		local ep2m = Material("detail/detailsprites_ep2")
+		if ep2m and not ep2m:IsError() then
+			detailstr["detail/detailsprites_ep2"] = true
+		end
+		local detail = {}
+		for k,v in pairs(detailstr) do
+			table.insert(detail, (Material(k)))
+		end
+	local function UpdateDetail(lightAmount)
+		lightAmount = math.Clamp(lightAmount, 0, 1)
+		local v = Vector(lightAmount,lightAmount,lightAmount)
+		for i, m in ipairs(detail) do
+			m:SetVector("$color",v)
+		end
+	end
 	function StormFox2.Map.SetLight( f )
 		hook.Run("StormFox2.lightsystem.new", f)
 		last_char = convertTo( f )
 		last_f = f
+		UpdateDetail(f / 90)
 	end
 	local last_sv,bSR
 	-- Server tells the client to update lightmaps
