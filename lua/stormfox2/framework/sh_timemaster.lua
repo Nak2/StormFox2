@@ -76,7 +76,7 @@ StormFox2.Time = StormFox2.Time or {}
 	end
 
 -- Get the start time.
-	local start = StormFox2.Setting.Get("start_time",-1)
+	local start = StormFox2.Setting.Get("start_time",-1) or -1
 	local TIME_SPEED = (StormFox2.Setting.Get("time_speed",60) or 60) / 60
 	if SERVER then
 		-- Use server time
@@ -85,8 +85,8 @@ StormFox2.Time = StormFox2.Time or {}
 			TIME_SPEED = 1 / 60
 			local dt = string.Explode(":",os.date("%H:%M:%S"))
 			start = tonumber(dt[1]) * 60 + tonumber(dt[2]) + tonumber(dt[3]) / 60
-		elseif start < 0 then -- If there isn't a last time .. use mathrandom
-			start = cookie.GetNumber("sf_lasttime",math.random(1300))
+		elseif not start or start < 0 then -- If there isn't a last time .. use mathrandom
+			start = cookie.GetNumber("sf2_lasttime",math.random(1300))
 		end
 
 		StormFox2.Setting.Callback("real_time",function(vVar,vOldVar,sName, sID)
@@ -316,9 +316,9 @@ StormFox2.Time = StormFox2.Time or {}
 		-- Cookie save. 
 		hook.Add("ShutDown","StormFox2.Time.Save",function()
 			StormFox2.Msg("Saving time | " .. StormFox2.Time.TimeToString())
-			cookie.Set("sf_lasttime",StormFox2.Time.Get(true))
+			cookie.Set("sf2_lasttime",StormFox2.Time.Get(true))
 		end)
-		cookie.Delete("sf_lasttime") -- Always delete this at launch.
+		cookie.Delete("sf2_lasttime") -- Always delete this at launch.
 		-- Loading things sometimes desync
 		if StormFox2.Setting.Get("real_time",false) then
 			timer.Simple(1, function()

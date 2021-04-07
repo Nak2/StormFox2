@@ -147,9 +147,9 @@ function StormFox2.Setting.Get(sName,vDefaultVar)
 	local con = GetConVar("sf_" .. sName)
 	if not con then return vDefaultVar end
 	if settings[sName] == "number" then
-		return tonumber(con:GetString())
+		return tonumber(con:GetString()) or vDefaultVar
 	elseif settings[sName] == "string" then
-		return con:GetString()
+		return con:GetString() or vDefaultVar
 	elseif settings[sName] == "boolean" then
 		return con:GetString() == "1"
 	else
@@ -157,9 +157,9 @@ function StormFox2.Setting.Get(sName,vDefaultVar)
 		if st == "boolean" then st = "bool"
 		elseif st == "number" then st = "float" end
 		if table.HasValue(w_list, st) then
-			return util.StringToType(con:GetString(),st)
+			return util.StringToType(con:GetString(),st) or vDefaultVar
 		else
-			return con:GetString()
+			return con:GetString() or vDefaultVar
 		end
 	end
 end
