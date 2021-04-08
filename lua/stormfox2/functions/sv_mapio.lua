@@ -59,7 +59,7 @@ hook.Add("StormFox2.InitPostEntity", "StormFox2.lightioinit", function()
 		table.insert(night_lights[ 1 + i % 6 ],ent)
 	end
 	-- Update on launch
-	timer.Simple(1, function()
+	timer.Simple(5, function()
 		SetRelay(StormFox2.Map.GetLight())
 	end)
 end)

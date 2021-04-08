@@ -698,6 +698,8 @@ Locates an entity with the given hammer_id from the mapfile.
 	end)
 	if SERVER then
 		function StormFox2.Map.CallLogicRelay(sName,b)
+			if sName == "dusk" then sName = "night_events" end
+			if sName == "dawn" then sName = "day_events" end
 			if b ~= nil and b == false then
 				sName = sName .. "_off"
 			end
