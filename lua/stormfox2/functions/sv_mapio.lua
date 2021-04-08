@@ -15,20 +15,7 @@ logic_relays support and map lights.
 
 local night_lights = {{}, {}, {}, {}, {}, {}}
 local relays = {}
-hook.Add("StormFox2.InitPostEntity", "StormFox2.lightioinit", function()
-	-- Locate lights on the map
-	local t = {"env_projectedtexture", "light_dynamic", "light", "light_spot"}
-	for i,ent in ipairs( ents.GetAll() ) do
-		local c = ent:GetClass()
-		if not table.HasValue(t, c) then continue end
-		local name = ent:GetName()
-		if c == "light_spot" then name = name or "night" end -- Make unnamed light_spots count.
-		if not name then continue end
-		if string.find(name,"indoor") then continue end
-		if not (string.find(name,"night") or string.find(name,"1") or string.find(name,"day")) then continue end
-		table.insert(night_lights[ 1 + i % 6 ],ent)
-	end
-end)
+local switch
 -- local functions
 local function setELight( ent, bTurnOn )
 	local sOnOff = bTurnOn and "TurnOn" or "TurnOff"
@@ -46,10 +33,8 @@ local function setLights( bTurnOn )
 		i = i + 1
 	end)
 end
--- Call day and night relays
-local switch
-hook.Add("StormFox2.lightsystem.new", "StormFox2.mapinteractions.light", function( nPercent )
-	local lights_on = nPercent < 20
+local function SetRelay(fMapLight)
+	local lights_on = fMapLight < 20
 	if switch ~= nil and lights_on == switch then return end -- Nothing changed
 	if lights_on then
 		StormFox2.Map.CallLogicRelay("night_events")
@@ -59,7 +44,27 @@ hook.Add("StormFox2.lightsystem.new", "StormFox2.mapinteractions.light", functio
 		setLights( false )
 	end
 	switch = lights_on
+end
+hook.Add("StormFox2.InitPostEntity", "StormFox2.lightioinit", function()
+	-- Locate lights on the map
+	local t = {"env_projectedtexture", "light_dynamic", "light", "light_spot"}
+	for i,ent in ipairs( ents.GetAll() ) do
+		local c = ent:GetClass()
+		if not table.HasValue(t, c) then continue end
+		local name = ent:GetName()
+		if c == "light_spot" then name = name or "night" end -- Make unnamed light_spots count.
+		if not name then continue end
+		if string.find(name,"indoor") then continue end
+		if not (string.find(name,"night") or string.find(name,"1") or string.find(name,"day")) then continue end
+		table.insert(night_lights[ 1 + i % 6 ],ent)
+	end
+	-- Update on launch
+	timer.Simple(1, function()
+		SetRelay(StormFox2.Map.GetLight())
+	end)
 end)
+-- Call day and night relays
+hook.Add("StormFox2.lightsystem.new", "StormFox2.mapinteractions.light", SetRelay)
 
 -- StormFox2.Map.w_CallLogicRelay( name )
 
