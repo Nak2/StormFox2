@@ -1,0 +1,23 @@
+"UnlitGeneric"
+{
+	"$basetexture" "stormfox2/effects/ice_water"
+	"$surfaceprop" "glass"
+	"$bumpmap" "stormfox2/effects/ice_water_normal"
+	"$translucent" 1
+	"$alpha" 0.65 //0.65
+	"$vertexalpha" 1
+	"$vertexcolor" 1
+	"$additive" 0
+	//"$envmapsaturation" 1
+	"$nocull" 0
+	"$model" 1
+	//$envmap env_cubemap
+	//$envmaptint "[0.5 0.5 0.5]"
+	//$fresnelreflection 1
+
+	// Details
+	"$detail" "stormfox2/effects/ice_water"
+	"$detailscale" 1.5
+	"$detailblendfactor" 1
+	"$detailblendmode" 8
+}

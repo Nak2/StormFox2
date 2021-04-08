@@ -529,6 +529,9 @@ Generate meshes and env-points out from the map-data.
 		end
 
 	STORMFOX_WINDOWMESHES = STORMFOX_WINDOWMESHES or {}
+	STORMFOX_WATERMESHBUILD = {}
+	STORMFOX_WATERMESHCOLLISON = {}
+	STORMFOX_WATERMESHBUILD_SKYBOX = {}
 	-- In case of reload, we delete the old meshes
 		for i,v in pairs(STORMFOX_WINDOWMESHES) do
 			v:Destroy()
@@ -543,6 +546,10 @@ Generate meshes and env-points out from the map-data.
 	local norm_mat = Material("stormfox2/effects/window/win")
 	local refact_mat = Material("stormfox2/effects/window/win_refract")
 	local puddle_mat = Material("stormfox2/effects/rain_puddle")
+
+	local ice = Material("stormfox/effects/ice_water")
+	local ice_size = 500
+	local vec_ex = Vector(0,0,1)
 
 	-- Scans for nearby window entities.
 	local function scan_dynamic()
@@ -798,6 +805,67 @@ Generate meshes and env-points out from the map-data.
 			puddle_mapmesh = Mesh(puddle_mat)
 			puddle_mapmesh:BuildFromTriangles(mesh)
 			table.insert(STORMFOX_WINDOWMESHES, puddle_mapmesh)
+		-- Generate water mesh
+			StormFox2.Msg("Generating ice-mesh [" .. #surfaceinfos[WATER_VERTS] .. "] ")
+			local mesh = {}
+			STORMFOX_WATERMESH = Mesh(ice)
+			STORMFOX_WATERMESH_SKYBOX = Mesh(ice)
+			for i,v in ipairs(surfaceinfos[WATER_VERTS]) do
+				local t = v[1]:GetVertices()
+				if StormFox2.Map.IsInside( v[2] ) then
+					
+					for i = 1,3 do
+						local vec = t[i]
+						table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+					end
+					for i = 4,20 do
+						if #t < i then continue end
+						local vec = t[1]
+						table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+						local vec = t[i - 1]
+						table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+						local vec = t[i]
+						table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+					end
+					-- Thickness
+					for i = #t,3,-1 do
+						if i < 3 then continue end
+						local vec = t[1]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
+						local vec = t[i - 1]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
+						local vec = t[i]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
+					end
+					for i = 3,1,-1 do
+						local vec = t[i]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
+					end
+				elseif CLIENT then
+					local s = StormFox2.Map.GetSkyboxScale() or 1
+					for i = 1,3 do
+						local vec = t[i]
+						table.insert(STORMFOX_WATERMESHBUILD_SKYBOX, {pos = vec + (vec_ex / s),u = vec.x / ice_size * s,v = vec.y / ice_size * s, normal = Vector(0,0,1)})
+					end
+					for i = 4,20 do
+						if #t < i then continue end
+						local vec = t[1]
+						table.insert(STORMFOX_WATERMESHBUILD_SKYBOX, {pos = vec + (vec_ex / s),u = vec.x / ice_size * s,v = vec.y / ice_size * s, normal = Vector(0,0,1)})
+						local vec = t[i - 1]
+						table.insert(STORMFOX_WATERMESHBUILD_SKYBOX, {pos = vec + (vec_ex / s),u = vec.x / ice_size * s,v = vec.y / ice_size * s, normal = Vector(0,0,1)})
+						local vec = t[i]
+						table.insert(STORMFOX_WATERMESHBUILD_SKYBOX, {pos = vec + (vec_ex / s),u = vec.x / ice_size * s,v = vec.y / ice_size * s, normal = Vector(0,0,1)})
+					end
+				end
+			end
+			-- Build the water
+			STORMFOX_WATERMESH:BuildFromTriangles(STORMFOX_WATERMESHBUILD)
+			STORMFOX_WATERMESH_SKYBOX:BuildFromTriangles(STORMFOX_WATERMESHBUILD_SKYBOX)
+
 		-- Add window-entities	
 			StormFox2.Msg("Locating window entities ..")
 			coroutine.yield() -- Wait a bit

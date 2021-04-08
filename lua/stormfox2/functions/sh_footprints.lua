@@ -75,6 +75,9 @@ end
 			filter = filter
 		} )
 		if not t.Hit then return end -- flying
+		if t.Entity and IsValid(t.Entity) and t.HitNonWorld and t.HitTexture == "**studio**" then
+			return
+		end
 		return t.HitTexture
 	end
 	-- Returns true if the entity is on replaced texture.
