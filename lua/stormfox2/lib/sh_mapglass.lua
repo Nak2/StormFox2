@@ -686,7 +686,7 @@ Locates an entity with the given hammer_id from the mapfile.
 		dawn = day_events
 	---------------------------------------------------------------------------]]
 	local relay = {}
-	hook.Add("StormFox2.PreInit", "StormFox2.MapInteractions.Init", function()
+	hook.Add("StormFox2.InitPostEntity", "StormFox2.MapInteractions.Init", function()
 		-- Locate all logic_relays on the map
 		for _,ent in ipairs( ents.FindByClass("logic_relay") ) do
 			local name = ent:GetName()
@@ -721,13 +721,30 @@ Locates an entity with the given hammer_id from the mapfile.
 			l_w = name
 			StormFox2.Map.CallLogicRelay("weather_" .. name, true)
 		end
-	end
-	function StormFox2.Map.HasLogicRelay(sName,b)
-		if b ~= nil and b == false then
-			sName = sName .. "_off"
+		function StormFox2.Map.HasLogicRelay(sName,b)
+			if sName == "dusk" then sName = "night_events" end
+			if sName == "dawn" then sName = "day_events" end
+			if b ~= nil and b == false then
+				sName = sName .. "_off"
+			end
+			return relay[sName] and true or false
 		end
-		return relay[sName] and true or false
+	else -- Clients don't know the relays
+		local t = {}
+		for k,v in ipairs(StormFox2.Map.FindClass("logic_relay")) do
+			local sName = v.targetname
+			if not sName then return end
+			if sName == "dusk" then sName = "night_events" end
+			if sName == "dawn" then sName = "day_events" end
+			t[sName] = true
+		end
+		function StormFox2.Map.HasLogicRelay(sName,b)
+			if sName == "dusk" then sName = "night_events" end
+			if sName == "dawn" then sName = "day_events" end
+			return t[sName] and true or false
+		end
 	end
+
 -- Generates the texture-tree
 	if not SF_TEXTDATA or table.Count(SF_TEXTDATA) < 1 then
 		SF_TEXTDATA = GenerateTextureTree()
