@@ -379,7 +379,7 @@ StormFox2.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 	end)
 	-- New day
 	hook.Add("StormFox2.Time.NextDay", "StormFox2.Weathergen.NextDay", function(nDaysPast)
-		for i = 1, nDaysPast do
+		for i = 1, math.min(nDaysPast, 7) do
 			GenerateNewDay() -- New day
 		end
 	end)

@@ -223,7 +223,7 @@ StormFox2.Time = StormFox2.Time or {}
 		local nTime = StormFox2.Time.Get()
 		local lastStamp = currentStamp
 		currentStamp = timeToStamp(nTime)
-		if nTime <  num or TIME_SPEED > 2880 then
+		if (nTime < num or TIME_SPEED > 2880) and TIME_SPEED ~= 0 then
 			--[[-------------------------------------------------------------------------
 			Gets called on a new day.
 			---------------------------------------------------------------------------]]
