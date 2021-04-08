@@ -10,9 +10,9 @@ function ENT:Initialize()
 		self:Remove()
 		return
 	end
+	self:SetMaterial( "stormfox2/effects/ice_water" )
 	self:SetPos(Vector(0,0,0))
 	self:PhysicsFromMesh(STORMFOX_WATERMESHCOLLISON)
-	--self:SetMaterial( "stormfox2/effects/ice_water" )
 	local phys = self:GetPhysicsObject()
 	self:SetMoveType( MOVETYPE_NONE )
 	if ( IsValid( phys ) ) then
@@ -20,15 +20,15 @@ function ENT:Initialize()
 		phys:AddGameFlag( FVPHYSICS_CONSTRAINT_STATIC )
 		phys:SetMass(4000)
 		phys:EnableDrag(false)
-		--phys:SetMaterial( "ice" )
+		--phys:SetMaterial( "ice" ) Breaks all collision with non-players
 	end
 	self:EnableCustomCollisions( true );
+	self:AddFlags( FL_WORLDBRUSH )
 	self:SetSolid( SOLID_VPHYSICS )
 	self:AddEFlags(EFL_IN_SKYBOX)
 	self:AddEFlags(EFL_NO_PHYSCANNON_INTERACTION)
 	self:SetKeyValue("gmod_allowphysgun", 0)
-	self:AddFlags( FL_WORLDBRUSH )
-
+	
 	-- Try and unstuck players.
 	for i,v in ipairs( player.GetAll() ) do
 		if v:WaterLevel() == 1 then

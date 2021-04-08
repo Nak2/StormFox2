@@ -45,7 +45,7 @@ function ENT:DrawTranslucent()
 	if not STORMFOX_WATERMESH then return end
 	--local c = StormFox2.Data.Get("bottomColor") or Color(204, 255, 255)
 	--	c = Color(c.r * 0.9 + 70,c.g * 0.8 + 70,c.b * 0.8 + 70)
-	local n = (20 + (StormFox2.Map.GetLight() or 100)) / 120
+	local n = (20 + (StormFox2.Map.GetLight() or 100)) / 150
 	ice:SetVector("$color", Vector(n,n,n))
 	render.SetMaterial(ice)
 	STORMFOX_WATERMESH:Draw()
