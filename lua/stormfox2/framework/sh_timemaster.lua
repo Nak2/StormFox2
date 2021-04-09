@@ -271,6 +271,7 @@ StormFox2.Time = StormFox2.Time or {}
 			if type(nsTime) == "string" then
 				nsTime = StormFox2.Time.StringToTime(nsTime)
 			end
+			if not nsTime then return end
 			if TIME_SPEED <= 0 then
 				BASETIME = nsTime
 			else
@@ -282,6 +283,7 @@ StormFox2.Time = StormFox2.Time or {}
 		Sets the timespeed.
 		---------------------------------------------------------------------------]]
 		function StormFox2.Time.SetSpeed(nSpeed)
+			if not nSpeed then return end
 			local cur = StormFox2.Time.Get()
 			TIME_SPEED = nSpeed / 60
 			StormFox2.Time.Set(cur)
