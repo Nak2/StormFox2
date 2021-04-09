@@ -245,37 +245,39 @@ local scan = function() -- Locates all surfaceinfos we need.
 		end
 		coroutine.yield()
 	-- Generate water mesh
-		StormFox2.Msg("Generating ice-mesh [" .. #surfaceinfos[WATER_VERTS] .. "] ")
-		local mesh = {}
-		for i,v in ipairs(surfaceinfos[WATER_VERTS]) do
-			if StormFox2.Map.IsInside( v[2] ) then
-				local t = v[1]:GetVertices()
-				for i = 1,3 do
-					local vec = t[i]
-					table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
-				end
-				for i = 4,20 do
-					if #t < i then continue end
-					local vec = t[1]
-					table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
-					local vec = t[i - 1]
-					table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
-					local vec = t[i]
-					table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
-				end
-				-- Thickness
-				for i = #t,3,-1 do
-					if i < 3 then continue end
-					local vec = t[1]
-					table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
-					local vec = t[i - 1]
-					table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
-					local vec = t[i]
-					table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
-				end
-				for i = 3,1,-1 do
-					local vec = t[i]
-					table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
+		if surfaceinfos[WATER_VERTS] then
+			StormFox2.Msg("Generating ice-mesh [" .. #surfaceinfos[WATER_VERTS] .. "] ")
+			local mesh = {}
+			for i,v in ipairs(surfaceinfos[WATER_VERTS]) do
+				if StormFox2.Map.IsInside( v[2] ) then
+					local t = v[1]:GetVertices()
+					for i = 1,3 do
+						local vec = t[i]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+					end
+					for i = 4,20 do
+						if #t < i then continue end
+						local vec = t[1]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+						local vec = t[i - 1]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+						local vec = t[i]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+					end
+					-- Thickness
+					for i = #t,3,-1 do
+						if i < 3 then continue end
+						local vec = t[1]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
+						local vec = t[i - 1]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
+						local vec = t[i]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
+					end
+					for i = 3,1,-1 do
+						local vec = t[i]
+						table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
+					end
 				end
 			end
 		end
