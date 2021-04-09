@@ -267,6 +267,7 @@ StormFox2.Time = StormFox2.Time or {}
 			Sets the time. Also supports a string "12:00" or "5:00 AM".
 		---------------------------------------------------------------------------]]
 		function StormFox2.Time.Set(nsTime)
+			if not nsTime then return end
 			if type(nsTime) == "string" then
 				nsTime = StormFox2.Time.StringToTime(nsTime)
 			end

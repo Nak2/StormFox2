@@ -49,6 +49,7 @@ if SERVER then
 	end)
 
 	concommand.Add("stormfox2_settime", function(ply, _, _, argS)
+		if not argS then return end
 		StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
 			StormFox2.Time.Set( argS )
 		end)
