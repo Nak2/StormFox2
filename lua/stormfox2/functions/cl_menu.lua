@@ -33,6 +33,38 @@ local function niceName(sName)
 	return string.TrimRight(str, " ")
 end
 
+local function wrapText(sText, wide)
+	wide = wide - 10
+	local tw,th = surface.GetTextSize(language.GetPhrase(sText))
+	local lines,b = 1, false
+	local s = ""
+	for w in string.gmatch(sText, "[^%s,]+") do
+		local tt = s .. (b and " " or "") .. w
+		if surface.GetTextSize(tt) >= wide then
+			s = s .. "\n" .. w
+			lines = lines + 1
+		else
+			s = tt
+		end
+		b = true
+	end
+	return s, lines
+end
+
+local m = Material("gui/gradient")
+
+local function paintKnob(self,x, y) -- Skin doesn't have x or y pos
+	local skin = self:GetSkin()
+	if ( self:GetDisabled() ) then	return skin.tex.Input.Slider.H.Disabled( x, y, 15, 15 ) end
+	if ( self.Depressed ) then
+		return skin.tex.Input.Slider.H.Down( x, y, 15, 15 )
+	end
+	if ( self.Hovered ) then
+		return skin.tex.Input.Slider.H.Hover( x, y, 15, 15 )
+	end
+	skin.tex.Input.Slider.H.Normal( x, y, 15, 15 )
+end
+
 local tabs = {
 	[1] = {"Start","#start",(Material("stormfox2/hud/menu/dashboard.png")),function(board)
 		local dash = vgui.Create("DPanel", board)
@@ -145,7 +177,90 @@ local tabs = {
 			sup:SetPos(x + a*3, h - sup:GetTall())
 			mth:SetPos(x + a*4, h - sup:GetTall())
 		end
-		board:AddSetting("quality_target")
+		local FPSTarget = vgui.Create("DPanel", board)
+		do
+			FPSTarget:SetTall( 50 )
+			FPSTarget:Dock(TOP)
+			function FPSTarget:Paint() end
+			local l = vgui.Create( "DLabel", FPSTarget )
+			l:SetColor(color_black)
+			l:SetFont("DermaDefaultBold")
+			l:SetText( "#sf_" .. "quality_target" )
+			l:SetPos(15,0)
+			l:SizeToContents()
+			
+			local button = vgui.Create("DButton", FPSTarget)
+			button:SetPos(28,18)
+			button:SetWide(250)
+			button:SetText("")
+			local c = Color(0,0,0,100)
+			function button:GetNotchColor()
+				return c
+			end
+			function button:GetNotches()
+				return math.floor(self:GetWide() / 21)
+			end
+			function button:Paint(w,h)
+				local cV = 300 - StormFox2.Setting.GetCache("quality_target", 144)
+				local skin = self:GetSkin()
+				skin:PaintNumSlider(self,w,h)
+				surface.SetMaterial(m)
+				surface.SetDrawColor(Color(255,0,0,205))
+				local wi = w / 300 * 260
+				surface.DrawTexturedRectUV(wi - 6, 4, w - wi, h - 6, 1,0,0,1)
+				paintKnob(self, 1 + (w - 16) / 300 * cV,-0.5)
+			end
+			local n = vgui.Create("DNumberWang", FPSTarget)
+			n:SetDecimals(0)
+			function button:Think()
+				if not self:IsDown() then
+					if IsValid(self.tTip) then
+						self.tTip:Remove()
+						self.tTip = nil
+					end
+					return
+				end
+				local f = math.Clamp(1 - (self:LocalCursorPos() - 6) / (self:GetWide() - 12), 0, 1) * 300
+				local c = f <= 40
+				if c and not IsValid(self.tTip) then
+					self.tTip = vgui.Create("DTooltip")
+					self.tTip:SetText( "#frame_blend_pp.desc2" )
+					self.tTip.TargetPanel = self
+					self.tTip:PositionTooltip()
+				elseif not c and IsValid(self.tTip) then
+					self.tTip:Remove()
+					self.tTip = nil
+				end
+				RunConsoleCommand("sf_quality_target", f)
+			end
+			local con = GetConVar("sf_quality_target")
+			function n:Think()
+				if self:GetText() ~= con:GetString() and not self:IsEditing() then
+					self:SetText( con:GetInt() )
+				end
+			end
+			n:SetDrawLanguageID( false )
+			n:SetNumeric( true )
+			n:SetPaintBackground( false )
+			n:SetValue( con:GetInt() )
+			n:SetConVar( "sf_quality_target" )
+			n:SetPos( 280, 18 )
+			n:SetWide(40)
+			n.Up:Hide()
+			n.Down:Hide()
+			local l = vgui.Create("DLabel", FPSTarget)
+			l:SetDark(true)
+			l:SetFont("DermaDefault")
+			l:SetPos(320,16)
+			function FPSTarget:PerformLayout(w, h)
+				local s,lines = wrapText( language.GetPhrase("#sf_" .. "quality_target.desc"), w - 320 )
+				l:SetText( s )
+				l:SizeToContents()
+			end
+		end
+
+		--local qs = board:AddSetting("quality_target")
+
 		board:AddSetting("quality_ultra")
 		board:AddTitle("#sf_customization")
 		local l = vgui.Create("DPanel", board)
@@ -210,3 +325,5 @@ list.Set( "DesktopWindows", "StormFoxSetting", {
 		StormFox2.Menu.Open()
 	end
 } )
+
+StormFox2.Menu.Open()

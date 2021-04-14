@@ -69,6 +69,16 @@ local function FindPercent( x, a, b )
 	return (x - a) / (b - a)
 end
 
+local function SliderApply(self)
+	local col = self.Label:GetTextStyleColor()
+	if ( self.Label:GetTextColor() ) then col = self.Label:GetTextColor() end
+	local col = table.Copy( col )
+	col.a = 100 -- Fade it out a bit so it looks right
+	self.Slider:SetNotchColor( a )
+end
+
+local b_alpha = Color(0,0,0,100)
+
 
 -- Title
 do
@@ -303,6 +313,7 @@ do
 		--self.Paint = empty
 		local l = vgui.Create( "DLabel", self )
 		local b = vgui.Create("DNumSlider", self)
+		b.ApplySchemeSettings = SliderApply
 		b.Label:Dock(NODOCK)
 		b.PerformLayout = empty
 		local d = vgui.Create( "DLabel", self )
@@ -358,6 +369,7 @@ do
 		--self.Paint = empty
 		local l = vgui.Create( "DLabel", self )
 		local b = vgui.Create("DNumSlider", self)
+		b.ApplySchemeSettings = SliderApply
 		local t = vgui.Create("DCheckBox", self)
 		t.b = b
 		b.TextArea:SetDrawLanguageID( false )
@@ -464,6 +476,7 @@ do
 		else
 			self._type = true
 			local b = vgui.Create("DNumSlider", self)
+			b.ApplySchemeSettings = SliderApply
 			b.Label:Dock(NODOCK)
 			b.PerformLayout = empty
 			b:SetPos(5, self._l:GetTall())
@@ -1056,13 +1069,24 @@ do
 	--function PANEL:GetNotchColor()
 --		return color_white
 --	end
+	function PANEL:GetRange()
+		return self.m_max - self.m_min
+	end
+	function PANEL:GetNotches()
+		return math.floor(self:GetRange() / 4)
+	end
+	function PANEL:GetNotchColor()
+		return b_alpha
+	end
 	function PANEL:Paint( w, h )
 		-- GetNotchColor
-
+		local skin = self:GetSkin()
+		skin:PaintNumSlider(self,w,h)
 		--self:Paint2(w,h)
 		local sw = w - 15
 		paintKnob(self,sw * self.m_fSlideX,0)
 		paintKnob(self,sw * self.m_fSlide2X,0)
+		surface.SetDrawColor(color_white)
 	end
 	function PANEL:SetSlideX( i )
 		self.m_fSlideX = math.Clamp(math.max(i, self.m_fSlide2X or 0), 0, 1)
@@ -1988,5 +2012,5 @@ end
 
 
 if StormFox2.Menu and StormFox2.Menu.OpenSV then
-	StormFox2.Menu.OpenSV()
+	StormFox2.Menu.Open()
 end
