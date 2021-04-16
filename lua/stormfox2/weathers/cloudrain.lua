@@ -353,7 +353,7 @@ if CLIENT then
 		local speed = 0.72 + 0.36 * P
 		StormFox2.Misc.rain_template:SetSpeed( speed )
 		StormFox2.Misc.rain_template_medium:SetSpeed( speed )
-
+		StormFox2.Misc.rain_template_medium:SetAlpha( L / 5)
 		
 	end
 	-- Gets called every tick to add rain.

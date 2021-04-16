@@ -120,6 +120,7 @@ local init = function()
 	rain_template_medium:SetFadeIn( true )
 	rain_template_medium:SetSize(20,40)
 	rain_template_medium:SetRenderHeight(800)
+	rain_template_medium:SetAlpha(20)
 
 	--rain_template_multi
 	rain_template_multi:SetFadeIn( true )
