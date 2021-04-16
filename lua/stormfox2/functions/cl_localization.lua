@@ -1,7 +1,6 @@
 -- This is a localization backup, in case the file didn't transferre.
 if not file.Exists("resource/localization/en/stormfox.properties", "GAME") then return end
 local str = [[
-
 	#StormFox2.weather = weather
 	# https://github.com/Facepunch/garrysmod/blob/master/garrysmod/resource/localization/en/community.properties Check this first
 	# weather, day, night, sun, lightning, snow, cloud
@@ -45,7 +44,10 @@ local str = [[
 	sf_windmove_players.desc=Affect player movment in strong wind.
 	sf_enable_fogz=Overwrite farZ fog
 	sf_enable_fogz.desc=Overwrites the maps farZ fog. This might look bad on some maps.
-	
+	sf_enable_ice=Enable ice
+	sf_enable_ice.desc=Creates ice over water.
+	sf_overwrite_fogdistance=Default fog-distance.
+	sf_overwrite_fogdistance.desc=Overwrites the default fog-distance.
 	
 	#Details
 	sf_quality_target=FPS Target
@@ -105,16 +107,16 @@ local str = [[
 	sf_maplight_min.desc=The min lightlevel. You can adjust this if the map is too bright/dark.
 	
 	sf_maplight_smooth=Maplight Lerp.
-	sf_maplight_smooth.desc=Enables smooth light transisions.
+	sf_maplight_smooth.desc=Enables smooth light transitions.
 	sf_maplight_updaterate=Maplight UpdateRate
-	sf_maplight_updaterate.desc=The max amount of times StormFox will update the maplight doing transisions. Will cause lag on large maps!
+	sf_maplight_updaterate.desc=The max amount of times StormFox will update the maplight doing transitions. Will cause lag on large maps!
 	sf_extra_lightsupport=Extra Lightsupport
 	sf_extra_lightsupport.desc=Utilize engine.LightStyle to change the map-light. This can cause lag-spikes, but required on certain maps.
 	
 	#Effects
 	sf_enable_fog=Enable Fog
 	sf_enable_fog.desc=Allow StormFox to edit the fog.
-	sf_footprint_enabled=Disable Footprints
+	sf_footprint_enabled=Enable Footprints
 	sf_footprint_enabled.desc=Enable footprint effects.
 	sf_footprint_playeronly=Player Footprints Only.
 	sf_footprint_playeronly.desc=Only players make footprints.
@@ -146,7 +148,7 @@ local str = [[
 	sf_temp_range=Temperature range
 	sf_temp_range.desc=The min and max temperature.
 	sf_temp_acc=Temperature change.
-	sf_temp_acc.desc=The max temperature changes pr day.
+	sf_temp_acc.desc=The max temperature changes pr day.	
 		]]
 
 for k, v in ipairs( string.Explode("\n", str)) do

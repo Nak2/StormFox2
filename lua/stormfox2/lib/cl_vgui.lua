@@ -405,6 +405,7 @@ do
 		self._b.ConVarChanged = ConVarChanged
 		self._b.Scratch.ConVarChanged = ConVarChanged
 		self._b.TextArea.ConVarChanged = ConVarChanged
+		self._b:SetMinMax( con:GetMin() or 0, con:GetMax() or 1)
 		function self._t:DoClick()
 			if con:GetFloat() >= 0 then
 				SetSFConVar(sName, -1)
@@ -1877,6 +1878,12 @@ do
 			end
 		end
 		
+		-- Move changelog down
+		if p_left.buttons["changelog"] then
+			p_left.buttons["changelog"]:Dock(BOTTOM)
+			p_left.buttons["changelog"]:SetZPos(1)
+		end
+
 		-- Add workshop button
 		local b = vgui.Create("DButton", p_left)
 		b:Dock(BOTTOM)
@@ -2012,5 +2019,5 @@ end
 
 
 if StormFox2.Menu and StormFox2.Menu.OpenSV then
-	StormFox2.Menu.Open()
+	StormFox2.Menu.OpenSV()
 end

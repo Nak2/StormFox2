@@ -223,6 +223,19 @@ function StormFox2.Terrain.Set( sName )
 	return true
 end
 
+local NO_TYPE = -1
+local DIRTGRASS_TYPE = 0
+local ROOF_TYPE = 1
+local ROAD_TYPE = 2
+local PAVEMENT_TYPE = 3
+
+local function checkType(n)
+	if not n then return false end
+	if n == 0 then return true end
+	if n == 1 then return true end
+	return false
+end
+
 -- Applies the terrain (This won't reset old terrain)
 function meta:Apply()
 	CURRENT_TERRAIN = self
@@ -241,7 +254,8 @@ function meta:Apply()
 	if self.ground then
 		for materialName,tab in pairs( StormFox2.Map.GetTextureTree() ) do
 			local mat = Material( materialName )
-			SetMat( mat, tab[1] and self.ground, tab[2] and self.ground )
+			local a,b = checkType(tab[1]), checkType(tab[2])
+			SetMat( mat, a and self.ground,b and self.ground)
 		end
 	end
 	footStepLisen = self.footprints or self.footprintSnds

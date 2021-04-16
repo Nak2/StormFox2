@@ -310,7 +310,9 @@ local tabs = {
 		board:AddSetting("maplight_updaterate")
 		board:AddTitle("#effects_pp")
 		board:AddSetting("overwrite_extra_darkness")
+		board:AddSetting("enable_ice")
 		board:AddSetting("enable_fogz")
+		board:AddSetting("overwrite_fogdistance")
 		board:AddSetting("footprint_enablelogic")
 
 		-- Hide this features, as they're broken
@@ -321,6 +323,16 @@ local tabs = {
 	end},
 	[5] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png"))},
 	[6] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png"))},
+	[7] = {"Changelog", niceName(language.GetPhrase("#changelog")),(Material("stormfox2/hud/menu/other.png")),function(board)
+		local p = vgui.Create("DHTML", board)
+		board.PerformLayout = function(self,w,h)
+			p:SetTall(h)
+			p:SetWide(w)
+		end
+		p:SetPos(0,0)
+
+		p:OpenURL('https://steamcommunity.com/sharedfiles/filedetails/changelog/2447774443')
+	end}
 }
 
 local col = {Color(230,230,230), color_white}

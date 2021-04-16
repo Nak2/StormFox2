@@ -47,7 +47,7 @@ function StormFox2.Client.GetQualityNumber()
 	end
 	-- Players have complained not seeing the particles when their FPS is low
 	if game.SinglePlayer() then
-		q_num = math.max(1.5, q_num)
+		q_num = math.max(0.5, q_num)
 	end
 	return q_num, avagefps
 end

@@ -326,4 +326,4 @@ list.Set( "DesktopWindows", "StormFoxSetting", {
 	end
 } )
 
-StormFox2.Menu.Open()
+--StormFox2.Menu.Open()

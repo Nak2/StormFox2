@@ -2,7 +2,9 @@
 Use the map-data to set a minimum and maximum fogdistance
 ---------------------------------------------------------------------------]]
 StormFox2.Setting.AddCL("enable_fog",true)
-StormFox2.Setting.AddSV("enable_fogz",false,nil, "Effect")
+StormFox2.Setting.AddSV("enable_fogz",false,nil, "Effects")
+StormFox2.Setting.AddSV("overwrite_fogdistance",-1,nil, "Effects", -1, 800000)
+StormFox2.Setting.SetType("overwrite_fogdistance","special_float")
 StormFox2.Fog = {}
 --[[TODO: There are still problems with the fog looking strange.
 
@@ -114,9 +116,14 @@ function StormFox2.Fog.GetAmount()
 	return 1 - _fE / max_Dist
 end
 
-for k, v in ipairs( StormFox2.Map.FindClass('env_fog_controller') ) do
-	inf_Dist = inf_Dist or v.farz < 0
-	max_Dist = math.max(max_Dist, v.farz)
+local t = StormFox2.Map.FindClass('env_fog_controller')
+if #t > 0 then
+	for k, v in ipairs( t ) do
+		inf_Dist = inf_Dist or v.farz < 0
+		max_Dist = math.max(max_Dist, v.farz)
+	end
+else
+	max_Dist = 400000
 end
 
 local m_fog = Material('stormfox2/effects/fog_sphere')
@@ -155,7 +162,11 @@ end)
 function StormFox2.Fog.GetFarZ()
 	local n_Dis = StormFox2.Data.GetFinal("fogDistance", max_Dist + 700)
 	if inf_Dist then return n_Dis end
-	return math.min(max_Dist, n_Dis + 700)
+	local n = max_Dist
+	if StormFox2.Setting.GetCache("overwrite_fogdistance",-1) > -1 then
+		n = StormFox2.Setting.GetCache("overwrite_fogdistance",-1)
+	end
+	return math.min(n, n_Dis + 700)
 end
 
 function StormFox2.Fog.GetColor()

@@ -10,9 +10,6 @@ ENT.Category		= "StormFox2"
 ENT.Editable		= false
 ENT.Spawnable		= false
 
-hook.Add( "PhysgunPickup", "StormFox2.MapIce.DisallowPickup", function( ply, ent )
-	if ent:GetClass() == "stormfox_mapice" then return false end
-end )
 function ENT:GravGunPunt()
 	return false
 end
@@ -22,8 +19,8 @@ end
 function ENT:CanProperty()
 	return false
 end
-function ENT:CanTool()
-	return false
+function ENT:CanTool( ply, tab, str )
+	return str == "creator"
 end
 function ENT:CanDrive()
 	return false

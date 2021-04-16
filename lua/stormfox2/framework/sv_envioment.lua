@@ -1,6 +1,8 @@
 local INVALID_VERTS = 0
 local WATER_VERTS = 1
 
+StormFox2.Setting.AddSV("enable_ice",not game.IsDedicated())
+
 --[[-------------------------------------------------------------------------
 Localize
 ---------------------------------------------------------------------------]]
@@ -297,6 +299,7 @@ local function StartGenerating()
 end
 hook.Add("StormFox2.InitPostEntity", "StormFox_ENV_SCAN", StartGenerating)
 
+local bIce = false
 local function SpawnIce()
 	for k,v in ipairs(ents.FindByClass("stormfox_mapice")) do
 		v:Remove()
@@ -304,7 +307,29 @@ local function SpawnIce()
 	local e = ents.Create("stormfox_mapice")
 	e:SetPos(Vector(0,0,0))
 	e:Spawn()
+	bIce = true
 end
+
+local function RemoveIce()
+	bIce = false
+	for k,v in ipairs(ents.FindByClass("stormfox_mapice")) do
+		v:Remove()
+	end
+end
+
+timer.Create("stormfox2.spawnice", 8, 0, function()
+	if not StormFox2.Setting.GetCache("enable_ice") then
+		if bIce then
+			RemoveIce()
+		end
+		return
+	end
+	if bIce and StormFox2.Temperature.Get() > -2 then
+		RemoveIce()
+	elseif not bIce and StormFox2.Temperature.Get() <= -15 then
+		SpawnIce()
+	end
+end)
 
 concommand.Add("stormfox2_debug_spawnice", function(ply)
 	if ply and not ply:IsListenServerHost() then return end
@@ -313,7 +338,5 @@ end, nil, nil)
 
 concommand.Add("stormfox2_debug_removeice", function(ply)
 	if ply and not ply:IsListenServerHost() then return end
-	for k,v in ipairs(ents.FindByClass("stormfox_mapice")) do
-		v:Remove()
-	end
+	RemoveIce()
 end, nil, nil)

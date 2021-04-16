@@ -1,5 +1,9 @@
 include("shared.lua")
 
+hook.Add( "PhysgunPickup", "StormFox2.MapIce.DisallowPickup", function( ply, ent )
+	if ent:GetClass() == "stormfox_mapice" then return false end
+end )
+
 -- nature/dirtfloor005
 -- wood/woodburnt001
 local ice = Material("stormfox2/effects/ice_water")
@@ -45,7 +49,7 @@ function ENT:DrawTranslucent()
 	if not STORMFOX_WATERMESH then return end
 	--local c = StormFox2.Data.Get("bottomColor") or Color(204, 255, 255)
 	--	c = Color(c.r * 0.9 + 70,c.g * 0.8 + 70,c.b * 0.8 + 70)
-	local n = (20 + (StormFox2.Map.GetLight() or 100)) / 150
+	local n = (50 + (StormFox2.Map.GetLight() or 100)) / 200
 	ice:SetVector("$color", Vector(n,n,n))
 	render.SetMaterial(ice)
 	STORMFOX_WATERMESH:Draw()
