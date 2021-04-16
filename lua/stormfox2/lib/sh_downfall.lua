@@ -454,7 +454,7 @@ if CLIENT then
 			if self._renh then
 				if self._renh <= 0 then return end
 				local sr = 1 - self._renh
-				local sh = self:GetNorm() * self.h
+				local sh = self:GetNorm() * self.h * 0.91
 				render.DrawBeam(pos - sh, pos - sh * sr, self.w, 0, self._renh, self.cL or self.c)
 			else
 				render.DrawBeam(pos - self:GetNorm() * self.h, pos, self.w, 0, 1, self.cL or self.c)
