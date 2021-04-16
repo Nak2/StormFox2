@@ -145,8 +145,11 @@ if SERVER then
 	local t = {}
 	local lerp_to
 	function StormFox2.Map.SetLightLerp(f, nLerpTime, ignore_lightstyle )
-		if last_f == f and not lerp_to then return end -- No need to update
-		if lerp_to and lerp_to == f then return end -- Already lerping
+		if nLerpTime then
+			nLerpTime = math.max(nLerpTime, 6)
+		end
+		if last_f and last_f == f and not lerp_to then return end -- No need to update
+		if lerp_to and lerp_to == f then return end -- Already lerping to that
 		-- If there isn't a smooth-option, don't use lerp.
 		t = {}
 		local smooth = StormFox2.Setting.GetCache("maplight_smooth",true)

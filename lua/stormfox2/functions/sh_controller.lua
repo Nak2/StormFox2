@@ -27,7 +27,7 @@ if SERVER then
 		elseif uID == SF_SETTIME_S and type(var) == "number" then
 			StormFox2.Time.SetSpeed( var )
 		elseif uID == SF_THUNDER and type(var) == "boolean" then
-			StormFox2.Thunder.SetEnabled(var)
+			StormFox2.Thunder.SetEnabled(var, 6)
 		elseif uID == SF_YEARDAY and type(var) == "number" then
 			StormFox2.Date.SetYearDay( var )
 		end
@@ -111,10 +111,11 @@ local rad,cos,sin = math.rad, math.cos, math.sin
 local grad = Material("gui/gradient_down")
 local function DrawButton(self,w,h)
 	local hov = self:IsHovered()
-	local down = self:IsDown()
+	local down = self:IsDown() or self._DEPRESSED
 	surface.SetDrawColor(b_col)
 	surface.DrawRect(0,0,w,h)
-	if down then
+	if self._DISABLED then
+	elseif down then
 		surface.SetDrawColor(p_col)
 	elseif hov then
 		surface.SetDrawColor(h_col)
@@ -240,11 +241,13 @@ end
 
 local bottom_size = 24
 local col_ba = Color(0,0,0,155)
+local col_dis = Color(125,125,125,125)
 local m_cir = Material("stormfox2/hud/hudring2.png")
+local m_thunder = Material("stormfox2/hud/w_cloudy_thunder.png")
 local padding = 15
 local padding_y = 5
 local function Init(self)
-	self:SetSize(180,400)
+	self:SetSize(180,432)
 	self:SetPos(math.min(ScrW() * 0.8, ScrW() - 180), ScrH() / 2 - 200)
 	self:SetTitle("")
 	self.btnMaxim:SetVisible( false )
@@ -344,7 +347,42 @@ local function Init(self)
 		function p:DrawText( s )
 			return s .. "%"
 		end
-	-- Temperature
+	-- Thunder
+		local tP = vgui.Create("DPanel", self)
+		tP:Dock(TOP)
+		tP:SetTall(32)
+		tP.Paint = empty
+		local thunder = vgui.Create("DButton", tP)
+		thunder:NoClipping( true )
+		thunder:SetSize(33, 32)
+		thunder:SetText('')
+		function tP:PerformLayout(w, h)
+			thunder:SetPos(w / 2 - 16,0)
+		end
+		function thunder:Paint(w,h)
+			local cW = StormFox2.Weather.GetCurrent()
+			local hasThunder = cW.thunder and true or false
+			self._DEPRESSED = StormFox2.Thunder.IsThundering()
+			self._DISABLED = not hasThunder and not self._DEPRESSED
+			DrawButton(self,w,h)
+			if not self._DISABLED then
+				surface.SetDrawColor(color_white)
+			else
+				surface.SetDrawColor(col_dis)
+			end
+			surface.SetMaterial(m_thunder)
+			surface.DrawTexturedRect(5,5,w - 10,h - 10)
+		end
+		function thunder:DoClick()
+			local cW = StormFox2.Weather.GetCurrent()
+			local hasThunder = cW.thunder and true or false
+			local isth = StormFox2.Thunder.IsThundering()
+			if not isth and not hasThunder then
+				return
+			end
+			SetWeather(SF_THUNDER, not isth)
+		end
+		-- Temperature
 		local t = vgui.Create("DPanel", self)
 		t:SetTall(30)
 		t:Dock(TOP)
@@ -612,6 +650,6 @@ list.Set( "DesktopWindows", "StormFoxController", {
 		StormFox2.Menu.OpenController()
 	end
 } )
-
+StormFox2.Menu.OpenController()
 
 -- icon16/shield

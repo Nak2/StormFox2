@@ -132,7 +132,6 @@ function SWEP:ShouldDropOnDie() return false end
 
 if ( SERVER ) then return end -- Only clientside lua after this line
 function SWEP:Holster()
-
 end
 
 SWEP.WepSelectIcon = surface.GetTextureID( "vgui/gmod_camera" )
@@ -140,12 +139,6 @@ SWEP.WepSelectIcon = surface.GetTextureID( "vgui/gmod_camera" )
 -- Don't draw the weapon info on the weapon selection thing
 function SWEP:DrawHUD() end
 function SWEP:PrintWeaponInfo( x, y, alpha ) end
-
-function SWEP:HUDShouldDraw( name )
-   -- So we can change weapons
-   draw.DrawText(self:GetPower(), "DermaDefault", 0, 0, Color(255,255,255,255), TEXT_ALIGN_LEFT)
-   return true
-end
 
 --[[-------------------------------------------------------------------------
 function SWEP:CalcView(ply,pos,ang,fov)
