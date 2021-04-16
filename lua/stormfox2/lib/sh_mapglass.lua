@@ -752,15 +752,23 @@ Locates an entity with the given hammer_id from the mapfile.
 		SF_TEXTDATA = GenerateTextureTree()
 	end
 -- Find some useful variables we can use
-	max = util.StringToType( StormFox2.Map.Entities()[1]["world_maxs"], "Vector" )
-	min = util.StringToType( StormFox2.Map.Entities()[1]["world_mins"], "Vector" )
+	if StormFox2.Map.Entities()[1] then
+		max = util.StringToType( StormFox2.Map.Entities()[1]["world_maxs"], "Vector" )
+		min = util.StringToType( StormFox2.Map.Entities()[1]["world_mins"], "Vector" )
+		bCold = StormFox2.Map.Entities()[1]["coldworld"] and true or false
+	else
+		StormFox2.Warning("This map doesn't have an entity lump! Might cause some undocumented behaviors.")
+		-- gm_flatgrass
+		max = Vector(15360, 15360, -12288)
+		min = Vector(15360, 15360, -12800)
+		bCold = false
+	end
 	local sky_cam = StormFox2.Map.FindClass("sky_camera")[1]
 	if sky_cam then
 		has_Sky = true
 		sky = util.StringToType( sky_cam.origin, "Vector" )
 		sky_scale = tonumber(sky_cam.scale) or 1
 	end
-	bCold = StormFox2.Map.Entities()[1]["coldworld"] and true or false
 	for _,tab in pairs(StormFox2.Map.Textures()) do
 		if string.find(tab.texture:lower(), "snow") then
 			bSnow = true
