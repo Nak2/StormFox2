@@ -2016,8 +2016,3 @@ do
 	end
 	derma.DefineControl( "SF_Menu", "", PANEL, "DFrame" )
 end
-
-
-if StormFox2.Menu and StormFox2.Menu.OpenSV then
-	StormFox2.Menu.OpenSV()
-end
