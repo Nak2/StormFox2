@@ -74,7 +74,9 @@ local function SliderApply(self)
 	if ( self.Label:GetTextColor() ) then col = self.Label:GetTextColor() end
 	local col = table.Copy( col )
 	col.a = 100 -- Fade it out a bit so it looks right
-	self.Slider:SetNotchColor( a )
+	if self.Slider.SetNotchColor then
+		self.Slider:SetNotchColor( a )
+	end
 end
 
 local b_alpha = Color(0,0,0,100)
