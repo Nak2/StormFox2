@@ -28,6 +28,7 @@ local function setLights( bTurnOn )
 	local i = 1
 	timer.Create("StormFox2.mi.lights", 0.5, 6, function()
 		for _,ent in ipairs(night_lights[i] or {}) do
+			if not IsValid(ent) then continue end
 			setELight(ent, bTurnOn)
 		end
 		i = i + 1
@@ -55,7 +56,7 @@ hook.Add("StormFox2.InitPostEntity", "StormFox2.lightioinit", function()
 		if c == "light_spot" then name = name or "night" end -- Make unnamed light_spots count.
 		if not name then continue end
 		if string.find(name,"indoor") then continue end
-		if not (string.find(name,"night") or string.find(name,"1") or string.find(name,"day")) then continue end
+		if not (string.find(name,"night") or name == "1" or string.find(name,"day")) then continue end
 		table.insert(night_lights[ 1 + i % 6 ],ent)
 	end
 	-- Update on launch
