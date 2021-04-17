@@ -52,7 +52,7 @@ StormFox2.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 			StormFox2.Wind.SetForce( json.wind and json.wind.speed or 0 )
 			StormFox2.Wind.SetYaw( json.wind and json.wind.deg or 0 )
 		-- Weather
-			local cloudyness = ( json.clouds and json.clouds.all or 0 ) / 100
+			local cloudyness = ( json.clouds and json.clouds.all or 0 ) / 110
 			local rain = 0
 			if json.rain then
 				rain = math.max( json.rain["1h"] or 0, json.rain["3h"] or 0, 2) / 8

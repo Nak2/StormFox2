@@ -324,9 +324,9 @@ timer.Create("stormfox2.spawnice", 8, 0, function()
 		end
 		return
 	end
-	if bIce and StormFox2.Temperature.Get() > -2 then
+	if bIce and StormFox2.Temperature.Get() > -1 then
 		RemoveIce()
-	elseif not bIce and StormFox2.Temperature.Get() <= -15 then
+	elseif not bIce and StormFox2.Temperature.Get() <= -8 then
 		SpawnIce()
 	end
 end)
