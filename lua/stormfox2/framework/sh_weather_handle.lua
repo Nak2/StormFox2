@@ -215,6 +215,11 @@ if SERVER then
 			StormFox2.Weather.Set("Clear", 1, 0)
 		end
 	end)
+	-- In case no weather was set
+	timer.Simple(8, function()
+		if CurrentWeather then return end
+		StormFox2.Weather.Set("Clear", 1, 0)
+	end)
 else
 	local hasLocalWeather = false
 	local svWeather

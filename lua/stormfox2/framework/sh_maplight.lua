@@ -143,36 +143,34 @@ end
 ]]
 if SERVER then
 	local t = {}
-	local lerp_to
 	function StormFox2.Map.SetLightLerp(f, nLerpTime, ignore_lightstyle )
-		if nLerpTime then
-			nLerpTime = math.max(nLerpTime, 6)
-		end
-		if last_f and last_f == f and not lerp_to then return end -- No need to update
-		if lerp_to and lerp_to == f then return end -- Already lerping to that
-		-- If there isn't a smooth-option, don't use lerp.
-		t = {}
 		local smooth = StormFox2.Setting.GetCache("maplight_smooth",true)
-		if not StormFox2.Ent.light_environments or not smooth or not last_f then
+		local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
+		-- No lights to smooth and/or setting is off
+		if not StormFox2.Ent.light_environments or not smooth or nLerpTime <= 5 or not last_f or num <= 1 then
+			t = {}
 			StormFox2.Map.SetLight( f, ignore_lightstyle )
 			return
 		end
-		-- Check to see if we we can lerp.
-		local delta = last_f - f
-		if nLerpTime <= 5 or not last_f or math.abs(delta) < 3.7 then -- No need to lerp
-			StormFox2.Map.SetLight( f, ignore_lightstyle )
+		-- Are we trying to lerp towards current value?
+		if last_f and last_f == f then
+			t = {}
 			return
 		end
+		t = {}
 		-- Start lerping ..
 		-- We make a time-list of said values. Where the last will trigger light_style (If enabled)
-		lerp_to = f
-		local ticks = math.floor( math.max(nLerpTime / 5, StormFox2.Setting.GetCache("maplight_updaterate", 3)) ) -- How many times should the light update?
+		local delta = f - last_f
+		local ticks = math.floor( math.max(nLerpTime / 5, num) ) -- How many times should the light update?
 		local c = CurTime()
-		local n = delta / ticks
+		local n = math.abs(delta / ticks)
 		for i = 2, ticks do
-			table.insert(t, {c + (i - 1) * 5, last_f - n * i, ignore_lightstyle})
+			table.insert(t, {c + (i - 1) * 5, 
+				math.Approach(last_f, f, n * i), 
+				ignore_lightstyle
+			})
 		end
-		StormFox2.Map.SetLight( last_f + n, true )
+		StormFox2.Map.SetLight( math.Approach(last_f, f, n), true )
 	end
 	timer.Create("StormFox2.lightupdate", 1, 0, function()
 		if #t <= 0 then return end
