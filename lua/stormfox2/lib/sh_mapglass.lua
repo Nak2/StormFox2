@@ -690,6 +690,7 @@ Locates an entity with the given hammer_id from the mapfile.
 		-- Locate all logic_relays on the map
 		for _,ent in ipairs( ents.FindByClass("logic_relay") ) do
 			local name = ent:GetName()
+			name = string.match(name, "-(.+)$") or name
 			if name == "dusk" then name = "night_events" end
 			if name == "dawn" then name = "day_events" end
 			if not relay[name] then relay[name] = {} end
