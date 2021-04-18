@@ -19,7 +19,7 @@ if SERVER then
 		StormFox2.Network.Set("day", nDay % 365)
 	end
 
-	concommand.Add("stormfox2_setyearday", function(ply, _, _, argStr)
+	concommand.Add("stormfox2_setyearday", "StormFox WeatherEdit", function(ply, _, _, argStr)
 		StormFox2.Permission.EditAccess(ply, function()
 			StormFox2.Date.SetYearDay( tonumber(argStr) or 0 )
 		end)
