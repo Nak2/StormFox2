@@ -178,6 +178,7 @@ local tabs = {
 			mth:SetPos(x + a*4, h - sup:GetTall())
 		end
 		local FPSTarget = vgui.Create("DPanel", board)
+		board:MarkUsed("quality_target")
 		do
 			FPSTarget:SetTall( 50 )
 			FPSTarget:Dock(TOP)
@@ -260,7 +261,6 @@ local tabs = {
 		end
 
 		--local qs = board:AddSetting("quality_target")
-
 		board:AddSetting("quality_ultra")
 		board:AddTitle("#sf_customization")
 		local l = vgui.Create("DPanel", board)
@@ -312,16 +312,3 @@ function StormFox2.Menu.Open()
 end
 
 concommand.Add('stormfox2_menu', StormFox2.Menu.Open, nil, "Opens SF clientside menu")
-
-list.Set( "DesktopWindows", "StormFoxSetting", {
-	title		= "SF " .. niceName(language.GetPhrase("#spawnmenu.utilities.settings")),
-	icon		= "stormfox2/hud/settings.png",
-	width		= 960,
-	height		= 700,
-	onewindow	= true,
-	init		= function( icon, window )
-		window:Remove()
-		surface.PlaySound("buttons/button14.wav")
-		StormFox2.Menu.Open()
-	end
-} )

@@ -637,19 +637,16 @@ function StormFox2.Menu.CloseController()
 end
 
 concommand.Add('stormfox2_controller', StormFox2.Menu.OpenController, nil, "Opens SF controller menu")
-
-list.Set( "DesktopWindows", "StormFoxController", {
-	title		= "#sf_wcontoller",
-	icon		= "stormfox2/hud/controller.png",
-	width		= 960,
-	height		= 700,
-	onewindow	= true,
-	init		= function( icon, window )
-		window:Remove()
-		surface.PlaySound("buttons/button14.wav")
-		StormFox2.Menu.OpenController()
-	end
-} )
-StormFox2.Menu.OpenController()
-
--- icon16/shield
+-- Controller
+	list.Set( "DesktopWindows", "StormFoxController", {
+		title		= "#sf_wcontoller",
+		icon		= "stormfox2/hud/controller.png",
+		width		= 960,
+		height		= 700,
+		onewindow	= true,
+		init		= function( icon, window )
+			window:Remove()
+			surface.PlaySound("buttons/button14.wav")
+			StormFox2.Menu.OpenController()
+		end
+	} )
