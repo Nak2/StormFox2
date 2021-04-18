@@ -815,37 +815,46 @@ Generate meshes and env-points out from the map-data.
 				for i,v in ipairs(surfaceinfos[WATER_VERTS]) do
 					local t = v[1]:GetVertices()
 					if StormFox2.Map.IsInside( v[2] ) then
-						
 						for i = 1,3 do
 							local vec = t[i]
 							table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
-							table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+							--table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex})
 						end
 						for i = 4,20 do
 							if #t < i then continue end
 							local vec = t[1]
 							table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
-							table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+						--	table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex})
 							local vec = t[i - 1]
 							table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
-							table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+						--	table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex})
 							local vec = t[i]
 							table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
-							table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata, tangent = tangent})
+						--	table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex})
 						end
-						-- Thickness
-						for i = #t,3,-1 do
-							if i < 3 then continue end
-							local vec = t[1]
-							table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
-							local vec = t[i - 1]
-							table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
-							local vec = t[i]
-							table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
-						end
-						for i = 3,1,-1 do
-							local vec = t[i]
-							table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec - vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1),userdata = userdata})
+						if #t >= 3 then
+							local t2 = {}
+							if #t == 3 then
+								for i = 1,3 do
+									table.insert(t2, t[i] + vec_ex)
+									table.insert(t2, t[i] - vec_ex)
+								end
+								table.insert(t2, t[3] + vec_ex)
+								table.insert(t2, t[3] - vec_ex)
+								table.insert(STORMFOX_WATERMESHCOLLISON, t2)
+							elseif #t == 4 then
+								for i = 1,4 do
+									table.insert(t2, t[i] + vec_ex)
+									table.insert(t2, t[i] - vec_ex)
+								end
+								table.insert(STORMFOX_WATERMESHCOLLISON, t2)
+							else
+								for i = 1,#t do
+									table.insert(t2, t[i] + vec_ex)
+									table.insert(t2, t[i] - vec_ex)
+								end
+								table.insert(STORMFOX_WATERMESHCOLLISON, t2)
+							end
 						end
 					elseif CLIENT then
 						local s = StormFox2.Map.GetSkyboxScale() or 1

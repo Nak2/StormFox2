@@ -123,7 +123,7 @@ function ENT:Initialize()
 
 	self:SetMaterial( "stormfox2/effects/ice_water" )
 	self:SetPos(Vector(0,0,0))
-	self:PhysicsFromMesh(STORMFOX_WATERMESHCOLLISON)
+	self:PhysicsInitMultiConvex(STORMFOX_WATERMESHCOLLISON)
 	local phys = self:GetPhysicsObject()
 	self:SetMoveType( MOVETYPE_NONE )
 	if ( IsValid( phys ) ) then
@@ -131,7 +131,6 @@ function ENT:Initialize()
 		phys:AddGameFlag( FVPHYSICS_CONSTRAINT_STATIC )
 		phys:SetMass(4000)
 		phys:EnableDrag(false)
-		--phys:SetMaterial( "ice" ) Breaks all collision with non-players
 	end
 	self:EnableCustomCollisions( true );
 	self:AddFlags( FL_WORLDBRUSH )
