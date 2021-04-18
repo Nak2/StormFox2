@@ -246,6 +246,35 @@ local m_cir = Material("stormfox2/hud/hudring2.png")
 local m_thunder = Material("stormfox2/hud/w_cloudy_thunder.png")
 local padding = 15
 local padding_y = 5
+
+local function addW( w_select, v, p )
+	local b = vgui.Create("DButton",w_select)
+	b:SetSize(32,32)
+	b:SetText("")
+	b:DockMargin(0,0,0,0)
+	w_select:AddPanel(b)
+	b.weather = v
+	b:SetToolTip(v)
+	function b:OnCursorEntered()
+		local w = StormFox2.Weather.Get(self.weather)
+		if not IsValid(w) then return end -- Something bad happen
+		b:SetToolTip(w:GetName(StormFox2.Time.Get(), StormFox2.Temperature.Get(), StormFox2.Wind.GetForce(), StormFox2.Thunder.IsThundering(), p:GetVal() / 100))
+	end
+	function b:Paint(w,h)
+		DrawButton(self,w,h)
+		local weather = StormFox2.Weather.Get(b.weather)
+		local mat = weather.GetSymbol and weather.GetSymbol(_,StormFox2.Temperature.Get())
+		if mat then
+			surface.SetDrawColor(255,255,255)
+			surface.SetMaterial(mat)
+			surface.DrawTexturedRect(5,5,w - 10,h - 10)
+		end
+	end
+	function b:DoClick()
+		SetWeather(SF_SETWEATHER, {self.weather, p:GetVal() / 100})
+	end
+end
+
 local function Init(self)
 	self:SetSize(180,432)
 	self:SetPos(math.min(ScrW() * 0.8, ScrW() - 180), ScrH() / 2 - 200)
@@ -312,32 +341,10 @@ local function Init(self)
 			end
 		end
 		local t = StormFox2.Weather.GetAll()
+		addW(w_select, "Clear", p)
 		for k,v in ipairs(t) do
-			local b = vgui.Create("DButton",w_select)
-			b:SetSize(32,32)
-			b:SetText("")
-			b:DockMargin(0,0,0,0)
-			w_select:AddPanel(b)
-			b.weather = v
-			b:SetToolTip(v)
-			function b:OnCursorEntered()
-				local w = StormFox2.Weather.Get(self.weather)
-				if not IsValid(w) then return end -- Something bad happen
-				b:SetToolTip(w:GetName(StormFox2.Time.Get(), StormFox2.Temperature.Get(), StormFox2.Wind.GetForce(), StormFox2.Thunder.IsThundering(), p:GetVal() / 100))
-			end
-			function b:Paint(w,h)
-				DrawButton(self,w,h)
-				local weather = StormFox2.Weather.Get(b.weather)
-				local mat = weather.GetSymbol and weather.GetSymbol(_,StormFox2.Temperature.Get())
-				if mat then
-					surface.SetDrawColor(255,255,255)
-					surface.SetMaterial(mat)
-					surface.DrawTexturedRect(5,5,w - 10,h - 10)
-				end
-			end
-			function b:DoClick()
-				SetWeather(SF_SETWEATHER, {self.weather, p:GetVal() / 100})
-			end
+			if v == "Clear" then continue end
+			addW(w_select, v, p)
 			w_select.num = w_select.num + 1
 		end
 		p:SetMin(1)

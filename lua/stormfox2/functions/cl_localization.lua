@@ -26,6 +26,7 @@ local str = [[
 	sf_weather.fog.low=Haze
 	sf_weather.fog.medium=Fog
 	sf_weather.fog.high=Thick Fog
+	sf_weather.lava=Lava
 	
 	#Settings
 	sf_mthreadwarning=These settings can boost your FPS:\n%s\nWarning\: Might crash some older AMD CPUs!
@@ -148,8 +149,8 @@ local str = [[
 	sf_temp_range=Temperature range
 	sf_temp_range.desc=The min and max temperature.
 	sf_temp_acc=Temperature change.
-	sf_temp_acc.desc=The max temperature changes pr day.	
-		]]
+	sf_temp_acc.desc=The max temperature changes pr day.
+	]]
 
 for k, v in ipairs( string.Explode("\n", str)) do
 	if string.match(v, "%s-#") then continue end

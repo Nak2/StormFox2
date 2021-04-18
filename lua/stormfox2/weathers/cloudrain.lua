@@ -464,6 +464,17 @@ if CLIENT then
 			end
 		end
 	end
+
+-- Render water
+	local debri = Material("stormfox2/effects/terrain/snow_water")
+	local function renderD( a, b)
+		local f = 5 + StormFox2.Temperature.Get()
+		if f > 0 then return end
+		debri:SetFloat("$alpha",StormFox2.Weather.GetPercent() * 0.3 * math.Clamp(-f, 0, 1))
+		render.SetMaterial(debri)
+		StormFox2.Environment.DrawWaterOverlay( b )
+	end
+	rain.PreDrawTranslucentRenderables = renderD
 end
 
 -- 2D skyboxes

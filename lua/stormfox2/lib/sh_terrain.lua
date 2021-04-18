@@ -62,8 +62,9 @@ function meta:LockUntil( fFunc )
 	self.lock = fFunc
 end
 -- Sets the ground texture. e.i; snow
-function meta:SetGroundTexture( iTexture )
+function meta:SetGroundTexture( iTexture, bOnlyGround )
 	self.ground = iTexture
+	self.only_ground = bOnlyGround
 end
 -- Adds a texture swap.
 function meta:AddTextureSwap( mMaterial, basetexture, basetextire2 )
@@ -76,7 +77,9 @@ end
 -- Makes footprints. Allows to overwrite footstep sounds.
 function meta:MakeFootprints( bool, sndList, sndName, OnPrint )
 	self.footprints = bool
-	self.footprintSnds = {sndList, sndName}
+	if sndList or sndName then
+		self.footprintSnds = {sndList, sndName}
+	end
 	self.footstepFunc = OnPrint
 	self.footstepLisen = bool or sndList or sndName or OnPrint
 end
@@ -229,10 +232,10 @@ local ROOF_TYPE = 1
 local ROAD_TYPE = 2
 local PAVEMENT_TYPE = 3
 
-local function checkType(n)
+local function checkType(n, bOnlkyG)
 	if not n then return false end
 	if n == 0 then return true end
-	if n == 1 then return true end
+	if n == 1 and not bOnlkyG then return true end
 	return false
 end
 
@@ -254,7 +257,7 @@ function meta:Apply()
 	if self.ground then
 		for materialName,tab in pairs( StormFox2.Map.GetTextureTree() ) do
 			local mat = Material( materialName )
-			local a,b = checkType(tab[1]), checkType(tab[2])
+			local a,b = checkType(tab[1], self.only_ground), checkType(tab[2], self.only_ground)
 			SetMat( mat, a and self.ground,b and self.ground)
 		end
 	end

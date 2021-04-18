@@ -1,0 +1,22 @@
+"UnlitGeneric"
+{
+	"$basetexture" "nature/snowfloor001a"
+	"$surfaceprop" "glass"
+
+	"$translucent" 1
+	"$alpha" 0.3
+	"$vertexalpha" 1
+	"$vertexcolor" 1
+	"$additive" 0
+	//"$envmapsaturation" 1
+	"$nocull" 0
+	"$model" 1
+	//$envmap env_cubemap
+	//$envmaptint "[0.5 0.5 0.5]"
+	//$fresnelreflection 1
+
+	// Details
+	"$detail" "effects/filmscan256"
+	"$detailscale" 0.01
+	"$detailblendmode" 8
+}

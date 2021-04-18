@@ -1,0 +1,11 @@
+"WorldVertexTransition"
+{
+	"$basetexture" "stormfox2/effects/terrain/lava_ground"
+	"$selfillum" 1
+	"$selfillummask" "stormfox2/effects/terrain/lava_ground"
+
+        "$basetexturetransform" "center .5 .5 scale 1 1 rotate 0  translate 0 0"	
+	//"%detailtype" "sf_lava"
+	"%keywords" "wasteland"
+	"$surfaceprop" "dirt"
+}

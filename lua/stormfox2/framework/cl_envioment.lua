@@ -1165,3 +1165,23 @@ timer.Create("StormFox2.enviroment.think", 0.25, 0, function()
 	env_corotine()
 	--print(coroutine.resume(env_corotine))
 end)]]
+
+--[[-------------------------------------------------------------------------
+Ice sheet on the map
+---------------------------------------------------------------------------]]
+local b = #ents.FindByClass("stormfox_mapice") > 0
+function StormFox2.Environment.HasMapIce()
+	return b
+end
+function StormFox2.Environment._SETMapIce(s)
+	b = s
+end
+function StormFox2.Environment.DrawWaterOverlay(bSkyBox)
+	if not STORMFOX_WATERMESH_SKYBOX then return end -- Invalid mesh.
+	if StormFox2.Environment.HasMapIce() then return end -- Ice is on the map
+	if bSkyBox then
+		STORMFOX_WATERMESH_SKYBOX:Draw()
+	else
+		STORMFOX_WATERMESH:Draw()
+	end
+end

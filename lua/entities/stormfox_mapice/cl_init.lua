@@ -30,7 +30,9 @@ local function BuildPhysics( self )
 end
 
 function ENT:Initialize()
-	RenderSkyBoxIce = true
+	if StormFox2.Environment._SETMapIce then
+		StormFox2.Environment._SETMapIce( true )
+	end
 	if not STORMFOX_WATERMESHCOLLISON then return end
 	BuildPhysics( self )
 	self:SetRenderBoundsWS(StormFox2.Map.MinSize(),StormFox2.Map.MaxSize())
@@ -38,7 +40,9 @@ end
 
 function ENT:OnRemove( )
 	if #ents.FindByClass("stormfox_mapice") > 1 then return end
-	RenderSkyBoxIce = false
+	if StormFox2.Environment._SETMapIce then
+		StormFox2.Environment._SETMapIce( false )
+	end
 end
 
 function ENT:Think()
@@ -47,16 +51,15 @@ function ENT:Think()
 end
 
 hook.Add("PreDrawTranslucentRenderables","StormFox2.Client.RenderSkyWater",function(a,b)
-	if not RenderSkyBoxIce then return end
+	if not StormFox2.Environment.HasMapIce() then return end
 	if not STORMFOX_WATERMESH_SKYBOX then return end -- Invalid mesh.
 	local n = (50 + (StormFox2.Map.GetLight() or 100)) / 200
 		ice:SetVector("$color", Vector(n,n,n))
+	render.SetMaterial(ice)
 	if b then
-		-- Render skybox-water
-		render.SetMaterial(ice)
+		-- Render skybox-water	
 		STORMFOX_WATERMESH_SKYBOX:Draw()
 	else
-		render.SetMaterial(ice)
 		STORMFOX_WATERMESH:Draw()
 	end
 end)

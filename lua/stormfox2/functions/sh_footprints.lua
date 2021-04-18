@@ -43,6 +43,8 @@ end
 		local foot = -1
 		if cache[OriginalSnd] then
 			foot = cache[OriginalSnd]
+		elseif string.match(OriginalSnd, "npc_antlionguard.farstep") or string.match(OriginalSnd, "npc_antlionguard.nearstep") then
+			foot = lastFoot[ent] or -1
 		elseif find(OriginalSnd, "stepleft",1,true) or find(OriginalSnd, "gallopleft",1,true) then
 			foot = 0
 			cache[OriginalSnd] = 0
@@ -103,7 +105,7 @@ end
 			if SERVER and not game.SinglePlayer() and not StormFox2.Setting.GetCache("footprint_enablelogic",true) then return end
 		-- Check if it is a footstep sound of some sort.
 			local foot = GetFootstep(data) -- Returns [-1 = invalid, 0 = left, 1 = right]
-			if not foot or foot < 0 then return end
+			if not foot then return end
 		-- Checks to see if the texturem the entity stands on, have been replaced.
 			local bReplace, sTex = IsOnReplacedTex(data.Entity,data.SoundName:lower(),data.Pos or data.Entity:GetPos())
 		-- Overwrite the sound if needed.

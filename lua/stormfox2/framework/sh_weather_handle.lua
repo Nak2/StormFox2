@@ -281,7 +281,7 @@ end
 hook.Add("Think", "StormFox2.Weather.Think", function()
 	if not CurrentWeather then return end
 	if not CurrentWeather.Think then return end
-	CurrentWeather.Think()
+	CurrentWeather:Think()
 end)
 
 timer.Create("StormFox2.Weather.tickslow", 1, 0, function()
