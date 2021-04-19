@@ -51,7 +51,7 @@ function ENT:Think()
 end
 
 hook.Add("PreDrawTranslucentRenderables","StormFox2.Client.RenderSkyWater",function(a,b)
-	if not StormFox2.Environment.HasMapIce() then return end
+	if not StormFox2 or not StormFox2.Environment.HasMapIce() then return end
 	if not STORMFOX_WATERMESH_SKYBOX then return end -- Invalid mesh.
 	local n = (50 + (StormFox2.Map.GetLight() or 100)) / 200
 		ice:SetVector("$color", Vector(n,n,n))
