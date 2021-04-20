@@ -26,24 +26,23 @@ function StormFox2.Map.Set2DSkyBoxDarkness( f )
 	end
 end
 
-local function SkyThink(stamp)
-	local s = StormFox2.Setting.GetCache("overwrite_2dskybox", "")
+local function SkyThink(b, str)
+	if b == nil then
+		b = StormFox2.Setting.GetCache("use_2dskybox", false)
+	end
+	if not b then
+		return RunConsoleCommand("sv_skyname", "painted")
+	end
+	local s = str or StormFox2.Setting.GetCache("overwrite_2dskybox", "")
 	if s == "" then
-		local sky_options = StormFox2.Weather.GetCurrent():Get("skyBox",stamp or StormFox2.Sky.GetLastStamp())
+		local sky_options = StormFox2.Weather.GetCurrent():Get("skyBox",StormFox2.Sky.GetLastStamp())
 		s = (table.Random(sky_options))
 	end
 	RunConsoleCommand("sv_skyname", s)
 end
 
-local function _2dSwitch( b )
-	if not b then
-		RunConsoleCommand("sv_skyname", "painted")
-	else
-		SkyThink()
-	end
-end
-StormFox2.Setting.Callback("use_2dskybox",_2dSwitch,"2dskybox_enable")
-StormFox2.Setting.Callback("overwrite_2dskybox",function() SkyThink() end,"2dskybox_enable2")
+StormFox2.Setting.Callback("use_2dskybox",SkyThink,"2dskybox_enable")
+StormFox2.Setting.Callback("overwrite_2dskybox",function(str) SkyThink(nil, str) end,"2dskybox_enable2")
 
 hook.Add("StormFox2.weather.postchange", "StormFox2.weather.set2dsky", function( _ )
 	if not StormFox2.Setting.GetCache("use_2dskybox", false) then return end
