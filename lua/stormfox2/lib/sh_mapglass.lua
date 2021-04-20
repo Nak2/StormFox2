@@ -519,7 +519,7 @@ Gets all entities with the given class from the mapfile.
 	function StormFox2.Map.FindClass(sClass)
 		local t = {}
 		for k,v in pairs(SF_BSPDATA.Entities) do
-			if string.match(v.classname,sClass) then
+			if v.classname and string.match(v.classname,sClass) then
 				table.insert(t,v)
 			end
 		end
