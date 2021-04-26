@@ -278,6 +278,7 @@ if CLIENT then
 	-- Particle Template. Particles "copy" these values when they spawn.
 	local pt_meta = {}
 	pt_meta.__index = pt_meta
+	debug.getregistry()["SFParticleTemplate"] = pt_meta
 	pt_meta.MetaName = "ParticleTemplate"
 	pt_meta.g = 1
 	pt_meta.r_H = 400 -- Default render height
@@ -355,6 +356,7 @@ if CLIENT then
 	end
 	-- Particles
 	local p_meta = {}
+	debug.getregistry()["SFParticle"] = p_meta
 	p_meta.__index = function(self, key)
 		return p_meta[key] or self.data[key]
 	end

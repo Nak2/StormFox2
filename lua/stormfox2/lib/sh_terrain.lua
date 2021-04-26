@@ -31,6 +31,7 @@ meta.__eq = function(self, other)
 	if not other.Name then return false end
 	return other.Name == self.Name
 end
+debug.getregistry()["SFTerrain"] = meta
 local terrains = {}
 StormFox2.Terrain = {}
 -- Creates a new terrain type and stores it
