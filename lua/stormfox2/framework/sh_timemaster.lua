@@ -81,12 +81,22 @@ StormFox2.Time = StormFox2.Time or {}
 	if SERVER then
 		-- Use server time
 		if StormFox2.Setting.Get("real_time",false) then
+			StormFox2.Msg("Starting time: Real Time")
 			StormFox2.Setting.Set("time_speed",1)
 			TIME_SPEED = 1 / 60
 			local dt = string.Explode(":",os.date("%H:%M:%S"))
 			start = tonumber(dt[1]) * 60 + tonumber(dt[2]) + tonumber(dt[3]) / 60
 		elseif not start or start < 0 then -- If there isn't a last time .. use mathrandom
-			start = cookie.GetNumber("sf2_lasttime",math.random(1300))
+			local num = cookie.GetNumber("sf2_lasttime",-1)
+			if num < 0 then
+				num = math.random(1300)
+				StormFox2.Msg("Starting time: Random")
+			else
+				StormFox2.Msg("Starting time: Last Saved")
+			end
+			start = num
+		else
+			StormFox2.Msg("Starting time: sf_start_time")
 		end
 
 		StormFox2.Setting.Callback("real_time",function(vVar,vOldVar,sName, sID)
