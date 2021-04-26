@@ -5,6 +5,8 @@ StormFox2.Sun = {}
 StormFox2.Moon = {}
 StormFox2.Sky = {}
 
+-- Pipe Dawg
+
 	SF_SKY_DAY = 0
 	SF_SKY_SUNRISE = 1
 	SF_SKY_SUNSET = 2
