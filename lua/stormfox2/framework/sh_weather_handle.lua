@@ -139,6 +139,9 @@ function StormFox2.Weather.GetIcon()
 	return c.GetIcon(StormFox2.Time.Get(), StormFox2.Temperature.Get(), StormFox2.Wind.GetForce(), StormFox2.Thunder.IsThundering(), StormFox2.Weather.GetPercent())
 end
 
+local SF_UPDATE_WEATHER = 0
+local SF_INIT_WEATHER 	= 1
+
 if SERVER then
 	util.AddNetworkString("StormFox2.weather")
 	local l_data
@@ -168,6 +171,7 @@ if SERVER then
 		end
 		lastSet = CurTime()
 		net.Start("StormFox2.weather")
+			net.WriteBit(SF_UPDATE_WEATHER)
 			net.WriteUInt(lastSet,32)
 			net.WriteInt(nDelta or 0, 8)
 			net.WriteFloat(nPercentage)
@@ -182,10 +186,12 @@ if SERVER then
 	end
 	net.Receive("StormFox2.weather", function(len, ply) -- OI, what weather?
 		net.Start("StormFox2.weather")
+			net.WriteBit(SF_INIT_WEATHER)
 			net.WriteUInt(lastSet,32)
-			net.WriteInt(nDelta or 0, 8)
+			net.WriteInt(l_data or 0, 8)
 			net.WriteFloat(CurrentPercent)
 			net.WriteString(CurrentWeather and CurrentWeather.Name or "Clear")
+			net.WriteFloat( StormFox2.Data.Get("w_Percentage",CurrentPercent) )
 		net.Send(ply)
 	end)
 	-- Handles the terrain logic
@@ -198,7 +204,6 @@ if SERVER then
 		if not cT and not terrain then return end -- No terrain detected
 		if cT and terrain and cT == terrain then return end -- Same terrain detected
 		if terrain then -- Switch terraintype out. This can't be the same as the other
-			--print("TERRAIIN:", terrain.Name)
 			StormFox2.Terrain.Set(terrain.Name)
 		elseif not terrain and not cT.lock then -- This terrain doesn't have a lock. Reset terrain
 			StormFox2.Terrain.Reset()
@@ -208,15 +213,18 @@ if SERVER then
 			end
 		end
 	end)
-	-- Clear up weather when it reaches 0
-	timer.Create("StormFox2.weather.clear",1,0,function()
-		local p = StormFox2.Weather.GetPercent()
-		if p <= 0 then
-			StormFox2.Weather.Set("Clear", 1, 0)
-		end
-	end)
+	local tS = CurTime()
 	-- In case no weather was set
 	timer.Simple(8, function()
+		-- Clear up weather when it reaches 0
+		timer.Create("StormFox2.weather.clear",1,0,function()
+			if not CurrentWeather then return end
+			if CurrentWeather.Name == "Clear" then return end
+			local p = StormFox2.Weather.GetPercent()
+			if p <= 0 then
+				StormFox2.Weather.Set("Clear", 1, 0)
+			end
+		end)
 		if CurrentWeather then return end
 		StormFox2.Weather.Set("Clear", 1, 0)
 	end)
@@ -258,17 +266,29 @@ else
 		hasLocalWeather = false
 	end
 	net.Receive("StormFox2.weather", function(len)
+		local flag = net.ReadBit() == SF_UPDATE_WEATHER
 		local lastSet = net.ReadUInt(32)
 		local nDelta = net.ReadInt(8)
 		local nPercentage = net.ReadFloat()
 		local sName = net.ReadString()
-		-- Calculate the time since server set this
 		local n_delta = CurTime() - lastSet
-		if not hasLocalWeather then
-			SetW(sName, nPercentage, nDelta - n_delta)
+		if flag then
+			-- Calculate the time since server set this
+			if not hasLocalWeather then
+				SetW(sName, nPercentage, nDelta - n_delta)
+			else
+				svWeather[1] = sName
+				svWeather[2] = nPercentage
+			end
 		else
-			svWeather[1] = sName
-			svWeather[2] = nPercentage
+			local c_f = net.ReadFloat()
+			if not hasLocalWeather then
+				SetW(sName, c_f, 0)
+				SetW(sName, nPercentage, nDelta - n_delta)
+			else
+				svWeather[1] = sName
+				svWeather[2] = nPercentage
+			end
 		end
 	end)
 	-- Ask the server what weather we have
