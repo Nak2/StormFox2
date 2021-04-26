@@ -46,8 +46,8 @@ function StormFox2.Client.GetQualityNumber()
 		return 1, 1 / RealFrameTime()
 	end
 	-- Players have complained not seeing the particles when their FPS is low
-	if game.SinglePlayer() then
+	--if game.SinglePlayer() then		I've now had multiplayer complaints.
 		q_num = math.max(0.5, q_num)
-	end
+	--end
 	return q_num, avagefps
 end
