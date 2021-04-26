@@ -13,6 +13,8 @@ StormFox2.Setting.SetType( "extra_lightsupport", {
 StormFox2.Setting.AddSV("overwrite_extra_darkness",-1,nil, "Effects", -1, 1)
 StormFox2.Setting.SetType( "overwrite_extra_darkness", "special_float")
 
+StormFox2.Setting.AddSV("allow_weather_lightchange",true,nil, "Weather")
+
 if CLIENT then
 	StormFox2.Setting.AddCL("extra_darkness",render.SupportsPixelShaders_2_0(),nil,"Effects",0,1)
 	StormFox2.Setting.AddCL("extra_darkness_amount",0.75,nil, "Effects",0,1)
@@ -181,7 +183,13 @@ if SERVER then
 
 	-- Control light
 	hook.Add("StormFox2.weather.postchange", "StormFox2.weather.setlight", function( sName ,nPercentage, nDelta )
-		local night,day = StormFox2.Data.GetFinal("mapNightLight", 0), StormFox2.Data.GetFinal("mapDayLight",100)					-- Maplight
+		local night, day
+		if StormFox2.Setting.GetCache("allow_weather_lightchange") then
+			night,day = StormFox2.Data.GetFinal("mapNightLight", 0), StormFox2.Data.GetFinal("mapDayLight",100)					-- Maplight
+		else
+			local c = StormFox2.Weather.Get("Clear")
+			night,day = c:Get("mapNightLight",0), c:Get("mapDayLight",80)					-- Maplight
+		end
 		local minlight,maxlight = StormFox2.Setting.GetCache("maplight_min",0),StormFox2.Setting.GetCache("maplight_max",80) 	-- Settings
 		local smooth = StormFox2.Setting.GetCache("maplight_smooth",game.SinglePlayer())
 		-- Calc maplight
@@ -211,10 +219,15 @@ if SERVER then
 else -- Fake darkness. Since some maps are bright
 
 	hook.Add("StormFox2.weather.postchange", "StormFox2.weather.setlight", function( sName ,nPercentage, nDelta )
-		local night,day = StormFox2.Data.GetFinal("mapNightLight", 0), StormFox2.Data.GetFinal("mapDayLight",100)					-- Maplight
 		local minlight,maxlight = StormFox2.Setting.GetCache("maplight_min",0),StormFox2.Setting.GetCache("maplight_max",80) 	-- Settings
 		local smooth = StormFox2.Setting.GetCache("maplight_smooth",game.SinglePlayer())
-
+		local night, day
+		if StormFox2.Setting.GetCache("allow_weather_lightchange") then
+			night,day = StormFox2.Data.GetFinal("mapNightLight", 0), StormFox2.Data.GetFinal("mapDayLight",100)					-- Maplight
+		else
+			local c = StormFox2.Weather.Get("Clear")
+			night,day = c:Get("mapNightLight",0), c:Get("mapDayLight",80)					-- Maplight
+		end
 		-- Calc maplight
 		local stamp, mapLight = StormFox2.Sky.GetLastStamp()
 		if stamp >= SF_SKY_NAUTICAL then
