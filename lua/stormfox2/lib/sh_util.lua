@@ -62,8 +62,10 @@ if CLIENT then
 	Returns the current viewentity
 	---------------------------------------------------------------------------]]
 	function StormFox2.util.ViewEntity()
-		local p = LocalPlayer():GetViewEntity() or LocalPlayer()
-		if p.InVehicle and p:InVehicle() and p == LocalPlayer() then
+		local lp = LocalPlayer()
+		if not IsValid(lp) then return end
+		local p = lp:GetViewEntity() or lp
+		if p.InVehicle and p:InVehicle() and p == lp then
 			p = p:GetVehicle() or p
 		end
 		return p
