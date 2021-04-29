@@ -1,12 +1,9 @@
 
-StormFox2.WeatherGen = {}
+StormFox2.WeatherGen = StormFox2.WeatherGen or {}
 -- Settings
-StormFox2.Setting.AddSV("temp_acc",5,nil,"Weather",0,20)
-StormFox2.Setting.AddSV("min_temp",-10,nil,"Weather")
-StormFox2.Setting.AddSV("max_temp",20,nil, "Weather")
-StormFox2.Setting.AddSV("addnight_temp",-4.5,nil, "Weather", -100, 0)
 StormFox2.Setting.AddSV("auto_weather",true,nil, "Weather", 0, 1)
-StormFox2.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
+StormFox2.Setting.AddSV("hide_forecast",false,nil, "Weather")
+
 
 -- OpenWeatherMap API
 	CreateConVar("sf_openweathermap_key", "", 				{FCVAR_ARCHIVE, FCVAR_PROTECTED}, "Sets the API key")
@@ -16,12 +13,83 @@ StormFox2.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 	StormFox2.Setting.AddSV("openweathermap_enabled",false,nil,"Weather")
 	StormFox2.Setting.AddSV("openweathermap_lat","52",nil,"Weather",-180,180)
 	StormFox2.Setting.AddSV("openweathermap_lon","-2",nil,"Weather",-90,90)
+	StormFox2.Setting.AddSV("openweathermap_forecast_irl",false,nil,"Weather")
+
+local forecastJson = {}
+function StormFox2.WeatherGen.GetForcast()
+	return forecastJson
+end
+function StormFox2.WeatherGen.SetForcast( tab )
+	forecastJson = tab
+	if StormFox2.Setting.GetCache("sf_hide_forecast", false) then return end
+	StormFox2.WeatherGen.UpdatePlayer()
+end
+
+-- API
+do
 	local api_MaxCalls = 59
 	local KEY_VALID = 0
 	local KEY_INVALID = 1
 	local KEY_UNKNOWN = 2
 	local key_valid = KEY_UNKNOWN
 	local n_NextAllowedCall = 0
+	local function onSuccessF( body, len, head, code )
+		if code == 401 then -- Most likly an invalid API-Key.
+			key_valid = KEY_INVALID
+			local t = util.JSONToTable(body) or {}
+			StormFox2.Warning(t.message or "API returned 401")
+			StormFox2.Setting.Set("openweathermap_enabled", false)
+			return
+		end
+		local t = util.JSONToTable( body )
+		if not t.list then
+			StormFox2.Warning("API can't create forcast! [" .. code .. "]")
+			return
+		end
+		-- Neat, it even list the nearest city, but we don't want to dox anyone who sets the coords to their town.
+		local forecastJson = {}
+		forecastJson.unix_stamp = true
+		for i, v in ipairs(t.list or {}) do
+			local cloudyness = ( v.clouds and v.clouds.all or 0 ) / 110
+			local rain = 0
+			if v.rain then
+				rain = math.max( v.rain["1h"] or 0, v.rain["3h"] or 0, 2) / 8
+			elseif v.snow then
+				rain = math.max( v.snow["1h"] or 0, v.snow["3h"] or 0, 2) / 8
+			end
+			local w = rain > 0 and "Rain" or cloudyness >= 0.1 and "Cloud" or "Clear"
+			local p = rain > 0 and rain * .8 + 0.2 or cloudyness > 0 and cloudyness or 1
+			local temp = v.main.temp or v.main.temp_min or v.main.temp_max or 0 -- In Kelvin
+			local c_obj = StormFox2.Weather.Get( w ) or StormFox2.Weather.Get("Clear")
+			local tab = {
+				["Weather"] = w,
+				["Percent"] = math.Round(p,2),
+				["Temperature"] = math.Round(StormFox2.Temperature.Convert("kelvin",nil,temp), 2),
+				["Wind"] = v.wind and v.wind.speed or 0,
+				["WindAng"] = v.wind and v.wind.deg or 0,
+				["Unix"] = tonumber( v.dt ) or 0
+			}
+			local b_thunder = false
+			if v.weather and v.weather[1] and v.weather[1].id then
+				local id = v.weather[1].id
+				b_thunder = ( id >= 200 and id <= 202 ) or ( id >= 210 and id <= 212 ) or ( id >= 230 and id <= 232 ) or id == 212
+			end
+			tab["Thunder"] = b_thunder
+			tab["Icon"] = c_obj.GetIcon(720, tab.Temperature, tab.Wind, b_thunder, tab.Percent)
+			forecastJson[i] = tab
+		end
+		StormFox2.WeatherGen.SetForcast(forecastJson)
+	end
+	local function Updateforecast( bIgnoreSafty )
+		if not bIgnoreSafty and n_NextAllowedCall >= CurTime() then
+			return StormFox2.Warning("API can't be called that often!")
+		end
+		if key_valid == KEY_INVALID then return end
+		n_NextAllowedCall = CurTime() + (60 / api_MaxCalls)
+		local lat = GetConVar("sf_openweathermap_real_lat"):GetString()
+		local lon = GetConVar("sf_openweathermap_real_lon"):GetString()
+		http.Fetch("http://api.openweathermap.org/data/2.5/forecast?lat=" .. lat .. "&lon=" .. lon .. "&appid=" .. GetConVar("sf_openweathermap_key"):GetString(), onSuccessF)
+	end
 	local function SetWeatherFromJSON( sJSON )
 		local json = util.JSONToTable( sJSON ) or {}
 		if json.cod == "404" then return end -- Not found
@@ -38,15 +106,14 @@ StormFox2.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 			end
 		-- Temperature
 			local temp = json.main.temp or json.main.temp_min or json.main.temp_max -- In Kelvin
-				temp = StormFox2.Temperature.Convert("kelvin",nil,temp)
-			
+				temp = StormFox2.Temperature.Convert("kelvin",nil,temp)	
 			if temp then
 				if json.snow then
 					temp = math.min(temp, -1)
 				elseif json.rain then
 					temp = math.max(temp, 0)
 				end
-				StormFox2.Temperature.Set( temp, 2)
+				StormFox2.Temperature.Set( math.Round(temp, 2), 2)
 			end
 		-- Wind
 			StormFox2.Wind.SetForce( json.wind and json.wind.speed or 0 )
@@ -60,13 +127,20 @@ StormFox2.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 				rain = math.max( json.snow["1h"] or 0, json.snow["3h"] or 0, 2) / 8
 			end
 			if rain > 0 then
-				rain = math.ceil(rain, 1)
-				StormFox2.Weather.Set("Rain", rain * .8 + 0.2)
-			elseif cloudyness > 0 then
-				StormFox2.Weather.Set("Cloud", cloudyness)
+				StormFox2.Weather.Set("Rain", math.Round(rain * .8 + 0.2,2))
+			elseif cloudyness >= 0.1 then
+				StormFox2.Weather.Set("Cloud", math.Round(cloudyness, 2))
 			else
 				StormFox2.Weather.Set("Clear", 1)
 			end
+		-- Thunder
+			local b_thunder = false
+			if json.weather and json.weather[1] and json.weather[1].id and (rain > 0 or cloudyness >= 0.3) then
+				local id = json.weather[1].id
+				print(id, "><<")
+				b_thunder = ( id >= 200 and id <= 202 ) or ( id >= 210 and id <= 212 ) or ( id >= 230 and id <= 232 ) or id == 212
+			end
+			StormFox2.Thunder.SetEnabled(b_thunder, id == 212 and 12 or 6) -- 212 is heavy thunderstorm 
 	end
 	local function SetLatLon(lat, lon)
 		RunConsoleCommand("sf_openweathermap_real_lat", lat)
@@ -85,7 +159,10 @@ StormFox2.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 		key_valid = KEY_VALID
 		SetWeatherFromJSON(body)
 	end
-	local function UpdateWeather()
+	local function UpdateWeather( bIgnoreSafty )
+		if not bIgnoreSafty and n_NextAllowedCall >= CurTime() then
+			return StormFox2.Warning("API can't be called that often!")
+		end
 		if key_valid == KEY_INVALID then return end
 		n_NextAllowedCall = CurTime() + (60 / api_MaxCalls)
 		local lat = GetConVar("sf_openweathermap_real_lat"):GetString()
@@ -117,12 +194,22 @@ StormFox2.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 	end
 	local function StartTimer()
 		StormFox2.Setting.Set("auto_weather", false)
-		UpdateWeather()
+		UpdateWeather( true )
+		Updateforecast( true )
 
 		timer.Create("StormFox2.openweathermap", 10 * 60, 0, UpdateWeather)
+		timer.Create("StormFox2.openweathermapforcast", 3 * 60 * 60, 0, Updateforecast)
+	end
+	function StormFox2.WeatherGen._APIStart()
+		if key_valid == KEY_INVALID then
+			StormFox2.Warning("Invalid API key!")
+			StormFox2.Setting.Set("openweathermap_enabled", false)
+		end
+		StartTimer()
 	end
 	local function StopTimer()
 		timer.Remove("StormFox2.openweathermap")
+		timer.Remove("StormFox2.openweathermapforcast")
 	end
 	StormFox2.Setting.Callback("openweathermap_enabled",function(vVar,vOldVar,sName, sID)
 		if not vVar then StopTimer() return end
@@ -155,238 +242,38 @@ StormFox2.Setting.AddSV("max_weathers_prweek",2,nil, "Weather", 1, 8)
 		end
 		cvars.AddChangeCallback("sf_openweathermap_real_lat", Update, "StormFox2.APICALL_LAT")
 		cvars.AddChangeCallback("sf_openweathermap_real_lon", Update, "StormFox2.APICALL_LON")
+end
 
--- Weather gen
-	local current_weatherlist = SF_WEEKWEATHER or {} 		-- Every hour
-	SF_WEEKWEATHER = current_weatherlist
-	local wD_meta = {}
-	function wD_meta:GetLastTemp()
-		return self.temp[1439]
+-- On Launch
+local function init()
+	if StormFox2.Setting.Get("openweathermap_enabled", false) then
+		StormFox2.WeatherGen._APIStart()
+	elseif StormFox2.Setting.GetCache("auto_weather", true) then
+		-- Auto weather
+		StormFox2.WeatherGen._Start()
 	end
-	function wD_meta:GetMaxTemp()
-		return self.maxtemp
+end
+hook.Add("stormfox2.postinit", "StormFox2.WeatherGen.Launch", function()
+	timer.Simple(4, init)
+end)
+
+function StormFox2.WeatherGen.NetWriteForecast()
+	local n = math.min(7 * 24, #forecastJson)
+	net.WriteBool(forecastJson.unix_stamp or false)
+	net.WriteUInt(n, 8)
+	for i = 1, n do
+		net.WriteFloat(forecastJson[i].Percent)
+		net.WriteString(forecastJson[i].Weather)
+		net.WriteFloat(forecastJson[i].Temperature)
+		net.WriteBool(forecastJson[i].Thunder or false)
+		net.WriteUInt(forecastJson[i].WindAng, 9)
+		net.WriteFloat(forecastJson[i].Wind)
+		if not forecastJson.unix_stamp then
+			net.WriteUInt(forecastJson[i].Time or -1, 5)
+		else
+			net.WriteUInt(forecastJson[i].Unix or 0, 32)
+		end
 	end
-	function wD_meta:HasWeather()
-		if not self.weather then return false end
-		for time, weatherD in ipairs( self.weather ) do
-			if weatherD[1]~="Clear" and weatherD[1]~="Cloud" then
-				return true
-			end
-		end
-		return false
-	end
-	wD_meta.__index = wD_meta
-	--[[
-		Problem: If time is sped up, will temperaturechange follow?
-		Since StormFox2.Data.Set's lerp is based on real time.
-
-		Even if we updated all .Data variables to follow this, it will also cause problems if user sets time.
-		Only option I see is to update the lerptime to follow the new time and set the weather instantly, if the user jumps.
-
-		Other option is to make StormFox2.Data work with StormFox2.Time instead. A bit like Mixer.
-
-		PS temp calculations should have 1~2 hours line at max
-	]]
-	-- Higer temperature = higer pressure = Typically, when air pressure is high there skies are clear and blue
-	-- Lower temperature = lower pressure = When air pressure is low, air flows together and then upward where it form clouds.
-	local min_weather_amount = 0.3
-	local max_weather_amount = 0.95
-	local max_weather_time = 1200
-	local cloud_to_weather = 5
-
-	local round = 3
-
-	local function CreateDay( lastDay, amount_of_weathers )
-		local avgNightTemp = StormFox2.Setting.Get("addnight_temp", -4.5)
-		local tmin,tmax = StormFox2.Setting.Get("min_temp",-10) - avgNightTemp, StormFox2.Setting.Get("max_temp",20)
-		-- If the map is cold, then don't increase the temperature over -4.
-			if StormFox2.Map.IsCold() then
-				tmax = math.min(tmax, -4)
-				tmin = math.min(tmin, -4)
-			end
-		-- Get last the variables (or make)
-			local last_temp
-			if not lastDay or not lastDay.temp and lastDay.temp[1439] then
-				last_temp = math.random( tmin, tmax )
-			else
-				last_temp = lastDay:GetLastTemp()
-			end
-			local last_maxtemp
-			if lastDay and lastDay.maxtemp then
-				last_maxtemp = lastDay:GetMaxTemp()
-			else
-				last_maxtemp = last_temp - avgNightTemp
-			end
-		-- Variables
-			local n = StormFox2.Setting.Get("temp_acc",5)
-			local last_acc = lastDay and lastDay.acc or math.Rand(-n, n)
-			local sunrise, sunset = math.max( StormFox2.Sun.GetSunRise(), 60), math.min(StormFox2.Sun.GetSunSet(), 1380)
-			local midday = math.Clamp(StormFox2.Sun.GetSunAtHigest(), 120, 1320)
-		-- Generate temperature changes
-			local nDay = {}
-			setmetatable(nDay, wD_meta)
-			-- In/dec
-			nDay.acc = math.Clamp(last_acc + math.Rand(-n, n) * 0.5, -n, n)
-			-- Don't get stuck "boring" temperatures
-			if last_temp <= tmin then
-				nDay.acc = math.Rand(1, n) * 0.5
-			elseif last_maxtemp >= tmax then
-				nDay.acc = math.Rand(-n, -1) * 0.5
-			elseif last_maxtemp > -5 and last_maxtemp < 5 then -- We don't want to stick around these temperatures. Sleet is boring.
-				if nDay.acc >= 0 then
-					nDay.acc = math.max(nDay.acc, 5)
-				else
-					nDay.acc = math.min(nDay.acc, -5)
-				end
-			end
-			local temp = math.Clamp(last_maxtemp + nDay.acc, tmin, tmax)
-			nDay.maxtemp = temp
-		-- Apply temperatures
-			nDay.temp = {}
-			nDay.temp[sunrise] = math.Round(Lerp(0.2, last_temp + avgNightTemp, temp), round)
-			nDay.temp[math.floor((sunrise + midday) / 2)] = math.Round(Lerp(0.8, last_temp + avgNightTemp, temp), round)
-			nDay.temp[midday] = math.Round(temp, round)
-			nDay.temp[math.ceil((sunset + midday) / 2)] = math.Round(temp + avgNightTemp * 0.2, round)
-			nDay.temp[sunset] = math.Round(temp + avgNightTemp * 0.8, round)
-			nDay.temp[1439] = math.Round(temp + avgNightTemp, round)
-		-- Calculate the cloudyness
-			local cloudyness = lastDay and lastDay.cloudyness or math.Rand(0, 0.3)	
-			if nDay.acc > 0 then -- Clearish weahter
-				nDay.cloudyness = math.max(-0.25, cloudyness - math.Rand(0.5, nDay.acc))
-			else
-				nDay.cloudyness = cloudyness - math.Rand(nDay.acc * .5, nDay.acc)
-			end
-		-- Wind
-			nDay.wind = {}
-			local nWind = (lastDay and lastDay.wind and lastDay.wind[midday] and lastDay.wind[midday][1] or math.random(0, 10)) -math.random(0,nDay.acc * 2)
-			nWind = math.Clamp(nWind, 0, 30)
-			local nWindAngle = lastDay and lastDay.wind[1439] and lastDay.wind[1439][2] or math.random(0, 360)
-			nWindAngle = (nWindAngle + math.Rand(16, -16)) % 360
-			nDay.wind[midday] = {nWind, nWindAngle}
-			nDay.wind[1439] = {math.max(0, nWind - math.random(nWind / 2,nWind)), (nWindAngle + math.Rand(16, -16)) % 360}
-		-- Calculate weather
-			nDay.weather = {}
-			local max_w = StormFox2.Setting.Get("max_weathers_prweek", 3)
-			if nDay.cloudyness >= min_weather_amount * cloud_to_weather and (amount_of_weathers or 0) < max_w then -- Chance to spawn weather
-				local w_amount = math.Clamp(nDay.cloudyness / cloud_to_weather, min_weather_amount, max_weather_amount)
-				local w_name = table.Random(StormFox2.Weather.GetAllSpawnable())
-				local w_length = math.max(0.1, w_amount / max_weather_amount)
-				w_amount = math.Round(math.Rand(min_weather_amount, w_amount), 2) -- A bit random amount
-				local start_time = math.random( 1, 1380 - w_length * max_weather_time )
-				local end_time = math.Round(start_time + w_length * max_weather_time)
-				if StormFox2.Weather.Get(w_name).Inherit == "Cloud" and math.random(1, 3) > 1 then -- Spawn clouds, then weather
-					nDay.weather[start_time - 2] = {"Cloud", w_amount}
-					nDay.weather[start_time] = {w_name, w_amount}
-					nDay.weather[math.max(end_time, start_time + 20)] = {"Clear", 1}
-				else -- Spawn weather
-					nDay.weather[start_time] = {w_name, w_amount}
-					nDay.weather[end_time] = {"Clear", 1}
-				end
-				if StormFox2.Weather.Get(w_name).thunder then
-					local activity = StormFox2.Weather.Get(w_name).thunder(w_amount)
-					if activity > 0 then
-						nDay.weather[start_time][3] = activity
-					end
-				end
-				nDay.cloudyness = math.max(-0.25, nDay.cloudyness - w_amount * 5)
-			elseif nDay.cloudyness > 0.1 then -- Cloudy
-				local f = math.min(1, math.Round(nDay.cloudyness / 5, 1))
-				nDay.weather[math.random(sunrise, sunset)] = {"Cloud", f}
-				nDay.cloudyness = math.max(-0.25, nDay.cloudyness - math.Rand(f * 5, 0.1))
-			else -- Clear all day
-				nDay.weather[math.random(10, sunrise)] = {"Clear", 1}
-			end
-		return nDay
-	end
-	-- Generate a new day
-	local t = {}
-	local function GenerateNewDay()
-		t = {}
-		if #current_weatherlist >= 7 then
-			table.remove(current_weatherlist, 1)
-		end
-		local lastDay = current_weatherlist[#current_weatherlist]
-		local n = 0
-		for _, v in ipairs( current_weatherlist ) do
-			if v:HasWeather() then
-				n = n + 1
-			end
-		end
-		table.insert(current_weatherlist, CreateDay(lastDay, n))
-		return current_weatherlist
-	end
-	-- Generate a week
-	for i = 1, 7 - #current_weatherlist do
-		GenerateNewDay()
-	end
-	-- Find last and next key
-	local function search(tab, time)
-		local last, next
-		for k, v in pairs( tab ) do
-			if k < time and (not last or k > last) then
-				last = k
-			elseif k > time and (not next or k < next) then
-				next = k
-			end
-		end
-		return last, next
-	end
-
-	local WAIT_TIL_NEXT_DAY = -1
-
-	local function daylogic(str, tab, time)
-		if t[str] then 
-			if t[str] == WAIT_TIL_NEXT_DAY then return end
-			if t[str] > time then return end
-		end
-		local _, n = search(tab, time)
-		if not n then
-			t[str] = WAIT_TIL_NEXT_DAY
-			return
-		end
-		t[str] = n
-		return n
-	end
-
-	hook.Add("Think", "StormFox2.weather.weeklogic", function()
-		if not StormFox2.Setting.GetCache("auto_weather", false) then return end
-		if StormFox2.Setting.GetCache("openweathermap_enabled", false) then return end
-		local curDay = current_weatherlist[1]
-		if not curDay then return end -- No day generated
-		local time = StormFox2.Time.Get()
-		local speed = StormFox2.Time.GetSpeed()
-		local n = daylogic("temp", curDay.temp, time)
-		if n then
-			local timeset = (n - time) / speed
-			--print(curDay.temp[n], timeset)
-			StormFox2.Temperature.Set( curDay.temp[n], timeset )
-		end
-		local n = daylogic("weather", curDay.weather, time)
-		if n then
-			--print(curDay.weather[n][1], curDay.weather[n][2], (n - time) / speed)
-			StormFox2.Weather.Set( curDay.weather[n][1], curDay.weather[n][2], (n - time) / speed )
-			if curDay.weather[n][3] then -- Thunder
-				StormFox2.Thunder.SetEnabled( true, curDay.weather[n][3], 50 / speed )
-			end
-		end
-		local n = daylogic("wind", curDay.wind, time)
-		if n then
-			--print(curDay.wind[n][1], (n - time) / speed)
-			StormFox2.Wind.SetForce( curDay.wind[n][1], (n - time) / speed )
-			StormFox2.Wind.SetYaw( curDay.wind[n][2] ) --, (n - time) / speed ) Looks strange
-		end
-
-	end)
-	-- New day
-	hook.Add("StormFox2.Time.NextDay", "StormFox2.Weathergen.NextDay", function(nDaysPast)
-		for i = 1, math.min(nDaysPast, 7) do
-			GenerateNewDay() -- New day
-		end
-	end)
-
--- Returns the generated week
-function StormFox2.WeatherGen.GetWeek()
-	return current_weatherlist
 end
 
 -- Network
@@ -395,12 +282,7 @@ function StormFox2.WeatherGen.UpdatePlayer( ply )
 	local sunrise, sunset = math.max( StormFox2.Sun.GetSunRise(), 60), math.min(StormFox2.Sun.GetSunSet(), 1380)
 	local midday = math.Clamp(StormFox2.Sun.GetSunAtHigest(), 120, 1320)
 	net.Start("StormFox2.weekweather")
-		net.WriteUInt(#current_weatherlist, 3)
-		for _, wDay in ipairs( current_weatherlist ) do
-			net.WriteTable(wDay.temp)
-			net.WriteTable(wDay.weather)
-			net.WriteTable(wDay.wind)
-		end
+		StormFox2.WeatherGen.NetWriteForecast()
 	if not ply then
 		net.Broadcast()
 	else
@@ -408,14 +290,16 @@ function StormFox2.WeatherGen.UpdatePlayer( ply )
 	end
 end
 
-function StormFox2.WeatherGen.NextDay()
-	GenerateNewDay()
-end
+net.Receive("StormFox2.weekweather", function(len, ply)
+	StormFox2.Permission.EditAccess(ply,"StormFox Settings", function()
+		StormFox2.WeatherGen.UpdatePlayer( ply )
+		print("UPDATE PLY")
+	end)
+end)
 
 
 hook.Add("ShutDown","StormFox2.Temp.Save",function()
 	cookie.Set("sf_lasttemp",StormFox2.Temperature.Get())
 	cookie.Set("sf_lastweather",StormFox2.Weather.GetCurrent().Name)
 end)
-
 -- StormFox2.Weather.Set("Clear")
