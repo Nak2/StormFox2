@@ -172,10 +172,10 @@ if SERVER then
 		lastSet = CurTime()
 		net.Start("StormFox2.weather")
 			net.WriteBit(SF_UPDATE_WEATHER)
-			net.WriteUInt(lastSet,32)
-			net.WriteInt(nDelta or 0, 8)
+			net.WriteUInt( math.max(0, StormFox2.Data.GetLerpEnd( "w_Percentage" )), 32)
 			net.WriteFloat(nPercentage)
 			net.WriteString(sName)
+			net.WriteFloat(nDelta)
 		net.Broadcast()
 		ApplyWeather(sName, nPercentage, nDelta)
 		if sName == "Clear" then
@@ -185,12 +185,12 @@ if SERVER then
 		return true
 	end
 	net.Receive("StormFox2.weather", function(len, ply) -- OI, what weather?
+		local lerpEnd = StormFox2.Data.GetLerpEnd( "w_Percentage" )
 		net.Start("StormFox2.weather")
 			net.WriteBit(SF_INIT_WEATHER)
-			net.WriteUInt(lastSet,32)
-			net.WriteInt(l_data or 0, 8)
-			net.WriteFloat(CurrentPercent)
-			net.WriteString(CurrentWeather and CurrentWeather.Name or "Clear")
+			net.WriteUInt( math.max(0, StormFox2.Data.GetLerpEnd( "w_Percentage" )), 32)
+			net.WriteFloat( CurrentPercent )
+			net.WriteString( StormFox2.Weather.GetCurrent().Name )
 			net.WriteFloat( StormFox2.Data.Get("w_Percentage",CurrentPercent) )
 		net.Send(ply)
 	end)
@@ -267,24 +267,28 @@ else
 	end
 	net.Receive("StormFox2.weather", function(len)
 		local flag = net.ReadBit() == SF_UPDATE_WEATHER
-		local lastSet = net.ReadUInt(32)
-		local nDelta = net.ReadInt(8)
+		local wTarget = net.ReadUInt(32)
 		local nPercentage = net.ReadFloat()
 		local sName = net.ReadString()
-		local n_delta = CurTime() - lastSet
 		if flag then
+			local nDelta = net.ReadFloat()
 			-- Calculate the time since server set this
 			if not hasLocalWeather then
-				SetW(sName, nPercentage, nDelta - n_delta)
+				SetW(sName, nPercentage, nDelta)
 			else
 				svWeather[1] = sName
 				svWeather[2] = nPercentage
 			end
 		else
-			local c_f = net.ReadFloat()
+			local current = net.ReadFloat()
 			if not hasLocalWeather then
-				SetW(sName, c_f, 0)
-				SetW(sName, nPercentage, nDelta - n_delta)
+				local secondsLeft = wTarget - CurTime()
+				if secondsLeft <= 0 then
+					SetW(sName, nPercentage, 0)
+				else
+					SetW(sName, current, 0)
+					SetW(sName, nPercentage, secondsLeft)
+				end
 			else
 				svWeather[1] = sName
 				svWeather[2] = nPercentage
