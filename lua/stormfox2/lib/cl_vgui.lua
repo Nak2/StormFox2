@@ -1499,24 +1499,25 @@ do
 			draw.SimpleText(self.text, "DermaDefault",w / 2,h / 4,color_white,TEXT_ALIGN_CENTER)
 		end
 	end
-	function PANEL:SetData(time, last_data, data, next_data )
+	function PANEL:SetData(time, last_data, data, next_data, unixtime )
 		self.data = data
-		self.temp.text = StormFox2.Temperature.GetDisplay(data.temp) .. StormFox2.Temperature.GetDisplaySymbol()
+		self.temp.text = math.Round(StormFox2.Temperature.GetDisplay(data.Temperature), 1) .. StormFox2.Temperature.GetDisplaySymbol()
 		
-		self.display.last_temp 	= last_data and last_data.temp or 0
-		self.display.next_temp 	= next_data and next_data.temp or data.temp
-		self.display.temp 		= data.temp
+		self.display.last_temp 	= last_data and last_data.Temperature or 0
+		self.display.next_temp 	= next_data and next_data.Temperature or data.Temperature
+		self.display.temp 		= data.Temperature
 
-		self.time.text = StormFox2.Time.GetDisplay(time)
-		self.wind.text = (data.wind or 0) .. " m/s"
-		self.weather = StormFox2.Weather.Get( data.weather and data.weather[2] or "Clear" )
+		self.time.text = time and StormFox2.Time.GetDisplay(data.Time * 60) or unixtime
+		self.wind.text = (data.Wind or 0) .. " m/s"
+		self.weather = StormFox2.Weather.Get( data.Weather and data.Weather or "Clear" )
 		self.display.weather = self.weather
-		self.display.weather_a = data.weather[1]
+		self.display.weather_a = data.Percent
 		if self.weather then
-			self.icon:SetMaterial(self.weather.GetIcon(time, data.temp or 20, data.wind, data.weather[3], data.weather[1]))
-			self.temp.desc = self.weather:GetName(time, data.temp or 20, data.wind, data.weather[3], data.weather[1] )
+			self.icon:SetMaterial(	self.weather.GetIcon(time or 720, data.Temperature or 20, data.Wind, data.Thunder, data.Percent))
+			self.temp.desc = 		self.weather:GetName(time or 720, data.Temperature or 20, data.Wind, data.Thunder, data.Percent )
 		end
 	end
+
 
 	function PANEL:PerformLayout(w, h)
 		-- Icon
@@ -1544,32 +1545,44 @@ do
 		self._board:Dock(FILL)
 		self._board:DockPadding(0,0,0,24)
 		self:Update()
+		hook.Add("StormFox2.WeatherGen.ForcastUpdate", self, function()
+			self.data = nil
+			self:Update()
+		end)
 	end
 	function PANEL:Update()
 		if not StormFox2.WeatherGen then return end
-		if table.Count(StormFox2.WeatherGen.GetData()) < 1 then return end
-		self.data = StormFox2.WeatherGen.GetData()
-		local key = table.GetKeys( self.data )
-		table.sort(key, function(a,b) return b > a end)
-		local time = StormFox2.Time.Get()
+		local json = StormFox2.WeatherGen.GetForcast()
+		if not json or #json < 1 then return end
+		self.data = json
 		for _, v in ipairs( self._board.Panels ) do
 			v:Remove()
 		end
-		for i, hour in ipairs( key ) do
-			if hour + 60 < time then continue end
-			self.firstUp = math.min(hour, self.firstUp or 1440)
-			local data = self.data[ hour ]
+		local time = StormFox2.Time.Get()
+		for i, data in ipairs( json ) do
+			local n
+			if i <= 8 then
+				if json.unix_stamp then
+					if data.Unix < os.time() then continue end
+					self.firstUp = 1440
+				else
+					if (data.Time * 60) + 30 < time then continue end
+					self.firstUp = math.min(data.Time * 60, self.firstUp or 1440)
+				end
+			end
 			local v_hour = vgui.Create("SF_WeatherHour", self._board)
 			v_hour:DockMargin(0,0,0,24)
 			self._board:AddPanel(v_hour)
-			v_hour:SetData( (hour % 1440), self.data[ key[i - 1] ],data, self.data[ key[i + 1] ] )
+			--		SetData(time, last_data, data, next_data )
+			local dn = math.floor(i / 8) * 24
+			v_hour:SetData( data.Time, json[ i - 1 ],data, json[ i + 1 ], data.Unix and (os.date("%H",data.Unix) + dn) )
 		end
 		self._board:InvalidateLayout()
 	end
 	function PANEL:Think()
 		if not self.data then
 			self:Update()
-		elseif self.firstUp and self.firstUp + 60 <= StormFox2.Time.Get() then
+		elseif self.firstUp and self.firstUp + 30 <= StormFox2.Time.Get() then
 			self.firstUp = nil
 			self:Update()
 		end
