@@ -168,6 +168,11 @@ function StormFox2.Data.IsLerping( sKey )
 	return true
 end
 
+function StormFox2.Data.GetLerpEnd( sKey )
+	if not StormFox_AIMDATA[sKey] then return 0 end
+	return StormFox_AIMDATA[sKey][3]
+end
+
 -- If time changes, we need to update the lerp values
 hook.Add("StormFox2.Time.Set", "StormFox2.datatimefix", function()
 	local nT = StormFox2.Time.GetSpeed()
