@@ -7,6 +7,10 @@ StormFox2.Setting.AddSV("max_weathers_prweek",3,nil, "Weather", 1, 8)
 
 StormFox2.WeatherGen = StormFox2.WeatherGen or {}
 
+--[[FIXME
+	Thunder can spawn before rain has kicked in.
+]]
+
 local min_weather_amount = 0.3
 local max_weather_amount = 0.95
 local max_weather_time = 1200
@@ -204,7 +208,6 @@ local function clearWeekCache( n )
 end
 -- Moves on to the next day
 local function nextDay()
-	print("GENERATE NEXT DAY!")
 	if #week["days"] >= 7 then
 		table.remove(week["days"], 1)
 	end
@@ -281,12 +284,10 @@ local function generateJSON()
 		end
 	end
 	StormFox2.WeatherGen.SetForcast( forecastJson )
-	print("JSON UPDATE")
 end
 -- Tries to init the weather
 local function SetWeatherFromGen()
 	if not StormFox2.Setting.GetCache("auto_weather", false) then return end
-	print("LOCATE AND RESET WEATHER")
 	local time = StormFox2.Time.Get()
 	local speed = StormFox2.Time.GetSpeed()
 	if not week["temp"] then StormFox2.Warning("Weather hasn't generated!") return end
@@ -431,6 +432,16 @@ end,"auto_weather_logic")
 -- Skips to next day
 function StormFox2.WeatherGen.SkipDay()
 	nextDay()
+	updateWTab()
+	clearWeekCache( nDaysPast )
+	resetWeather()
+	generateJSON()
+end
+
+function StormFox2.WeatherGen.SkipWeek()
+	for i = 1, 7 do
+		nextDay()
+	end
 	updateWTab()
 	clearWeekCache( nDaysPast )
 	resetWeather()
