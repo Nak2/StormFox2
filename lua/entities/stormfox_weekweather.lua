@@ -83,8 +83,9 @@ else
 		local hF = StormFox2.Setting.GetCache("hide_forecast", false)
 		local aF = StormFox2.Setting.GetCache("auto_weather", true)
 		local wF = StormFox2.Setting.GetCache("openweathermap_enabled", false)
+		sc_mat:SetTexture("$basetexture", sc_RT)
 		render.PushRenderTarget( sc_RT )
-			render.Clear(0, 0, 0, 0, true, false)
+			render.Clear(0, 0, 0, 255, true, true)
 			cam.Start2D()
 				if hF then
 					DrawDisabled(w,h, "sf_hide_forecast 1")
@@ -100,14 +101,19 @@ else
 				end
 			cam.End2D()
 		render.PopRenderTarget()
-		sc_mat:SetTexture("$basetexture", sc_RT)
 	end
-	
+	local r_update = false
 	function ENT:Draw()
-		UpdateRTTexture()
 		render.MaterialOverrideByIndex(1, sc_mat)
 		self:DrawModel()
 		render.MaterialOverrideByIndex()
+		r_update = true
 	end
+	-- Updating it inside ENT:Draw causes problems
+	hook.Add("PostDrawOpaqueRenderables", "StormFox2.Entity.weekweather", function()
+		if not r_update then return end
+		r_update = false
+		UpdateRTTexture()
+	end)
 end
 

@@ -1,7 +1,7 @@
 "UnlitGeneric"
 {
 	"$basetexture" "color/black"
-	"%tooltexture" "dev/dev_monitor"
+	"$model"	"1"
 	"$surfaceprop" "glass"
-	"$selfillum" 1
+	// "$selfillum" 1
 }
