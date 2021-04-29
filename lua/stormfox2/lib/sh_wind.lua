@@ -14,6 +14,7 @@ end
 -- Settings
 hook.Add("stormfox2.postlib", "stormfox2.windSettings",function()
 	StormFox2.Setting.AddSV("windmove_players",true,nil,"Effects")
+	StormFox2.Setting.AddSV("windmove_foliate",true,nil,"Effects")
 	hook.Remove("stormfox2.postlib", "stormfox2.windSettings")
 end)
 
@@ -94,31 +95,54 @@ function StormFox2.Wind.GetBeaufort(ms)
 end
 -- Spawning env_wind won't work. Therefor we need to use the cl_tree_sway_dir on the client if it's not on the map.
 	if CLIENT then
-		hook.Add("StormFox2.Wind.Change","StormFox2.Wind.CLFix",function(windNorm, wind)
+		local function updateWind()
 			if StormFox2.Map.HadClass( "env_wind" ) then return end
 			local nw = math.min(StormFox2.Wind.GetForce() * 0.6, 21)
 			local ra = math.rad( StormFox2.Data.Get( "WindAngle", 0 ) )
 			local wx,wy = math.cos(ra) * nw,math.sin(ra) * nw
 			RunConsoleCommand("cl_tree_sway_dir",wx,wy)
+		end
+		hook.Add("StormFox2.Wind.Change","StormFox2.Wind.CLFix",function(windNorm, wind)
+			if not StormFox2.Setting.GetCache("windmove_foliate", true) then return end
+			updateWind()
+		end)
+		StormFox2.Setting.Callback("windmove_foliate", function(b)
+			if b then
+				updateWind()
+			else
+				RunConsoleCommand("cl_tree_sway_dir",0,0)
+			end
 		end)
 	else
-		hook.Add("StormFox2.Wind.Change","StormFox2.Wind.CLFix",function(windNorm, wind)
+		local function updateWind(nw, ang)
 			if not StormFox2.Ent.env_winds then return end
-			local nw = StormFox2.Wind.GetForce() * 2
-			local ang = StormFox2.Data.Get( "WindAngle", 0 )
-
 			local min = nw * .6
 			local max = nw * .8
 			local gust = math.min(nw, 5)
 			for _,ent in ipairs( StormFox2.Ent.env_winds ) do
 				--print(ent, max, min ,gust)
-				ent:Fire('SetWindDir', ang)
+				if ang then ent:Fire('SetWindDir', ang) end
 				ent:SetKeyValue('minwind', min)
 				ent:SetKeyValue('maxwind', max)
 				ent:SetKeyValue('gustdirchange', math.max(0, 21 - nw))			
 				ent:SetKeyValue('maxgust', gust)
 				ent:SetKeyValue('mingust', gust * .8)
 			end
+		end
+		hook.Add("StormFox2.Wind.Change","StormFox2.Wind.SVFix",function(windNorm, wind)
+			local nw = StormFox2.Wind.GetForce() * 2
+			local ang = StormFox2.Data.Get( "WindAngle", 0 )
+			updateWind(nw, ang)
+		end)
+		StormFox2.Setting.Callback("windmove_foliate", function(b)
+			if not StormFox2.Ent.env_winds then return end
+			local ang = StormFox2.Data.Get( "WindAngle", 0 )
+			if not b then
+				updateWind(0, ang)
+				return
+			end
+			local nw = StormFox2.Wind.GetForce() * 2
+			updateWind(nw, ang)
 		end)
 	end
 --[[-------------------------------------------------------------------------
