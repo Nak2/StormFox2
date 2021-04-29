@@ -86,7 +86,8 @@ end
 
 local bg = Color(26,41,72, 255)
 local rc = Color(55,55,255,55)
-function StormFox2.WeatherGen.DrawForecast(w,h,hourly)
+local ca = Color(255,255,255,8)
+function StormFox2.WeatherGen.DrawForecast(w,h,bExpensive)
 	local y = 0
 	surface.SetDrawColor(bg)
 	surface.DrawRect(0,0,w,h)
@@ -173,13 +174,14 @@ function StormFox2.WeatherGen.DrawForecast(w,h,hourly)
 
 	-- Render rain
 		local cW = StormFox2.Weather.GetCurrent()
+		local ws2 = ws / 2
 		surface.SetDrawColor(rc)
 		if isWTRain(cW) then
 			local data = math.max(StormFox2.Weather.GetPercent(), forecastJson[2 + idCast].Downfall)
 			if data > 0 then
 				local x = 0
 				local s = h * data
-				surface.DrawRect(x, y + h - s, ws, s)
+				surface.DrawRect(x + ws2, y + h - s, ws2, s)
 			end
 		end
 		for i = 2, 7 do
@@ -188,11 +190,11 @@ function StormFox2.WeatherGen.DrawForecast(w,h,hourly)
 			if data.Downfall <= 0 then continue end
 			local x = i * ws - ws
 			local s = h * data.Downfall
-			surface.DrawRect(x, y + h - s, ws, s)
+			surface.DrawRect(x, y + h - s, i == 7 and ws2 or ws, s)
 		end
 	-- Render temp
 		surface.SetDrawColor(color_white)
-		local ws2 = ws / 2
+		
 		for i = 2, 7 do
 			local data = forecastJson[i + idCast]
 			if not data then break end
@@ -206,7 +208,20 @@ function StormFox2.WeatherGen.DrawForecast(w,h,hourly)
 			local x = i * ws - ws
 			local cH = fkey(data, max_temp, min_temp)
 			local lH = fkey(prev, max_temp, min_temp)
-			surface.DrawLine(x - ws2, y + h * lH, x + ws2, y + h * cH)
+			local xx,yy,xx2,yy2 = x - ws2, y + h * lH, x + ws2, y + h * cH
+			surface.DrawLine(xx,yy,xx2,yy2)
+			if bExpensive then
+				local triangle = {
+					{ x = xx,  y = yy},
+					{ x = xx2, y = yy2 },
+					{ x = xx2, y = y + h },
+					{ x = xx , y = y + h },
+				}
+				draw.NoTexture()
+				surface.SetDrawColor(ca)
+				surface.DrawPoly( triangle )
+				surface.SetDrawColor(color_white)
+			end
 			if i == 2 then
 				local s = math.Round(StormFox2.Temperature.GetDisplay(prev), 2) .. StormFox2.Temperature.GetDisplaySymbol()
 				draw.DrawText(s, "SF_Display_H3", x - ws2, y + h * lH, color_white, TEXT_ALIGN_CENTER)
