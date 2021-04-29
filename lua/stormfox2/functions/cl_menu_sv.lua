@@ -1,24 +1,3 @@
-do
-	surface.CreateFont( "SF_Menu_H2", {
-		font = "coolvetica", --  Use the font-name which is shown to you by your operating system Font Viewer, not the file name
-		extended = false,
-		size = 20,
-		weight = 500,
-		blursize = 0,
-		scanlines = 0,
-		antialias = true,
-		underline = false,
-		italic = false,
-		strikeout = false,
-		symbol = false,
-		rotary = false,
-		shadow = false,
-		additive = false,
-		outline = false,
-	} )
-end
-
-
 StormFox2.Menu = StormFox2.Menu or {}
 
 local mapPoint = 0
@@ -140,6 +119,12 @@ local tabs = {
 
 		local weather_board = vgui.Create("SF_WeatherMap", w_panel)
 		weather_board:Dock(FILL)
+
+		hook.Add("StormFox2.Time.NextDay", weather_board, function()
+			if not StormFox2.Setting.GetCache("sf_hide_forecast", false) then return end -- Everyone gets informed
+			net.Start("StormFox2.weekweather")
+			net.SendToServer()
+		end)
 		
 		local wmap_board = vgui.Create("DPanel", w_panel)
 		wmap_board:Dock(FILL)

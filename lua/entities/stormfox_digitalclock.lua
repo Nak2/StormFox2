@@ -40,23 +40,6 @@ if SERVER then
 		self:EmitSound("buttons/button24.wav")
 	end
 else
-	surface.CreateFont( "SkyFox-DigitalClock", {
-		font = "Arial", -- Use the font-name which is shown to you by your operating system Font Viewer, not the file name
-		extended = false,
-		size = 50,
-		weight = 500,
-		blursize = 0,
-		scanlines = 0,
-		antialias = true,
-		underline = false,
-		italic = false,
-		strikeout = false,
-		symbol = false,
-		rotary = false,
-		shadow = false,
-		additive = false,
-		outline = false,
-	} )
 	function ENT:Initialize()
 		self.ClockBase = ClientsideModel("models/maxofs2d/hover_plate.mdl",RENDERGROUP_TRANSLUCENT)
 		self.ClockBase:SetPos(self:LocalToWorld(Vector(0,0,-6.2)))

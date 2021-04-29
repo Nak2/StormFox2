@@ -93,14 +93,6 @@ local function SetWeather( uID, var )
 end
 
 -- Menu
-do 	
-	surface.CreateFont("SF2.W_Button", {
-		font = "Tahoma",
-		size = 15,
-		weight = 1500,
-	})
-end
-
 local t_col = Color(67,73,83)
 local h_col = Color(84,90,103)
 local b_col = Color(51,56,62)
