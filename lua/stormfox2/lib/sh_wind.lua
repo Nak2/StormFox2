@@ -240,7 +240,7 @@ if CLIENT then
 	-- StormFox2.Ambience.ForcePlay
 	hook.Add("StormFox2.Ambiences.OnSound", "StormFox2.Ambiences.Wind", function()
 		if windSnd < 0 then return end -- No wind
-		local wForce = StormFox2.Wind.GetForce() * 0.5
+		local wForce = StormFox2.Wind.GetForce() * 0.25
 		local vM = (400 - windSnd) / 400
 		if vM <= 0 then return end
 		-- Main loop
