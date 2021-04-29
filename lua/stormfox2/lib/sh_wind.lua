@@ -13,8 +13,8 @@ end
 
 -- Settings
 hook.Add("stormfox2.postlib", "stormfox2.windSettings",function()
-	StormFox2.Setting.AddSV("windmove_players",true,nil,"Effects")
-	StormFox2.Setting.AddSV("windmove_foliate",true,nil,"Effects")
+	StormFox2.Setting.AddSV("windmove_players",true,nil,"Weather")
+	StormFox2.Setting.AddSV("windmove_foliate",true,nil,"Weather")
 	hook.Remove("stormfox2.postlib", "stormfox2.windSettings")
 end)
 
@@ -118,7 +118,7 @@ end
 			if not StormFox2.Ent.env_winds then return end
 			local min = nw * .6
 			local max = nw * .8
-			local gust = math.min(nw, 5)
+			local gust = math.min(nw, 5.5)
 			for _,ent in ipairs( StormFox2.Ent.env_winds ) do
 				--print(ent, max, min ,gust)
 				if ang then ent:Fire('SetWindDir', ang) end
