@@ -203,7 +203,7 @@ if CLIENT then
 	local function AddGuest( snd, vol, duration )
 		if windGusts[snd] then return end
 		if not duration then duration = SoundDuration( snd ) end 
-		windGusts[snd] = {vol * 0.8, CurTime() + duration - 1}
+		windGusts[snd] = {vol * 0.4, CurTime() + duration - 1}
 	end
 
 	timer.Create("StormFox2.Wind.Snd", 1, 0, function()
@@ -250,7 +250,7 @@ if CLIENT then
 			if data[2] <= CurTime() then
 				windGusts[snd] = nil
 			else	
-				StormFox2.Ambience.ForcePlay( snd, data[1] * vM + math.Rand(0, 0.1) )
+				StormFox2.Ambience.ForcePlay( snd, 0.2 * data[1] + math.Rand(0, 0.1) )
 			end
 		end
 	end)
