@@ -293,10 +293,13 @@ end
 net.Receive("StormFox2.weekweather", function(len, ply)
 	StormFox2.Permission.EditAccess(ply,"StormFox Settings", function()
 		StormFox2.WeatherGen.UpdatePlayer( ply )
-		print("UPDATE PLY")
 	end)
 end)
 
+hook.Add("StormFox2.data.initspawn", "StormFox2.WeatherGen.UpdatePly", function(pl)
+	if StormFox2.Setting.GetCache("sf_hide_forecast", false) then return end
+	StormFox2.WeatherGen.UpdatePlayer(pl)
+end)
 
 hook.Add("ShutDown","StormFox2.Temp.Save",function()
 	cookie.Set("sf_lasttemp",StormFox2.Temperature.Get())
