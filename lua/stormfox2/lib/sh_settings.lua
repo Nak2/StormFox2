@@ -142,10 +142,11 @@ end
 
 --[[<Shared>-----------------------------------------------------------------
 Returns a setting and will try to convert to the given defaultvar type.
+Secondary will be true, if the setting isn't there.
 ---------------------------------------------------------------------------]]
 function StormFox2.Setting.Get(sName,vDefaultVar)
 	local con = GetConVar("sf_" .. sName)
-	if not con then return vDefaultVar end
+	if not con then return vDefaultVar, true end
 	if settings[sName] == "number" then
 		return tonumber(con:GetString()) or vDefaultVar
 	elseif settings[sName] == "string" then
@@ -240,7 +241,13 @@ function StormFox2.Setting.GetCache(sName,vDefaultVar)
 	StormFox2.Setting.Callback(sName,function(vVar)
 		cache[sName] = vVar
 	end,"cache")
-	cache[sName] = StormFox2.Setting.Get(sName,vDefaultVar) or vDefaultVar
+	local a,b = StormFox2.Setting.Get(sName,vDefaultVar)
+	if b then return a end
+	if a == nil then -- Just in case
+		cache[sName] = vDefaultVar
+	else
+		cache[sName] = a
+	end
 	return cache[sName]
 end
 
