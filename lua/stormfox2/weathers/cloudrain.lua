@@ -380,7 +380,6 @@ if CLIENT then
 					--v:SetSize(  1.22 + 1.56 * P * math.Rand(1,2) * 10, 5.22 + 7.56 * P * 10 )
 				end
 			end
-
 			-- Spawn distant rain
 			if P > 0.15 then
 				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, 250, 700, 10 + P * 500, 250, vNorm ) or {} ) do
@@ -400,13 +399,12 @@ if CLIENT then
 				--	v:SetMaterial( Material('color') )
 				--	v:SetAlpha(255)
 				end
-
+			end
+			if P > (0.5 - W * 0.4)  then
 				local dis = math.random(900 - W * 100 - P * 500,multi_dis)
 				local d = math.max(dis / multi_dis, 0.5)
 				local s = math.Rand(0.5,1) * math.max(0.7,P) * 300 * d
-
 				--StormFox2.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * .2)
-
 				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_multi, dis, multi_dis * 2, (90 + P * (250 + W)) / 2, s, vNorm ) or {} ) do
 					local d = v:GetDistance()
 					if not d or d < 500 then 
