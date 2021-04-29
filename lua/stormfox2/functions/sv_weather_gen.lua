@@ -1,9 +1,8 @@
 
 StormFox2.WeatherGen = StormFox2.WeatherGen or {}
 -- Settings
-StormFox2.Setting.AddSV("auto_weather",true,nil, "Weather", 0, 1)
+StormFox2.Setting.AddSV("auto_weather",true,nil, "Weather")
 StormFox2.Setting.AddSV("hide_forecast",false,nil, "Weather")
-
 
 -- OpenWeatherMap API
 	CreateConVar("sf_openweathermap_key", "", 				{FCVAR_ARCHIVE, FCVAR_PROTECTED}, "Sets the API key")
@@ -137,7 +136,6 @@ do
 			local b_thunder = false
 			if json.weather and json.weather[1] and json.weather[1].id and (rain > 0 or cloudyness >= 0.3) then
 				local id = json.weather[1].id
-				print(id, "><<")
 				b_thunder = ( id >= 200 and id <= 202 ) or ( id >= 210 and id <= 212 ) or ( id >= 230 and id <= 232 ) or id == 212
 			end
 			StormFox2.Thunder.SetEnabled(b_thunder, id == 212 and 12 or 6) -- 212 is heavy thunderstorm 
@@ -236,8 +234,10 @@ do
 			if not StormFox2.Setting.Get("openweathermap_enabled") then return end
 			timer.Remove("sf_openweathermap_change")
 			timer.Create("sf_openweathermap_change", 1, 1, function()
-				if n_NextAllowedCall >= CurTime() then return end
-				UpdateWeather()
+				if n_NextAllowedCall <= CurTime() then
+					UpdateWeather()
+				end
+				Updateforecast( true )
 			end)
 		end
 		cvars.AddChangeCallback("sf_openweathermap_real_lat", Update, "StormFox2.APICALL_LAT")
@@ -252,9 +252,13 @@ local function init()
 		-- Auto weather
 		StormFox2.WeatherGen._Start()
 	end
+	if #forecastJson < 1 then return end
+	if StormFox2.Setting.GetCache("hide_forecast", false) then return end
+	StormFox2.WeatherGen.UpdatePlayer()
 end
 hook.Add("stormfox2.postinit", "StormFox2.WeatherGen.Launch", function()
-	timer.Simple(4, init)
+	timer.Simple(2, init)
+	hook.Remove("stormfox2.postinit", "StormFox2.WeatherGen.Launch")
 end)
 
 function StormFox2.WeatherGen.NetWriteForecast()
@@ -279,8 +283,6 @@ end
 -- Network
 util.AddNetworkString("StormFox2.weekweather")
 function StormFox2.WeatherGen.UpdatePlayer( ply )
-	local sunrise, sunset = math.max( StormFox2.Sun.GetSunRise(), 60), math.min(StormFox2.Sun.GetSunSet(), 1380)
-	local midday = math.Clamp(StormFox2.Sun.GetSunAtHigest(), 120, 1320)
 	net.Start("StormFox2.weekweather")
 		StormFox2.WeatherGen.NetWriteForecast()
 	if not ply then
@@ -297,6 +299,7 @@ net.Receive("StormFox2.weekweather", function(len, ply)
 end)
 
 hook.Add("StormFox2.data.initspawn", "StormFox2.WeatherGen.UpdatePly", function(pl)
+	if #forecastJson < 1 then return end
 	if StormFox2.Setting.GetCache("sf_hide_forecast", false) then return end
 	StormFox2.WeatherGen.UpdatePlayer(pl)
 end)
