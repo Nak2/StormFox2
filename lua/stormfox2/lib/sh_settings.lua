@@ -58,7 +58,7 @@ end
 
 local gm_settings -- Allows gamemodes to overwrite the settings
 hook.Add("PostGamemodeLoaded", "StormFox2.Settings.PGL", function()
-	gm_settings = gmod.GetGamemode().SF_Settings
+	gm_settings = gmod.GetGamemode().SF2_Settings
 	if not gm_settings then return end
 	-- Remove all callbacks and caches for the given setting.
 	for sName,var in pairs( gm_settings ) do
