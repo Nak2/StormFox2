@@ -53,6 +53,7 @@ local function PaintOver(self, w, h)
 end
 
 local function SetSFConVar( convar, str )
+	if StormFox2.Setting.IsGMSetting(convar) then return end
 	if string.sub(convar, 0, 3) == "sf_" then
 		convar = string.sub(convar, 4)
 	end
@@ -126,6 +127,9 @@ do
 		self._b:SetText( con:GetString())
 		function self._b:OnEnter( str )
 			SetSFConVar(sName, tostring(str))
+		end
+		if StormFox2.Setting.IsGMSetting(sName) then
+			self._b:SetDisabled( true )
 		end
 		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, self)
 			self._b:SetText(vVar)
@@ -237,7 +241,9 @@ do
 			local text = tab[vVar] or tab[tostring(vVar)] or vVar
 			self._b:SetText(niceName( language.GetPhrase(text)))
 		end,self)
-	
+		if StormFox2.Setting.IsGMSetting(sName) then
+			self._b:SetDisabled( true )
+		end
 		self._w = w
 		self._b:SetWide(w)
 		self:InvalidateLayout(true)
@@ -291,6 +297,9 @@ do
 		self._b:SetConVar( "sf_" .. sName )
 		function self._b:DoClick()
 			SetSFConVar(sName, not self:GetChecked())
+		end
+		if StormFox2.Setting.IsGMSetting(sName) then
+			self._b:SetDisabled( true )
 		end
 		self._b.ConVarChanged = ConVarChanged
 		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
@@ -349,6 +358,9 @@ do
 		self._b:SetMax(con:GetMax() or 1)
 		self._b.Scratch.ConVarChanged = ConVarChanged
 		self._b.TextArea.ConVarChanged = ConVarChanged
+		if StormFox2.Setting.IsGMSetting(sName) then
+			self._b:SetDisabled( true )
+		end
 		self:InvalidateLayout(true)
 	end
 	function PANEL:PerformLayout(w, h)
@@ -415,6 +427,9 @@ do
 				SetSFConVar(sName, 0.5)
 			end
 		end
+		if StormFox2.Setting.IsGMSetting(sName) then
+			self._b:SetDisabled( true )
+		end
 		function self._t:Think()
 			b = con:GetFloat() >= 0
 			self:SetChecked( b )
@@ -474,6 +489,9 @@ do
 			n:SetConVar( "sf_" .. sName )
 			n:SetDrawLanguageID( false )
 			n.ConVarChanged = ConVarChanged
+			if StormFox2.Setting.IsGMSetting(sName) then
+				n:SetDisabled( true )
+			end
 			self._d:SetPos(74,self._l:GetTall() + 4)
 			if nMin then n:SetMin(nMin) end
 		else
@@ -493,6 +511,9 @@ do
 			b.TextArea.ConVarChanged = ConVarChanged
 			b.TextArea:SetDrawLanguageID( false )
 			b.ConVarChanged = ConVarChanged
+			if StormFox2.Setting.IsGMSetting(sName) then
+				b:SetDisabled( true )
+			end
 			self._d:SetPos(305, self._l:GetTall() + 2)
 		end
 		self:InvalidateLayout(true)
@@ -642,6 +663,14 @@ do
 				self.ampm:SetValue(am and "AM" or "PM")
 			end
 		self.trigger = true
+
+		if StormFox2.Setting.IsGMSetting(sName) then
+			self.hour:SetDisabled( true )
+			self.minute:SetDisabled( true )
+			if self.ampm then
+				self.ampm:SetDisabled( true )
+			end
+		end
 
 		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
 			pln.trigger = false
@@ -839,6 +868,9 @@ do
 				SetSFConVar(sName, -1)
 			end
 		end
+		if StormFox2.Setting.IsGMSetting(sName) then
+			self._t:SetDisabled( true )
+		end
 		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
 			pln.trigger = false
 			if tonumber(vVar) < 0 then
@@ -949,6 +981,10 @@ do
 		if nMin then self._b:SetMin( nMin )	else self._b.m_numMin = nil	end
 		local val = StormFox2.Temperature.Convert(nil,StormFox2.Temperature.GetDisplayType(),con:GetInt())
 		self._b:SetValue( val )
+
+		if StormFox2.Setting.IsGMSetting(sName) then
+			self._b:SetDisabled( true )
+		end
 
 		function self._b:OnLoseFocus( )
 			local num = tonumber(self:GetText()) or 0
@@ -1159,6 +1195,10 @@ do
 		self:SetMin( conMi:GetMin() or 0 )
 		self:SetMaxVar( conMa:GetFloat() )
 		self:SetMinVar( conMi:GetFloat() )
+
+		if StormFox2.Setting.IsGMSetting(sMinName) or StormFox2.Setting.IsGMSetting(sMaxName) then
+			self:SetDisabled( true )
+		end
 		
 		self.OnValueChanged = conFunc	
 		StormFox2.Setting.Callback(sMinName,function(vVar,vOldVar,_, pln)
@@ -1319,6 +1359,10 @@ do
 			end
 			pln:SetText(math.Round(vVar, pln.sl:GetDecimals()))
 		end,self.n_max)
+		if StormFox2.Setting.IsGMSetting(sMinName) or StormFox2.Setting.IsGMSetting(sMaxName) then
+			self.n_min:SetDisabled( true )
+			self.n_max:SetDisabled( true )
+		end
 	end
 
 	derma.DefineControl( "SF_DDSliderNum", "", PANEL, "DPanel" )

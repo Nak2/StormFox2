@@ -256,10 +256,6 @@ local function init()
 	if StormFox2.Setting.GetCache("hide_forecast", false) then return end
 	StormFox2.WeatherGen.UpdatePlayer()
 end
-hook.Add("stormfox2.postinit", "StormFox2.WeatherGen.Launch", function()
-	timer.Simple(2, init)
-	hook.Remove("stormfox2.postinit", "StormFox2.WeatherGen.Launch")
-end)
 
 function StormFox2.WeatherGen.NetWriteForecast()
 	local n = math.min(7 * 24, #forecastJson)
@@ -308,4 +304,19 @@ hook.Add("ShutDown","StormFox2.Temp.Save",function()
 	cookie.Set("sf_lasttemp",StormFox2.Temperature.Get())
 	cookie.Set("sf_lastweather",StormFox2.Weather.GetCurrent().Name)
 end)
--- StormFox2.Weather.Set("Clear")
+
+-- Wait until StormFox and gamemode has loaded.
+local a,b = false, false
+local function initW()
+	if not a or not b then return end
+	init()
+end
+hook.Add("PostGamemodeLoaded", "StormFox2.WeatherGen.Launch2", function()
+	a = true
+	initW()
+end)
+hook.Add("stormfox2.postinit", "StormFox2.WeatherGen.Launch", function()
+	b = true
+	timer.Simple(2, initW)
+	hook.Remove("stormfox2.postinit", "StormFox2.WeatherGen.Launch")
+end)

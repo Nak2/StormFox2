@@ -5,6 +5,7 @@ Handle settings and convert convars.
 	- Hooks: StormFox2.Setting.Change 		sName, vVarable
 ---------------------------------------------------------------------------]]
 StormFox2.Setting = {}
+local cache = {}
 local settings = {}
 local settings_ov = {}
 local settings_env = {}
@@ -54,6 +55,20 @@ end
 if SERVER then
 	util.AddNetworkString("StormFox2.setting")
 end
+
+local gm_settings -- Allows gamemodes to overwrite the settings
+hook.Add("PostGamemodeLoaded", "StormFox2.Settings.PGL", function()
+	gm_settings = gmod.GetGamemode().SF_Settings
+	if not gm_settings then return end
+	-- Remove all callbacks and caches for the given setting.
+	for sName,var in pairs( gm_settings ) do
+		if string.sub(sName, 0, 3) == "sf_" then
+			sName = string.sub(sName, 4)
+		end
+		callback_func[sName] = nil
+		cache[sName] = StormFox2.Setting.Get(sName,var)
+	end
+end)
 
 --[[<Shared>-----------------------------------------------------------------
 Adds a server setting that will sync with clients
@@ -146,21 +161,27 @@ Secondary will be true, if the setting isn't there.
 ---------------------------------------------------------------------------]]
 function StormFox2.Setting.Get(sName,vDefaultVar)
 	local con = GetConVar("sf_" .. sName)
-	if not con then return vDefaultVar, true end
+	local str
+	if gm_settings and gm_settings[sName] then
+		str = gm_settings[sName]
+	elseif con then
+		str = con:GetString()
+	end
+	if not con or not str then return vDefaultVar, true end
 	if settings[sName] == "number" then
-		return tonumber(con:GetString()) or vDefaultVar
+		return tonumber(str) or vDefaultVar
 	elseif settings[sName] == "string" then
-		return con:GetString() or vDefaultVar
+		return str or vDefaultVar
 	elseif settings[sName] == "boolean" then
-		return con:GetString() == "1"
+		return str == "1"
 	else
 		local st = (settings[sName] or type(vDefaultVar) or vDefaultVar):lower()
 		if st == "boolean" then st = "bool"
 		elseif st == "number" then st = "float" end
 		if table.HasValue(w_list, st) then
-			return util.StringToType(con:GetString(),st) or vDefaultVar
+			return util.StringToType(str,st) or vDefaultVar
 		else
-			return con:GetString() or vDefaultVar
+			return str or vDefaultVar
 		end
 	end
 end
@@ -178,6 +199,10 @@ function StormFox2.Setting.Set(sName,vVar)
 	if string.sub(sName, 0, 3) == "sf_" then
 		sName = string.sub(sName, 4)
 	end
+	if gm_settings and gm_settings[sName] then -- Gamemode overwrites this change.
+		StormFox2.Warning("Can't change setting. Gamemode overwrites " .. sName .. "!")
+		return
+	end 
 	if sName == "openweathermap_real_city" then
 		StormFox2.WeatherGen.APISetCity( vVar )
 		return
@@ -215,6 +240,7 @@ Unlike convars, this will also be triggered on the clients too.
 Note: Variables get converted automatically 
 ---------------------------------------------------------------------------]]
 function StormFox2.Setting.Callback(sName,fFunc,sID)
+	if gm_settings and gm_settings[sName] then return end -- Gamemode overwrites this change.
 	if not sID then sID = "default" end
 	if not callback_func[sName] then callback_func[sName] = {} end
 	callback_func[sName][sID] = fFunc
@@ -228,6 +254,7 @@ if CLIENT then
 		local newvar = net.ReadString()
 		local oldvar = net.ReadString()
 		if not callback_func[sName] then return end
+		if gm_settings and gm_settings[sName] then return end -- Gamemode overwrites this change.
 		callBack("sf_" .. sName,oldvar,newvar)
 	end)
 end
@@ -235,14 +262,13 @@ end
 Same as StormFox2.Setting.Get, however this will cache the result.
 This is faster than looking it up constantly.
 ---------------------------------------------------------------------------]]
-local cache = {}
 function StormFox2.Setting.GetCache(sName,vDefaultVar)
 	if cache[sName] ~= nil then return cache[sName] end
 	StormFox2.Setting.Callback(sName,function(vVar)
 		cache[sName] = vVar
 	end,"cache")
 	local a,b = StormFox2.Setting.Get(sName,vDefaultVar)
-	if b then return a end
+	if b then return a end -- Setting hasn't loaded yet. Wait caching it.
 	if a == nil then -- Just in case
 		cache[sName] = vDefaultVar
 	else
@@ -309,4 +335,17 @@ function StormFox2.Setting.SetType( sName, sType, tSortOrter )
 			settings_ov[sName] = string.lower(sType)
 		end
 	end
+end
+
+-- Returns true if the given setting is overwritten by the current gamemode.
+function StormFox2.Setting.IsGMSetting( sName )
+	if string.sub(sName, 0, 3) == "sf_" then
+		sName = string.sub(sName, 4)
+	end
+	return gm_settings and gm_settings[sName] and true or false
+end
+
+-- Returns a list that the current gamemode overwrites or nil if none.
+function StormFox2.Setting.GetGMSettings()
+	return gm_settings
 end
