@@ -176,7 +176,7 @@ function StormFox2.WeatherGen.DrawForecast(w,h,bExpensive)
 		local cW = StormFox2.Weather.GetCurrent()
 		local ws2 = ws / 2
 		surface.SetDrawColor(rc)
-		if isWTRain(cW) then
+		if isWTRain(cW) and forecastJson[2 + idCast] then
 			local data = math.max(StormFox2.Weather.GetPercent(), forecastJson[2 + idCast].Downfall)
 			if data > 0 then
 				local x = 0
