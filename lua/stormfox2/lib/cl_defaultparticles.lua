@@ -141,12 +141,12 @@ local init = function()
 	function rain_template_multi:Think()
 		local P = StormFox2.Weather.GetPercent()
 		local fC = StormFox2.Fog.GetColor()
-		local L = StormFox2.Weather.GetLuminance()
+		local L = math.min(StormFox2.Weather.GetLuminance(), 100) 
 		local TL = StormFox2.Thunder.GetLight() / 2
 		local speed = 0.162 * P + 0.324
-		StormFox2.Misc.rain_template_multi:SetColor( Color(fC.r + TL + 15, fC.g + TL + 15, fC.b + TL + 15) ) 
-		StormFox2.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * 25)
-		StormFox2.Misc.rain_template_multi:SetSpeed( speed ) 
+		StormFox2.Misc.rain_template_multi:SetColor( Color(fC.r + TL + 15, fC.g + TL + 15, fC.b + TL + 15)  ) 
+		StormFox2.Misc.rain_template_multi:SetAlpha( math.min(255, math.max(0, (P - 0.5) * 525 ))  )
+		StormFox2.Misc.rain_template_multi:SetSpeed( speed )
 	end
 
 	-- Particle Explosion
