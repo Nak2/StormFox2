@@ -352,16 +352,15 @@ do
 		local con = GetConVar( "sf_" .. sName )
 		self._l:SetText( sDesc and sDesc or "#sf_" .. sName )
 		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
-		self._b:SetConVar( "sf_" .. sName )
-		self._b.ConVarChanged = ConVarChanged
+
 		self._b:SetMin(con:GetMin() or 0)
 		self._b:SetMax(con:GetMax() or 1)
 		self._b.Scratch.ConVarChanged = ConVarChanged
 		self._b.TextArea.ConVarChanged = ConVarChanged
-		if StormFox2.Setting.IsGMSetting(sName) then
-			self._b:SetDisabled( true )
+		if not StormFox2.Setting.IsGMSetting(sName) then
+			self._b:SetConVar( "sf_" .. sName )
+			self._b.ConVarChanged = ConVarChanged
 		end
-		self:InvalidateLayout(true)
 	end
 	function PANEL:PerformLayout(w, h)
 		local text, lines = wrapText(self._des, self:GetWide() )
