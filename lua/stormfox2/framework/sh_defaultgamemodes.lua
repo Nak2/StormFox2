@@ -4,6 +4,8 @@ StormFox2.Setting.AddSV("random_round_weather",true,nil,"Weather")
 local gamemodes = {"terrortown"}
 local isRGame = table.HasValue(gamemodes, engine.ActiveGamemode())
 
+local nightBlock = false
+
 local function SelectRandom()
 	-- Temp
 	local tmin,tmax = StormFox2.Setting.Get("min_temp",-10), StormFox2.Setting.Get("max_temp",20)
@@ -27,12 +29,17 @@ local function SelectRandom()
 	else
 		StormFox2.Thunder.SetEnabled( false )
 	end
-	StormFox2.Weather.Set( w_name, w_p )
 	-- Set random time
 	local start = StormFox2.Setting.Get("start_time",-1) or -1
 	if start < 0 then
-		StormFox2.Time.Set( math.random(60, 1080) )
+		if nightBlock then
+			StormFox2.Time.Set( math.random(500, 900 ) )
+			w_p = math.Rand(0.4, 0.6) -- Reroll
+		else
+			StormFox2.Time.Set( math.random(60, 1080) )
+		end
 	end
+	StormFox2.Weather.Set( w_name, w_p )
 end
 
 hook.Add("StormFox2.Settings.PGL", "StormFox2.DefaultGamemodeSettings", function()
@@ -45,8 +52,14 @@ hook.Add("StormFox2.Settings.PGL", "StormFox2.DefaultGamemodeSettings", function
 			["hide_forecast"]	= 1,
 			["openweathermap_enabled"] = 0,
 			["time_speed"] = 1,
+			["sf_extra_lightsupport"] = 0,
 		}
-		StormFox2.Time.SetSpeed(1) -- Jsut in case
+		-- These gamemodes are quick-roundbased. 2~6 mins or so. Block the exspensive light-changes. 
+		GM.SF2_Settings["extra_lightsupport"] = 0
+		if not StormFox2.Ent.light_environments then
+			GM.SF2_Settings["allow_weather_lightchange"] = 0
+			nightBlock = true
+		end
 	end
 	if GM.PreRoundStart then
 		_SFGMPRERS = _SFGMPRERS or GM.PreRoundStart
