@@ -4,7 +4,7 @@ local rain = StormFox2.Weather.Add( "Rain", "Cloud" )
 	-- cloudy.spawnable = true Cloud is not spawnable. Since it is a "default" when it is cloudy
 	rain.spawnable = true
 	rain.thunder = function(percent) -- The amount of strikes pr minute
-		return true and 3 or percent > 0.5 and math.random(10) > 5 and percent * 3 or 0
+		return percent > 0.5 and math.random(10) > 5 and percent * 3 or 0
 	end
 -- Cloud icon
 do
@@ -342,7 +342,7 @@ if CLIENT then
 		local TL = StormFox2.Thunder.GetLight()
 		local TP = math.Clamp(T / 4,0,1)
 
-		rain_outside:SetVolume( P * 1 )
+		rain_outside:SetVolume( P * TP )
 		rain_light:SetVolume( P * TP )
 		rain_window:SetVolume( P * 0.3 * TP )
 		rain_roof_wood:SetVolume( P * 0.3 * TP )
