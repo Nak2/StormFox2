@@ -235,6 +235,9 @@ hook.Add("Think", "StormFox2.Ambiences.Logic", function()
 		else
 			SF_AMB_CHANNEL[snd][2] = vol -- Set the target volume
 			if IsValid( SF_AMB_CHANNEL[snd][1] ) then
+				if SF_AMB_CHANNEL[snd][1]:GetState() == 0 then -- Somehow stopped
+					SF_AMB_CHANNEL[snd][1]:Play()
+				end
 				if SF_AMB_CHANNEL[snd][1]:GetPlaybackRate() ~= p_br[snd] then
 					SF_AMB_CHANNEL[snd][1]:SetPlaybackRate(p_br[snd])
 				end
