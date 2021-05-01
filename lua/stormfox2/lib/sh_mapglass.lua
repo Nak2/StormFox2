@@ -736,7 +736,7 @@ Locates an entity with the given hammer_id from the mapfile.
 		local t = {}
 		for k,v in ipairs(StormFox2.Map.FindClass("logic_relay")) do
 			local sName = v.targetname
-			if not sName then return end
+			if not sName then break end
 			if sName == "dusk" then sName = "night_events" end
 			if sName == "dawn" then sName = "day_events" end
 			t[sName] = true
@@ -747,7 +747,6 @@ Locates an entity with the given hammer_id from the mapfile.
 			return t[sName] and true or false
 		end
 	end
-
 -- Generates the texture-tree
 	if not SF_TEXTDATA or table.Count(SF_TEXTDATA) < 1 then
 		SF_TEXTDATA = GenerateTextureTree()
