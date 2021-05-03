@@ -354,7 +354,6 @@ if CLIENT then
 		StormFox2.Misc.rain_template:SetSpeed( speed )
 		StormFox2.Misc.rain_template_medium:SetSpeed( speed )
 		StormFox2.Misc.rain_template_medium:SetAlpha( L / 5)
-		
 	end
 	-- Gets called every tick to add rain.
 	local multi_dis = 1200

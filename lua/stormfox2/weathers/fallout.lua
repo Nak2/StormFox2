@@ -1,6 +1,5 @@
 
 local rad = StormFox2.Weather.Add( "Radioactive", "Rain" )
-
 if CLIENT then
 	function rad:GetName(nTime, nTemp, nWind, bThunder, nFraction )
 		return language.GetPhrase('sf_weather.fallout')
@@ -19,16 +18,15 @@ function rad.GetIcon( nTime, nTemp, nWind, bThunder, nFraction) -- What symbol t
 	return m_def
 end
 
-local n = 160
-	-- Day -- 
-	rad:SetSunStamp("topColor",Color(3.0, n + 2.9, 3.5),	SF_SKY_DAY)
+-- Day -- 
+	rad:SetSunStamp("topColor",Color(3.0, 102.9, 3.5),	SF_SKY_DAY)
 	rad:SetSunStamp("bottomColor",Color(20, 55, 25),		SF_SKY_DAY)
 	rad:SetSunStamp("duskColor",Color(3, 5.9, 3.5),			SF_SKY_DAY)
 	rad:SetSunStamp("duskScale",1,							SF_SKY_DAY)
 	rad:SetSunStamp("HDRScale",0.33,						SF_SKY_DAY)
 -- Night
-	rad:SetSunStamp("topColor",Color(0.4, n + 0.2, 0.54),SF_SKY_NIGHT)
-	rad:SetSunStamp("bottomColor",Color(2.25, 112.25,2.25),SF_SKY_NIGHT)
+	rad:SetSunStamp("topColor",Color(0.4, 20.2, 0.54),SF_SKY_NIGHT)
+	rad:SetSunStamp("bottomColor",Color(2.25, 25,2.25),SF_SKY_NIGHT)
 	rad:SetSunStamp("duskColor",Color(.4, 1.2, .54),		SF_SKY_NIGHT)
 	rad:SetSunStamp("duskScale",0,							SF_SKY_NIGHT)
 	rad:SetSunStamp("HDRScale",0.1,							SF_SKY_NIGHT)
@@ -41,7 +39,6 @@ if CLIENT then
 	local rain_light = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_light.ogg", SF_AMB_OUTSIDE, 1 )
 	local rain_window = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_glass.ogg", SF_AMB_WINDOW, 0.1 )
 	local rain_outside = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_outside.ogg", SF_AMB_NEAR_OUTSIDE, 0.1 )
-	--local rain_underwater = StormFox2.Ambience.CreateAmbienceSnd( "", SF_AMB_UNDER_WATER, 0.1 ) Unused
 	local rain_watersurf = StormFox2.Ambience.CreateAmbienceSnd( "ambient/water/water_run1.wav", SF_AMB_UNDER_WATER_Z, 0.1 )
 	local rain_roof_wood = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_roof.ogg", SF_AMB_ROOF_WOOD, 0.1 )
 	local rain_roof_metal = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/rain_roof_metal.ogg", SF_AMB_ROOF_METAL, 0.1 )
@@ -117,11 +114,9 @@ if CLIENT then
 					v:SetSize(  250, 250 )
 					v:SetSpeed( v:GetSpeed() * math.Rand(1,2))
 				else
-					v:SetSize(  1.22 + 1.56 * P * math.Rand(1,3) * 10, 5.22 + 7.56 * P * 10 )
+					v:SetSize(  1.22 + 15.6 * P * math.Rand(1,3), 5.22 + 75.6 * P )
 				end
 				v:SetAlpha(math.min(15 + 4 * P + L,255) * 0.2)
-			--	v:SetMaterial( Material('color') )
-			--	v:SetAlpha(255)
 			end
 		end
 		if P > (0.5 - W * 0.4)  then
@@ -143,6 +138,16 @@ if CLIENT then
 			end
 		end
 	end
+	-- Render fallout
+	local debri = Material("stormfox2/effects/terrain/fallout_water")
+	local function renderD( a, b)
+		local P = StormFox2.Weather.GetPercent()
+		debri:SetFloat("$alpha",StormFox2.Weather.GetPercent())
+		render.SetMaterial(debri)
+		StormFox2.Environment.DrawWaterOverlay( b )
+	end
+	rad.PreDrawTranslucentRenderables = renderD
+
 else
 	-- Take dmg in rain, slowly
 	local nt = 0
@@ -171,9 +176,9 @@ else
 end
 
 -- Terrain 
-local radt = StormFox2.Terrain.Create("radio")
-rad:SetTerrain( function(a) return StormFox2.Weather.GetPercent() > 0.5 and radt end )
-radt:SetGroundTexture("nature/toxicslime001a")
+	local radt = StormFox2.Terrain.Create("radio")
+	rad:SetTerrain( function(a) return StormFox2.Weather.GetPercent() > 0.5 and radt end )
+	radt:SetGroundTexture("nature/toxicslime001a")
 -- Footsounds
 	radt:MakeFootprints(true,{
 		"player/footsteps/gravel1.wav",
@@ -181,12 +186,3 @@ radt:SetGroundTexture("nature/toxicslime001a")
 		"player/footsteps/gravel3.wav",
 		"player/footsteps/gravel4.wav"
 	},"gravel.step")
-
-local debri = Material("stormfox2/effects/terrain/fallout_water")
-local function renderD( a, b)
-	local P = StormFox2.Weather.GetPercent()
-	debri:SetFloat("$alpha",StormFox2.Weather.GetPercent() * 1)
-	render.SetMaterial(debri)
-	StormFox2.Environment.DrawWaterOverlay( b )
-end
-rad.PreDrawTranslucentRenderables = renderD

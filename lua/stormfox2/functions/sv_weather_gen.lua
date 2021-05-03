@@ -310,7 +310,7 @@ hook.Add("ShutDown","StormFox2.Temp.Save",function()
 end)
 
 -- Wait until StormFox and gamemode has loaded.
-local a,b = false, false
+local a,b = GAMEMODE and true or false, false
 local function initW()
 	if not a or not b then return end
 	init()
