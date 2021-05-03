@@ -120,6 +120,7 @@ end
 			local max = nw * .8
 			local gust = math.min(nw, 5.5)
 			for _,ent in ipairs( StormFox2.Ent.env_winds ) do
+				if not IsValid(ent) then continue end
 				--print(ent, max, min ,gust)
 				if ang then ent:Fire('SetWindDir', ang) end
 				ent:SetKeyValue('minwind', min)
