@@ -34,7 +34,7 @@ local function SelectRandom()
 	if start < 0 then
 		if nightBlock then
 			StormFox2.Time.Set( math.random(500, 900 ) )
-			w_p = math.Rand(0.4, 0.6) -- Reroll
+			w_p = math.Rand(0.4, 0.75) -- Reroll
 		else
 			StormFox2.Time.Set( math.random(60, 1080) )
 		end
