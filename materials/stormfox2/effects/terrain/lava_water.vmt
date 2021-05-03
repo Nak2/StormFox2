@@ -1,6 +1,6 @@
 "UnlitGeneric"
 {
-	"$basetexture" "stormfox2/effects/terrain/lava_water"
+	"$basetexture" "decals/debris_concrete001a"
 	"$surfaceprop" "glass"
 
 	"$translucent" 1
@@ -14,7 +14,8 @@
 	//$fresnelreflection 1
 
 	// Details
-	"$detail" "decals/debris_concrete001b"
-	"$detailscale" 0.09
-	"$detailblendmode" 4
+	"$detail" "stormfox2/effects/terrain/lava_water"
+	"$detailscale" 0.99
+	"$detailblendmode" 2
+	"$basetexturetransform" "center .5 .5 scale 0.1 0.1 rotate 33 translate 0 0"
 }
