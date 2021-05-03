@@ -812,24 +812,52 @@ Generate meshes and env-points out from the map-data.
 				local mesh = {}
 				STORMFOX_WATERMESH = Mesh(ice)
 				STORMFOX_WATERMESH_SKYBOX = Mesh(ice)
+				local c = Color(255,255,255)
+				local t = Vector(0,1,0)
+				local u = {0,1,0,-1}
 				for i,v in ipairs(surfaceinfos[WATER_VERTS]) do
 					local t = v[1]:GetVertices()
 					if StormFox2.Map.IsInside( v[2] ) then
 						for i = 1,3 do
 							local vec = t[i]
-							table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
+							table.insert(STORMFOX_WATERMESHBUILD, {
+									pos = vec + vec_ex,
+									u = vec.x / ice_size,
+									v = vec.y / ice_size, 
+									normal = vector_up, 
+									tangent = t,
+									userdata = u,
+									color = c})
 							--table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex})
 						end
 						for i = 4,20 do
 							if #t < i then continue end
 							local vec = t[1]
-							table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
+							table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,
+								u = vec.x / ice_size,
+								v = vec.y / ice_size, 
+								normal = vector_up, 
+								tangent = t,
+								userdata = u,
+								color = c})
 						--	table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex})
 							local vec = t[i - 1]
-							table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
+							table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,
+								u = vec.x / ice_size,
+								v = vec.y / ice_size, 
+								normal = vector_up,
+								tangent = t,
+								userdata = u,
+								color = c})
 						--	table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex})
 							local vec = t[i]
-							table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,u = vec.x / ice_size,v = vec.y / ice_size, normal = Vector(0,0,1)})
+							table.insert(STORMFOX_WATERMESHBUILD, {pos = vec + vec_ex,
+								u = vec.x / ice_size,
+								v = vec.y / ice_size, 
+								normal = vector_up, 
+								tangent = t,
+								userdata = u,
+								color = c})
 						--	table.insert(STORMFOX_WATERMESHCOLLISON, {pos = vec + vec_ex})
 						end
 						if #t >= 3 then
@@ -1177,11 +1205,12 @@ function StormFox2.Environment._SETMapIce(s)
 	b = s
 end
 function StormFox2.Environment.DrawWaterOverlay(bSkyBox)
-	if not STORMFOX_WATERMESH_SKYBOX then return end -- Invalid mesh.
-	if StormFox2.Environment.HasMapIce() then return end -- Ice is on the map
+	if not STORMFOX_WATERMESH_SKYBOX then return false end -- Invalid mesh.
+	if StormFox2.Environment.HasMapIce() then return false end -- Ice is on the map
 	if bSkyBox then
 		STORMFOX_WATERMESH_SKYBOX:Draw()
 	else
 		STORMFOX_WATERMESH:Draw()
 	end
+	return true
 end

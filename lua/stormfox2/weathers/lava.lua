@@ -60,7 +60,6 @@ if CLIENT then
 -- Render water debri
 	local debri = Material("stormfox2/effects/terrain/lava_water")
 	local function renderD( a, b)
-		if not STORMFOX_WATERMESH_SKYBOX then return end -- Invalid mesh.
 		render.SetMaterial(debri)
 		StormFox2.Environment.DrawWaterOverlay( b )
 	end

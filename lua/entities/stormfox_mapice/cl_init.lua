@@ -55,7 +55,7 @@ hook.Add("PreDrawTranslucentRenderables","StormFox2.Client.RenderSkyWater",funct
 	if not STORMFOX_WATERMESH_SKYBOX then return end -- Invalid mesh.
 	local n = (50 + (StormFox2.Map.GetLight() or 100)) / 200
 		ice:SetVector("$color", Vector(n,n,n))
-	render.SetMaterial(ice)
+		render.SetMaterial(ice)
 	if b then
 		-- Render skybox-water	
 		STORMFOX_WATERMESH_SKYBOX:Draw()
