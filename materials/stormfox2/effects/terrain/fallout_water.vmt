@@ -1,0 +1,21 @@
+"UnlitGeneric"
+{
+	"$basetexture" "decals/debris_concrete001b"
+	"$surfaceprop" "glass"
+
+	"$translucent" 1
+	"$alpha" 1
+	"$additive" 0
+	//"$envmapsaturation" 1
+	"$nocull" 0
+	"$model" 1
+	//$envmap env_cubemap
+	//$envmaptint "[0.5 0.5 0.5]"
+	//$fresnelreflection 1
+
+	// Details
+	"$detail" "nature/toxicslime002a"
+	"$detailscale" 0.33
+	"$detailblendmode" 2
+	"$basetexturetransform" "center .5 .5 scale 0.4 0.4 rotate 45 translate 0 0"
+}
