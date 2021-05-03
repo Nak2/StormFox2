@@ -48,6 +48,7 @@ do
 		-- Neat, it even list the nearest city, but we don't want to dox anyone who sets the coords to their town.
 		local forecastJson = {}
 		forecastJson.unix_stamp = true
+		local e1 = t.city and t.city.name and t.city.name == "Chernobyl"
 		for i, v in ipairs(t.list or {}) do
 			local cloudyness = ( v.clouds and v.clouds.all or 0 ) / 110
 			local rain = 0
@@ -58,6 +59,9 @@ do
 			end
 			local w = rain > 0 and "Rain" or cloudyness >= 0.1 and "Cloud" or "Clear"
 			local p = rain > 0 and rain * .8 + 0.2 or cloudyness > 0 and cloudyness or 1
+			if e1 and w == "Rain" then
+				w = "Radioactive"
+			end
 			local temp = v.main.temp or v.main.temp_min or v.main.temp_max or 0 -- In Kelvin
 			local c_obj = StormFox2.Weather.Get( w ) or StormFox2.Weather.Get("Clear")
 			local tab = {
