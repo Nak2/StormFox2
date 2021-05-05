@@ -20,7 +20,7 @@ if SERVER then
 	util.AddNetworkString("StormFox2.permission")
 	util.AddNetworkString("StormFox2.menu")
 	local w_list = {
-		"sf_openweathermap_key", "sf_openweathermap_real_lat", "sf_openweathermap_real_lon", "sf_openweathermap_real_city"
+		"sf_openweathermap_key", "sf_openweathermap_real_lat", "sf_openweathermap_real_lon", "sf_openweathermap_real_city", "sf_cvslist"
 	}
 	net.Receive("StormFox2.menu", function(len, ply)
 		local req = net.ReadBool()

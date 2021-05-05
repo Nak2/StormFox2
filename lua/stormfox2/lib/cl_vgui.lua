@@ -1814,7 +1814,7 @@ do
 		for k,v in ipairs( tabs ) do
 			local p = vgui.Create("DScrollPanel", self.p_right)
 			-- Draw beta
-			function p:Paint(w,h)
+			function p:PaintOver(w,h)
 				surface.SetMaterial(b_mat)
 				surface.SetDrawColor(color_white)
 				if self.VBar.Enabled then

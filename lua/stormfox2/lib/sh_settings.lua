@@ -211,10 +211,13 @@ function StormFox2.Setting.Set(sName,vVar)
 	if sName == "openweathermap_real_city" then
 		StormFox2.WeatherGen.APISetCity( vVar )
 		return
+	elseif sName == "cvslist" then
+		StormFox2.Setting.SetCVS( vVar )
+		return
 	end
 	if not table.HasValue(w_list, sName) and not settings[sName] then return false,"Not a stormfox setting" end -- Not a stormfox setting
 	local con = GetConVar("sf_" .. sName)
-	if not con then return false,"IS not a convar" end
+	if not con then return false,"Is not a convar" end
 	if CLIENT and settings_env[sName]then -- Ask the server
 		if StormFox2.Permission then
 			StormFox2.Permission.RequestSetting(sName, vVar)
@@ -247,10 +250,12 @@ Note: Variables get converted automatically
 function StormFox2.Setting.Callback(sName,fFunc,sID)
 	if gm_settings and gm_settings[sName] then return end -- Gamemode overwrites this change.
 	if not sID then sID = "default" end
-	if not callback_func[sName] then callback_func[sName] = {} end
+	if not callback_func[sName] then
+		cvars.RemoveChangeCallback( "sf_" .. sName,"callback" )
+		cvars.AddChangeCallback("sf_" .. sName,callBack,"callback")
+		callback_func[sName] = {} 
+	end
 	callback_func[sName][sID] = fFunc
-	cvars.RemoveChangeCallback( "sf_" .. sName,"callback" )
-	cvars.AddChangeCallback("sf_" .. sName,callBack,"callback")
 end
 -- Fix clients not calling callbacks when servervars change.
 if CLIENT then
@@ -353,4 +358,85 @@ end
 -- Returns a list that the current gamemode overwrites or nil if none.
 function StormFox2.Setting.GetGMSettings()
 	return gm_settings
+end
+
+-- Resets all stormfox settings to default.
+if SERVER then
+	function StormFox2.Setting.Reset()
+		for _, sName in ipairs(StormFox2.Setting.GetAllServer()) do
+			local con = GetConVar( "sf_" .. sName )
+			if not con then
+				StormFox2.Warning("Invalid setting: " .. sName .. ".")
+				continue
+			end
+			con:Revert()
+		end
+		StormFox2.Warning("All settings were reset to default values. You should restart!")
+		cache = {}
+	end
+	concommand.Add("stormfox2_settings_reset", function( ply, cmd, args, argStr )
+		if ply and IsValid(ply) and not ply:IsListenServerHost() then return end
+		StormFox2.Setting.Reset()
+	end)
+else
+	function StormFox2.Setting.Reset()
+		for _, sName in ipairs(StormFox2.Setting.GetAllClient()) do
+			local con = GetConVar( "sf_" .. sName )
+			if not con then
+				StormFox2.Warning("Invalid setting: " .. sName .. ".")
+				continue
+			end
+			con:Revert()
+		end
+		cache = {}
+		StormFox2.Warning("All settings were reset to default values. You should rejoin!")
+	end
+end
+
+-- Gets and sets StormFox server setting
+if SERVER then
+	function StormFox2.Setting.SetCVS( str )
+		local t = string.Explode(",", str)
+		for i = 1, #t, 2 do
+			local sName, var = t[i], t[i+1] or nil
+			if string.len(sName) < 1 or not var then continue end
+			local con = GetConVar( "sf_" .. sName )
+			if not con then
+				StormFox2.Warning("Invalid setting: " .. sName .. ".")
+				continue
+			else
+				con:SetString( var )
+			end
+		end
+		StormFox2.Warning("All settings were set to input. You should restart!")
+	end
+end
+
+local exlist = {"openweathermap_real_lat", "openweathermap_real_lon", "openweathermap_key"}
+function StormFox2.Setting.GetCVS()
+	local c = ""
+	for _, sName in ipairs(StormFox2.Setting.GetAllServer()) do
+		if table.HasValue(exlist, sName) then continue end
+		local con = GetConVar( "sf_" .. sName )
+		if not con then
+			StormFox2.Warning("Invalid setting: " .. sName .. ".")
+			continue
+		end
+		c = c .. sName .. "," .. con:GetString() .. ","
+	end
+	return c
+end
+
+function StormFox2.Setting.GetCVSDefault()
+	local c = ""
+	for _, sName in ipairs(StormFox2.Setting.GetAllServer()) do
+		if table.HasValue(exlist, sName) then continue end
+		local con = GetConVar( "sf_" .. sName )
+		if not con then
+			StormFox2.Warning("Invalid setting: " .. sName .. ".")
+			continue
+		end
+		c = c .. sName .. "," .. con:GetDefault() .. ","
+	end
+	return c
 end

@@ -52,6 +52,42 @@ local function CheckSetAPI(self, str )
 	end)
 end
 
+local function ResetPromt( paste )
+	LocalPlayer():EmitSound("buttons/combine_button7.wav")
+	local f = vgui.Create("DFrame")
+	f:SetTitle("#addons.warning")
+	f:MakePopup()
+	f:SetSize(210, 85)
+	f:Center()
+	local l = vgui.Create("DLabel",f)
+	l:SetText("#addons.cannotundo")
+	l:Dock(TOP)
+	local n = vgui.Create("DButton", f)
+	n:SetText("#addons.cancel")
+	n:SetSize(100, 22)
+	local y = vgui.Create("DButton", f)
+	y:SetText("#addons.confirm")
+	y:SetSize(100, 22)
+	n:SetPos(105,58)
+	y:SetPos(5,58)
+	function n.DoClick()
+		f:Remove()
+	end
+	y.paste = paste
+	function y.DoClick(self)
+		LocalPlayer():EmitSound("buttons/button6.wav")
+		local s = StormFox2.Setting.GetCVSDefault()
+		self.paste:SetText(s)
+		net.Start("StormFox2.permission")
+			net.WriteUInt(0, 1)
+			net.WriteString( "sf_cvslist" )
+			net.WriteType(s)
+		net.SendToServer()
+		f:Remove()
+		chat.AddText(Color(155,155,255),"[StormFox2] ", color_white, "Would be best to restart the server.")
+	end
+end
+
 local m_check = Material("icon16/accept.png")
 local m_warni = Material("icon16/bullet_error.png")
 local m_none  = Material("icon16/cancel.png")
@@ -308,7 +344,80 @@ local tabs = {
 		board:MarkUsed("overwrite_2dskybox")
 		
 	end},
-	[5] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png"))},
+	[5] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png")),function(board)
+		board:AddTitle("CVS" .. " " ..  niceName(language.GetPhrase("#spawnmenu.utilities.settings")))
+		local cvs = vgui.Create("DPanel", board)
+		cvs:SetTall(240)
+		cvs:Dock(TOP)
+		cvs.Paint = function() end
+		surface.SetFont("SF_Display_H3")
+		local length = 0
+	
+		local copy = vgui.Create("DButton", cvs)
+		length = surface.GetTextSize(language.GetPhrase("#spawnmenu.menu.copy"))
+		copy:SetText(language.GetPhrase("#spawnmenu.menu.copy"))
+		
+		local insert = vgui.Create("DButton", cvs)
+		insert:SetText(niceName(language.GetPhrase("#ugc_upload.update")))
+		length = math.max(length, surface.GetTextSize(language.GetPhrase("#ugc_upload.update")))
+		
+		local setsetting = vgui.Create("DButton", cvs)
+		setsetting:SetText(language.GetPhrase("#sf_apply_settings"))
+		length = math.max(length, surface.GetTextSize(language.GetPhrase("#sf_apply_settings")))
+
+		local reset = vgui.Create("DButton", cvs)
+		reset:SetText("")
+		length = math.max(length, surface.GetTextSize(language.GetPhrase("#sf_reset_settings")))
+		local c = Color(255,55,55)
+		local c2 = Color(255,255,255,15)
+		local t = language.GetPhrase("#sf_reset_settings")
+		function reset:Paint(w,h)
+			draw.RoundedBox(3, 0, 0, w, h, color_black)
+			draw.RoundedBox(3, 1, 1, w - 2, h - 2, c)
+			if self:IsHovered() then
+				draw.RoundedBox(3, 1, 1, w - 2, h - 2, c2)
+			end
+			draw.DrawText(t, "SF_Display_H3", w / 2, h / 5, color_white, TEXT_ALIGN_CENTER)
+		end
+
+		copy:SetFont( "SF_Display_H3" )
+		copy:SetSize( length + 10, 24)
+		insert:SetFont( "SF_Display_H3" )
+		insert:SetSize(length + 10, 24)
+		setsetting:SetFont( "SF_Display_H3" )
+		setsetting:SetSize(length + 10, 24)
+		reset:SetSize(length + 10, 24)
+		copy:SetPos( 20, 20)
+		insert:SetPos( 20, 60)
+		setsetting:SetPos( 20, 100)
+		reset:SetPos( 20, 140)
+		local paste = vgui.Create("DTextEntry", cvs)
+		paste:SetDrawLanguageID( false )
+		function copy.DoClick()
+			SetClipboardText( paste:GetText() )
+		end
+		function insert.DoClick()
+			paste:SetText( StormFox2.Setting.GetCVS() )
+		end
+		function setsetting.DoClick()
+			-- paste:GetText()
+			net.Start("StormFox2.permission")
+				net.WriteUInt(0, 1)
+				net.WriteString( "sf_cvslist" )
+				net.WriteType(paste:GetText())
+			net.SendToServer()
+		end
+		function reset.DoClick()
+			ResetPromt( paste )
+		end
+		paste:SetPos( length + 50 , 20)
+		paste:SetMultiline( true )
+		local c = length + 80
+		function cvs:PerformLayout(w, h)
+			paste:SetSize( w - c , h - 40)
+		end
+		paste:SetText( StormFox2.Setting.GetCVS() )
+	end},
 	[6] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png"))},
 	[7] = {"Changelog", niceName(language.GetPhrase("#changelog")),(Material("stormfox2/hud/menu/other.png")),function(board)
 		local p = vgui.Create("DHTML", board)
