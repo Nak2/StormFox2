@@ -35,8 +35,9 @@ t_lava:SetGroundTexture("stormfox2/effects/terrain/lava_ground", true)
 -- Downfall & Snd
 if CLIENT then
 	local lava_snd = StormFox2.Ambience.CreateAmbienceSnd( "stormfox2/amb/lava.ogg", SF_AMB_OUTSIDE, 0.4 )
+	local m_lava = Material("stormfox2/effects/lava_particle")
 	lava:AddAmbience( lava_snd )
-	local p_d = Material("particle/particle_debris_02")
+	local p_d = Material("stormfox2/effects/lava_particle2")
 	local lava_particles = 	StormFox2.DownFall.CreateTemplate(p_d, 		true)
 	lava_particles:SetFadeIn( true )
 	lava_particles:SetRandomAngle(0.1)
@@ -53,7 +54,7 @@ if CLIENT then
 			v:SetSize(  s, s )
 			v:SetSpeed( math.Rand(.05, .15) )
 			if math.random(1,2) == 1 then
-				v:SetMaterial(Material("particle/particle_debris_01"))
+				v:SetMaterial(m_lava)
 			end
 		end
 	end
