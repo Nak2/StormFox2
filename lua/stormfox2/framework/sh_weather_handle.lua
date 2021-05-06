@@ -331,9 +331,18 @@ if CLIENT then
 	end
 end
 
--- Some functions to make it easier
+-- Some functions to make it easier.
 function StormFox2.Weather.IsRaining()
-	return StormFox2.Weather.GetCurrent().Name == "Rain"
+	local wT = StormFox2.Weather.GetCurrent()
+	if wT.Inherit == "Rain" then return true end
+	if wT.Name ~= "Rain" then return false end
+	return StormFox2.Temperature.Get() > -2 or false
+end
+
+function StormFox2.Weather.IsSnowing()
+	local wT = StormFox2.Weather.GetCurrent()
+	if wT.Name ~= "Rain" then return false end
+	return StormFox2.Temperature.Get() <= -2 or false
 end
 
 function StormFox2.Weather.GetRainAmount()
