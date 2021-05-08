@@ -141,8 +141,9 @@ local function OpenMenu( self )
 	menu:SetValue( self:GetVal() )
 	menu.b = self
 	function menu:OnEnter( str )
-		self.b.p:OnMenu( tonumber( str ) )
 		CloseDermaMenus()
+		if not str then return end
+		self.b.p:OnMenu( tonumber( str ) )
 	end
 end
 
@@ -174,6 +175,7 @@ local function SliderNumber(self)
 		OpenMenu(self)
 	end
 	function p:OnMenu( val )
+		if not val then return end
 		self:SetVal( val )
 		self:OnVal( val )
 	end
