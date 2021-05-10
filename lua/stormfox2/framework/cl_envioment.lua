@@ -226,6 +226,10 @@ Make some adv SurfaceInfo functions.
 		if not self:IsValid() then return end
 		if self.t_mesh then return table.Copy(self.t_mesh) end
 		local verts = self:GetVerticesNoParallel()
+		if #verts < 3 then 
+			self.b_invalid = false
+			return
+		end
 		local n = self:GetNormal()
 		-- Calc the height and width
 		local h_max,h_min = verts[1].z,verts[1].z
