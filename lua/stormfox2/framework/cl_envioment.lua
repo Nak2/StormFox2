@@ -8,7 +8,6 @@ local GLASS_VERTS = 2
 local GLASS_ROOF_VERTS = 3
 local METAL_ROOF_VERTS = 4
 
-StormFox2.Setting.AddSV("csgo_2dskybox",false,nil, "Effect")
 StormFox2.Setting.AddCL("window_enable",render.SupportsPixelShaders_2_0())
 StormFox2.Setting.AddCL("window_distance",800, nil, nil, 0, 4000)
 StormFox2.Setting.AddSV("enable_ice",not game.IsDedicated())

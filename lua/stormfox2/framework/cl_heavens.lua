@@ -22,9 +22,11 @@ StormFox2.Sky = {}
 	StormFox2.Setting.SetType("sunset", "Time")
 	StormFox2.Setting.AddSV("sunyaw",90,nil, "Effects", 0, 360)
 	StormFox2.Setting.AddSV("moonlock",false,nil,"Effects", 0, 1)
-
+	
+	StormFox2.Setting.AddSV("enable_skybox",true,nil, "Effect")
 	StormFox2.Setting.AddSV("use_2dskybox",false,nil, "Effects")
 	StormFox2.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
+	StormFox2.Setting.AddSV("darken_2dskybox", false, nil, "Effect")
 
 	-- The sun is up ½ of the day; 1440 / 2 = 720. 720 / 2 = 360 and 360 * 3 = 1080
 	local SunDelta = 180 / (StormFox2.Data.Get("sun_sunset",1080) - StormFox2.Data.Get("sun_sunrise",360))
@@ -315,12 +317,13 @@ StormFox2.Sky = {}
 			if not StormFox2.Moon then return end
 			if not StormFox2.Moon.GetAngle then return end
 		local c_pos = StormFox2.util.RenderPos()
+		local sky = StormFox2.Setting.GetCache("enable_skybox", true)
 		local use_2d = StormFox2.Setting.GetCache("use_2dskybox",false)
 		cam.Start3D( Vector( 0, 0, 0 ), EyeAngles() ,nil,nil,nil,nil,nil,1,32000)  -- 2d maps fix
 			render.OverrideDepthEnable( false,false )
 			render.SuppressEngineLighting(true)
 			render.SetLightingMode( 2 )
-			if not use_2d then
+			if not use_2d or not sky then
 				hook.Run("StormFox2.2DSkybox.StarRender",	c_pos)
 
 				-- hook.Run("StormFox2.2DSkybox.BlockStarRender",c_pos)

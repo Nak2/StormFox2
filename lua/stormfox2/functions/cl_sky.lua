@@ -41,11 +41,22 @@ We overwrite the sky variables. Its much better to handle it clientside.
 		AddDataCache("HDRScale", 0.66 )
 
 	-- Override the skypaint directly
+		local SkyPaintEnt
 		hook.Add("Think","StormFox2.sky.paintFix",function()
 			if not IsValid(g_SkyPaint) then return end
-			if type(g_SkyPaint) ~= "Entity" then return end
+			-- Disable skybox and reset entity
+			if not StormFox2.Setting.GetCache("enable_skybox", true) then
+				if SkyPaintEnt and type(g_SkyPaint) ~= "Entity" then
+					g_SkyPaint = SkyPaintEnt
+				end
+				return
+			end
+			if type(g_SkyPaint) ~= "Entity" then
+				return
+			end
 			if g_SkyPaint:GetClass() == "env_skypaint" then
 				-- We'll hande it from here
+				SkyPaintEnt = g_SkyPaint
 				g_SkyPaint = g_SkyPaint_tab
 			end
 		end)
@@ -62,6 +73,8 @@ We overwrite the sky variables. Its much better to handle it clientside.
 		if not IsValid(g_SkyPaint) then return end
 		if not StormFox2.Time then return end
 		if not StormFox2.Mixer then return end
+		if not StormFox2.Setting.GetCache("enable_skybox", true) then return end
+		if StormFox2.Setting.GetCache("use_2dskybox",false,nil, "Effects") then return end
 		-- Top color + Thunder
 			local fogAm
 			if StormFox2.Fog then

@@ -28,6 +28,7 @@ StormFox2.Setting.SetType("sunset", "Time")
 StormFox2.Setting.AddSV("sunyaw",90,nil, "Effects", 0, 360)
 StormFox2.Setting.AddSV("moonlock",false,nil,"Effects")
 
+StormFox2.Setting.AddSV("enable_skybox",true,nil, "Effect")
 StormFox2.Setting.AddSV("use_2dskybox",false,nil, "Effects")
 StormFox2.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
 
@@ -338,3 +339,34 @@ function StormFox2.Moon.GetPhaseName(nTime)
 		return "First Quarder"
 	end
 end
+
+-- Skybox
+local function SkyTick(b)
+	if b then -- Reenable skybox
+		local _2d = StormFox2.Setting.GetCache("use_2dskybox", false)
+		if not _2d then
+			RunConsoleCommand("sv_skyname", "painted")
+		else
+			local sky_over = StormFox2.Setting.GetCache("overwrite_2dskybox", "")
+			if sky_over == "" then
+				sky_over = StormFox2.Weather.GetCurrent():Get("skyBox",StormFox2.Sky.GetLastStamp()) or "skybox/sky_day02_06_hdrbk"
+				if type(sky_over) == "table" then
+					sky_over = table.Random(sky_over)
+				end
+			end
+			RunConsoleCommand("sv_skyname", sky_over)
+		end
+	else -- Disable skybox
+		local map_ent = StormFox2.Map.Entities()[1]
+		if not map_ent then
+			StormFox2.Warning("No map-entity?")
+			RunConsoleCommand("sv_skyname", "skybox/sky_day02_06_hdrbk")
+			return
+		end
+		local sky_name = map_ent["skyname"] or "skybox/sky_day02_06_hdrbk"
+		StormFox2.Map.Set2DSkyBoxDarkness( 1 )
+		RunConsoleCommand("sv_skyname", sky_name)
+	end
+end
+
+StormFox2.Setting.Callback("enable_skybox",SkyTick,"enable_skybox_call")

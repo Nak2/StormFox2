@@ -88,6 +88,156 @@ local function ResetPromt( paste )
 	end
 end
 
+local c = Color(0,255,0)
+local s = {	{"up",-vector_up},
+	{"dn",vector_up},
+	{"bk",Vector(0,-1,0)},
+	{"ft",Vector(0,1,0)},
+	{"lf",Vector(1,0,0)},
+	{"rt",Vector(-1,0,0)},
+}
+local v1 = Vector(1,1,1)
+local function ButtonRender( self, w, h )
+	local me = StormFox2.Setting.GetCache("overwrite_2dskybox", "") == self.Name
+	draw.RoundedBox(3, 0, 0, w, h, me and c or color_black)
+	draw.RoundedBox(3, 1, 1, w - 2, h - 2, color_white)
+	
+	if self:IsHovered() and self.Name then
+		surface.SetDrawColor(color_black)
+		surface.DrawRect(1, 1, w - 2, w - 2)
+		local a = Angle(0,CurTime() * 30,0)
+		local x, y = self:LocalToScreen( 0, 0 )
+		-- Find clip
+		local curparent = self
+		local leftx, topy = self:LocalToScreen( 1, 1 )
+		local rightx, bottomy = self:LocalToScreen( self:GetWide() - 1, self:GetTall() - 21 )
+		while ( curparent:GetParent() != nil ) do
+			curparent = curparent:GetParent()
+
+			local x1, y1 = curparent:LocalToScreen( 0, 0 )
+			local x2, y2 = curparent:LocalToScreen( curparent:GetWide(), curparent:GetTall() )
+
+			leftx = math.max( leftx, x1 )
+			topy = math.max( topy, y1 )
+			rightx = math.min( rightx, x2 )
+			bottomy = math.min( bottomy, y2 )
+			previous = curparent
+		end
+
+		render.SetScissorRect( leftx, topy, rightx, bottomy, true )
+		cam.Start3D( -a:Forward() * 100, a, 70, x, y, w, h, 5, 4096 )
+			render.SuppressEngineLighting( true )
+				for i = 1, 6 do
+					local mat = Material("skybox/" .. self.Name .. s[i][1])
+					render.SetMaterial(mat)
+					local vt = mat:GetVector("$color") or v1
+					mat:SetVector("$color", v1)
+					render.DrawQuadEasy(s[i][2] * -50, s[i][2] * 100, 100, 100, color_white,(i <= 2) and 0 or 180)	
+					mat:SetVector("$color", vt)	
+				end
+			render.SuppressEngineLighting( false )
+		cam.End3D()
+		render.SetScissorRect( 0, 0, 0, 0, false )
+	else
+		local vt = self.Mat:GetVector("$color") or v1
+		self.Mat:SetVector("$color", v1)
+		surface.SetMaterial( self.Mat )
+		surface.DrawTexturedRect(1, 1, w - 2, w - 2)
+		self.Mat:SetVector("$color", vt)
+	end
+
+	draw.DrawText(self.Tex, "DermaDefault", w / 2, h - 18, color_black, TEXT_ALIGN_CENTER)
+end
+
+local col = {Color(230,230,230), color_white}
+local function Open2DSkybox()
+	if _SFMENU_SKYBOX2D then
+		_SFMENU_SKYBOX2D:Remove()
+	end
+	local f = vgui.Create("DFrame")
+	_SFMENU_SKYBOX2D = f
+	function f:Paint(w,h)
+		surface.SetDrawColor( col[2] )
+		surface.DrawRect(0,0,w,h)
+		surface.SetDrawColor( col[1] )
+		if self.p_left then
+			surface.DrawRect(0,0,self.p_left:GetWide(),24)
+		else
+			surface.DrawRect(0,0,w,24)
+		end
+
+		surface.SetDrawColor(55,55,55,255)
+		surface.DrawRect(0, 0, w, 24)
+
+		local t = self._title or "Window"
+		surface.SetFont("DermaDefault")
+		local tw,th = surface.GetTextSize( t )
+		surface.SetTextColor(color_white)
+		surface.SetTextPos(5, 12 - th / 2)
+		surface.DrawText(t)
+	end
+	local s = "2D " .. niceName(language.GetPhrase("#skybox"))
+	f._title = "StormFox 2 - " .. s
+	f:SetTitle("")
+	f:MakePopup()
+	f:SetSize(800, 520)
+	f:Center()
+	local b = vgui.Create("DScrollPanel", f)
+	b:Dock(FILL)
+	local grid = vgui.Create( "DGrid", b )
+	function f:PerformLayout(w,h)
+		local c = (800 - 24) / 5
+		grid:SetCols( 5 )
+		grid:SetColWide( c )
+		grid:SetRowHeight( 175 )
+	end
+	--grid:SetCols( 5 )
+	--grid:SetColWide( 36 )
+	
+	local list = {}
+	-- List
+	local t = {}
+	for k, v in ipairs( file.Find("materials/skybox/*.vmt","GAME") ) do
+		if not string.match(v, "[bdflru][kntfp]%.vmt") then continue end
+		local s = string.sub(v, 0, #v - 6)
+		if Material( "skybox/" .. v ):IsError() then continue end
+		t[s] = (t[s] or 0) + 1
+	end
+	-- Validate
+	local nt = {}
+	for mat, n in pairs( t ) do
+		if mat == "painted" then continue end
+		if n < 6 then continue end
+		table.insert(nt, mat)
+	end
+	-- Sort
+	table.sort( nt, function(a, b) return a < b end )
+	-- Default
+	local but = vgui.Create( "DButton" )
+		but:SetText( "" )
+		but:SetSize( 150, 170 )
+		but.Mat = Material("stormfox2/hud/settings.png")
+		but.Tex = niceName(language.GetPhrase("#sf_auto"))
+		but.Paint = ButtonRender
+		function but.DoClick(self)
+			StormFox2.Setting.Set("sf_overwrite_2dskybox", "")
+		end
+		grid:AddItem( but )
+
+	for _, mat in pairs( nt ) do
+		local but = vgui.Create( "DButton" )
+		but:SetText( "" )
+		but:SetSize( 150, 170 )
+		but.Mat = Material("skybox/" .. mat .. "up")
+		but.Tex = niceName(mat)
+		but.Name = mat
+		but.Paint = ButtonRender
+		function but.DoClick(self)
+			StormFox2.Setting.Set("sf_overwrite_2dskybox", self.Name)
+		end
+		grid:AddItem( but )
+	end
+end
 local m_check = Material("icon16/accept.png")
 local m_warni = Material("icon16/bullet_error.png")
 local m_none  = Material("icon16/cancel.png")
@@ -331,6 +481,24 @@ local tabs = {
 		board:AddSetting("maplight_min")
 		board:AddSetting("maplight_max")
 		board:AddSetting("maplight_updaterate")
+		board:AddTitle(niceName("#skybox"))
+		local skyobj = board:AddSetting("enable_skybox")
+		local t = {}
+		table.insert(t, board:AddSetting("use_2dskybox"))
+		table.insert(t, board:AddSetting("darken_2dskybox"))
+		table.insert(t, board:AddSetting("overwrite_2dskybox"))
+		local skybox_select = vgui.Create("DPanel", board)
+		skybox_select.Paint = empty
+		skybox_select:SetTall( 24 )
+		skybox_select:Dock(TOP)
+		skybox_select:DockMargin(20,0,0,0)
+		local button = vgui.Create("DButton", skybox_select)
+		table.insert(t,button)
+		button:SetWide(150)
+		local s = language.GetPhrase("#skybox") .. " " .. language.GetPhrase("#spawnmenu.search")
+		button:SetText(niceName(s))
+		button.DoClick = Open2DSkybox
+
 		board:AddTitle("#effects_pp")
 		board:AddSetting("overwrite_extra_darkness")
 		board:AddSetting("enable_ice")
@@ -338,11 +506,27 @@ local tabs = {
 		board:AddSetting("overwrite_fogdistance")
 		board:AddSetting("footprint_enablelogic")
 
-		-- Hide this features, as they're broken
-		board:MarkUsed("csgo_2dskybox")
-		board:MarkUsed("use_2dskybox")
-		board:MarkUsed("overwrite_2dskybox")
+		local function en_skybox( var, var2 )
+			if var2 == nil then
+				var2 = StormFox2.Setting.GetCache("use_2dskybox", false)
+			end
+			for i, v in ipairs( t ) do
+				if i > 1 and not var2 then
+					var = true
+				end
+				v:SetDisabled( var )
+			end
+		end
 		
+		en_skybox( not StormFox2.Setting.GetCache("enable_skybox", true) )
+
+		StormFox2.Setting.Callback("use_2dskybox",function(vVar,_,_, self)
+			en_skybox( not StormFox2.Setting.GetCache("enable_skybox", true), vVar )
+		end,skyobj)
+
+		StormFox2.Setting.Callback("enable_skybox",function(vVar,_,_, self)
+			en_skybox( not vVar )
+		end,skyobj)
 	end},
 	[5] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png")),function(board)
 		board:AddTitle("CVS" .. " " ..  niceName(language.GetPhrase("#spawnmenu.utilities.settings")))
@@ -514,7 +698,7 @@ end
 
 local t_mat = "icon16/font.png"
 local s_mat = "icon16/cog.png"
-
+local n_vc = Color(55,255,55)
 function StormFox2.Menu._OpenSV()
 	if not StormFox2.Loaded then return end
 	if _SFMENU and IsValid(_SFMENU) then

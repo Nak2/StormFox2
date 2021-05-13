@@ -59,8 +59,8 @@ if SERVER then
 		-- 2D Skybox
 		local str = StormFox2.Setting.GetCache("overwrite_2dskybox","")
 		local use_2d = StormFox2.Setting.GetCache("use_2dskybox",false)
-		if (str ~= "" or use_2d) and str ~= "painted" then
-			StormFox2.Map.Set2DSkyBoxDarkness( f * 0.009 + 0.1 )
+		if use_2d and str ~= "painted" then
+			StormFox2.Map.Set2DSkyBoxDarkness( f * 0.009 + 0.1, true )
 		end
 
 		local smooth = StormFox2.Setting.GetCache("maplight_smooth",game.SinglePlayer()) -- light_environments

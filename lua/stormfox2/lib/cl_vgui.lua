@@ -1757,6 +1757,8 @@ do
 	local s_mat = "icon16/cog.png"
 	local s = 60
 	local b_mat = Material("stormfox2/hud/menu/beta.png")
+	local n_vc = Color(55,255,55)
+	local n_bm = Material("vgui/notices/undo")
 
 	local PANEL = {}
 	function PANEL:Init()
@@ -1950,6 +1952,22 @@ do
 		b.icon = tabs[1][3]
 		b.text = "Workshop"
 		b.Paint = side_button
+		b.r = 180
+		if StormFox2.NewVersion() then
+			function b:PaintOver(w,h)
+				surface.SetDrawColor(color_white)
+				surface.SetMaterial(n_bm)
+				if self:IsHovered() then
+					local dif = math.abs(math.AngleDifference(self.r, 0)) + 5
+					self.r = (self.r + math.max(0.01,dif) * FrameTime() * 5) % 360
+				else
+					self.r = 180
+				end
+				surface.DrawTexturedRectRotated(w - 20, h / 2, 20, 20, self.r)
+--					surface.DrawRect( - w,0,w,h - 1)
+				draw.DrawText( StormFox2.NewVersion() , "SF_Menu_H2", w - 34 , h / 2 - 8, color_black, TEXT_ALIGN_RIGHT)
+			end
+		end
 		p_left.buttons["workshop"] = b
 		function b:DoClick()
 			gui.OpenURL( StormFox2.WorkShopURL )

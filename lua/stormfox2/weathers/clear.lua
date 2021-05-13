@@ -122,11 +122,6 @@ if SERVER then
 	t_sunset = {"sky_day02_02", "sky_day02_01"}
 	t_night = {"sky_day01_09", "sky_black_nofog"}
 
-	-- IF CSGO
-	if StormFox2.Setting.Get("csgo_2dskybox", false) then
-		table.insert(t_night, "sky_csgo_night_flat")
-		table.insert(t_day, "vertigoblue_hdr")
-	end
 	clear:SetSunStamp("skyBox",t_day,		SF_SKY_DAY)
 	clear:SetSunStamp("skyBox",t_sunrise,	SF_SKY_SUNRISE)
 	clear:SetSunStamp("skyBox",t_sunset,	SF_SKY_SUNSET)
