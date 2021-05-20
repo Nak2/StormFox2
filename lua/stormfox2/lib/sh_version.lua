@@ -14,7 +14,7 @@ if SERVER then
 	local function RunLogic()
 		-- Check if a newer version is out
 		local lV = cookie.GetNumber("sf_nextv", StormFox2.Version)
-		if cookie.GetNumber("sf_nextvcheck", 0) <= os.time() then
+		if cookie.GetNumber("sf_nextvcheck", 0) > os.time() then
 			if lV > StormFox2.Version then
 				StormFox2.Msg("Version " .. lV .. " is out!")
 				StormFox2.Network.Set("stormfox_newv", lV)
