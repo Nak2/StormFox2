@@ -342,6 +342,7 @@ end
 
 -- Skybox
 local function SkyTick(b)
+	b = b and StormFox2.Setting.SFEnabled()
 	if b then -- Reenable skybox
 		local _2d = StormFox2.Setting.GetCache("use_2dskybox", false)
 		if not _2d then
@@ -368,5 +369,9 @@ local function SkyTick(b)
 		RunConsoleCommand("sv_skyname", sky_name)
 	end
 end
-
+local func = function(b)
+	SkyTick(StormFox2.Setting.GetCache("enable_skybox", true))
+end
+StormFox2.Setting.Callback("enable", func, "disable_heavens")
+StormFox2.Setting.Callback("clenable", func, "disable_heavenscl")
 StormFox2.Setting.Callback("enable_skybox",SkyTick,"enable_skybox_call")

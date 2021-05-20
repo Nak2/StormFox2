@@ -152,7 +152,7 @@ hook.Add("Think", "StormFox2.Ambiences.Logic", function()
 	end
 	-- Generate a list of all sounds the client should hear. And set the the volume
 	local t = {}
-	if c.ambience_tab then
+	if c.ambience_tab and StormFox2.Setting.SFEnabled() then
 		for _,amb_object in ipairs( c.ambience_tab ) do
 			local c_vol = t[amb_object.snd] or 0
 			-- WATER

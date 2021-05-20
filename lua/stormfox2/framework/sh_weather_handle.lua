@@ -146,6 +146,7 @@ if SERVER then
 	util.AddNetworkString("StormFox2.weather")
 	local l_data
 	function StormFox2.Weather.Set( sName, nPercentage, nDelta )
+		if not StormFox2.Setting.GetCache("enable", true) then return end -- Just in case
 		if nDelta and l_data and nDelta == l_data then
 			if IsSame(sName, nPercentage) then return false end
 		end
@@ -305,6 +306,7 @@ end
 hook.Add("Think", "StormFox2.Weather.Think", function()
 	if not CurrentWeather then return end
 	if not CurrentWeather.Think then return end
+	if not StormFox2.Setting.SFEnabled() then return end
 	CurrentWeather:Think()
 end)
 

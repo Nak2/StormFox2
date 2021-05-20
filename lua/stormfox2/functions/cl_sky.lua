@@ -42,10 +42,13 @@ We overwrite the sky variables. Its much better to handle it clientside.
 
 	-- Override the skypaint directly
 		local SkyPaintEnt
+		if #ents.FindByClass("env_skypaint") > 0 then
+			SkyPaintEnt = ents.FindByClass("env_skypaint")[1]
+		end
 		hook.Add("Think","StormFox2.sky.paintFix",function()
 			if not IsValid(g_SkyPaint) then return end
 			-- Disable skybox and reset entity
-			if not StormFox2.Setting.GetCache("enable_skybox", true) then
+			if not StormFox2.Setting.GetCache("enable_skybox", true) or not StormFox2.Setting.SFEnabled() then
 				if SkyPaintEnt and type(g_SkyPaint) ~= "Entity" then
 					g_SkyPaint = SkyPaintEnt
 				end
@@ -73,6 +76,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 		if not IsValid(g_SkyPaint) then return end
 		if not StormFox2.Time then return end
 		if not StormFox2.Mixer then return end
+		if not StormFox2.Setting.SFEnabled() then return end
 		if not StormFox2.Setting.GetCache("enable_skybox", true) then return end
 		if StormFox2.Setting.GetCache("use_2dskybox",false,nil, "Effects") then return end
 		-- Top color + Thunder

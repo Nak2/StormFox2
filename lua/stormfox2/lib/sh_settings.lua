@@ -375,7 +375,7 @@ if SERVER then
 		cache = {}
 	end
 	concommand.Add("stormfox2_settings_reset", function( ply, cmd, args, argStr )
-		if ply and IsValid(ply) and not ply:IsListenServerHost() then return end
+		if ply and IsValid(ply) and not ply:IsListenServerHost() then return end -- Nope
 		StormFox2.Setting.Reset()
 	end)
 else
@@ -439,4 +439,16 @@ function StormFox2.Setting.GetCVSDefault()
 		c = c .. sName .. "," .. con:GetDefault() .. ","
 	end
 	return c
+end
+
+-- Disable SF2
+StormFox2.Setting.AddSV("enable", true, nil, "Start")
+StormFox2.Setting.AddSV("allow_csenable", false, nil, "Start")
+if CLIENT then
+	StormFox2.Setting.AddCL("clenable", true, nil, "Start")
+end
+function StormFox2.Setting.SFEnabled()
+	if not StormFox2.Setting.GetCache("enable", true) then return false end
+	if SERVER or not StormFox2.Setting.GetCache("allow_csenable", false) then return true end
+	return StormFox2.Setting.GetCache("clenable", true)
 end

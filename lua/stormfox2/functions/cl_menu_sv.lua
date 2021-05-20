@@ -296,6 +296,9 @@ local tabs = {
 				y = 0
 			end
 		end
+		board:AddSetting("enable")
+		board:AddSetting("allow_csenable")
+
 		board:AddTitle(language.GetPhrase("#weather"))
 
 		local w_panel = vgui.Create("DPanel", board)

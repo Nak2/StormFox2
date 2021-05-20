@@ -66,6 +66,8 @@ local tabs = {
 				p:SetText(string.upper(language.GetPhrase("#fps")) .. ": " .. math.floor(avgFPS))
 			end
 			fps = p
+		-- EnableDisable
+			local p = board:AddSetting("clenable")
 		-- Quality
 			local p = vgui.Create("SF_HudRing", dash)
 			p:SetText(language.GetPhrase("#effects"))

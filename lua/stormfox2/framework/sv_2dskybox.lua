@@ -22,7 +22,7 @@ function StormFox2.Map.Set2DSkyBoxDarkness( f, bRemember, bDark )
 	if bDark == nil then
 		bDark = StormFox2.Setting.GetCache("darken_2dskybox", false)
 	end
-	if not StormFox2.Setting.GetCache("enable_skybox", true) or not bDark then
+	if not StormFox2.Setting.GetCache("enable_skybox", true) or not StormFox2.Setting.SFEnabled() or not bDark then
 		f = 1
 	end
 	mat_2dBox = "skybox/" .. sky
@@ -32,6 +32,8 @@ function StormFox2.Map.Set2DSkyBoxDarkness( f, bRemember, bDark )
 		local m = Material(mat_2dBox .. v)
 		if m:IsError() then continue end
 		m:SetVector("$color", vec)
+		m:SetInt("$nofog", 1)
+		m:SetInt("$ignorez", 1)
 	end
 end
 
@@ -40,7 +42,7 @@ StormFox2.Setting.Callback("darken_2dskybox", function(vVar)
 end, "darken_2dskybox")
 
 local function SkyThink(b, str)
-	if not StormFox2.Setting.GetCache("enable_skybox", true) then return end
+	if not StormFox2.Setting.GetCache("enable_skybox", true) or not StormFox2.Setting.SFEnabled() then return end
 	if b == nil then
 		b = StormFox2.Setting.GetCache("use_2dskybox", false)
 	end

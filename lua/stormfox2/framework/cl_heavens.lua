@@ -316,6 +316,7 @@ StormFox2.Sky = {}
 			if not StormFox2.Sun then return end
 			if not StormFox2.Moon then return end
 			if not StormFox2.Moon.GetAngle then return end
+		if not StormFox2.Setting.SFEnabled() then return end
 		local c_pos = StormFox2.util.RenderPos()
 		local sky = StormFox2.Setting.GetCache("enable_skybox", true)
 		local use_2d = StormFox2.Setting.GetCache("use_2dskybox",false)

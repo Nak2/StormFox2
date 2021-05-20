@@ -96,6 +96,7 @@ end)
 
 local f_Col = color_white
 local SkyFog = function(scale)
+	if not StormFox2.Setting.SFEnabled() then return end
 	if _fD <= 0 then return end
 	if not scale then scale = 1 end
 	if not StormFox2.Setting.GetCache("enable_fog",true) then return end
