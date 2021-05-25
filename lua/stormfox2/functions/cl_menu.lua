@@ -262,7 +262,7 @@ local tabs = {
 	end},
 	[2] = {"Effects","#effects",(Material("stormfox2/hud/menu/settings.png")),function(board)
 		board:AddTitle(language.GetPhrase("#effects"))
-		board:AddSetting("enable_fog")
+		local fog = board:AddSetting("enable_fog")
 		board:AddSetting("extra_darkness")
 		board:AddSetting("extra_darkness_amount")
 		board:AddTitle(language.GetPhrase("#footprints"))
@@ -273,6 +273,11 @@ local tabs = {
 		board:AddTitle(language.GetPhrase("#sf_window_effects"))
 		board:AddSetting("window_enable")
 		board:AddSetting("window_distance")
+
+		fog:SetDisabled(not StormFox2.Setting.GetCache("allow_fog_change"))
+		StormFox2.Setting.Callback("allow_fog_change",function(vVar,_,_, self)
+			fog:SetDisabled(not vVar)
+		end,fog)
 	end},
 	[3] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png"))},
 	[4] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png"))}

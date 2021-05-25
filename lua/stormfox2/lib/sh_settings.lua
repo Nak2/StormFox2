@@ -443,7 +443,7 @@ end
 
 -- Disable SF2
 StormFox2.Setting.AddSV("enable", true, nil, "Start")
-StormFox2.Setting.AddSV("allow_csenable", false, nil, "Start")
+StormFox2.Setting.AddSV("allow_csenable", engine.ActiveGamemode() == "sandbox", nil, "Start")
 if CLIENT then
 	StormFox2.Setting.AddCL("clenable", true, nil, "Start")
 end

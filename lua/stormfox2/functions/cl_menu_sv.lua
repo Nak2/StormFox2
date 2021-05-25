@@ -505,9 +505,13 @@ local tabs = {
 		board:AddTitle("#effects_pp")
 		board:AddSetting("overwrite_extra_darkness")
 		board:AddSetting("enable_ice")
+		board:AddSetting("footprint_enablelogic")
+
+		board:AddTitle("fog")
+		board:AddSetting("enable_svfog", nil, "sf_enable_fog")
+		board:AddSetting("allow_fog_change")
 		board:AddSetting("enable_fogz")
 		board:AddSetting("overwrite_fogdistance")
-		board:AddSetting("footprint_enablelogic")
 
 		local function en_skybox( var, var2 )
 			if var2 == nil then
@@ -666,7 +670,7 @@ local function switch(sName, tab)
 	cookie.Set("sf2_lastmenusv", sName)
 	return pnl
 end
-local function addSetting(sName, pPanel, _type)
+local function addSetting(sName, pPanel, _type, _description)
 	local setting
 	if type(_type) == "table" then
 		setting = vgui.Create("SFConVar_Enum", pPanel)
@@ -695,7 +699,7 @@ local function addSetting(sName, pPanel, _type)
 		return
 	end
 	--local setting = _type == "boolean" and vgui.Create("SFConVar_Bool", board) or  vgui.Create("SFConVar", board)
-	setting:SetConvar(sName, _type)
+	setting:SetConvar(sName, _type, _description)
 	return setting
 end
 

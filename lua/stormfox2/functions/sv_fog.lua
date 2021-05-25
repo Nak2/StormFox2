@@ -2,8 +2,10 @@
 Use the map-data to set farz for fogcontrollers
 This is disabled as FarZ might cause troubles
 ---------------------------------------------------------------------------]]
+StormFox2.Setting.AddSV("enable_svfog",true,nil, "Effects")
 StormFox2.Setting.AddSV("enable_fogz",false,nil, "Effects")
 StormFox2.Setting.AddSV("overwrite_fogdistance",-1,nil, "Effects", -1, 800000)
+StormFox2.Setting.AddSV("allow_fog_change",engine.ActiveGamemode() == "sandbox",nil, "Effects")
 
 StormFox2.Fog = {}
 -- Sets the farz value

@@ -293,7 +293,7 @@ do
 	end
 	function PANEL:SetConvar( sName,_,sDesc )
 		local con = GetConVar( "sf_" .. sName )
-		self._l:SetText( sDesc and sDesc or "#sf_" .. sName )
+		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
 		self._b:SetConVar( "sf_" .. sName )
 		function self._b:DoClick()
 			SetSFConVar(sName, not self:GetChecked())
@@ -350,7 +350,7 @@ do
 	end
 	function PANEL:SetConvar( sName, _, sDesc )
 		local con = GetConVar( "sf_" .. sName )
-		self._l:SetText( sDesc and sDesc or "#sf_" .. sName )
+		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
 		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
 
 		self._b:SetMin(con:GetMin() or 0)
@@ -412,7 +412,7 @@ do
 	end
 	function PANEL:SetConvar( sName, _, sDesc )
 		local con = GetConVar( "sf_" .. sName )
-		self._l:SetText( sDesc and sDesc or "#sf_" .. sName )
+		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
 		self._des = language.GetPhrase(sDesc and sDesc .. "desc" or con:GetHelpText() or "Unknown")
 		self._b:SetConVar( "sf_" .. sName )
 		self._b.ConVarChanged = ConVarChanged
@@ -472,7 +472,7 @@ do
 	end
 	function PANEL:SetConvar( sName,_, sDesc )
 		local con = GetConVar( "sf_" .. sName )
-		self._l:SetText( sDesc and sDesc or "#sf_" .. sName )
+		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
 		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
 		self._dw = 0
 		local nMin, nMax = con:GetMin(), con:GetMax()
@@ -639,7 +639,7 @@ do
 	function PANEL:SetConvar( sName, _ , sDesc )
 		local con = GetConVar( "sf_" .. sName )
 		self.sName = sName
-		self._l:SetText( sDesc and sDesc or "#sf_" .. sName )
+		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
 		--self._b:SetConVar( "sf_" .. sName )
 		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
 		self.trigger = false
@@ -834,7 +834,7 @@ do
 	function PANEL:SetConvar( sName, _, sDesc )
 		local con = GetConVar( "sf_" .. sName )
 		self.sName = sName
-		self._l:SetText( sDesc and sDesc or "#sf_" .. sName )
+		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
 		--self._b:SetConVar( "sf_" .. sName )
 		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
 		self.trigger = false

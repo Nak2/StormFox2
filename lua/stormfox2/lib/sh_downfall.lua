@@ -180,6 +180,12 @@ do
 		t.mins.y = -nRadius
 		t.filter = filter or GetViewEntity()
 		local tr = util_TraceHull(t)
+		if tr and (tr.AllSolid or tr.StartSolid) then
+			return
+		elseif nRadius > 5 and tr.Fraction * -norm.z < 0.0005 then -- About 150 hammer-units
+		--	print("Dis: " .. 262144 * tr.Fraction * -norm.z)
+			return 
+		end
 		if not tr or not tr.Hit then
 			return tr.HitPos, SF_DOWNFALL_HIT_NIL
 		elseif not IsValid(tr.Entity) then
@@ -203,7 +209,9 @@ do
 				mask = MASK_SOLID_BRUSHONLY
 			} )
 			if t.HitTexture == "TOOLS/TOOLSINVISIBLE" then return end
-			if t.HitSky then return t.HitPos end
+			if t.HitSky then
+				return t.HitPos
+			end
 			if not t.Hit then return nil, last end
 			last = t.HitPos
 			vFrom = t.HitPos + vNormal

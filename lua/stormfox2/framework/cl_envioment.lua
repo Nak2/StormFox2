@@ -1105,7 +1105,7 @@ local function env_corotinefunction()
 					if curDist and dis > curDist then continue end
 					local win = close_window_ents[i]
 					local n = view.ang:Forward()
-					debugoverlay.Cross(win:GetCenter()- n * 15, 15, 1, color_white)
+					--debugoverlay.Cross(win:GetCenter()- n * 15, 15, 1, color_white)
 					local v, tr = MatchTrace(view.pos,win:GetCenter() - n * 15)
 					if not v then continue end
 					curDist = dis
@@ -1138,7 +1138,7 @@ local function env_corotinefunction()
 		coroutine.yield()
 		-- Roof pos
 			roof_pos, roof_type = StormFox2.DownFall.CheckDrop(viewPos, Vector(0,0,-1), 3, StormFox2.util.ViewEntity())
-			debugoverlay.Cross(roof_pos, 15, 1, color_white, true)
+			--debugoverlay.Cross(roof_pos, 15, 1, color_white, true)
 	end
 	coroutine.yield()
 end

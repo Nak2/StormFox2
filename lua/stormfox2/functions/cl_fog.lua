@@ -1,10 +1,14 @@
 --[[-------------------------------------------------------------------------
 Use the map-data to set a minimum and maximum fogdistance
 ---------------------------------------------------------------------------]]
-StormFox2.Setting.AddCL("enable_fog",true)
+StormFox2.Setting.AddSV("enable_svfog",true,nil, "Effects")
+StormFox2.Setting.AddCL("enable_fog",true, "sf_enable_fog")
 StormFox2.Setting.AddSV("enable_fogz",false,nil, "Effects")
 StormFox2.Setting.AddSV("overwrite_fogdistance",-1,nil, "Effects", -1, 800000)
 StormFox2.Setting.SetType("overwrite_fogdistance","special_float")
+StormFox2.Setting.AddSV("allow_fog_change",engine.ActiveGamemode() == "sandbox",nil, "Effects")
+
+
 StormFox2.Fog = {}
 --[[TODO: There are still problems with the fog looking strange.
 
@@ -20,7 +24,11 @@ StormFox2.Fog = {}
 
 		- EndMeter = fDen * fDen * fDen ... == 1
 ]]
-
+local function fogEnabled()
+	if not StormFox2.Setting.GetCache("enable_svfog", true) then return false end
+	if not StormFox2.Setting.GetCache("allow_fog_change", false) then return true end
+	return StormFox2.Setting.GetCache("enable_fog", true)
+end
 local _fS, _fE, _fD = 0,400000,1
 local function fogStart( f )
 	_fS = f
@@ -99,7 +107,7 @@ local SkyFog = function(scale)
 	if not StormFox2.Setting.SFEnabled() then return end
 	if _fD <= 0 then return end
 	if not scale then scale = 1 end
-	if not StormFox2.Setting.GetCache("enable_fog",true) then return end
+	if not fogEnabled() then return end
 	f_Col = StormFox2.Mixer.Get("fogColor", StormFox2.Mixer.Get("bottomColor",color_white) )
 	-- Apply fog
 	local tD = StormFox2.Thunder.GetLight() / 2055
