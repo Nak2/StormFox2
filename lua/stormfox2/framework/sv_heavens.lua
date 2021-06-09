@@ -161,6 +161,7 @@ StormFox2.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
 		[348] = {SF_SKY_NAUTICAL,6,"Nautical"}, -- 12
 		[354] = {SF_SKY_BLUE_HOUR,2,"Blue Hour"}, -- 6
 		[356] = {SF_SKY_CEVIL,4,"Cevil"}, -- 4
+		[360] =  {SF_SKY_SUNRISE,6,"SunRise"}, -- 6					OK
 	}
 	local lC,lCV = -1,-1
 	local function GetsunSize()
