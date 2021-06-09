@@ -43,7 +43,7 @@ local function MakeSnowflake( vPos, vNormal, L, Part )
 end
 
 local pT = function(self)
-	local n = math.min(15, StormFox2.Weather.GetLuminance())
+	local n = math.min(15, StormFox2.Weather.GetLuminance() / 2)
 	if self:GetLifeTime() < self:GetDieTime() * .25 then
 		self:SetStartAlpha(0)
 		self:SetEndAlpha( n * 8 )

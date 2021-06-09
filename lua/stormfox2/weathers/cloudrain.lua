@@ -358,6 +358,7 @@ if CLIENT then
 	-- Gets called every tick to add rain.
 	local multi_dis = 1200
 	local m2 = Material("particle/particle_smokegrenade1")
+	local tc = Color(150,150,150)
 	function rain.Think()
 		local P = StormFox2.Weather.GetPercent()
 		local L = StormFox2.Weather.GetLuminance()
@@ -368,16 +369,13 @@ if CLIENT then
 			-- Set alpha
 			local s = 1.22 + 1.56 * P
 			StormFox2.Misc.rain_template:SetSize( s , 5.22 + 7.56 * P)
-			StormFox2.Misc.rain_template:SetColor(Color(150,150,150))
+			StormFox2.Misc.rain_template:SetColor(tc)
 			StormFox2.Misc.rain_template:SetAlpha(math.min(15 + 4 * P + L,255))
 			StormFox2.Misc.rain_template_medium:SetAlpha(math.min(15 + 4 * P + L,255)  /3)
+			StormFox2.Misc.rain_template_multi:SetAlpha( L )
 			-- Spawn rain particles
 			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template, 10, 700, 10 + P * 900, 5, vNorm ) or {} ) do
 				v:SetSize(  1.22 + 1.56 * P * math.Rand(1,2), 5.22 + 7.56 * P )
-				if math.random(0,1) == 0 then
-					--v:SetMaterial(m_rain2)
-					--v:SetSize(  1.22 + 1.56 * P * math.Rand(1,2) * 10, 5.22 + 7.56 * P * 10 )
-				end
 			end
 			-- Spawn distant rain
 			if P > 0.15 then
@@ -395,11 +393,9 @@ if CLIENT then
 						v:SetSize(  1.22 + 1.56 * P * math.Rand(1,3) * 10, 5.22 + 7.56 * P * 10 )
 					end
 					v:SetAlpha(math.min(15 + 4 * P + L,255) * 0.2)
-				--	v:SetMaterial( Material('color') )
-				--	v:SetAlpha(255)
 				end
 			end
-			if P > (0.5 - W * 0.4)  then
+			if P > (0.5 - W * 0.4) and L > 5 then
 				local dis = math.random(900 - W * 100 - P * 500,multi_dis)
 				local d = math.max(dis / multi_dis, 0.5)
 				local s = math.Rand(0.5,1) * math.max(0.7,P) * 300 * d
@@ -411,7 +407,6 @@ if CLIENT then
 					else
 						v:SetSize( d * .45, d)
 					end
-
 					if math.random(0,1) == 1 then
 						v:SetMaterial(m2)
 					end
@@ -430,7 +425,6 @@ if CLIENT then
 			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template, 500, dis, 400 + P * 4600, 5, vNorm ) or {} ) do
 				v:SetSize(  s, s )
 				v:SetSpeed( math.Rand(1, 2) * 0.15)
-			--	v:SetMaterial(Material("particle/warp3_warp_noz"))
 			end
 			-- Spawn snow distant
 			if P > 0.15 then
@@ -444,7 +438,6 @@ if CLIENT then
 					if math.random(0,1) == 0 then
 						v:SetMaterial(m_snowmulti2)
 					end
-				--	v:SetMaterial(Material("particle/warp3_warp_noz"))
 				end
 			end
 			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, dis * 2, multi_dis * 2 , (90 + P * (20 + W)) / 2, s, vNorm ) or {} ) do
@@ -464,14 +457,13 @@ if CLIENT then
 
 -- Render water
 	local debri = Material("stormfox2/effects/terrain/snow_water")
-	local function renderD( a, b)
+	rain.PreDrawTranslucentRenderables = function( a, b)
 		local f = 5 + StormFox2.Temperature.Get()
 		if f > 0 then return end
 		debri:SetFloat("$alpha",StormFox2.Weather.GetPercent() * 0.3 * math.Clamp(-f, 0, 1))
 		render.SetMaterial(debri)
 		StormFox2.Environment.DrawWaterOverlay( b )
 	end
-	rain.PreDrawTranslucentRenderables = renderD
 end
 
 -- 2D skyboxes
