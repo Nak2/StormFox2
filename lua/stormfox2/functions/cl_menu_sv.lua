@@ -349,7 +349,10 @@ local tabs = {
 	[3] = {"Weather","#weather",(Material("stormfox2/hud/menu/weather.png")),function(board)
 		board:AddTitle("#weather")
 		board:AddSetting("auto_weather")
+		board:AddSetting("allow_weather_lightchange")
+		board:AddSetting("random_round_weather")
 		board:AddSetting("hide_forecast")
+		board:AddSetting("addnight_temp")
 		board:AddSetting("max_weathers_prweek")
 		board:AddTitle("#temperature")
 		local temp = board:AddSetting({"min_temp", "max_temp"}, "temperature", "sf_temp_range")
@@ -475,6 +478,13 @@ local tabs = {
 		board:AddTitle("#sf_wind")
 		board:AddSetting("windmove_players")
 		board:AddSetting("windmove_foliate")
+		board:AddSetting("windmove_props")
+		board:AddSetting("windmove_props_break")
+		board:AddSetting("windmove_props_makedebris")
+		board:AddSetting("windmove_props_unfreeze")
+		board:AddSetting("windmove_props_unweld")
+		board:AddSetting("windmove_props_max")
+		
 		
 	end},
 	[4] = {"Effects","#effects",(Material("stormfox2/hud/menu/settings.png")),function(board)

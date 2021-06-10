@@ -1,5 +1,5 @@
 StormFox2.Wind = StormFox2.Wind or {}
-local min,max,sqrt = math.min,math.max,math.sqrt
+local min,max,sqrt,abs = math.min,math.max,math.sqrt,math.abs
 local function ET(pos,pos2,mask,filter)
 	local t = util.TraceLine( {
 		start = pos,
@@ -15,6 +15,12 @@ end
 hook.Add("stormfox2.postlib", "stormfox2.windSettings",function()
 	StormFox2.Setting.AddSV("windmove_players",true,nil,"Weather")
 	StormFox2.Setting.AddSV("windmove_foliate",true,nil,"Weather")
+	StormFox2.Setting.AddSV("windmove_props",false,nil,"Weather")
+	StormFox2.Setting.AddSV("windmove_props_break",true,nil,"Weather")
+	StormFox2.Setting.AddSV("windmove_props_unweld",true,nil,"Weather")
+	StormFox2.Setting.AddSV("windmove_props_unfreeze",true,nil,"Weather")
+	StormFox2.Setting.AddSV("windmove_props_max",100,nil,"Weather")
+	StormFox2.Setting.AddSV("windmove_props_makedebris",true,nil,"Weather")
 	hook.Remove("stormfox2.postlib", "stormfox2.windSettings")
 end)
 
@@ -326,6 +332,7 @@ end
 -- Wind movment
 	local function windMove(ply, mv, cmd )
 		if not StormFox2.Setting.GetCache("windmove_players") then return end
+		if( ply:GetMoveType() != MOVETYPE_WALK ) then return end
 		local wF = (StormFox2.Wind.GetForce() - 15) / 11
 		if wF <= 0 then return end
 		if not StormFox2.Wind.IsEntityInWind(ply) then return end -- Not in wind
@@ -369,3 +376,150 @@ end
 		end
 	end
 	hook.Add("SetupMove", "windtest", windMove)
+
+-- Wind proppush
+	local move_list = {
+		["rpg_missile"] = true,
+		["npc_grenade_frag"] = true,
+		["npc_grenade_bugbait"] = true, -- Doesn't work
+		["gmod_hands"] = false,
+		["gmod_tool"] = false
+	}
+	local function CanMoveClass( ent )
+		if( IsValid( ent:GetParent()) ) then return end
+		local class = ent:GetClass()
+		if( move_list[class] == false ) then return false end
+		return string.match(class,"^prop_") or string.match(class,"^gmod_") or move_list[class]
+	end
+
+	local function ApplyWindEffect( ent, wind, windnorm )
+		if(wind < 5) then return end
+		-- Make a toggle
+		local vol
+		local phys = ent:GetPhysicsObject()
+		if(not phys or not IsValid(phys)) then -- No physics
+			return
+		end
+			vol = phys:GetVolume() or 15
+		-- Check Move
+			local windPush = windnorm * 1.37 * vol * .66
+			--windnorm * 5.92 * (vol / 50)
+			local windRequ = phys:GetInertia()
+				windRequ = max(windRequ.x,windRequ.y)
+			if max(abs(windPush.x),abs(windPush.y)) < windRequ then -- Can't move
+				return
+			end
+			local class = ent:GetClass()
+			if( class != "npc_grenade_frag") then
+				windPush.x = math.Clamp(windPush.x, -5500, 5500)
+				windPush.y = math.Clamp(windPush.y, -5500, 5500)
+			end
+		-- Unfreeze
+		if(wind > 20) then
+			if( StormFox2.Setting.GetCache("windmove_props_unfreeze", true) ) then
+				if not phys:IsMoveable() then
+					phys:EnableMotion(true)
+				end
+			end
+		end
+		-- Unweld
+		if(wind > 30) then
+			if( StormFox2.Setting.GetCache("windmove_props_unweld", true) ) then
+				if constraint.FindConstraint( ent, "Weld" ) and math.random(1, 15) < 2 then
+					ent:EmitSound("physics/wood/wood_box_break" .. math.random(1,2) .. ".wav")
+					constraint.RemoveConstraints( ent, "Weld" )
+				end
+			end
+		end
+		-- Move
+		phys:Wake()
+		phys:ApplyForceCenter(windPush)
+		-- Break
+		if(wind > 40) then
+			if( StormFox2.Setting.GetCache("windmove_props_break", true) ) then
+				if not ent:IsVehicle() and (ent._sfnext_dmg or 0) <= CurTime() and ent:GetClass() != "npc_grenade_frag" then
+					ent._sfnext_dmg = CurTime() + 0.5
+					ent:TakeDamage(ent:Health() / 10 + 2,game.GetWorld(),game.GetWorld())
+				end
+			end
+		end
+	end
+
+	local move_tab = {}
+	local current_prop = 0
+	local function AddEntity( ent )
+		if( ent._sfwindcan or 0 ) > CurTime() then return end
+		if( StormFox2.Setting.GetCache("windmove_props_max", 50) <= table.Count(move_tab) ) then return end -- Too many props moving atm
+		move_tab[ ent ] = CurTime()
+		--ApplyWindEffect( ent, StormFox2.Wind.GetForce(), StormFox2.Wind.GetNorm() )
+	end
+
+	hook.Add("OnEntityCreated","StormFox.Wind.PropMove",function(ent)
+		if( not StormFox2.Setting.GetCache("windmove_props", false) ) then return end
+		if( not IsValid(ent) ) then return end
+		if( not CanMoveClass( ent ) ) then return end
+		AddEntity( ent )
+	end)
+
+	local scanID = 0
+	local function ScanProps()
+		local t = ents.GetAll()
+		if( #t < scanID) then
+			scanID = 0
+		end
+		for i = scanID, math.min(#t, scanID + 30) do
+			local ent = t[i]
+			if(not IsValid( ent )) then break end
+			if not CanMoveClass( ent ) then continue end
+			if move_tab[ ent ] then continue end -- Already added
+			if not StormFox2.Wind.IsEntityInWind( ent ) then continue end -- Not in wind
+			AddEntity( ent )
+		end
+		scanID = scanID + 30
+	end
+
+	local next_loop = 0 -- We shouldn't run this on think if there arae too few props
+	hook.Add("Think","StormFox.Wind.EffectProps",function()
+		if( not StormFox2.Setting.GetCache("windmove_props", false) ) then return end
+		if( next_loop > CurTime() ) then return end
+			next_loop = CurTime() + (SERVER and 0.3 or 0.1)
+		-- Scan on all entities. This would be slow. But we're only looking at 30 entities at a time.
+		ScanProps()
+
+		local t = table.GetKeys( move_tab )
+		if(#t < 1) then return end
+		local wind = StormFox2.Wind.GetForce()
+		-- Check if there is wind
+		if( wind < 10) then
+			table.Empty( move_tab )
+			return
+		end
+		if( current_prop > #t) then
+			current_prop = 1
+		end
+		local wind, c_windnorm = StormFox2.Wind.GetForce(), StormFox2.Wind.GetNorm()
+		local windnorm = Vector(c_windnorm.x, c_windnorm.y, 0) 
+		local c = CurTime()
+		for i = current_prop, math.min(#t, current_prop + 30) do
+			local ent = t[i]
+			if(not ent) then
+				break 
+			end
+			-- Check if valid
+			if(not IsValid( ent ) or not StormFox2.Wind.IsEntityInWind( ent )) then
+				move_tab[ent] = nil
+				continue
+			end
+			-- If the entity has been in the wind for over 10 seconds, try and move on and see if we can pick up something else
+			if(move_tab[ ent ] < c - 10) then
+				ent._sfwindcan = c + math.random(20, 30)
+				if(StormFox2.Setting.GetCache("windmove_props_makedebris", true)) then
+					ent:SetCollisionGroup( COLLISION_GROUP_DEBRIS )
+				end
+				move_tab[ent] = nil
+				continue
+			end
+			ApplyWindEffect( ent, wind, windnorm )
+		end
+		current_prop = current_prop + 30
+	end)
