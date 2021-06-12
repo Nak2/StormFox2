@@ -231,7 +231,6 @@ local vec_ex = Vector(0,0,1)
 
 STORMFOX_WATERMESHCOLLISON = {}
 
-hook.Add("PostCleanupMap", "StormFox2.environment.onclean", scan_dynamic)
 local scan = function() -- Locates all surfaceinfos we need.
 	StormFox2.Msg("Scanning surfaces ..")
 	surfaceinfos = {}
