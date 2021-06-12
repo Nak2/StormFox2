@@ -329,6 +329,8 @@ else
 	end
 	hook.Add("StormFox2.PostEntityScan", "StormFox2.Wind.FlagInit", FlagInit)
 end
+
+if CLIENT then return end
 -- Wind movment
 	local function windMove(ply, mv, cmd )
 		if not StormFox2.Setting.GetCache("windmove_players") then return end
@@ -433,7 +435,7 @@ end
 		end
 		-- Move
 		phys:Wake()
-		phys:ApplyForceCenter(windPush)
+		phys:ApplyForceCenter(Vector(windPush.x, windPush.y, math.max(phys:GetVelocity().z, 0)))
 		-- Break
 		if(wind > 40) then
 			if( StormFox2.Setting.GetCache("windmove_props_break", true) ) then
@@ -482,7 +484,7 @@ end
 	hook.Add("Think","StormFox.Wind.EffectProps",function()
 		if( not StormFox2.Setting.GetCache("windmove_props", false) ) then return end
 		if( next_loop > CurTime() ) then return end
-			next_loop = CurTime() + (SERVER and 0.3 or 0.1)
+			next_loop = CurTime() + (game.SinglePlayer() and 0.1 or 0.2)
 		-- Scan on all entities. This would be slow. But we're only looking at 30 entities at a time.
 		ScanProps()
 
