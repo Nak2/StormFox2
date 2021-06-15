@@ -139,6 +139,10 @@ end
 function StormFox2.Map.GetLight()
 	return last_f or 80
 end
+local last_f_raw = 100
+function StormFox2.Map.GetLightRaw()
+	return last_f_raw
+end
 
 --[[ Lerp light
 	People complain if we use lightStyle too much (Even with settings), so I've removed lerp from maps without light_environment.
@@ -211,6 +215,7 @@ if SERVER then
 				mapLight = night
 			end
 		end
+		last_f_raw = mapLight
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
 		StormFox2.Map.SetLightLerp(newLight, nDelta or 0, b_i )
@@ -245,6 +250,7 @@ else -- Fake darkness. Since some maps are bright
 				mapLight = night
 			end
 		end
+		last_f_raw = mapLight
 		-- Apply settings
 		StormFox2.Map.SetLight( minlight + mapLight * (maxlight - minlight) / 100 )
 	end)
@@ -275,7 +281,7 @@ else -- Fake darkness. Since some maps are bright
 	hook.Add("RenderScreenspaceEffects","StormFox2.Light.MapMat",function()
 		-- How old is the GPU!?
 		if not render.SupportsPixelShaders_2_0() then return end
-		local a = 1 - StormFox2.Map.GetLight()
+		local a = 1 - StormFox2.Map.GetLightRaw() / 100
 		if a <= 0 then -- Too bright
 			fade = 0
 			return
