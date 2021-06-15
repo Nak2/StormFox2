@@ -122,6 +122,10 @@ do
 			- Second argument will tell SF it is static and shouldn't be mixed
 	]]
 	function w_meta:Get(sKey, SUNSTAMP )
+		-- Fallback to day-stamp, if Last Steamp is nil-
+		if not SUNSTAMP then
+			SUNSTAMP = StormFox2.Sky.GetLastStamp() or SF_SKY_DAY
+		end
 		if self.Function[sKey] then
 			return self.Function[sKey]( SUNSTAMP )
 		elseif self.SunStamp[sKey] then
