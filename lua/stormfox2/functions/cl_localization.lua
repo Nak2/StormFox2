@@ -1,6 +1,7 @@
 -- This is a localization backup, in case the file didn't transferre.
 if not file.Exists("resource/localization/en/stormfox.properties", "GAME") then return end
 local str = [[
+
 	#StormFox2.weather = weather
 	# https://github.com/Facepunch/garrysmod/blob/master/garrysmod/resource/localization/en/community.properties Check this first
 	# weather, day, night, sun, lightning, snow, cloud
@@ -11,6 +12,7 @@ local str = [[
 	sf_window_effects=Window Effects
 	footprints=footprints
 	temperature=temperature
+	fog=Fog
 	
 	#Weather
 	sf_weather.clear=Clear
@@ -27,8 +29,16 @@ local str = [[
 	sf_weather.fog.medium=Fog
 	sf_weather.fog.high=Thick Fog
 	sf_weather.lava=Lava
+	sf_weather.fallout=Nuclear Fallout
 	
 	#Settings
+	sf_enable=Enable StormFox
+	sf_enable.desc=Enable / Disable StormFox 2
+	sf_clenable=Enable StormFox
+	sf_clenable.desc=Enable / Disable StormFox 2. Requires sf_allow_csenable.
+	sf_allow_csenable=Allow Clients to disable StormFox 2
+	sf_allow_csenable.desc=Enabling this will allow clients to disable StormFox 2.
+	
 	sf_mthreadwarning=These settings can boost your FPS:\n%s\nWarning\: Might crash some older AMD CPUs!
 	sf_holdc=Hold C
 	sf_weatherpercent=Weather Amount
@@ -43,12 +53,43 @@ local str = [[
 	sf_map.logic_relay.none=This map doens't have custome day/night relays.
 	sf_windmove_players=Affect players
 	sf_windmove_players.desc=Affect player movment in strong wind.
+	sf_windmove_foliate=Affect Foliate
+	sf_windmove_foliate.desc=Foliate moves with the wind.
+	sf_windmove_props=Affect Props
+	sf_windmove_props.desc=Props will move with the wind. This can cause lag!
+	sf_windmove_props_break=Damage Props
+	sf_windmove_props_break.desc=Props will take damage in the wind.
+	sf_windmove_props_makedebris=Change CollisionGroup
+	sf_windmove_props_makedebris.desc=Will make props change collisiongroup, recuding lag.
+	sf_windmove_props_unfreeze=Unfreeze props.
+	sf_windmove_props_unfreeze.desc=Unfreeze props being moved by the wind.
+	sf_windmove_props_unweld=Unweld props.
+	sf_windmove_props_unweld.desc=Unweld props being moved by the wind.
+	sf_windmove_props_max=Max props being moved.
+	sf_windmove_props_max.desc=Max amount of props moving. This can cause lag!
+	
 	sf_enable_fogz=Overwrite farZ fog
 	sf_enable_fogz.desc=Overwrites the maps farZ fog. This might look bad on some maps.
 	sf_enable_ice=Enable ice
 	sf_enable_ice.desc=Creates ice over water.
 	sf_overwrite_fogdistance=Default fog-distance.
 	sf_overwrite_fogdistance.desc=Overwrites the default fog-distance.
+	sf_hide_forecast=Hide Forecast
+	sf_hide_forecast.desc=Stops clients from updating the forecast.
+	sf_allow_weather_lightchange=Allow weather maplight
+	sf_allow_weather_lightchange.desc=Allows the weather to modify the maplight.
+	sf_addnight_temp=Add Night Temperature
+	sf_addnight_temp.desc=The amount the temperature drops doing night.
+	sf_apply_settings=Apply settings.
+	sf_reset_settings=Reset settings.
+	sf_enable_skybox=Enable Skybox
+	sf_enable_skybox.desc=Allows StormFox to use the skybox.
+	sf_use_2dskybox=Use 2D Skybox
+	sf_use_2dskybox.desc=Makes StormFox use 2D skyboxes instead.
+	sf_overwrite_2dskybox=Overwrite 2D skybox
+	sf_overwrite_2dskybox.desc=Overwrites the 2D skybox with another.
+	sf_darken_2dskybox=Darken 2D Skybox
+	sf_darken_2dskybox.desc=Match the skybox brightness with the map.
 	
 	#Details
 	sf_quality_target=FPS Target
@@ -117,6 +158,8 @@ local str = [[
 	#Effects
 	sf_enable_fog=Enable Fog
 	sf_enable_fog.desc=Allow StormFox to edit the fog.
+	sf_allow_fog_change=Allow clinets to toggle fog.
+	sf_allow_fog_change.desc=Enabling this will allow clients to toggle fog.
 	sf_footprint_enabled=Enable Footprints
 	sf_footprint_enabled.desc=Enable footprint effects.
 	sf_footprint_playeronly=Player Footprints Only.
