@@ -31,6 +31,7 @@ if CLIENT then
 		view.ang = Angle(0,0,0)
 		view.fov = 0
 		view.drawviewer = false
+		view.modified = false
 	hook.Add("PreDrawTranslucentRenderables", "StormFox2.util.EyeHack", function() EyePos() end)
 	hook.Add("PreRender","StormFox2.util.EyeFix",function()
 		local t = hook.Run("CalcView", LocalPlayer(), EyePos(), EyeAngles(), LocalPlayer():GetFOV(),3,28377)
@@ -39,8 +40,10 @@ if CLIENT then
 			view.ang = EyeAngles()
 			view.fov = 90
 			view.drawviewer = LocalPlayer():ShouldDrawLocalPlayer()
+			view.modified = true
 			return
 		end
+		view.modified = false
 		view.pos = t.origin or EyePos()
 		view.ang = t.angles or EyeAngles()
 		view.fov = t.fov or view.fov or 90
@@ -58,16 +61,22 @@ if CLIENT then
 	function StormFox2.util.RenderPos()
 		return view.pos or EyePos()
 	end
-		--[[<Client>-----------------------------------------------------------------
+
+	--[[<Client>-----------------------------------------------------------------
 	Returns the current viewentity
 	---------------------------------------------------------------------------]]
-	function StormFox2.util.ViewEntity()
+	local viewEntity
+	hook.Add("Think", "StormFox2.util.ViewEnt", function()
 		local lp = LocalPlayer()
 		if not IsValid(lp) then return end
 		local p = lp:GetViewEntity() or lp
 		if p.InVehicle and p:InVehicle() and p == lp then
-			p = p:GetVehicle() or p
+			viewEntity = p:GetVehicle() or p
+		else
+			viewEntity = p
 		end
-		return p
+	end)
+	function StormFox2.util.ViewEntity()
+		return IsValid(viewEntity) and viewEntity or LocalPlayer()
 	end
 end
