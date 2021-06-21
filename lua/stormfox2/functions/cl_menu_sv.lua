@@ -619,7 +619,9 @@ local tabs = {
 		end
 		paste:SetText( StormFox2.Setting.GetCVS() )
 	end},
-	[6] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png"))},
+	[6] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png")), function(board)
+		hook.Run("stormfox2.svmenu.dlc", board)
+	end},
 	[7] = {"Changelog", niceName(language.GetPhrase("#changelog")),(Material("stormfox2/hud/menu/other.png")),function(board)
 		local p = vgui.Create("DHTML", board)
 		board.PerformLayout = function(self,w,h)

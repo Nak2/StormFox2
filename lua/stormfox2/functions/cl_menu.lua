@@ -280,7 +280,9 @@ local tabs = {
 		end,fog)
 	end},
 	[3] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png"))},
-	[4] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png"))}
+	[4] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png")), function(board)
+		hook.Run("stormfox2.menu.dlc", board)
+	end}
 }
 
 function StormFox2.Menu.Open()
