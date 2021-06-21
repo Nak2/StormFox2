@@ -26,12 +26,10 @@ do
 				if not att then return end
 				pos = att.Pos
 				ang = att.Ang
-			elseif not view.modified then -- Use view
+			else
 				e = 2
 				ang = Angle(-view.ang.p,view.ang.y,0)
 				pos = view.pos  + ang:Forward() * 3  + ang:Up() * -2
-			--else
-			--	The view got modified and we're not drawing the local player. This can be many reasons, so don't do it
 			end
 		end
 		local l = StormFox2.Map.GetLight() / 100

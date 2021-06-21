@@ -31,23 +31,11 @@ if CLIENT then
 		view.ang = Angle(0,0,0)
 		view.fov = 0
 		view.drawviewer = false
-		view.modified = false
-	hook.Add("PreDrawTranslucentRenderables", "StormFox2.util.EyeHack", function() EyePos() end)
-	hook.Add("PreRender","StormFox2.util.EyeFix",function()
-		local t = hook.Run("CalcView", LocalPlayer(), EyePos(), EyeAngles(), LocalPlayer():GetFOV(),3,28377)
-		if not t then 
-			view.pos = EyePos()
-			view.ang = EyeAngles()
-			view.fov = 90
-			view.drawviewer = LocalPlayer():ShouldDrawLocalPlayer()
-			view.modified = true
-			return
-		end
-		view.modified = false
-		view.pos = t.origin or EyePos()
-		view.ang = t.angles or EyeAngles()
-		view.fov = t.fov or view.fov or 90
-		view.drawviewer = t.drawviewer or LocalPlayer():ShouldDrawLocalPlayer()
+	hook.Add("RenderScene", "StormFox2.util.EyeHack", function(pos, ang,fov)
+		view.pos = pos or EyePos()
+		view.ang = ang or EyeAngles()
+		view.fov = fov or 90
+		view.drawviewer = LocalPlayer():ShouldDrawLocalPlayer()
 	end)
 	--[[<Client>-----------------------------------------------------------------
 	Returns the last calcview result.
