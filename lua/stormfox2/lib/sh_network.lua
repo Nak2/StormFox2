@@ -18,6 +18,16 @@ if SERVER then
 		net.Broadcast()
 		StormFox_NETWORK[sKey] = zVar
 	end
+	function StormFox2.Network.ForceSet( sKey, zVar, nDelta )
+		StormFox2.Data.Set(sKey, zVar, nDelta)
+		net.Start("StormFox2.network")
+			net.WriteBool(true)
+			net.WriteString(sKey)
+			net.WriteType(zVar)
+			net.WriteUInt(nDelta or 0, 16)
+		net.Broadcast()
+		StormFox_NETWORK[sKey] = zVar
+	end
 	local tickets = {}
 	net.Receive("StormFox2.network", function(len, ply)
 		if tickets[ply] then return end
