@@ -748,9 +748,9 @@ Locates an entity with the given hammer_id from the mapfile.
 		end
 	end
 -- Generates the texture-tree
-	if not SF_TEXTDATA or table.Count(SF_TEXTDATA) < 1 then
-		SF_TEXTDATA = GenerateTextureTree()
-	end
+	--if not SF_TEXTDATAMAP or table.Count(SF_TEXTDATAMAP) < 1 then
+		SF_TEXTDATAMAP = GenerateTextureTree()
+	--end
 -- Find some useful variables we can use
 	if StormFox2.Map.Entities()[1] then
 		max = util.StringToType( StormFox2.Map.Entities()[1]["world_maxs"], "Vector" )
@@ -776,4 +776,71 @@ Locates an entity with the given hammer_id from the mapfile.
 		end
 	end
 
+-- Modify the texture tree, if there are changes
+--[[
+		local INVALID = -2
+		local NO_TYPE = -1
+		local DIRTGRASS_TYPE = 0
+		local ROOF_TYPE = 1
+		local ROAD_TYPE = 2
+		local PAVEMENT_TYPE = 3
+]]
 
+local modifyData = {} -- Holds the list of modified materials
+-- Gnerates SF_TEXTDATA from SF_TEXTDATAMAP and modifyData
+local function GenerateTEXTDATA()
+	-- Create a copy from the map-data
+	SF_TEXTDATA = table.Copy( SF_TEXTDATAMAP )
+	-- Modify the data
+	for sMat,v in pairs( modifyData ) do
+		if v == -1 then
+			SF_TEXTDATA[sMat] = {-1, -1}
+		else
+			if not SF_TEXTDATA[sMat] then
+				SF_TEXTDATA[sMat] = {}
+			end
+			local mat = Material(sMat)
+			if mat:GetTexture("$basetexture") then
+				SF_TEXTDATA[sMat][1] = v
+			end
+			--if mat:GetTexture("$basetexture2") then Broken
+			--	SF_TEXTDATA[sMat][2] = v
+			--end
+		end
+	end
+end
+
+if SERVER then
+	local map_tex_file = "stormfox2/tex_setting/" .. game.GetMap() .. ".txt"
+	local function SaveMData()
+		StormFox2.FileWrite(map_tex_file, util.TableToJSON(modifyData))
+	end
+	local function LoadMData()
+		if file.Exists(map_tex_file, "DATA") then
+			modifyData = util.JSONToTable( file.Read(map_tex_file, "DATA") ) or {}
+		end
+		GenerateTEXTDATA()
+	end
+	LoadMData()
+	hook.Add("stormfox2.postlib", "stormfox2.lib.texturesetting", function()
+		StormFox2.Network.ForceSet("texture_modification", modifyData)
+		function StormFox2.Map.ModifyMaterialType( sMat, v )
+			if v < -1 then
+				modifyData[sMat] = nil
+			else
+				modifyData[sMat] = v
+			end
+			SaveMData()
+			StormFox2.Network.ForceSet("texture_modification", modifyData)
+			GenerateTEXTDATA()
+		end
+	end)
+else
+	GenerateTEXTDATA() -- We don't know if we'll ever get a list of modified materials.
+	hook.Add("StormFox2.data.change", "stormfox2.lib.texturesetting", function(key, _)
+		if key ~= "texture_modification" then return end
+		modifyData = StormFox2.Data.Get("texture_modification", {})
+		GenerateTEXTDATA()
+		StormFox2.Terrain.Update()
+	end)
+end

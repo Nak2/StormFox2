@@ -124,6 +124,11 @@ function StormFox2.Terrain.HasMaterialChanged( iMaterial )
 	return _STORMFOX_TEXCHANGES[mat] and _STORMFOX_TEXCHANGES[mat]
 end
 
+function StormFox2.Terrain.GetOriginalTexture( iMaterial )
+	local mat = iMaterial:GetName() or iMaterial
+	return _STORMFOX_TEXORIGINAL[mat] and _STORMFOX_TEXORIGINAL[mat][1]
+end
+
 -- We're going to overwrite SetTexture. As some mods might change the default texture.
 local mat_meta = FindMetaTable("IMaterial")
 STORMFOX_TEX_APPLY = STORMFOX_TEX_APPLY or mat_meta.SetTexture
@@ -225,6 +230,14 @@ function StormFox2.Terrain.Set( sName )
 		StormFox2.Map.CallLogicRelay( "terrain_" .. string.lower(sName) )
 	end
 	return true
+end
+
+-- Reapplies the current terrain
+function StormFox2.Terrain.Update()
+	local terrain = StormFox2.Terrain.GetCurrent()
+	if not terrain then return end
+	StormFox2.Terrain.Reset( true )
+	terrain:Apply()
 end
 
 local NO_TYPE = -1
