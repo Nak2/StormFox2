@@ -262,7 +262,7 @@ if CLIENT then
 				if q >= 4 then continue end
 				render.SetMaterial(getMat(q,foot))
 				if foot == 0 and q > 1 then
-					DrawQuadEasy( pos + Vector(0,0,q / 3), normal, 6 * scale, 10 * scale * lengh, bC, yawoff )
+					DrawQuadEasy( pos + Vector(0,0,q / 3 + 1), normal, 6 * scale, 10 * scale * lengh, bC, yawoff )
 				else
 					DrawQuadEasy( pos + Vector(0,0,q / 3), normal, -6 * scale, 10 * scale * lengh, bC, yawoff )
 				end

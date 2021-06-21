@@ -265,6 +265,7 @@ local tabs = {
 		local fog = board:AddSetting("enable_fog")
 		board:AddSetting("extra_darkness")
 		board:AddSetting("extra_darkness_amount")
+		board:AddSetting("enable_breath")
 		board:AddTitle(language.GetPhrase("#footprints"))
 		board:AddSetting("footprint_enabled")
 		board:AddSetting("footprint_playeronly")

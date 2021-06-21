@@ -31,6 +31,14 @@ local str = [[
 	sf_weather.lava=Lava
 	sf_weather.fallout=Nuclear Fallout
 	
+	#Tool
+	sf_tool.name=StormFox2 Tool
+	sf_tool.desc=Allows you to edit StormFox2 map settings.
+	sf_tool.surface_editor=Surface Editor
+	sf_tool.surface_editor.desc=Allows you to edit surface-types
+	sf_enable_breath=Enables breath
+	sf_enable_breath.desc=Makes players breath visible in cold.
+	
 	#Settings
 	sf_enable=Enable StormFox
 	sf_enable.desc=Enable / Disable StormFox 2
@@ -192,7 +200,7 @@ local str = [[
 	sf_temp_range=Temperature range
 	sf_temp_range.desc=The min and max temperature.
 	sf_temp_acc=Temperature change.
-	sf_temp_acc.desc=The max temperature changes pr day.
+	sf_temp_acc.desc=The max temperature changes pr day.	
 	]]
 
 for k, v in ipairs( string.Explode("\n", str)) do

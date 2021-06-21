@@ -18,7 +18,7 @@ StormFox2 = {}
 StormFox2.WorkShopVersion = false--game.IsDedicated()
 StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443"
 --<Var> StormFox's Version number
-	StormFox2.Version = 2.19
+	StormFox2.Version = 2.20
 	StormFox2.Loaded = false
 
 --[[<Shared>-----------------------------------------------------------------
@@ -67,6 +67,23 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 		for _,fil in ipairs(file.Find(str .. "/*.lua","LUA")) do
 			HandleFile(str .. "/" .. fil)
 		end
+	end
+
+-- File function that creates folders
+	function StormFox2.FileWrite( filename, data )
+		local a = string.Explode("/", filename)
+		-- Create folders
+		if #a > 0 then
+			local path = ""
+			for i = 1, #a - 1 do
+				path = path .. (i > 1 and "/" or "") .. a[i]
+				if not file.Exists(path, "DATA") then
+					file.CreateDir(path)
+				end
+			end
+		end
+		-- Create file
+		file.Write(filename, data)
 	end
 
 -- Resources
