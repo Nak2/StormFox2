@@ -1,0 +1,93 @@
+"UnlitTwoTexture"
+{
+ 	"$basetexture" 	"effects/tvscreen_noise001a"
+	"$texture2"	"dev/dev_scanline"
+	"$texture2scale" 0
+	"$selfillum" "1"
+	"$color" "[1 1 1]"
+
+// Variables
+	"$shake" 	0
+	"$line_speed" 	.16
+	"$screen_size"	1
+
+//Temp
+	"$one"		1
+	"$zero"		0
+	"$temp"		0
+	"$texoffset"	"[0 0]"
+	"$texscale"	0.1
+	"$tex2scale"	1
+	"$tex2offset"	"[0 0]"
+	"$tex2scale"	0
+	"$xo_b_noise"		0
+	"$xo_s_noise"		0
+	"$yspeed"	0
+	"$ymultspeed"	-0.005
+	"$y_tempspeed"	0
+
+	"$xo_t_halfwidth" 	0
+	"$xo_threshold"		0
+
+
+	"Proxies"
+	{
+//		x offset noise
+
+		"GaussianNoise"
+		{
+			"mean"	"$zero"
+			"halfwidth"	"$shake"
+			"resultVar"	"$xo_b_noise"
+		}
+		"GaussianNoise"
+		{
+			"mean"	"$zero"
+			"halfwidth"	"$shake"
+			"resultVar"	"$xo_s_noise"
+		}
+		"GaussianNoise"
+		{
+			"mean"	"$xo_threshold"
+			"halfwidth"	"$xo_t_halfwidth"
+			"resultVar"	"$xo_threshold"
+		}
+		"Abs"
+		{
+			"srcVar1"	"$xo_b_noise"
+			"resultVar"	"$temp"
+		}
+		"LessOrEqual"
+		{
+			"srcVar1"	"$temp"
+			"srcVar2"	"$xo_threshold"
+			"lessEqualVar"	"$xo_s_noise"
+			"greaterVar"	"$xo_b_noise"
+			"resultVar"	"$texoffset[0]"
+		}
+		"TextureTransform"
+		{
+			"scaleVar"	"$screen_size"
+			"translateVar"	"$texoffset"
+			"resultVar"	"$basetexturetransform"
+		}
+		"Multiply"{
+			"srcVar1" "$ymultspeed"
+			"srcVar2"	"$shake"
+			"resultVar" "$y_tempspeed"
+		}
+		"Add"{
+			"srcVar1" "$line_speed"
+			"srcVar2"	"$y_tempspeed"
+			"resultVar" "$yspeed"
+		}
+		"TextureScroll"
+		{
+			"texturescrollvar" "$texture2transform"
+			"texturescrollrate" "$yspeed"
+			"texturescrollangle" -90
+		}
+
+
+	}
+}

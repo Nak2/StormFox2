@@ -93,3 +93,28 @@ surface.CreateFont("SF2.W_Button", {
 	size = 15,
 	weight = 1500,
 })
+
+-- Tool
+surface.CreateFont( "sf_tool_large", {
+	font = "Verdana", -- Use the font-name which is shown to you by your operating system Font Viewer, not the file name
+	extended = false,
+	size = 30,
+	weight = 700,
+	blursize = 0,
+	scanlines = 0,
+	antialias = true,
+	underline = false,
+	italic = false,
+	strikeout = false,
+	symbol = false,
+	rotary = false,
+	shadow = false,
+	additive = false,
+	outline = true,
+} )
+
+surface.CreateFont( "sf_tool_small", {
+	font = "Verdana",
+	size = 17,
+	weight = 1000
+} )

@@ -1,0 +1,14 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "stormfox2/weapons/sf_tool"
+	"$selfillum" 1 
+	"$model" 1
+	"$envmapmask" "models/weapons/v_toolgun/toolgun3_mask" 
+	"$envmap" "env_cubemap"
+	"$envmapcontrast" 0.9
+	"$envmaptint" "[0.3 0.3 0.3]" 
+	"$phong" "1" 
+	"$phongboost" "1" 
+	"$phongfresnelranges" "[0.1 0.9 3]"
+	"$phongexponenttexture" "models/weapons/v_toolgun/toolgun3_exp"
+}
