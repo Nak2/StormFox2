@@ -13,6 +13,9 @@ SWEP.UseHands		= true
 SWEP.Spawnable		= true
 SWEP.AdminOnly		= true
 
+SWEP.Slot      = 5
+SWEP.SlotPos   = 5
+
 util.PrecacheModel( SWEP.ViewModel )
 util.PrecacheModel( SWEP.WorldModel )
 

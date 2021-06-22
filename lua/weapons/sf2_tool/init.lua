@@ -79,5 +79,6 @@ end
 
 -- Stops players from picking up multiple tools
 hook.Add("PlayerCanPickupWeapon", "StormFox2.Tool.Pickup", function(ply, wep)
-	if IsValid(ply:GetWeapon("sf2_tool")) then return false end
+	if (wep:GetClass() ~= "sf2_tool") then return end -- Ignore other weapons
+	if IsValid(ply:GetWeapon("sf2_tool")) then return false end -- If you already have a tool, don't pick this one up
 end)

@@ -36,8 +36,8 @@ SWEP.UseHands = true
 SWEP.Selected = 1
 
 if ( SERVER ) then
-   SWEP.AutoSwitchTo    = false
-   SWEP.AutoSwitchFrom     = false
+   SWEP.AutoSwitchTo    = true
+   SWEP.AutoSwitchFrom     = true
 end
 
 function SWEP:Initialize()
