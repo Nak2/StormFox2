@@ -26,6 +26,7 @@ StormFox2.Time = StormFox2.Time or {}
 	StormFox2.Setting.SetType( "time_speed", "Float")
 
 	StormFox2.Setting.AddSV("real_time",false,nil,"Time")
+	StormFox2.Setting.AddSV("random_time",false,nil,"Time")	-- Makes the time random
 
 
 -- Time stamps
@@ -95,15 +96,25 @@ StormFox2.Time = StormFox2.Time or {}
 				StormFox2.Msg("Starting time: Last Saved")
 			end
 			start = num
+		elseif StormFox2.Setting.Get("random_time",false) then
+			start = math.random(1, 1435)
+			StormFox2.Msg("Starting time: Random")
 		else
 			StormFox2.Msg("Starting time: sf_start_time")
 		end
+
+		StormFox2.Setting.Callback("random_time",function(vVar,vOldVar,sName, sID)
+			if not vVar then return end
+			StormFox2.Setting.Set("real_time",false)
+			StormFox2.Setting.Set("start_time",-1)
+		end,"sf_sttrigger")
 
 		StormFox2.Setting.Callback("real_time",function(vVar,vOldVar,sName, sID)
 			if not vVar then return end
 			StormFox2.Setting.Set("time_speed",1)
 			TIME_SPEED = 1 / 60
 			StormFox2.Setting.Set("start_time",-1)
+			StormFox2.Setting.Set("random_time",false)
 			local dt = string.Explode(":",os.date("%H:%M:%S"))
 			local n = dt[1] * 60 + dt[2] + dt[3] / 60
 			StormFox2.Time.Set(n)
@@ -113,6 +124,7 @@ StormFox2.Time = StormFox2.Time or {}
 			if not vVar then return end
 			if vVar < 0 then return end
 			StormFox2.Setting.Set("real_time",false)
+			StormFox2.Setting.Set("random_time",false)
 		end,"sf_sttrigger")
 	end
 

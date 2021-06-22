@@ -337,6 +337,7 @@ local tabs = {
 	[2] = {"Time","#time",(Material("stormfox2/hud/menu/clock.png")),function(board)
 		board:AddTitle("#time")
 		board:AddSetting("real_time")
+		board:AddSetting("random_time")
 		board:AddSetting("start_time")
 		board:AddSetting("time_speed")
 		board:AddTitle("#sun")
