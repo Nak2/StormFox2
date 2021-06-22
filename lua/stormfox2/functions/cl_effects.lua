@@ -1,6 +1,7 @@
 
 -- Breath Efect
 do
+	local threshold = 2	-- IRL it is 7.2C, but i think the community would like to tie it closer to snow.
 	StormFox2.Setting.AddCL("enable_breath", true)
 	local m_mats = {(Material("particle/smokesprites_0001")),(Material("particle/smokesprites_0002")),(Material("particle/smokesprites_0003"))}
 	local function GetMouth( ply )
@@ -65,7 +66,7 @@ do
 	-- The most optiomal way is to check within the renderhook.
 	local function RunEffect(ply)
 		if not StormFox2.Setting.GetCache("enable_breath") then return end
-		if StormFox2.Temperature.Get() > 7.2 then return end -- Breaht is visible at 7.2C or below
+		if StormFox2.Temperature.Get() > threshold then return end -- Breaht is visible at 7.2C or below
 		if (ply._sfbreath or 0) >= CurTime() then return end
 		local cE = CheckEffect( ply )
 		if not cE then
