@@ -2,11 +2,11 @@
 local rad = StormFox2.Weather.Add( "Radioactive", "Rain" )
 if CLIENT then
 	function rad:GetName(nTime, nTemp, nWind, bThunder, nFraction )
-		return language.GetPhrase('sf_weather.fallout')
+		return language.GetPhrase('sf_weather.fallout'), "Nuclear fallout"
 	end
 else
 	function rad:GetName(nTime, nTemp, nWind, bThunder, nFraction )
-		return "Nuclear fallout"
+		return "Nuclear fallout", "Nuclear fallout"
 	end
 end
 

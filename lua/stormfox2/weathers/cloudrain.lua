@@ -61,29 +61,29 @@ do
 	if CLIENT then
 		function rain:GetName(nTime, nTemp, nWind, bThunder, nFraction )
 			if StormFox2.Wind.GetBeaufort(nWind) >= 10 then
-				return language.GetPhrase('sf_weather.cloud.storm')
+				return language.GetPhrase('sf_weather.cloud.storm'), 'Storm'
 			elseif bThunder then
-				return language.GetPhrase('sf_weather.cloud.thunder')
+				return language.GetPhrase('sf_weather.cloud.thunder'), 'Thunder'
 			elseif nTemp > 0 then
-				return language.GetPhrase('sf_weather.rain')
+				return language.GetPhrase('sf_weather.rain'), 'Raining'
 			elseif nTemp > -2 then
-				return language.GetPhrase('sf_weather.rain.sleet')
+				return language.GetPhrase('sf_weather.rain.sleet'), 'Sleet'
 			else
-				return language.GetPhrase('sf_weather.rain.snow')
+				return language.GetPhrase('sf_weather.rain.snow'), 'Snowing'
 			end
 		end
 	else
 		function rain:GetName(nTime, nTemp, nWind, bThunder, nFraction )
 			if StormFox2.Wind.GetBeaufort(nWind) >= 10 then
-				return 'Storm'
+				return 'Storm', 'Storm'
 			elseif bThunder then
-				return 'Thunder'
+				return 'Thunder', 'Thunder'
 			elseif nTemp > 0 then
-				return 'Raining'
+				return 'Raining', 'Raining'
 			elseif nTemp > -2 then
-				return 'Sleet'
+				return 'Sleet', 'Sleet'
 			else
-				return 'Snowing'
+				return 'Snowing', 'Snowing'
 			end
 		end
 	end

@@ -10,9 +10,9 @@ if CLIENT then
 	function clear:GetName(nTime, nTemp, nWind, bThunder, nFraction )
 		local b_windy = StormFox2.Wind.GetBeaufort(nWind) >= windy
 		if b_windy then
-			return language.GetPhrase("#sf_weather.clear.windy")
+			return language.GetPhrase("#sf_weather.clear.windy"), "Windy"
 		end
-		return language.GetPhrase("#sf_weather.clear")
+		return language.GetPhrase("#sf_weather.clear"), "Clear"
 	end
 else
 	function clear:GetName(nTime, nTemp, nWind, bThunder, nFraction )

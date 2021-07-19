@@ -12,7 +12,7 @@ if CLIENT then
 	end
 else
 	function lava:GetName(nTime, nTemp, nWind, bThunder, nFraction )
-		return "Lava"
+		return "Lava", "Lava"
 	end
 end
 local m_def = Material("stormfox2/hud/w_lava.png")

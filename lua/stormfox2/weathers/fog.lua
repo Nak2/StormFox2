@@ -15,25 +15,25 @@ if CLIENT then
 
 	function fog:GetName(nTime, nTemp, nWind, bThunder, nFraction )
 		if nFraction < 0.2 then
-			return language.GetPhrase('#sf_weather.clear')
+			return language.GetPhrase('#sf_weather.clear'), 'Clear'
 		elseif nFraction < 0.6 then
-			return language.GetPhrase('#sf_weather.fog.low')
+			return language.GetPhrase('#sf_weather.fog.low'), 'Haze'
 		elseif nFraction < 0.8 then
-			return language.GetPhrase('#sf_weather.fog.medium')
+			return language.GetPhrase('#sf_weather.fog.medium'), 'Fog'
 		else
-			return language.GetPhrase('#sf_weather.fog.high')
+			return language.GetPhrase('#sf_weather.fog.high'), 'Thick Fog'
 		end
 	end
 else
 	function fog:GetName(nTime, nTemp, nWind, bThunder, nFraction )
 		if nFraction < 0.2 then
-			return 'Clear'
+			return 'Clear', 'Clear'
 		elseif nFraction < 0.6 then
-			return 'Haze'
+			return 'Haze', 'Haze'
 		elseif nFraction < 0.8 then
-			return 'Fog'
+			return 'Fog', 'Fog'
 		else
-			return 'Thick Fog'
+			return 'Thick Fog', 'Thick Fog'
 		end
 	end
 end

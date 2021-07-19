@@ -127,7 +127,8 @@ function StormFox2.Weather.GetDescription()
 	if not c.GetName then
 		return c.Name
 	end
-	return c:GetName(StormFox2.Time.Get(), StormFox2.Temperature.Get(), StormFox2.Wind.GetForce(), StormFox2.Thunder.IsThundering(), StormFox2.Weather.GetPercent())
+	local a,b = c:GetName(StormFox2.Time.Get(), StormFox2.Temperature.Get(), StormFox2.Wind.GetForce(), StormFox2.Thunder.IsThundering(), StormFox2.Weather.GetPercent())
+	return a,b or a
 end
 
 local errM = Material("error")
