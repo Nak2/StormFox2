@@ -216,6 +216,7 @@ do
 			last = t.HitPos
 			vFrom = t.HitPos + vNormal
 		end
+		return nil, last
 	end
 	StormFox2.DownFall.FindSky = FindSky
 	

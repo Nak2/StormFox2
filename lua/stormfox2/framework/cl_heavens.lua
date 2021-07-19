@@ -20,7 +20,7 @@ StormFox2.Sky = {}
 	StormFox2.Setting.SetType("sunrise", "Time")
 	StormFox2.Setting.AddSV("sunset",1080,nil, "Time", 0, 1440)
 	StormFox2.Setting.SetType("sunset", "Time")
-	StormFox2.Setting.AddSV("sunyaw",90,nil, "Effects", 0, 360)
+	StormFox2.Setting.AddSV("sunyaw",88,nil, "Effects", 0, 360)
 	StormFox2.Setting.AddSV("moonlock",false,nil,"Effects", 0, 1)
 	
 	StormFox2.Setting.AddSV("enable_skybox",true,nil, "Effect")
