@@ -106,6 +106,7 @@ else
 	function ENT:Draw()
 		render.MaterialOverrideByIndex(1, sc_mat)
 		self:DrawModel()
+		if self:GetPos():DistToSqr(LocalPlayer():GetPos()) > 350000 then return end
 		render.MaterialOverrideByIndex()
 		r_update = true
 	end
