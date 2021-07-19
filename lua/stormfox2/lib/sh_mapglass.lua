@@ -591,7 +591,7 @@ Locates an entity with the given hammer_id from the mapfile.
 		return
 	end
 -- Map functions 
-	local min,max,sky,sky_scale,has_Sky = Vector(0,0,0),Vector(0,0,0),Vector(0,0,0),1,false
+	local min,max,sky,sky_scale,has_Sky,map_radius = Vector(0,0,0),Vector(0,0,0),Vector(0,0,0),1,false
 	--[[-------------------------------------------------------------------------
 	Returns the maxsize of the map.
 	---------------------------------------------------------------------------]]
@@ -603,6 +603,22 @@ Locates an entity with the given hammer_id from the mapfile.
 	---------------------------------------------------------------------------]]
 	function StormFox2.Map.MinSize()
 		return min
+	end
+	--[[-------------------------------------------------------------------------
+	Returns the radius of the map.
+	---------------------------------------------------------------------------]]
+	function StormFox2.Map.RadiusSize()
+		return map_radius
+	end
+	--[[-------------------------------------------------------------------------
+	Clamps the vector to the size of the map.
+	---------------------------------------------------------------------------]]
+	local clamp = math.Clamp
+	function StormFox2.Map.ClampPos(vec)
+		vec.x = clamp(vec.x, min.x + 1, max.x - 1)
+		vec.y = clamp(vec.y, min.y + 1, max.y - 1)
+		vec.z = clamp(vec.z, min.z + 1, max.z - 1)
+		return vec
 	end
 	--[[-------------------------------------------------------------------------
 	Returns the true center of the map. Often Vector( 0, 0, 0 )
@@ -755,12 +771,14 @@ Locates an entity with the given hammer_id from the mapfile.
 	if StormFox2.Map.Entities()[1] then
 		max = util.StringToType( StormFox2.Map.Entities()[1]["world_maxs"], "Vector" )
 		min = util.StringToType( StormFox2.Map.Entities()[1]["world_mins"], "Vector" )
+		map_radius = math.max(max.x, max.y, max.z, -min.x, -min.y, -min.z) * 1.41
 		bCold = StormFox2.Map.Entities()[1]["coldworld"] and true or false
 	else
 		StormFox2.Warning("This map doesn't have an entity lump! Might cause some undocumented behaviors.")
 		-- gm_flatgrass
 		max = Vector(15360, 15360, -12288)
 		min = Vector(15360, 15360, -12800)
+		map_radius = 15360 * 1.41
 		bCold = false
 	end
 	local sky_cam = StormFox2.Map.FindClass("sky_camera")[1]
