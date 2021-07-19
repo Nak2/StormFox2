@@ -46,6 +46,33 @@ local function SetRelay(fMapLight)
 	end
 	switch = lights_on
 end
+
+local includeNames = {
+	["1"] = true,
+	["streetlight"] = true,
+	["streetlights"] = true
+}
+
+local includeSearch = {
+	["night"] = true,
+	["day"] = true,
+--	["lake"] = true, Used indoors .. for some reason
+	["outdoor"] = true
+}
+
+local excludeSearch = {
+	["indoor"] = true,
+	["ind_"] = true,
+	["apt_"] = true
+}
+
+local function Search(name, tab)
+	for _, str in ipairs( tab ) do
+		if string.format(name, str) then return true end
+	end
+	return false
+end
+
 hook.Add("StormFox2.InitPostEntity", "StormFox2.lightioinit", function()
 	-- Locate lights on the map
 	local t = {"env_projectedtexture", "light_dynamic", "light", "light_spot"}
@@ -53,10 +80,27 @@ hook.Add("StormFox2.InitPostEntity", "StormFox2.lightioinit", function()
 		local c = ent:GetClass()
 		if not table.HasValue(t, c) then continue end
 		local name = ent:GetName()
-		if c == "light_spot" then name = name or "night" end -- Make unnamed light_spots count.
-		if not name then continue end
-		if string.find(name,"indoor") then continue end
-		if not (string.find(name,"night") or name == "1" or string.find(name,"day")) then continue end
+		-- Unnamed entities
+			if not name then
+				if c == "light_spot" then
+					table.insert(night_lights[ 1 + i % 6 ],ent)
+				end
+				continue
+			end
+			name = name:lower()
+		-- Check for include
+			if includeNames[name] then
+				table.insert(night_lights[ 1 + i % 6 ],ent)
+				continue
+			end
+		-- Check exclude
+			if Search(name, excludeSearch) then
+				continue
+			end
+			-- Check include
+			if not Search(name, includeSearch) then
+				continue
+			end
 		table.insert(night_lights[ 1 + i % 6 ],ent)
 	end
 	-- Update on launch
