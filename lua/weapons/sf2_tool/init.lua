@@ -26,7 +26,7 @@ end
 
 function SWEP:HasAccessToSettings( onSuccess, ... )
 	local a = {...}
-	local ply = self.Owner
+	local ply = self:GetOwner()
 	if not IsValid(ply) then return end
 	CAMI.PlayerHasAccess(ply,"StormFox Settings",function(b)
 		if not b then
@@ -52,8 +52,9 @@ function SWEP:PrimaryAttack()
 	if ( game.SinglePlayer() ) then self:CallOnClient( "PrimaryAttack" ) end
 	local tool = self:GetTool()
 	if not tool or not tool.LeftClick then return end
-	if tool.LeftClick(self, self.Owner:GetEyeTrace()) then
-		self:DoShootEffect(self.Owner:GetEyeTrace(),IsFirstTimePredicted())
+	local Owner = self:GetOwner()
+	if tool.LeftClick(self, Owner:GetEyeTrace()) then
+		self:DoShootEffect(Owner:GetEyeTrace(),IsFirstTimePredicted())
 	end
 end
 
@@ -62,16 +63,18 @@ function SWEP:SecondaryAttack()
 	if ( game.SinglePlayer() ) then self:CallOnClient( "SecondaryAttack" ) end
 	local tool = self:GetTool()
 	if not tool or not tool.RightClick then return end
-	if tool.RightClick(self, self.Owner:GetEyeTrace()) then
-		self:DoShootEffect(self.Owner:GetEyeTrace(),IsFirstTimePredicted())
+	local Owner = self:GetOwner()
+	if tool.RightClick(self, Owner:GetEyeTrace()) then
+		self:DoShootEffect(Owner:GetEyeTrace(),IsFirstTimePredicted())
 	end
 end
 
 function SWEP:Reload()
 	if not IsFirstTimePredicted() then return end
-	if ( !self.Owner:KeyPressed( IN_RELOAD ) ) then return end
+	local Owner = self:GetOwner()
+	if ( !Owner:KeyPressed( IN_RELOAD ) ) then return end
 	self:SwitchTool()
-	self.Owner:EmitSound("buttons/button14.wav")
+	Owner:EmitSound("buttons/button14.wav")
 end
 
 function SWEP:Think()

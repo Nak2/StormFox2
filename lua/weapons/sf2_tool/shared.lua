@@ -47,11 +47,12 @@ end
 
 function SWEP:DoShootEffect( tr, bFirstTimePredicted )
 	self:SendWeaponAnim( ACT_VM_PRIMARYATTACK ) -- View model animation
-	self.Owner:SetAnimation( PLAYER_ATTACK1 )
+	local Owner = self:GetOwner()
+	Owner:SetAnimation( PLAYER_ATTACK1 )
 	if ( not bFirstTimePredicted ) then return end
 	local traceEffect = EffectData()
 	traceEffect:SetOrigin( tr.HitPos + tr.HitNormal * 4 )
-	traceEffect:SetStart( self.Owner:GetShootPos() )
+	traceEffect:SetStart( Owner:GetShootPos() )
 	traceEffect:SetAttachment( 1 )
 	traceEffect:SetEntity( self )
 	traceEffect:SetScale(0.2)
@@ -83,7 +84,7 @@ else
 end
 
 function SWEP:GetTool()
-	if not IsValid(self.Owner) then return end -- No owner.
+	if not IsValid(self:GetOwner()) then return end -- No owner.
 	local n = self:GetToolID()
 	if n == 0 then return end -- Screen
 	return self.Tool[n]
