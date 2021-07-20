@@ -68,7 +68,7 @@ end
 -- SF commands
 local function Strike( self, bAlt )
 	if CLIENT then return end
-	local tr = util.TraceLine( util.GetPlayerTrace( self.Owner ) )
+	local tr = util.TraceLine( util.GetPlayerTrace( self:GetOwner() ) )
 	if not tr.HitPos then return end
 	if bAlt then
 		StormFox2.Thunder.CreateAt( tr.HitPos + vector_up * 4 )
@@ -78,7 +78,7 @@ local function Strike( self, bAlt )
 end
 local function Rumble( self )
 	if CLIENT then return end
-	local tr = util.TraceLine( util.GetPlayerTrace( self.Owner ) )
+	local tr = util.TraceLine( util.GetPlayerTrace( self:GetOwner() ) )
 	if not tr.HitPos then return end
 	StormFox2.Thunder.Rumble(tr.HitPos,true)
 end
@@ -90,16 +90,17 @@ end
 function SWEP:PrimaryAttack()
 	if not IsFirstTimePredicted() then return end
 	if not self:CanPrimaryAttack() then return end
-	self.Owner:MuzzleFlash()
+	local Owner = self:GetOwner()
+	Owner:MuzzleFlash()
 	self.Weapon:SendWeaponAnim( 186 )
-	self.Owner:SetAnimation( ACT_GLOCK_SHOOTEMPTY )
+	Owner:SetAnimation( ACT_GLOCK_SHOOTEMPTY )
 	self._bGlow = CurTime() + 0.1
 	self:UsePower( ( 0.5 + CurTime()%0.5 ) )
 	if SERVER then
-		Strike(self, self.Owner:KeyDown(IN_SPEED))
+		Strike(self, Owner:KeyDown(IN_SPEED))
 	else
 		--self:EmitSound("weapons/physcannon/energy_disintegrate4.wav", 75, 100, 0.2)
-		local hitPos = self.Owner:GetEyeTrace().HitPos or self.Owner:GetShootPos()
+		local hitPos = Owner:GetEyeTrace().HitPos or Owner:GetShootPos()
 	end
 end
 

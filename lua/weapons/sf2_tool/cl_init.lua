@@ -14,13 +14,13 @@ end
 function SWEP:PrimaryAttack()
 	local tool = self:GetTool()
 	if not tool or not tool.LeftClick then return end
-	tool.LeftClick(self, self.Owner:GetEyeTrace())
+	tool.LeftClick(self, self:GetOwner():GetEyeTrace())
 end
 
 function SWEP:SecondaryAttack()
 	local tool = self:GetTool()
 	if not tool or not tool.RightClick then return end
-	tool.RightClick(self, self.Owner:GetEyeTrace())
+	tool.RightClick(self, self:GetOwner():GetEyeTrace())
 end
 
 function SWEP:Think()
@@ -120,7 +120,8 @@ function SWEP:Deploy()
 end
 
 function SWEP:DrawWorldModel()
-	if IsValid(self.Owner) and self.Owner ~= LocalPlayer() then
+	local Owner = self:GetOwner()
+	if IsValid(Owner) and Owner ~= LocalPlayer() then
 		self:_SetScreenUN( 0 )
 	elseif self:_GetScreenUN() < 0.4 then
 		self:_SetScreenUN( math.min(0.4, self:_GetScreenUN() + FrameTime() * 0.2) )
