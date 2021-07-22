@@ -18,7 +18,7 @@ StormFox2 = {}
 StormFox2.WorkShopVersion = false--game.IsDedicated()
 StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443"
 --<Var> StormFox's Version number
-	StormFox2.Version = 2.20
+	StormFox2.Version = 2.22
 	StormFox2.Loaded = false
 
 --[[<Shared>-----------------------------------------------------------------
@@ -127,6 +127,9 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 		---------------------------------------------------------------------------]]
 		hook.Run("stormfox2.postinit")
 		StormFox2.Loaded = true
+		if CLIENT then
+			hook.Run( "StormFox2.PostEntityScan" )
+		end
 	end)
 
 -- Hack to stop cleanupmap deleting things.
