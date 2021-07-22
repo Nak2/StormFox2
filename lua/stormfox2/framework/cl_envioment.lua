@@ -664,6 +664,7 @@ Generate meshes and env-points out from the map-data.
 					local max_height,min_height,max_width,min_width
 					local max_vec,min_vec
 					for i,surf in ipairs(t_group) do
+						if not surf then continue end
 						for _,t in ipairs(surf:GetMesh()) do
 							local vec_r = Vector(t.pos[1],t.pos[2],t.pos[3])
 								vec_r:Rotate(-a) -- x = nil, y = w, z = h
