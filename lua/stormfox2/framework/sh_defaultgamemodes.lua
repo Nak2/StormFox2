@@ -52,10 +52,9 @@ hook.Add("StormFox2.Settings.PGL", "StormFox2.DefaultGamemodeSettings", function
 			["hide_forecast"]	= 1,
 			["openweathermap_enabled"] = 0,
 			["time_speed"] = 1,
-			["sf_extra_lightsupport"] = 0,
+			["maplight_auto"] = 1
 		}
 		-- These gamemodes are quick-roundbased. 2~6 mins or so. Block the exspensive light-changes. 
-		GM.SF2_Settings["extra_lightsupport"] = 0
 		if not StormFox2.Ent.light_environments then
 			GM.SF2_Settings["allow_weather_lightchange"] = 0
 			nightBlock = true
