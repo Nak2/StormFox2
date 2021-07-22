@@ -203,18 +203,25 @@ local lastSetting = {}
 		if vis < 0 then return end
 		local sunang = StormFox2.Sun.GetAngle() 	-- Angle towards sun
 		local p = sunang.p % 360
-		if p > 350 then -- 15 before
-			SF_SUN_PROTEX:SetBrightness(0)
-			SF_SUN_PROTEX:Update()
-			return
-		elseif p > 345 then
-			vis = vis * math.Clamp(-p / 5 + 70, 0, 1)
-		elseif p <= 190 then
-			SF_SUN_PROTEX:SetBrightness(0)
-			SF_SUN_PROTEX:Update()
-			return
-		elseif p <= 195 then
-			vis = vis * math.Clamp(p / 5 - 38, 0, 1)
+		local tL = math.min(255,StormFox2.Thunder.GetLight() or 0)
+		if tL > 0 then
+			p = 270
+			sunang.p = p
+			vis = tL / 2
+		else
+			if p > 350 then -- 15 before
+				SF_SUN_PROTEX:SetBrightness(0)
+				SF_SUN_PROTEX:Update()
+				return
+			elseif p > 345 then
+				vis = vis * math.Clamp(-p / 5 + 70, 0, 1)
+			elseif p <= 190 then
+				SF_SUN_PROTEX:SetBrightness(0)
+				SF_SUN_PROTEX:Update()
+				return
+			elseif p <= 195 then
+				vis = vis * math.Clamp(p / 5 - 38, 0, 1)
+			end
 		end
 		local sunnorm = sunang:Forward()			-- Norm of sun
 		local viewpos = StormFox2.util.RenderPos()	-- Point of render
