@@ -249,6 +249,7 @@ do
 		self:InvalidateLayout(true)
 	end
 	function PANEL:PerformLayout(w, h)
+		surface.SetFont("DermaDefault")
 		local text, lines = wrapText(self._des, self:GetWide() - self._b:GetWide())
 		self._d:SetPos(10 + self._b:GetWide(), self._l:GetTall() + 2)
 		self._d:SetText(text)
@@ -313,6 +314,7 @@ do
 		self:InvalidateLayout(true)
 	end
 	function PANEL:PerformLayout(w, h)
+		surface.SetFont("DermaDefault")
 		local text, lines = wrapText(language.GetPhrase(self._des), self:GetWide())
 		self._d:SetText(text)
 		self._d:SizeToContents()
@@ -374,6 +376,7 @@ do
 		end
 	end
 	function PANEL:PerformLayout(w, h)
+		surface.SetFont("DermaDefault")
 		local text, lines = wrapText(self._des, self:GetWide() )
 		self._d:SetText(text)
 		self._d:SizeToContents()
@@ -448,6 +451,7 @@ do
 		self:InvalidateLayout(true)
 	end
 	function PANEL:PerformLayout(w, h)
+		surface.SetFont("DermaDefault")
 		local text, lines = wrapText(self._des, self:GetWide() - 280)
 		self._d:SetText(text)
 		self._d:SizeToContents()
@@ -529,6 +533,7 @@ do
 		self:InvalidateLayout(true)
 	end
 	function PANEL:PerformLayout(w, h)
+		surface.SetFont("DermaDefault")
 		local text, lines = wrapText(self._des or "UNKNOWN", self:GetWide() - self._dw)
 		self._d:SetText(text)
 		self._d:SizeToContents()
@@ -725,6 +730,7 @@ do
 			self.ampm:SetPos(x,y)
 			x = x + self.ampm:GetWide() + 5
 		end
+		surface.SetFont("DermaDefault")
 		local text, lines = wrapText(self._des, self:GetWide())
 		self._d:SetText(text)
 		self._d:SizeToContents()
@@ -928,6 +934,7 @@ do
 			self.ampm:SetPos(x,y)
 			x = x + self.ampm:GetWide() + 5
 		end
+		surface.SetFont("DermaDefault")
 		local text, lines = wrapText(self._des, self:GetWide())
 		self._d:SetText(text)
 		self._d:SizeToContents()
@@ -1007,6 +1014,7 @@ do
 		end,self._b)
 	end
 	function PANEL:PerformLayout(w, h)
+		surface.SetFont("DermaDefault")
 		local text, lines = wrapText(self._des or "UNKNOWN", self:GetWide())
 		self._d:SetText(text)
 		self._d:SizeToContents()
@@ -1308,6 +1316,7 @@ do
 	
 	PANEL.Paint = empty
 	function PANEL:PerformLayout(w,h)
+		surface.SetFont("DermaDefault")
 		local text, lines = wrapText(self._des or "UNKNOWN", self:GetWide() - self._dw)
 		self._d:SetText(text)
 		self._d:SizeToContents()
