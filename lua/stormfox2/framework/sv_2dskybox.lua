@@ -51,7 +51,7 @@ local function SkyThink(b, str)
 	end
 	local s = str or StormFox2.Setting.GetCache("overwrite_2dskybox", "")
 	if s == "" then
-		local sky_options = StormFox2.Weather.GetCurrent():Get("skyBox",StormFox2.Sky.GetLastStamp())
+		local sky_options = StormFox2.Weather.GetCurrent():Get("skyBox",StormFox2.Sky.GetLastStamp() or 0)
 		s = (table.Random(sky_options))
 	else
 		StormFox2.Map.Set2DSkyBoxDarkness( last_f )
