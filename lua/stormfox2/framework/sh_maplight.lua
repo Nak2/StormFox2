@@ -55,6 +55,7 @@ if SERVER then
 	end
 	local oldLight = 'm'
 	SetLightEnv = function( char)
+		if not StormFox2.Ent.light_environments then return end
 		if char == oldLight then return end
 		oldLight = char
 		for _,light in ipairs(StormFox2.Ent.light_environments) do	-- Doesn't lag
