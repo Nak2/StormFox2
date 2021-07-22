@@ -239,6 +239,10 @@ StormFox2.Sky = {}
 	local tf = 0
 	local a = 7 / 7.4
 	function StormFox2.Moon.GetAngle(nTime)
+		if StormFox2.Setting.GetCache("moonlock",false) then
+			local a = StormFox2.Sun.GetAngle(nTime)
+			return Angle(a.p + 180, a.y,0)
+		end
 		--if true then return Angle(200,StormFox2.Data.Get("sun_yaw",90),0) end
 		local day_f = (nTime or StormFox2.Time.Get()) / 1440
 		tf = math.max(tf, day_f)
@@ -270,6 +274,9 @@ StormFox2.Sky = {}
 		-- Calculate the distance between the two (Somewhat real scale)
 		local mAng = StormFox2.Moon.GetAngle(nTime)
 		local sAng = StormFox2.Sun.GetAngle(nTime)
+		if math.abs(math.AngleDifference(mAng.p,sAng.p)) >= 179 then
+			mAng.p = mAng.p + 1.1
+		end
 		local A = sAng:Forward() * 14975
 		local B = mAng:Forward() * 39
 		-- Get the angle towards the sun from the moon
@@ -279,7 +286,9 @@ StormFox2.Sky = {}
 		local dot = C:Forward():Dot(moonTowardSun:Forward())
 		-- Dot: 1 = new moon
 		-- Dot: waz < 0 then waxin
-
+		if StormFox2.Setting.GetCache("moonlock",false) then
+			return 4, moonTowardSun
+		end
 		return math.abs(math.AngleDifference(C.p,moonTowardSun.p) / 45),moonTowardSun
 	end
 	--[[-------------------------------------------------------------------------
