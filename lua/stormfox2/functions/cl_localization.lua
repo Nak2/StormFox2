@@ -1,7 +1,6 @@
 -- This is a localization backup, in case the file didn't transferre.
 if not file.Exists("resource/localization/en/stormfox.properties", "GAME") then return end
 local str = [[
-
 	#StormFox2.weather = weather
 	# https://github.com/Facepunch/garrysmod/blob/master/garrysmod/resource/localization/en/community.properties Check this first
 	# weather, day, night, sun, lightning, snow, cloud
@@ -98,6 +97,9 @@ local str = [[
 	sf_overwrite_2dskybox.desc=Overwrites the 2D skybox with another.
 	sf_darken_2dskybox=Darken 2D Skybox
 	sf_darken_2dskybox.desc=Match the skybox brightness with the map.
+	sf_random_round_weather=Random weather each round.
+	sf_random_round_weather.desc=Gamemodes like TTT will have random weathers between each round.
+	
 	
 	#Details
 	sf_quality_target=FPS Target
@@ -137,6 +139,8 @@ local str = [[
 	sf_real_time.desc=Use the servers OS Time.
 	sf_start_time=Start time
 	sf_start_time.desc=Sets the start time.
+	sf_random_time=Random time
+	sf_random_time.desc=Sets the time randomly on server-launch.
 	sf_time_speed=Time speed
 	sf_time_speed.desc=Multiplies the in-game seconds with the given number.
 	#Sun
@@ -160,6 +164,20 @@ local str = [[
 	sf_maplight_smooth.desc=Enables smooth light transitions.
 	sf_maplight_updaterate=Maplight UpdateRate
 	sf_maplight_updaterate.desc=The max amount of times StormFox will update the maplight doing transitions. Will cause lag on large maps!
+	
+	sf_maplight_auto.desc=Select the best/fastes option for the map.
+	sf_maplight_lightenv.desc=Enable light_environment.
+	sf_maplight_colormod.desc=Enable colormod.
+	sf_maplight_dynamic.desc=Enable dynamic light/shadows.
+	sf_maplight_lightstyle.desc=Enable lightstyle.
+	
+	sf_modifyshadows=Modify shadows
+	sf_modifyshadows.desc=Modify default shadows to follow the sun.
+	sf_modifyshadows_rate=Modify shadow rate
+	sf_modifyshadows_rate.desc=The seconds between each shadow-update.
+	
+	
+	
 	sf_extra_lightsupport=Extra Lightsupport
 	sf_extra_lightsupport.desc=Utilize engine.LightStyle to change the map-light. This can cause lag-spikes, but required on certain maps.
 	
@@ -200,7 +218,7 @@ local str = [[
 	sf_temp_range=Temperature range
 	sf_temp_range.desc=The min and max temperature.
 	sf_temp_acc=Temperature change.
-	sf_temp_acc.desc=The max temperature changes pr day.	
+	sf_temp_acc.desc=The max temperature changes pr day.
 	]]
 
 for k, v in ipairs( string.Explode("\n", str)) do
