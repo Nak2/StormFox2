@@ -291,6 +291,13 @@ do
 		self._d = d
 		self:InvalidateLayout(true)
 	end
+	function PANEL:HideTitle()
+		self._l:Remove()
+		self._l = nil
+		self._b:SetPos(5, 0)
+		self._d:SetPos(25, 0)
+		self:InvalidateLayout()
+	end
 	function PANEL:SetConvar( sName,_,sDesc )
 		local con = GetConVar( "sf_" .. sName )
 		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
@@ -310,7 +317,11 @@ do
 		self._d:SetText(text)
 		self._d:SizeToContents()
 		self._desr = text
-		self:SetTall(10 + lines * 20)
+		if self._l then
+			self:SetTall(10 + lines * 20)
+		else
+			self:SetTall(lines * 20)
+		end
 	end
 	PANEL.PaintOver = PaintOver
 	derma.DefineControl( "SFConVar_Bool", "", PANEL, "DPanel" )
