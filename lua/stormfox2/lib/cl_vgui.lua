@@ -1767,7 +1767,6 @@ do
 	local t_mat = "icon16/font.png"
 	local s_mat = "icon16/cog.png"
 	local s = 60
-	local b_mat = Material("stormfox2/hud/menu/beta.png")
 	local n_vc = Color(55,255,55)
 	local n_bm = Material("vgui/notices/undo")
 
@@ -1826,16 +1825,6 @@ do
 	
 		for k,v in ipairs( tabs ) do
 			local p = vgui.Create("DScrollPanel", self.p_right)
-			-- Draw beta
-			function p:PaintOver(w,h)
-				surface.SetMaterial(b_mat)
-				surface.SetDrawColor(color_white)
-				if self.VBar.Enabled then
-					surface.DrawTexturedRect(w - s - self.VBar:GetWide(), 0, s, s)
-				else
-					surface.DrawTexturedRect(w - s, 0, s, s)
-				end
-			end
 			p:Dock(FILL)
 			self.p_right.sub[string.lower(v[1])] = p
 			p:Hide()
