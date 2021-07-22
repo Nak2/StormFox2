@@ -22,6 +22,7 @@ Shadow controls
 ---------------------------------------------------------------------------]]
 local lastP = -1
 function StormFox2.Shadows.SetAngle( nPitch )
+	if not StormFox2.Ent.shadow_controls then return end
 	local nPitch = (nPitch + 180) % 360
 	if nPitch == lastP then return end
 	lastP = nPitch
@@ -33,17 +34,20 @@ function StormFox2.Shadows.SetAngle( nPitch )
 	net.Broadcast()
 end
 function StormFox2.Shadows.SetColor( cColor )
+	if not StormFox2.Ent.shadow_controls then return end
 	local s = cColor.r .. " " .. cColor.g .. " " .. cColor.b
 	for _,ent in ipairs( StormFox2.Ent.shadow_controls ) do
 		ent:SetKeyValue( "color", s )
 	end
 end
 function StormFox2.Shadows.SetDistance( dis )
+	if not StormFox2.Ent.shadow_controls then return end
 	for _,ent in ipairs( StormFox2.Ent.shadow_controls ) do
 		ent:SetKeyValue( "SetDistance", dis )
 	end
 end
 function StormFox2.Shadows.SetDisabled( bool )
+	if not StormFox2.Ent.shadow_controls then return end
 	for _,ent in ipairs( StormFox2.Ent.shadow_controls ) do
 		ent:SetKeyValue( "SetShadowsDisabled", bool and 1 or 0 )
 	end
@@ -87,10 +91,12 @@ local function shadowTick()
 end
 
 local function enable()
+	if not StormFox2.Ent.shadow_controls then return end
 	hook.Add("Think", "StormFox2.shadow.rate", shadowTick)
 end
 local function disable()
 	hook.Remove("Think", "StormFox2.shadow.rate")
+	if not StormFox2.Ent.shadow_controls then return end
 	local a = StormFox2.Map.FindClass('shadow_control')
 	if not a or #a < 1 then
 		StormFox2.Shadows.SetAngle( 270 )
