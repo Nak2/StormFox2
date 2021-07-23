@@ -17,9 +17,8 @@
 	"$temp"		0
 	"$texoffset"	"[0 0]"
 	"$texscale"	0.1
-	"$tex2scale"	1
 	"$tex2offset"	"[0 0]"
-	"$tex2scale"	0
+	"$tex2scale"	1
 	"$xo_b_noise"		0
 	"$xo_s_noise"		0
 	"$yspeed"	0

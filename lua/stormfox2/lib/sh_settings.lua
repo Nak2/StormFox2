@@ -69,7 +69,7 @@ hook.Add("PostGamemodeLoaded", "StormFox2.Settings.PGL", function()
 		callback_func[sName] = nil
 		cache[sName] = StormFox2.Setting.Get(sName,var)
 		-- Need to reset timespeed.
-		if sName == "time_speed" then
+		if sName == "time_speed" and StormFox2.Time.SetSpeed then
 			StormFox2.Time.SetSpeed(tonumber(var) or 1)
 		end
 	end
