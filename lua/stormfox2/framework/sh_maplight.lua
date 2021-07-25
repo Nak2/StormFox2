@@ -77,7 +77,7 @@ else
 		last_sv = c_var
 		timer.Simple(1, function()
 			render.RedownloadAllLightmaps( true, true )
-			MsgC(color_white,"Redownload ligthmap [" .. last_sv .. "]\n")
+			--MsgC(color_white,"Redownload ligthmap [" .. last_sv .. "]\n")
 		end)
 	end)
 end
@@ -318,6 +318,14 @@ local function checkSetting(e_type, bool, lightlvl)
 end
 -- Called when one of the settings change
 local function SettingMapLight( lightlvl )
+	-- Stop all light-settings when SF gets turned off.
+	if not StormFox2.Setting.GetCache("enable", true) then
+		checkSetting(e_lightstyle, 	false, lightlvl)
+		checkSetting(e_colormod,	false, lightlvl)
+		checkSetting(e_lightdynamic,false, lightlvl)
+		checkSetting(e_light_env, 	false,  lightlvl)
+		return
+	end
 	-- Choose e_light_env or e_colormod
 	if StormFox2.Setting.Get("maplight_auto", true) then
 		if StormFox2.Ent.light_environments then
@@ -440,11 +448,12 @@ do
 	end)
 end
 -- On settings change
-for _, conv in ipairs({"maplight_auto", "maplight_lightenv", "maplight_colormod", "maplight_dynamic", "maplight_lightstyle"}) do
+for _, conv in ipairs({"enable","maplight_auto", "maplight_lightenv", "maplight_colormod", "maplight_dynamic", "maplight_lightstyle"}) do
 	StormFox2.Setting.Callback(conv,function(var)
 		SettingMapLight(f_mapLight)
-	end, conv .. "Check")
+	end, conv .. "MLCheck")
 end
+
 function StormFox2.Map.SetLight( f, ignore_lightstyle )
 	if f < 0 then f = 0 elseif
 		f > 100 then f = 100 end
