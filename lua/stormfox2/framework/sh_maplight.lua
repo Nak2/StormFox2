@@ -328,15 +328,13 @@ local function SettingMapLight( lightlvl )
 	end
 	-- Choose e_light_env or e_colormod
 	if StormFox2.Setting.Get("maplight_auto", true) then
+		checkSetting(e_lightdynamic,false, lightlvl)
+		checkSetting(e_lightstyle, 	false, lightlvl)
 		if StormFox2.Ent.light_environments then
-			checkSetting(e_lightstyle, 	false, lightlvl)
 			checkSetting(e_colormod,	false, lightlvl)
-			checkSetting(e_lightdynamic,false, lightlvl)
 			checkSetting(e_light_env, 	true,  lightlvl)
 		else
 			checkSetting(e_light_env, 	false, lightlvl)
-			checkSetting(e_lightstyle, 	false, lightlvl)
-			checkSetting(e_lightdynamic,false, lightlvl)
 			checkSetting(e_colormod,	true,  lightlvl)
 		end
 	else
