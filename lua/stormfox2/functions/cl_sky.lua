@@ -123,3 +123,32 @@ We overwrite the sky variables. Its much better to handle it clientside.
 			end
 			g_SkyPaint:SetHDRScale(StormFox2.Mixer.Get("HDRScale",0.7))
 	end)
+
+-- Debug
+	if true then return end
+	local x = 0
+	local x2 = 0
+	local function drawVal(text, val)
+		if type(val) == "table" then
+			val = val.r .. " " .. val.g .. " " .. val.b
+		end
+		draw.DrawText(text .. ": " .. tostring(val), "DermaDefault", x2, x * 20, color_white, TEXT_ALIGN_LEFT)
+		x = x + 1
+	end
+	hook.Add("HUDPaint", "SF_DEBUG.Sky", function()	
+		local t_color = StormFox2.Mixer.Get("topColor") or Color( 51, 127.5, 255 )
+		local b_color = StormFox2.Mixer.Get("bottomColor") or Color(204, 255, 255)
+		x = 1
+		x2 = 10
+		drawVal("StormFox2 Debug","")
+		x2 = 20
+		drawVal("TopColor",t_color)
+		drawVal("BottomColor",t_color)
+		drawVal("fadeBias",StormFox2.Mixer.Get("fadeBias",0.2))
+		drawVal("duskIntensity",StormFox2.Mixer.Get("duskIntensity",1.94))
+		drawVal("duskScale",StormFox2.Mixer.Get("duskScale",0.29))
+		drawVal("starFade",StormFox2.Mixer.Get("starFade",100))
+		drawVal("starScale",StormFox2.Mixer.Get("starScale",0.5))
+		drawVal("starSpeed",StormFox2.Mixer.Get("starSpeed",0.001))
+		drawVal("starTexture",StormFox2.Mixer.Get("starTexture","skybox/starfield"))
+	end)
