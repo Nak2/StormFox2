@@ -333,6 +333,44 @@ local tabs = {
 				wmap_board:Hide()
 			end
 		end,wmap)
+
+		-- Shhhh
+		local xp = vgui.Create("DPanel", board)
+			xp:SetWide(20)
+			xp:SetTall(20)
+			xp:Dock(TOP)
+			xp.Paint = empty
+		local xpp = vgui.Create("DImageButton", xp)
+			xpp:Hide()
+			xpp:Dock(RIGHT)
+			xpp:SetWide(20)
+			xpp:SetImage("icon16/control_play_blue.png")
+		-- If "XP" in search, then enable xxp
+			function xp:Think()
+				local p = board:GetParent():GetParent().p_left.sp.searchbar
+				if not p then return end
+				if p:GetText():lower() == "xp" then
+					xpp:Show()
+				else
+					xpp:Hide()
+				end
+			end
+		-- If click then music
+			local t = {"oNXzMBA9VU4","-U3sP-KbrGk"}
+			local n = 1
+			function xpp:DoClick()
+				if xpp._sn then
+					xpp._sn:Remove()
+					xpp._sn = nil
+					xpp:SetImage('icon16/control_play_blue.png')
+				else
+					n = (n + 1)%2
+					xpp._sn = vgui.Create("DHTML", xp)
+					xpp._sn:SetHTML([[<iframe width="560" height="315" src="https://www.youtube.com/embed/]] .. t[n+1] .. [[?autoplay=1" frameborder="0"></iframe>]])
+					xpp._sn:SetPos(0,19)
+					xpp:SetImage('icon16/control_stop_blue.png')
+				end
+			end
 	end},
 	[2] = {"Time","#time",(Material("stormfox2/hud/menu/clock.png")),function(board)
 		board:AddTitle("#time")
@@ -805,7 +843,6 @@ function StormFox2.Menu._OpenSV()
 	p:SetCookie("sf2_lastmenusv")
 	_SFMENU:MakePopup()
 end
-StormFox2.Menu._OpenSV()
 function StormFox2.Menu.OpenSV()
 	net.Start("StormFox2.menu")
 		net.WriteBool(true)
