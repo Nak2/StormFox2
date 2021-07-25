@@ -182,12 +182,17 @@ local lastSetting = {}
 				end 
 			end
 			fardetarget = math.Approach(fardetarget, darkness, FrameTime() * 0.5)
-			tab[ "$pp_colour_addr" ] = -0.09 *	fardetarget	
-			tab[ "$pp_colour_addg" ] = -0.1 * 	fardetarget
-			tab[ "$pp_colour_addb" ] = -0.05 * 	fardetarget
-			tab[ "$pp_colour_brightness" ] = 0 -fardetarget * 0.15
-			tab[ "$pp_colour_colour" ] = 1 - 	fardetarget * 0.5 	-- We're not good at seeing colors in the dark.
-			tab[ "$pp_colour_contrast" ] = 1 + 	fardetarget * 0.08	-- Lower the contrast, however; Bright things are still bright
+			local r_var = fardetarget
+			local tL = math.min(255,StormFox2.Thunder.GetLight() or 0) / 255
+			if tL > 0 then
+				r_var = r_var * (1 - tL)
+			end
+			tab[ "$pp_colour_addr" ] = -0.09 *	r_var	
+			tab[ "$pp_colour_addg" ] = -0.1 * 	r_var
+			tab[ "$pp_colour_addb" ] = -0.05 * 	r_var
+			tab[ "$pp_colour_brightness" ] = 0 -r_var * 0.15
+			tab[ "$pp_colour_colour" ] = 1 - 	r_var * 0.5 	-- We're not good at seeing colors in the dark.
+			tab[ "$pp_colour_contrast" ] = 1 + 	r_var * 0.08	-- Lower the contrast, however; Bright things are still bright
 			DrawColorModify( tab )
 		end)
 	end
