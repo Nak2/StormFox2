@@ -184,7 +184,7 @@ local str = [[
 	#Effects
 	sf_enable_fog=Enable Fog
 	sf_enable_fog.desc=Allow StormFox to edit the fog.
-	sf_allow_fog_change=Allow clinets to toggle fog.
+	sf_allow_fog_change=Allow clients to toggle fog.
 	sf_allow_fog_change.desc=Enabling this will allow clients to toggle fog.
 	sf_footprint_enabled=Enable Footprints
 	sf_footprint_enabled.desc=Enable footprint effects.
@@ -209,6 +209,8 @@ local str = [[
 	sf_window_enable.desc=Enables window weather effects.
 	sf_window_distance=Window Render Distance
 	sf_window_distance.desc=The render distance for breakable windows.
+	sf_override_foliagesway=Override Foliagesway
+	sf_override_foliagesway.desc=Overrides and applies foliagesway to most foliage on launch.
 	
 	#Weather
 	sf_auto_weather=Auto weather
