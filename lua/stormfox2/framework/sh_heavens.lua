@@ -1,0 +1,341 @@
+--[[-------------------------------------------------------------------------
+	StormFox2.Sun.SetTimeUp(nTime)		Sets how long the sun is on the sky.
+	StormFox2.Sun.IsUp() 				Returns true if the sun is on the sky.
+
+
+	StormFox2.Moon.SetTimeUp(nTime)		Sets how long the moon is on the sky.
+
+---------------------------------------------------------------------------]]
+local clamp = math.Clamp
+
+StormFox2.Sun = StormFox2.Sun 	or {}
+StormFox2.Moon = StormFox2.Moon or {}
+StormFox2.Sky = StormFox2.Sky 	or {}
+	SF_SKY_DAY = 0
+	SF_SKY_SUNRISE = 1
+	SF_SKY_SUNSET = 2
+	SF_SKY_CEVIL = 3
+	SF_SKY_BLUE_HOUR = 4
+	SF_SKY_NAUTICAL = 5
+	SF_SKY_ASTRONOMICAL = 6
+	SF_SKY_NIGHT = 7
+
+StormFox2.Setting.AddSV("sunrise",360,nil, "Time", 0, 1440)
+StormFox2.Setting.SetType("sunrise", "Time")
+StormFox2.Setting.AddSV("sunset",1080,nil, "Time", 0, 1440)
+StormFox2.Setting.SetType("sunset", "Time")
+StormFox2.Setting.AddSV("sunyaw",88,nil, "Effects", 0, 360)
+StormFox2.Setting.AddSV("moonlock",false,nil,"Effects")
+
+StormFox2.Setting.AddSV("enable_skybox",true,nil, "Effect")
+StormFox2.Setting.AddSV("use_2dskybox",false,nil, "Effects")
+StormFox2.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
+
+if CLIENT then -- From another file
+	StormFox2.Setting.AddSV("darken_2dskybox", false, nil, "Effect")
+end
+
+-- Sun and Sun functions
+	-- The sun is up ½ of the day; 1440 / 2 = 720. 720 / 2 = 360 and 360 * 3 = 1080
+	local SunDelta = 180 / (StormFox2.Data.Get("sun_sunset",1080) - StormFox2.Data.Get("sun_sunrise",360))
+	--[[-------------------------------------------------------------------------
+	Gets called when the sunset and sunrise changes.
+	---------------------------------------------------------------------------]]
+	hook.Add("StormFox2.data.change","StormFox2.Sky.DeltaChange",function(key,var)
+		if key ~= "sun_sunrise" and key ~= "sun_sunset" then return end
+		SunDelta = 180 / StormFox2.Time.DeltaTime(StormFox2.Data.Get("sun_sunrise",360),StormFox2.Data.Get("sun_sunset",1080))
+	end)
+	--[[-------------------------------------------------------------------------
+	Returns the time when the sun rises.
+	---------------------------------------------------------------------------]]
+	function StormFox2.Sun.GetSunRise()
+		return StormFox2.Data.Get("sun_sunrise",360)
+	end
+	--[[-------------------------------------------------------------------------
+		Returns the time when the sun sets.
+	---------------------------------------------------------------------------]]
+	function StormFox2.Sun.GetSunSet()
+		return StormFox2.Data.Get("sun_sunset",1080)
+	end
+	--[[
+		Returns the time when sun is at its higest
+	]]
+	function StormFox2.Sun.GetSunAtHigest()
+		return (StormFox2.Sun.GetSunRise() + StormFox2.Sun.GetSunSet()) / 2
+	end
+	--[[-------------------------------------------------------------------------
+		Returns the sun-yaw. (Normal 90)
+	---------------------------------------------------------------------------]]
+	function StormFox2.Sun.GetYaw()
+		return StormFox2.Data.Get("sun_yaw",90)
+	end
+	--[[-------------------------------------------------------------------------
+		Returns true if the sun is on the sky.
+	---------------------------------------------------------------------------]]
+	function StormFox2.Sun.IsUp(nTime)
+		return StormFox2.Time.IsBetween(StormFox2.Sun.GetSunRise(), StormFox2.Sun.GetSunSet(),nTime)
+	end
+	--[[-------------------------------------------------------------------------
+		Returns the sun-size. (Normal 30)
+	---------------------------------------------------------------------------]]
+	function StormFox2.Sun.GetSize()
+		return StormFox2.Mixer.Get("sun_size",30)
+	end
+	--[[-------------------------------------------------------------------------
+		Returns the  sun-color.
+	---------------------------------------------------------------------------]]
+	function StormFox2.Sun.GetColor()
+		return StormFox2.Mixer.Get("sun_color",Color(255,255,255))
+	end
+	local sunVisible = 0
+		--[[-------------------------------------------------------------------------
+	Returns the sunangle for the current or given time.
+	---------------------------------------------------------------------------]]
+	local function GetSunPitch(nTime)
+		local t = nTime or StormFox2.Time.Get()
+		local p = (t - StormFox2.Data.Get("sun_sunrise",360)) * SunDelta
+		if p < -90 or p > 270 then p = -90 end -- Sun stays at -90 pitch, the pitch is out of range
+		return p
+	end
+	function StormFox2.Sun.GetAngle(nTime)
+		local a = Angle(-GetSunPitch(nTime),StormFox2.Data.Get("sun_yaw",90),0)
+		return a
+	end
+
+-- We need a sun-stamp. We can't go by time.
+	local sunOffset = 5 -- Sunset needs to be pushed
+	local stamp = {
+		[0] =   {SF_SKY_SUNRISE,6,"SunRise"}, -- 6
+		[6] =   {SF_SKY_DAY,	168,"Day"}, -- 180 - 6
+		[174 + sunOffset] = {SF_SKY_SUNSET,6,"SunSet"}, -- 174 + 6
+		[180 + sunOffset] = {SF_SKY_CEVIL,4,"Cevil"}, -- 4
+		[184 + sunOffset] = {SF_SKY_BLUE_HOUR,2,"Blue Hour"}, -- 6
+		[186 + sunOffset] = {SF_SKY_NAUTICAL,6,"Nautical"}, -- 12
+		[192 + sunOffset] = {SF_SKY_ASTRONOMICAL,6,"Astronomical"}, -- 18
+		[198 + sunOffset] = {SF_SKY_NIGHT,168,"Night"}, -- 144
+		[342] = {SF_SKY_ASTRONOMICAL,6,"Astronomical"}, -- 18
+		[348] = {SF_SKY_NAUTICAL,6,"Nautical"}, -- 12
+		[354] = {SF_SKY_BLUE_HOUR,2,"Blue Hour"}, -- 6
+		[356] = {SF_SKY_CEVIL,4,"Cevil"}, -- 4
+		[360] = {SF_SKY_SUNRISE,6,"SunRise"}, -- 6
+	}
+	-- Make an array of keys
+		local stamp_arr = table.GetKeys(stamp)
+		table.sort(stamp_arr, function(a,b) return a < b end)
+	-- Fix calculating second argument
+		for id, pitch in pairs(stamp_arr) do
+			local n_pitch = stamp_arr[id + 1] or stamp_arr[1]
+			local ad = math.AngleDifference(n_pitch, pitch)
+			if ad == 0 then
+				ad = stamp[n_pitch][2]
+			end
+			stamp[pitch][2] = ad
+		end
+	-- Calculate the sunsize
+		local lC,lCV = -1,-1
+		local function GetsunSize()
+			if lC > CurTime() then return lCV end
+			lC = CurTime() + 2
+			local x = StormFox2.Sun.GetSize()
+			lCV = (-0.00019702 * x^2 + 0.149631 * x - 0.0429803) / 2
+			return lCV
+		end
+		-- Returns: Stamp-ptch, Sun-pitch, Stamp-pitch
+		local function GetStamp(nTime,nOffsetDegree)
+			local sunSize = GetsunSize()
+			local p = ( GetSunPitch(nTime) + (nOffsetDegree or 0) ) % 360
+			-- Offset the sunsize
+				if p > 90 and p < 270 then -- Sunrise
+					p = (p - sunSize) % 360
+				else -- Sunset
+					p = (p + sunSize) % 360
+				end
+			-- Locate the sunstamp by angle
+			local c_pitch, id = -1
+			for n, pitch in pairs(stamp_arr) do
+				if p >= pitch and c_pitch < pitch then
+					id = n
+					c_pitch = pitch
+				end
+			end
+			return stamp_arr[id], p, stamp_arr[id + 1] or stamp_arr[1]
+		end
+	--[[-------------------------------------------------------------------------
+	Returns the sun-stamp. 
+	First argument:
+		0 = day, 1 = golden hour, 2 = cevil, 3 = blue hour
+		4 = nautical, 5 = astronomical, 6 = night
+
+	Second argument:
+		Pitch
+
+	Second argument
+		Next stamp
+		0 = day, 1 = golden hour, 2 = cevil, 3 = blue hour
+		4 = nautical, 5 = astronomical, 6 = night
+	---------------------------------------------------------------------------]]
+	local function GetStamp(nTime,nOffsetDegree)
+		local sunSize = GetsunSize()
+		local p = ( GetSunPitch(nTime) + (nOffsetDegree or 0) ) % 360
+		-- Offset the sunsize
+			if p > 90 and p < 270 then -- Sunrise
+				p = (p - sunSize) % 360
+			else -- Sunset
+				p = (p + sunSize) % 360
+			end
+		-- Locate the sunstamp by angle
+		local c_pitch, id = -1
+		for n, pitch in pairs(stamp_arr) do
+			if p >= pitch and c_pitch < pitch then
+				id = n
+				c_pitch = pitch
+			end
+		end
+		return stamp_arr[id],p,stamp_arr[id + 1] or stamp_arr[1]
+	end
+	--[[-------------------------------------------------------------------------
+	Returns the sun-stamp. 
+	First argument:
+		0 = day, 1 = golden hour, 2 = cevil, 3 = blue hour
+		4 = nautical, 5 = astronomical, 6 = night
+
+	Second argument:
+		Percent used of the current stamp
+
+	Third argument
+		Next stamp
+		0 = day, 1 = golden hour, 2 = cevil, 3 = blue hour
+		4 = nautical, 5 = astronomical, 6 = night
+
+	Forth argument
+		Stamps pitch length
+	---------------------------------------------------------------------------]]
+	local nP = 0
+	function StormFox2.Sky.GetStamp(nTime,nOffsetDegree)
+		local c_stamp,p,n_stamp = GetStamp(nTime,nOffsetDegree) -- p is current angle
+		local per = (p - c_stamp) / (n_stamp - c_stamp)
+		return stamp[c_stamp][1], per, stamp[n_stamp][1],stamp[c_stamp][2]  	-- 1 = Stamp, 2 = Type of stamp
+	end
+	-- Returns the last stamp
+	local lastStamp = 0
+	function StormFox2.Sky.GetLastStamp()
+		return lastStamp
+	end
+	-- Sky hook. Used to update the sky colors and other things.
+	local nextStamp = -1
+	hook.Add("StormFox2.Time.Changed","StormFox2.Sky.UpdateStamp",function()
+		nextStamp = -1
+	end)
+	timer.Create("StormFox2.Sky.Stamp", 1, 0, function()
+		--local c_t = CurTime()
+		--if c_t < nextStamp then return end
+		local stamp,n_t = StormFox2.Sky.GetStamp(nil,6) -- Look 6 degrees into the furture so we can lerp the colors.
+		--nextStamp = c_t + (n_t * SunDelta) / StormFox2.Time.GetSpeed()
+		--[[-------------------------------------------------------------------------
+		This hook gets called when the sky-stamp changes. This is used to change the sky-colors and other things.
+		First argument:
+			0 = day, 1 = golden hour, 2 = cevil, 3 = blue hour
+			4 = nautical, 5 = astronomical, 6 = night
+
+		Second argument:
+			The lerp-time to change the variable.
+		---------------------------------------------------------------------------]]
+		if lastStamp == stamp then return end -- Don't call it twice.
+		lastStamp = stamp
+		hook.Run("StormFox2.Sky.StampChange", stamp, 6 / SunDelta )
+	end)
+-- Moon and its functions
+	--[[-------------------------------------------------------------------------
+		Moon phases
+	---------------------------------------------------------------------------]]
+	SF_MOON_NEW				= 0
+	SF_MOON_WAXIN_CRESCENT	= 1
+	SF_MOON_FIRST_QUARTER	= 2
+	SF_MOON_WAXING_GIBBOUS	= 3
+	SF_MOON_FULL			= 4
+	SF_MOON_WANING_GIBBOUS	= 5
+	SF_MOON_LAST_QUARTER	= 6
+	SF_MOON_WANING_CRESCENT = 7
+	--[[-------------------------------------------------------------------------
+		Returns the moon phase for the current day
+	---------------------------------------------------------------------------]]
+	function StormFox2.Moon.GetPhase()
+		local mp = StormFox2.Data.Get("moon_phase",SF_MOON_FULL)
+		local yd = StormFox2.Date.GetYearDay()
+		return yd - mp
+	end
+	--[[-------------------------------------------------------------------------
+		Returns the moon phase name
+	---------------------------------------------------------------------------]]
+	function StormFox2.Moon.GetPhaseName(nTime)
+		local n = StormFox2.Moon.GetPhase(nTime)
+		local pDif = math.AngleDifference(StormFox2.Moon.GetAngle(nTime).p, StormFox2.Sun.GetAngle(nTime).p)
+		if n >= 4.9 then
+			return "Full Moon"
+		elseif n <= 0.1 then
+			return "New Moon"
+		elseif pDif > 0 then
+			return "Third Quarder"
+		else
+			return "First Quarder"
+		end
+	end
+
+	--[[-------------------------------------------------------------------------
+		Returns the angle for the moon. First argument can also be a certain time.
+	---------------------------------------------------------------------------]]
+	local tf = 0
+	local a = 7 / 7.4
+	function StormFox2.Moon.GetAngle(nTime)
+		if StormFox2.Setting.GetCache("moonlock",false) then
+			local a = StormFox2.Sun.GetAngle(nTime)
+			return Angle(a.p + 180, a.y,0)
+		end
+		--if true then return Angle(200,StormFox2.Data.Get("sun_yaw",90),0) end
+		local day_f = (nTime or StormFox2.Time.Get()) / 1440
+		tf = math.max(tf, day_f)
+		local day_n = tf + StormFox2.Date.GetYearDay()
+		local p_c = ((day_n * a) % 8) * 360 + StormFox2.Data.Get("magic_moonnumber",0)
+		return Angle(-p_c % 360,StormFox2.Data.Get("sun_yaw",90),0)
+	end
+	-- It might take a bit for the server to tell us the day changed.
+	hook.Add("StormFox2.data.change", "StormFox2.moon.datefix", function(sKey, nDay)
+		if sKey ~= "day" then return end
+		tf = 0
+	end)
+	--[[-------------------------------------------------------------------------
+		Returns true if the moon is up.
+	---------------------------------------------------------------------------]]
+	function StormFox2.Moon.IsUp()
+		local t = StormFox2.Moon.GetAngle().p
+		local s = StormFox2.Mixer.Get("moonSize",20) / 6.9
+		return t > 180 - s or t < s
+	end
+	--[[-------------------------------------------------------------------------
+		Returns the current moon phase
+			5 = Full moon
+			3 = Half moon
+			0 = New moon
+		Seconary returns the angle towards the sun from the moon.
+	---------------------------------------------------------------------------]]
+	function StormFox2.Moon.GetPhase(nTime)
+		-- Calculate the distance between the two (Somewhat real scale)
+		local mAng = StormFox2.Moon.GetAngle(nTime)
+		local sAng = StormFox2.Sun.GetAngle(nTime)
+		if math.abs(math.AngleDifference(mAng.p,sAng.p)) >= 179 then
+			mAng.p = mAng.p + 1.1
+		end
+		local A = sAng:Forward() * 14975
+		local B = mAng:Forward() * 39
+		-- Get the angle towards the sun from the moon
+		local moonTowardSun = (A - B):Angle()
+		local C = mAng
+			C.r = 0
+		local dot = C:Forward():Dot(moonTowardSun:Forward())
+		-- Dot: 1 = new moon
+		-- Dot: waz < 0 then waxin
+		if StormFox2.Setting.GetCache("moonlock",false) then
+			return 4, moonTowardSun
+		end
+		return math.abs(math.AngleDifference(C.p,moonTowardSun.p) / 45),moonTowardSun
+	end

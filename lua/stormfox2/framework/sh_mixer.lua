@@ -75,12 +75,10 @@ StormFox2.Mixer.Blender = Blender
 	t.SunStamp = {}
 ]]
 
--- 6 * 4 = 24 "We look 6 degrees in the furture"
-
 -- Resets the values after a few frames. This is calculated live and should be cached.
 local max_frames = 4
 local i = 0
-local tToNext = 0
+local percent = 0
 hook.Add("Think", "StormFox2.mixerreset", function()
 	i = i + 1
 	if i < max_frames then return end
@@ -88,11 +86,16 @@ hook.Add("Think", "StormFox2.mixerreset", function()
 	cache = {}
 	-- Current Stamp
 	local nTime = StormFox2.Time.Get()
-	cStamp,tToNext = StormFox2.Sky.GetStamp(nTime)
-	nStamp = StormFox2.Sky.GetStamp(nTime + 24)
-	if cStamp == nStamp then
+	local stamp, percent, next_stamp, pitch_length = StormFox2.Sky.GetStamp(nTime, nil, true) -- cpercent goes from 0 - 1
+	local pitch_left = pitch_length * (1 - percent)
+	local forward = 6
+	if pitch_left >= 6 then -- Only look 6 degrees in the furture.
+		cStamp = stamp
+		nStamp = stamp
 		nStampFraction = 0
 	else
-		nStampFraction = (24 - tToNext) / 24
+		cStamp = stamp
+		nStamp = next_stamp
+		nStampFraction = 1 - ( pitch_left / (math.min(pitch_length, 6)) )
 	end
 end)
