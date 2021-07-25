@@ -153,7 +153,9 @@ local lastSetting = {}
 		mapLights[e_colormod]["off"] = function(lightLvl)
 			cmod_on = nil
 		end
-		mapLights[e_colormod]["change"] = mapLights[e_colormod]["on"]
+		mapLights[e_colormod]["change"] = function(lightLvl)
+			cmod_on = (1 - (lightLvl / 80)) * 0.7
+		end
 		local tab = {
 			[ "$pp_colour_addr" ] = -0.09,
 			[ "$pp_colour_addg" ] = -0.1,
@@ -452,7 +454,8 @@ for _, conv in ipairs({"enable","maplight_auto", "maplight_lightenv", "maplight_
 	end, conv .. "MLCheck")
 end
 
-function StormFox2.Map.SetLight( f, ignore_lightstyle )
+-- Allows us to use SetLight, without removing the lerp.
+local function SetLightInternal(f, ignore_lightstyle)
 	if f < 0 then f = 0 elseif
 		f > 100 then f = 100 end
 	if f_mapLight == f then return end -- Ignore
@@ -474,47 +477,61 @@ function StormFox2.Map.SetLight( f, ignore_lightstyle )
 		hook.Run("StormFox2.lightsystem.new", f)
 end
 
+local t = {}
+function StormFox2.Map.SetLight( f, ignore_lightstyle )
+	t = {} -- Remove light lerping
+	SetLightInternal(f, ignore_lightstyle)
+end
+
 --[[ Lerp light
 	People complain if we use lightStyle too much (Even with settings), so I've removed lerp from maps without light_environment.
 ]]
-if SERVER then
-	local t = {}
-	function StormFox2.Map.SetLightLerp(f, nLerpTime, ignore_lightstyle )
-		local smooth = StormFox2.Setting.GetCache("maplight_smooth",true)
-		local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
-		-- No lights to smooth and/or setting is off
-		if not StormFox2.Ent.light_environments or not smooth or nLerpTime <= 5 or not last_f or num <= 1 then
-			t = {}
-			StormFox2.Map.SetLight( f, ignore_lightstyle )
-			return
-		end
-		-- Are we trying to lerp towards current value?
-		if last_f and last_f == f then
-			t = {}
-			return
-		end
-		t = {}
-		-- Start lerping ..
-		-- We make a time-list of said values. Where the last will trigger light_style (If enabled)
-		local delta = f - last_f
-		local ticks = math.floor( math.max(nLerpTime / 5, num) ) -- How many times should the light update?
-		local c = CurTime()
-		local n = math.abs(delta / ticks)
-		for i = 2, ticks do
-			table.insert(t, {c + (i - 1) * 5, 
-				math.Approach(last_f, f, n * i), 
-				ignore_lightstyle
-			})
-		end
-		StormFox2.Map.SetLight( math.Approach(last_f, f, n), true )
-	end
-	timer.Create("StormFox2.lightupdate", 1, 0, function()
-		if #t <= 0 then return end
-		if t[1][1] > CurTime() then return end -- Wait
-		local v = table.remove(t, 1)
-		StormFox2.Map.SetLight( v[2], v[3] and #t ~= 0 ) -- Set the light, and lightsystel if last.
-	end)
 
+-- Lerps the light towards the goal. Make "not_final" true if you're calling it rapidly.
+function StormFox2.Map.SetLightLerp(f, nLerpTime, not_final )
+	local smooth = StormFox2.Setting.GetCache("maplight_smooth",true)
+	local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
+	-- No lights to smooth and/or setting is off
+	if not smooth or nLerpTime <= 5 or not f_mapLight or num <= 1 then
+		t = {}
+		SetLightInternal( f )
+		return
+	end
+	-- Are we trying to lerp towards current value?
+	if f_mapLight and f_mapLight == f then
+		t = {}
+		return
+	end
+	t = {}
+	-- Start lerping ..
+	-- We make a time-list of said values.
+	local st = StormFox2.Time.Get()						-- Start Time
+	local st_lerpt = math.floor(nLerpTime / num)		-- Each "step"'s time
+	local st_lerp = math.abs(f_mapLight - f) / num -- Each "step"'s value
+	-- from: f_mapLight
+	-- to: f
+	for i = 0, num - 1 do
+		table.insert(t, {
+			math.ceil(st + (i * st_lerpt)) % 1440, 						-- Time when applied
+			math.floor(math.Approach(f_mapLight, f, st_lerp * (i + 1))),-- The light value
+			i ~= num - 1 or not_final									-- Isn't last
+		})
+	end
+	--print("From:",f_mapLight, "TO:", f, "step:",st_lerp, "nums:",num)
+	--PrintTable(t)
+	--StormFox2.Map.SetLight( math.Approach(f_mapLight, f, n), true )
+end
+timer.Create("StormFox2.lightupdate", 1, 0, function()
+	if #t <= 0 then return end
+	local n = t[1]
+	local time = StormFox2.Time.Get()
+	if n[1] > time or math.abs(time - n[1]) > 720 then return end -- Wait.
+	-- Trigger 
+	local v = table.remove(t, 1)
+	SetLightInternal( v[2], v[3] ) -- Set the light, and lightsystel if last.
+	--print("SetLight",  v[2], v[3])
+end)
+if SERVER then
 	-- Control light
 	hook.Add("StormFox2.weather.postchange", "StormFox2.weather.setlight", function( sName ,nPercentage, nDelta )
 		local night, day
@@ -527,8 +544,8 @@ if SERVER then
 		local minlight,maxlight = StormFox2.Setting.GetCache("maplight_min",0),StormFox2.Setting.GetCache("maplight_max",80) 	-- Settings
 		local smooth = StormFox2.Setting.GetCache("maplight_smooth",game.SinglePlayer())
 		-- Calc maplight
+		local final = true
 		local stamp, mapLight = StormFox2.Sky.GetLastStamp()
-		local b_i = false
 		if stamp >= SF_SKY_NAUTICAL then
 			mapLight = night
 		elseif stamp <= SF_SKY_DAY then
@@ -536,9 +553,9 @@ if SERVER then
 		else
 			local delta = math.abs( SF_SKY_DAY - SF_SKY_NAUTICAL )
 			local f = StormFox2.Sky.GetLastStamp() / delta
-			if smooth and false then
+			if smooth then
 				mapLight = Lerp(f, day, night)
-				b_i = true
+				final = false
 			elseif f <= 0.5 then
 				mapLight = day
 			else
@@ -548,7 +565,7 @@ if SERVER then
 		last_f_raw = mapLight
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
-		StormFox2.Map.SetLightLerp(newLight, nDelta or 0, b_i )
+		StormFox2.Map.SetLightLerp(newLight, nDelta or 0, final )
 	end)
 
 else -- Fake darkness. Since some maps are bright
@@ -564,6 +581,7 @@ else -- Fake darkness. Since some maps are bright
 			night,day = c:Get("mapNightLight",0), c:Get("mapDayLight",80)					-- Maplight
 		end
 		-- Calc maplight
+		local final = true
 		local stamp, mapLight = StormFox2.Sky.GetLastStamp()
 		if stamp >= SF_SKY_NAUTICAL then
 			mapLight = night
@@ -572,8 +590,9 @@ else -- Fake darkness. Since some maps are bright
 		else
 			local delta = math.abs( SF_SKY_DAY - SF_SKY_NAUTICAL )
 			local f = StormFox2.Sky.GetLastStamp() / delta
-			if smooth and false then
+			if smooth then
 				mapLight = Lerp(f, day, night)
+				final = false
 			elseif f <= 0.5 then
 				mapLight = day
 			else
@@ -582,7 +601,8 @@ else -- Fake darkness. Since some maps are bright
 		end
 		last_f_raw = mapLight
 		-- Apply settings
-		StormFox2.Map.SetLight( minlight + mapLight * (maxlight - minlight) / 100 )
+		local newLight = minlight + mapLight * (maxlight - minlight) / 100
+		StormFox2.Map.SetLightLerp(newLight, nDelta or 0, final )
 	end)
 	
 	local function exp(n)
@@ -662,7 +682,6 @@ end
 
 --[[
 	TODO:
-	1) Check launch w light options.
-	3) Add option to limit the angle of the shadows.
-	4) Shadow color to match skies?
+	1) Add option to limit the angle of the shadows.
+	2) Shadow color to match skies?
 ]]

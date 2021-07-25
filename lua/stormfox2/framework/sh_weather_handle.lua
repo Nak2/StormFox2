@@ -48,6 +48,11 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 	hook.Run("StormFox2.weather.prechange", sName ,nPercentage )
 	if nDelta and nDelta <= 0 then
 		nDelta = nil
+	elseif nDelta then
+		local sp = StormFox2.Time.GetSpeed()
+		if sp > 0 then
+			nDelta = nDelta / sp
+		end
 	end
 	if CurrentWeather and CurrentWeather.OnChange then
 		CurrentWeather:OnChange( sName, nPercentage, nDelta )
@@ -177,7 +182,7 @@ if SERVER then
 			net.WriteUInt( math.max(0, StormFox2.Data.GetLerpEnd( "w_Percentage" )), 32)
 			net.WriteFloat(nPercentage)
 			net.WriteString(sName)
-			net.WriteFloat(nDelta)
+			net.WriteFloat(CurTime() + nDelta)
 		net.Broadcast()
 		ApplyWeather(sName, nPercentage, nDelta)
 		if sName == "Clear" then
@@ -273,7 +278,7 @@ else
 		local nPercentage = net.ReadFloat()
 		local sName = net.ReadString()
 		if flag then
-			local nDelta = net.ReadFloat()
+			local nDelta = net.ReadFloat() - CurTime()
 			-- Calculate the time since server set this
 			if not hasLocalWeather then
 				SetW(sName, nPercentage, nDelta)

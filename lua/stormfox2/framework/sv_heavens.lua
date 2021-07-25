@@ -229,7 +229,7 @@ StormFox2.Setting.AddSV("overwrite_2dskybox","",nil, "Effects")
 		---------------------------------------------------------------------------]]
 		if lastStamp == stamp then return end -- Don't call it twice.
 		lastStamp = stamp
-		hook.Run("StormFox2.Sky.StampChange", stamp, 3 / SunDelta )
+		hook.Run("StormFox2.Sky.StampChange", stamp, 6 / SunDelta )
 	end)
 -- It takes the moon 27 days to orbit eath .. and about 12.5 hours avage on the sky each night
 -- 29.5 days for a full cyckle
