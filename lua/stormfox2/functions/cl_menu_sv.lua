@@ -357,7 +357,7 @@ local tabs = {
 			end
 		-- If click then music
 			local t = {"oNXzMBA9VU4","-U3sP-KbrGk"}
-			local n = 1
+			local n,n2 = 1, true
 			function xpp:DoClick()
 				if xpp._sn then
 					xpp._sn:Remove()
@@ -366,7 +366,12 @@ local tabs = {
 				else
 					n = (n + 1)%2
 					xpp._sn = vgui.Create("DHTML", xp)
-					xpp._sn:SetHTML([[<iframe width="560" height="315" src="https://www.youtube.com/embed/]] .. t[n+1] .. [[?autoplay=1" frameborder="0"></iframe>]])
+					local r = ""
+					if n == 1 and n2 then
+						r = "&start=136"
+						n2 = not n2
+					end
+					xpp._sn:SetHTML([[<iframe width="560" height="315" src="https://www.youtube.com/embed/]] .. t[n+1] .. [[?autoplay=1]] .. r .. [[" frameborder="0"></iframe>]])
 					xpp._sn:SetPos(0,19)
 					xpp:SetImage('icon16/control_stop_blue.png')
 				end
