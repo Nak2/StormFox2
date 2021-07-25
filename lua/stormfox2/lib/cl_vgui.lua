@@ -1856,6 +1856,7 @@ do
 	
 		-- Add search bar
 		local sp = vgui.Create("DPanel", p_left)
+		p_left.sp = sp
 		local search_tab = {}
 		sp:Dock(TOP)
 		sp:SetTall(40)
@@ -2085,7 +2086,8 @@ do
 		end
 		-- Add space at bottom
 		for sBName, pnl in pairs(p_right.sub) do
-			pnl:AddTitle("")
+			
+			pnl.bottom = pnl:AddTitle("")
 		end
 	end
 	function PANEL:SetCookie( sCookie )
