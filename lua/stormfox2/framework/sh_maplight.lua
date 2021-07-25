@@ -562,7 +562,7 @@ if SERVER then
 				mapLight = night
 			end
 		end
-		last_f_raw = mapLight
+		f_mapLightRaw = mapLight
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
 		StormFox2.Map.SetLightLerp(newLight, nDelta or 0, final )
@@ -599,7 +599,7 @@ else -- Fake darkness. Since some maps are bright
 				mapLight = night
 			end
 		end
-		last_f_raw = mapLight
+		f_mapLightRaw = mapLight
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
 		StormFox2.Map.SetLightLerp(newLight, nDelta or 0, final )
