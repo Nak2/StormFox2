@@ -14,18 +14,78 @@ end
 function SWEP:PrimaryAttack()
 	local tool = self:GetTool()
 	if not tool or not tool.LeftClick then return end
-	tool.LeftClick(self, self:GetOwner():GetEyeTrace())
+	tool.LeftClick(tool, self:GetOwner():GetEyeTrace())
 end
 
 function SWEP:SecondaryAttack()
 	local tool = self:GetTool()
 	if not tool or not tool.RightClick then return end
-	tool.RightClick(self, self:GetOwner():GetEyeTrace())
+	tool.RightClick(tool, self:GetOwner():GetEyeTrace())
 end
 
+function SWEP:Holster()
+	self:RemoveGhost()
+	return true
+end
+
+function SWEP:OnRemove()
+	self:RemoveGhost()
+	return true
+end
+
+local oldTool = -1
 function SWEP:Think()
-
+	local tool_id = self:GetToolID()
+	if tool_id ~= oldTool then
+		self:RemoveGhost()
+		oldTool = tool_id
+		self:SetTool(tool_id)
+	end
 end
+
+local ghostHalo
+function SWEP:SetGhost(mdl, pos, ang)
+	-- Remove ghost if nil mdl
+	if not mdl then
+		if self._ghost and IsValid(self._ghost) then
+			self._ghost:Remove()
+			self._ghost = nil
+		end
+		return
+	end
+	-- Make ghost or set mdl
+	if not self._ghost or not IsValid(self._ghost) then
+		self._ghost = ClientsideModel(mdl, RENDERMODE_TRANSCOLOR )
+		ghostHalo = nil
+	elseif self._ghost:GetModel() ~= mdl then
+		self._ghost:SetModel(mdl)
+	end
+	-- Move ghost
+	if pos then
+		self._ghost:SetPos(pos)
+	end
+	if ang then
+		self._ghost:SetAngles(ang)
+	end
+	return self._ghost
+end
+
+function SWEP:SetGhostHalo(col)
+	ghostHalo = col
+end
+
+function SWEP:RemoveGhost()
+	self:SetGhost()
+end
+
+hook.Add("PreDrawHalos", "StormFox2.GhostHalo", function()
+	local wep = LocalPlayer():GetActiveWeapon()
+	if not wep or not IsValid(wep) then return end
+	if wep:GetClass() ~= "sf2_tool" then return end
+	if not IsValid(wep._ghost) then return end
+	if not ghostHalo then return end
+	halo.Add( {wep._ghost}, ghostHalo, 5, 5, 2 )
+end)
 
 SWEP.WepSelectIcon = surface.GetTextureID( "vgui/gmod_camera" )
 
@@ -79,7 +139,7 @@ do
 						draw.DrawText(tool.PrintName or "Unknown", "sf_tool_large", TEX_SIZE / 2, 10, color_white, TEXT_ALIGN_CENTER)
 					end
 					if tool.ScreenRender then
-						tool.ScreenRender( TEX_SIZE, TEX_SIZE )
+						tool:ScreenRender( TEX_SIZE, TEX_SIZE )
 					end
 				end
 		--		surface.SetMaterial(sMat)
@@ -99,6 +159,7 @@ do
 end
 
 local mTool = Material("stormfox2/weapons/sf_tool")
+
 function SWEP:PreDrawViewModel()
 	if self:_GetScreenUN() > 0 then
 		self:_SetScreenUN( math.max(0, self:_GetScreenUN() - FrameTime() * 0.6) )
@@ -106,9 +167,18 @@ function SWEP:PreDrawViewModel()
 	self:RenderToolScreen()
 	render.MaterialOverrideByIndex(1,matScreen)
 	render.MaterialOverrideByIndex(2,mTool)
+
 end
 function SWEP:PostDrawViewModel()
 	render.MaterialOverrideByIndex()
+	local tool = self:GetTool()
+	if not tool then return end
+	-- Render
+	if tool.Render then
+		cam.Start3D()
+			tool:Render()
+		cam.End3D()
+	end
 end
 
 -- CL swep rendering
@@ -125,7 +195,7 @@ function SWEP:DrawWorldModel()
 		self:_SetScreenUN( 0 )
 	elseif self:_GetScreenUN() < 0.4 then
 		self:_SetScreenUN( math.min(0.4, self:_GetScreenUN() + FrameTime() * 0.2) )
-	end
+	end	
 	self:RenderToolScreen()
 	render.MaterialOverrideByIndex(1,matScreen)
 	render.MaterialOverrideByIndex(2,mTool)

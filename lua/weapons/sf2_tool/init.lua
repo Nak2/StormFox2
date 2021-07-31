@@ -21,7 +21,7 @@ function SWEP:SwitchTool()
 	if n > #self.Tool then
 		n = 1
 	end
-	self:SetToolID( n )
+	self:SetTool( n )
 end
 
 function SWEP:HasAccessToSettings( onSuccess, ... )
@@ -67,6 +67,12 @@ function SWEP:SecondaryAttack()
 	if tool.RightClick(self, Owner:GetEyeTrace()) then
 		self:DoShootEffect(Owner:GetEyeTrace(),IsFirstTimePredicted())
 	end
+end
+
+function SWEP:Holster()
+	if not IsFirstTimePredicted() then return end
+	if ( game.SinglePlayer() ) then self:CallOnClient( "Holster" ) end
+	return true
 end
 
 function SWEP:Reload()

@@ -19,13 +19,47 @@ SWEP.SlotPos   = 5
 util.PrecacheModel( SWEP.ViewModel )
 util.PrecacheModel( SWEP.WorldModel )
 
+-- Tool meta
+local t_meta = {}
+-- Proxy allows to push entity functions within TOOL to SWEP. Its a hack, but I'm lazy.
+	local proxy_key,proxy_self
+	local function proxy(...)
+		local self = proxy_self
+		local func = self[proxy_key]
+		local a = {...}
+		-- In case first argument is "self", weplace it with SWEP
+		if #a > 0 then
+			if type(a[1]) == "table" and a[1].MetaName and a[1].MetaName == "sftool" then
+				a[1] = self
+			end
+		end	
+		func(unpack(a))
+		proxy_key = nil
+		proxy_self = nil
+	end
+	t_meta.__index = function(self, key)
+		if key == "_swep" then return end
+		if IsValid(self._swep) and self._swep[key] then
+			proxy_key = key
+			proxy_self = self._swep
+			return proxy
+		end
+	end
+	function t_meta:GetSWEP()
+		return self._swep
+	end
+
 -- Load tools
 SWEP.Tool = {}
+
 for _,fil in ipairs(file.Find("weapons/sf2_tool/settings/*.lua","LUA")) do
 	if SERVER then
 		AddCSLuaFile("weapons/sf2_tool/settings/" .. fil)
 	end
-	table.insert(SWEP.Tool, include("weapons/sf2_tool/settings/" .. fil))
+	local tool = (include("weapons/sf2_tool/settings/" .. fil))
+	tool.MetaName = "sftool"
+	setmetatable(tool, t_meta)
+	table.insert(SWEP.Tool, tool)
 end
 
 SWEP.Primary.ClipSize = -1
@@ -45,6 +79,30 @@ function SWEP:SetupDataTables()
 	self:NetworkVar( "Int", 0, "ToolID" )
 end
 
+function SWEP:SetTool(num)
+	self._toolobj = nil
+	if not IsValid(self:GetOwner()) then return end
+	if SERVER then
+		self:SetToolID( num )
+	end
+	if num == 0 then return end -- Screen
+	self._toolobj = table.Copy(self.Tool[num])
+	self._toolobj._swep = self
+	setmetatable(self._toolobj, t_meta)
+	return self._toolobj
+end
+
+function SWEP:GetTool()
+	if not IsValid(self:GetOwner()) then return end -- No owner.
+	if self._toolobj then
+		return self._toolobj
+	end
+	local n = self:GetToolID()
+	if n == 0 then return end
+	self:SetTool(self:GetToolID())
+	return self._toolobj
+end
+
 function SWEP:DoShootEffect( tr, bFirstTimePredicted )
 	self:SendWeaponAnim( ACT_VM_PRIMARYATTACK ) -- View model animation
 	local Owner = self:GetOwner()
@@ -59,6 +117,9 @@ function SWEP:DoShootEffect( tr, bFirstTimePredicted )
 	traceEffect:SetNormal( tr.HitNormal )
 	util.Effect( "ToolTracer", traceEffect )
 	util.Effect( "StunstickImpact", traceEffect )
+	local tool = self:GetTool()
+	if not tool or not tool.ShootSound then return end
+	Owner:EmitSound(tool.ShootSound)
 end
 
 if SERVER then
@@ -81,13 +142,6 @@ else
 			net.WriteTable({...})
 		net.SendToServer()
 	end
-end
-
-function SWEP:GetTool()
-	if not IsValid(self:GetOwner()) then return end -- No owner.
-	local n = self:GetToolID()
-	if n == 0 then return end -- Screen
-	return self.Tool[n]
 end
 
 function SWEP:Initialize()
