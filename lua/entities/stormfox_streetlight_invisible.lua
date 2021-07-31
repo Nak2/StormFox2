@@ -76,31 +76,31 @@ if CLIENT then
 	local Max_ShadowLight 	= 2
 	local Max_Fake			= 40
 
-	local plights = {
+	_STORMFOX2_PTLIGHT = _STORMFOX2_PTLIGHT or {
 		ents = {},
 		used = 0
 	}
 	-- Handles and returns a project texture.
 	-- Returns the projected texture and ID
 	local function RequestLight()
-		plights.used = plights.used + 1
-		if plights.used > Max_SpotLight then return end -- Max 4
-		local pfent = plights.ents[plights.used]
+		_STORMFOX2_PTLIGHT.used = _STORMFOX2_PTLIGHT.used + 1
+		if _STORMFOX2_PTLIGHT.used > Max_SpotLight then return end -- Max 4
+		local pfent = _STORMFOX2_PTLIGHT.ents[_STORMFOX2_PTLIGHT.used]
 		if IsValid(pfent) then
-			return pfent, plights.used
+			return pfent, _STORMFOX2_PTLIGHT.used
 		end
-		plights.ents[plights.used] = ProjectedTexture()
-		pfent = plights.ents[plights.used]
+		_STORMFOX2_PTLIGHT.ents[_STORMFOX2_PTLIGHT.used] = ProjectedTexture()
+		pfent = _STORMFOX2_PTLIGHT.ents[_STORMFOX2_PTLIGHT.used]
 		if not IsValid(fent) then return end
 		pfent:SetTexture( "effects/flashlight001" )
 		pfent:SetBrightness(2)
-		pfent:SetEnableShadows( plights.used < Max_ShadowLight )
-		return pfent, plights.used
+		pfent:SetEnableShadows( _STORMFOX2_PTLIGHT.used < Max_ShadowLight )
+		return pfent, _STORMFOX2_PTLIGHT.used
 	end
 	local cost = {}
 	local row = 0
 	hook.Add("PostDrawTranslucentRenderables", "StormFox2.Streetlights", function(a, b, c)
-		if a or b or c or not (m_render or plights.ents[1]) then return end
+		if a or b or c or not (m_render or _STORMFOX2_PTLIGHT.ents[1]) then return end
 		-- Check the light-range
 		local b_on = StormFox2.Map.GetLight() < 20
 		if row < 6 and b_on then -- On
@@ -108,7 +108,7 @@ if CLIENT then
 		elseif row > 0 and not b_on then
 			row = math.max(row - FrameTime() * 0.95, 0)
 		end
-		if row <= 0 and not plights.ents[1] then return end -- No lights are on. No need to calculate things
+		if row <= 0 and not _STORMFOX2_PTLIGHT.ents[1] then return end -- No lights are on. No need to calculate things
 		local view =  StormFox2.util.GetCalcView()
 		local rp = view.pos + view.ang:Forward() * 250
 		-- Sort the lights. So we get the closest first
@@ -116,7 +116,7 @@ if CLIENT then
 		local nID = math.Round(row, 0)
 		for k, v in ipairs(ents.FindByClass("stormfox_streetlight_invisible")) do
 			if v:EntIndex() % 6 >= row then continue end 
-			table.insert(t, {v,v:GetPos():DistToSqr(rp) - (v._tDis2 or 0)})
+			table.insert(t, {v,math.max(0, v:GetPos():DistToSqr(rp) - (v._tDis2 or 0))})
 		end
 		table.sort(t, sorter)
 		-- Setup cost calculation
@@ -125,19 +125,19 @@ if CLIENT then
 		cost[3] = Max_Fake
 		local vAng = view.ang
 		local vNorm = vAng:Forward()
-		plights.used = 0
+		_STORMFOX2_PTLIGHT.used = 0
 		-- Draw lights
-		local fD = (1 - (StormFox2.Fog.GetDistance() / 6000))
+		local fD = math.Clamp((1 - (StormFox2.Fog.GetDistance() / 6000)),0, 1)
 		for _, tab in ipairs(t) do
 			local n = 1 - (tab[2] / RENDER_DISTANCE)
 			if n <= 0 then continue end
 			tab[1]:DrawLight(n * (0.85 + 0.45 * fD),view.pos,vAng,vNorm)
 		end
 		for i = 4, 1, -1 do
-			if not IsValid(plights.ents[i]) then continue end
-			if plights.used < i then
-				plights.ents[i]:Remove()
-				plights.ents[i] = nil
+			if not IsValid(_STORMFOX2_PTLIGHT.ents[i]) then continue end
+			if _STORMFOX2_PTLIGHT.used < i then
+				_STORMFOX2_PTLIGHT.ents[i]:Remove()
+				_STORMFOX2_PTLIGHT.ents[i] = nil
 			else
 				break
 			end
@@ -156,7 +156,7 @@ if CLIENT then
 	local m_lamp = Material("stormfox2/effects/light_beam")
 	local col = Color(255,255,255,155)
 	function ENT:TraceDown()
-		if self._tPos then return self._tPos, self._tDis end
+		if self._tPos then return self._tPos, self._tDis, self._norm end
 		local norm = -self:GetAngles():Up()
 		local tr = util.TraceLine({
 			start = self:GetPos() + norm * 100,
@@ -167,7 +167,8 @@ if CLIENT then
 		self._tPos = tr.HitPos or self:GetPos()
 		self._tDis = self._tPos:Distance(self:GetPos())
 		self._tDis2 = self._tDis^2
-		return self._tPos, self._tDis
+		self._norm = norm
+		return self._tPos, self._tDis, norm
 	end
 
 	local m_spot = Material('stormfox2/effects/spotlight')
@@ -193,11 +194,11 @@ if CLIENT then
 			if self._lastB == bright and (self._lastID or -1) == id then return end
 			self._lastB = bright
 			pEnt:SetBrightness(bright)
-			local pos, dis = self:TraceDown()
+			local pos, dis, norm = self:TraceDown()
 			local up = self:GetAngles():Up()
 			local aDown = -up:Angle()
-			pEnt:SetPos(self:GetPos() + up * -20)
-			pEnt:SetAngles(aDown)
+			pEnt:SetPos(self:GetPos() + norm * 20)
+			pEnt:SetAngles(norm:Angle())
 			pEnt:SetFarZ( dis * 1.2 ) 
 			pEnt:SetTexture( "effects/flashlight001" )
 			pEnt:Update()
