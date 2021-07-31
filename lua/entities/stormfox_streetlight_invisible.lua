@@ -40,8 +40,17 @@ hook.Add("CanPlayerUnfreeze", "StormFox2.StreetLight.DisallowUnfreeze", function
 	if ent and ent:GetClass() == "stormfox_streetlight_invisible" then return false end
 end)
 
+local INVALID 	= 0
+local POINTLIGHT= 1
+local SPOTLIGHT = 2
+local FAKESPOT	= 3
+local options = {
+	["2D Sprite"] = POINTLIGHT,
+	["2D Beam"] = FAKESPOT,
+	["ProjectedTexture"] = SPOTLIGHT
+}
 function ENT:SetupDataTables()
-	self:NetworkVar( "Int", 0, "LightType" )
+	self:NetworkVar( "Int", 0, "LightType", { KeyName = "LightType",Edit = { type = "Combo", values = options } })
 end
 
 if CLIENT then
@@ -66,11 +75,6 @@ if CLIENT then
 	local Max_SpotLight 	= 4
 	local Max_ShadowLight 	= 2
 	local Max_Fake			= 40
-
-	local INVALID 	= 0
-	local POINTLIGHT= 1
-	local SPOTLIGHT = 2
-	local FAKESPOT	= 3
 
 	local plights = {
 		ents = {},
