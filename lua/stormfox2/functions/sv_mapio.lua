@@ -72,10 +72,9 @@ local function Search(name, tab)
 	end
 	return false
 end
-
+local t = {"env_projectedtexture", "light_dynamic", "light", "light_spot"}
 hook.Add("StormFox2.InitPostEntity", "StormFox2.lightioinit", function()
 	-- Locate lights on the map
-	local t = {"env_projectedtexture", "light_dynamic", "light", "light_spot"}
 	for i,ent in ipairs( ents.GetAll() ) do
 		local c = ent:GetClass()
 		if not table.HasValue(t, c) then continue end
