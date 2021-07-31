@@ -20,12 +20,25 @@ local RENDER_DISTANCE = 3500 ^ 2
 function ENT:Initialize()
 	if SERVER then
 		self:SetModel( "models/hunter/blocks/cube025x025x025.mdl" )
-		self:PhysicsInit( SOLID_VPHYSICS )      -- Make us work with physics,
-		self:SetMoveType( MOVETYPE_NONE )   -- after all, gmod is a physics
-		self:SetSolid( SOLID_VPHYSICS )         -- Toolbox
-		self:DrawShadow(false)
+		self:PhysicsInit( SOLID_VPHYSICS )
+		self:SetMoveType( MOVETYPE_NONE )
+		self:SetSolid( SOLID_VPHYSICS )
+		
+		self:AddFlags( FL_WORLDBRUSH )
+		self:AddEFlags(EFL_NO_PHYSCANNON_INTERACTION)
+		self:SetKeyValue("gmod_allowphysgun", 0)
+		self:AddEFlags( EFL_NO_DAMAGE_FORCES )
+		self:SetCollisionGroup(COLLISION_GROUP_WORLD)
 	end
+	self:DrawShadow(false)
 end
+
+hook.Add( "PhysgunPickup", "StormFox2.StreetLight.DisallowPickup", function( ply, ent )
+	if ent and ent:GetClass() == "stormfox_streetlight_invisible" then return false end
+end )
+hook.Add("CanPlayerUnfreeze", "StormFox2.StreetLight.DisallowUnfreeze", function( ply, ent )
+	if ent and ent:GetClass() == "stormfox_streetlight_invisible" then return false end
+end)
 
 function ENT:SetupDataTables()
 	self:NetworkVar( "Int", 0, "LightType" )
@@ -59,7 +72,7 @@ if CLIENT then
 	local SPOTLIGHT = 2
 	local FAKESPOT	= 3
 
-	plights = plights or {
+	local plights = {
 		ents = {},
 		used = 0
 	}
@@ -237,4 +250,31 @@ if CLIENT then
 			self:DrawSpot(dist, fake)
 		end
 	end
+else -- Save
+	local file_location = "stormfox2/streetlights/" .. game.GetMap() .. ".json"
+	hook.Add( "ShutDown", "StormFox2.Streetlights.Save", function()
+		local tab = {}
+		for k, ent in ipairs(ents.FindByClass("stormfox_streetlight_invisible")) do
+			table.insert(tab, {
+				ent:GetLightType(),
+				ent:GetPos(),
+				ent:GetAngles(),
+			})
+		end
+		local out = util.TableToJSON( tab )
+		StormFox2.FileWrite(file_location, out)
+	end)
+	hook.Add( "InitPostEntity", "tormFox2.Streetlights.Load", function()
+		local fil = file.Read(file_location, "DATA" )
+		if not fil then return end
+		local tab = util.JSONToTable( fil )
+		if ( !tab ) then return end
+		for k,v in ipairs(tab) do
+			local ent = ents.Create("stormfox_streetlight_invisible")
+			ent:SetLightType(v[1])	
+			ent:SetPos(v[2])
+			ent:SetAngles(v[3])
+			ent:Spawn()	
+		end
+	end )
 end
