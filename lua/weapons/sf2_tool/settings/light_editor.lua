@@ -22,6 +22,27 @@ local t_models = {}
 	t_models['models/props/de_inferno/light_streetlight.mdl'] 	= {Vector(0,0,150),		Angle(0,0,0),	POINTLIGHT}
 	t_models['models/props/cs_office/light_inset.mdl'] 			= {Vector(0,0,-3),		Angle(0,0,0),	POINTLIGHT}
 
+	t_models['models/props_badlands/siloroom_light2.mdl'] 		= {Vector(0,0,-18),		Angle(0,0,0),	POINTLIGHT}		
+	t_models['models/props_badlands/siloroom_light2_small.mdl'] = {Vector(0,0,-14),		Angle(0,0,0),	POINTLIGHT}	
+	t_models['models/props_c17/light_cagelight01_off.mdl']		= {Vector(4,0,-8),		Angle(0,0,0),	POINTLIGHT}	
+	t_models['models/props_c17/light_cagelight02_off.mdl']		= {Vector(4,0,-8),		Angle(0,0,0),	POINTLIGHT}	
+	t_models['models/props_c17/light_cagelight02_on.mdl']		= {Vector(4,0,-8),		Angle(0,0,0),	POINTLIGHT}	
+	t_models['models/props_c17/light_decklight01_off.mdl']		= {Vector(0,0,0),		Angle(90,180,0),SPOTLIGHT}	
+	t_models['models/props_c17/light_decklight01_on.mdl']		= {Vector(0,0,0),		Angle(90,180,0),SPOTLIGHT}	
+	t_models['models/props_c17/light_domelight01_off.mdl']		= {Vector(0,0,-8),		Angle(0,0,0),	POINTLIGHT}	
+	t_models['models/props_c17/light_floodlight02_off.mdl']		= {Vector(0,-15,78),	Angle(0,275,68),FAKESPOT,Vector(0,15,78), Angle(0,265,68)}
+	t_models['models/props_c17/light_industrialbell01_on.mdl']	= {Vector(0,0,-8),		Angle(0,0,0),	FAKESPOT}	
+	t_models['models/props_combine/combine_light001a.mdl']		= {Vector(-6,0,34), 	Angle(90,0,0),	SPOTLIGHT}
+	t_models['models/props_combine/combine_light001b.mdl']		= {Vector(-12,0,47), 	Angle(90,0,0),	SPOTLIGHT}
+	t_models['models/props_combine/combine_light002a.mdl']		= {Vector(-9,0,37), 	Angle(90,0,0),	SPOTLIGHT}
+	t_models['models/props_equipment/light_floodlight.mdl']		= {Vector(0,-12,80),	Angle(0,275,68),FAKESPOT,Vector(0,12,80), Angle(0,265,68)}
+	t_models['models/props_gameplay/security_fence_light01.mdl']= {Vector(0,-68,-11), 	Angle(0,0,0),	SPOTLIGHT}
+	t_models['models/props_wasteland/lights_industrialcluster01a.mdl']= {Vector(-20,0,374),Angle(52,0,0),SPOTLIGHT, Vector(20,0,374), Angle(-52,0,0)}
+	t_models['models/props_mvm/construction_light02.mdl']		= {Vector(-30,-25,144),	Angle(0,275,68),FAKESPOT,Vector(-30,25,144), Angle(0,265,68)}
+	t_models['models/props_hydro/construction_light.mdl']		= {Vector(0,-3,-19), 	Angle(0,0,45),	SPOTLIGHT}
+	t_models['models/props/cs_assault/streetlight.mdl']			= {Vector(50,0,45), 	Angle(0,0,0),	SPOTLIGHT}
+
+
 local function IsLightNear(pos)
 	local t = {}
 	for k,v in ipairs(ents.FindInSphere(pos, 30)) do
@@ -49,11 +70,11 @@ local function StaticLightPos(v)
 	local tab = t_models[v.PropType]
 	if not tab then return end -- Unknown
 	local pos, ang = StaticLocal(v, tab[1] * v.Scale, tab[2])
-	local spos
+	local spos, ang2
 	if tab[4] then
-		spos, ang = StaticLocal(v, tab[4] * v.Scale, tab[2])
+		spos, ang2 = StaticLocal(v, tab[4] * v.Scale, tab[5] or tab[2])
 	end
-	return pos, ang, spos
+	return pos, ang, spos, ang2
 end
 
 local sorter = function(a,b)
@@ -67,6 +88,7 @@ local function FindStaticProps(pos, dis)
 		if t_models[v.PropType] then
 			table.insert(t, {v.PropType, v.Origin, v.Angles, v.Scale, v.Origin:DistToSqr(pos)})
 		else
+			--print(v.PropType)
 		end
 	end
 	if #t < 1 then return end
@@ -94,10 +116,10 @@ if SERVER then
 		local all_static = StormFox2.Map.StaticProps()
 		for k, v in pairs(all_static) do
 			if v.PropType ~= mdl then continue end
-			local pos, ang, pos2 = StaticLightPos(v)
+			local pos, ang, pos2, ang2 = StaticLightPos(v)
 			SpawnMissingLight(pos, ang, t_models[mdl][3])
 			if pos2 then
-				SpawnMissingLight(pos2, ang, t_models[mdl][3])
+				SpawnMissingLight(pos2, ang2, t_models[mdl][3])
 			end
 		end
 	end
@@ -137,9 +159,9 @@ if SERVER then
 		end
 	end
 else
-	function TOOL:SpawnLight(n_type, pos, ang, double)
+	function TOOL:SpawnLight(n_type, pos, ang, double, ang2)
 		self.SendFunc( SPAWN, n_type, pos, ang )
-		if double then self.SendFunc( SPAWN, n_type, double, ang ) end
+		if double then self.SendFunc( SPAWN, n_type, double, ang2 or ang ) end
 	end
 	function TOOL:DeleteLight( ent )
 		if not IsValid(ent) then return end
@@ -167,7 +189,7 @@ else
 			render.SetMaterial(m_lamp)
 			render.DrawBeam(selectedData.Pos, selectedData.Pos - selectedData.Ang:Up() * 300, 300, 0, 1, color_white)
 			if selectedData.Pos2 then
-				render.DrawBeam(selectedData.Pos2, selectedData.Pos2 - selectedData.Ang:Up() * 300, 300, 0, 1, color_white)
+				render.DrawBeam(selectedData.Pos2, selectedData.Pos2 - selectedData.Ang2:Up() * 300, 300, 0, 1, color_white)
 			end
 		elseif selectedData.Type == POINTLIGHT then
 			render.SetMaterial(m_spot)
@@ -205,6 +227,7 @@ else
 					selectedData.Pos = ghost:LocalToWorld(tab[1] * scale)
 					selectedData.Ang =  ghost:LocalToWorldAngles(tab[2])
 					selectedData.Pos2 = tab[4] and ghost:LocalToWorld(tab[4] * scale)
+					selectedData.Ang2 = tab[5] and ghost:LocalToWorldAngles(tab[5]) or selectedData.Ang
 					selectedData.Type = tab[3]
 					local b = IsLightNear(selectedData.Pos)
 					local c = selectedData.Pos2 and IsLightNear(selectedData.Pos2)
@@ -266,7 +289,7 @@ else
 				return
 			end
 		elseif not selectedData.deleteEnt and selectedData.Pos then -- Only spawn light, if we aren't looking at an entity atm
-			self:SpawnLight(selectedData.Type, selectedData.Pos, selectedData.Ang, selectedData.Pos2)
+			self:SpawnLight(selectedData.Type, selectedData.Pos, selectedData.Ang, selectedData.Pos2, selectedData.Ang2)
 		--	selectedData.Pos = nil
 		end
 	end
