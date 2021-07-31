@@ -51,14 +51,18 @@ if SERVER then
 	-- Damanges an area
 	local function StrikeDamagePos( vPos )
 		local b_InWater = bit.band( util.PointContents( vPos ), CONTENTS_WATER ) == CONTENTS_WATER
+		local t = {}
 		for _,ent in ipairs(ents.FindInSphere(vPos,750)) do
 			-- It hit in water, and you're nearby
 			if b_InWater and ent:WaterLevel() > 0 then
 				StrikeDamageEnt(ent)
+				table.insert(t, ent)
 			elseif ent:GetPos():Distance( vPos ) < 150 then
 				StrikeDamageEnt(ent)
+				table.insert(t, ent)
 			end
 		end
+		hook.Run("StormFox2.Thunder.OnStrike", vPos, t)
 	end
 	-- Make STrike
 	local Sway = 100
