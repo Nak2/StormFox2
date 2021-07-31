@@ -6,7 +6,7 @@ TOOL.NoPrintName = false
 TOOL.ShootSound = Sound("weapons/irifle/irifle_fire2.wav")
 
 local mat = Material("stormfox2/weapons/sf_tool_mat")
-function FindTexture( str )
+local function FindTexture( str )
 	str = str:lower()
 	if str == "**displacement**" then return end
 	if str == "**studio**" then return end
@@ -37,7 +37,6 @@ if SERVER then
 		self:EmitSound(snd_accept)
 	end
 else
-
 	local function OpenOption( self, sTexture )
 		local p = vgui.Create("DFrame")
 			p:SetTitle(language.GetPhrase("spawnmenu.menu.edit"))
@@ -91,7 +90,7 @@ else
 	end
 end
 
-function TOOL.ScreenRender( w, h )
+function TOOL:ScreenRender( w, h )
 	local tr = LocalPlayer():GetEyeTrace()
 	local tex = FindTexture(tr.HitTexture)
 	if tex then
@@ -126,6 +125,4 @@ function TOOL.ScreenRender( w, h )
 	
 	surface.DrawOutlinedRect(w * 0.1,h * 0.2,w * 0.8,h * 0.7)
 end
-
-
 return TOOL
