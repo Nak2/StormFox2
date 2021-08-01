@@ -125,7 +125,7 @@ end
 if SERVER then
 	util.AddNetworkString("sf2_tool")
 	local function dofunction(ply, wep, tool, data)
-		StormFox2.Msg(Color(155,155,255),ply:GetName(),Color(255,255,255),"used",tool.RealName or "SF2 Tool.")
+		StormFox2.Msg(ply:GetName(),color_white," used",tool.RealName or "SF2 Tool.")
 		tool.SendFunc( wep, unpack( data ) )
 		wep:DoShootEffect(ply:GetEyeTrace(),IsFirstTimePredicted())
 	end
