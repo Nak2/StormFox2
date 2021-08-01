@@ -264,8 +264,8 @@ local lastSetting = {}
 			SF_SUN_PROTEX:SetNearZ(0)
 			SF_SUN_PROTEX:SetFarZ( 12000 )
 			SF_SUN_PROTEX:SetQuadraticAttenuation( 0 )
-			SF_SUN_PROTEX:SetShadowDepthBias(0.0000005)
-			SF_SUN_PROTEX:SetShadowFilter(0.08) -- Meed tp blur the shadows a bit.
+			SF_SUN_PROTEX:SetShadowDepthBias(0.000005)
+			SF_SUN_PROTEX:SetShadowFilter(0.05) -- Meed tp blur the shadows a bit.
 			SF_SUN_PROTEX:SetShadowSlopeScaleDepthBias(2)
 			SF_SUN_PROTEX:SetEnableShadows(true)
 			hook.Add("Think", "StormFox2.MapLightDynamic", tick)
