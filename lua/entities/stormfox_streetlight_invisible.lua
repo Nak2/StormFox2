@@ -31,6 +31,8 @@ function ENT:Initialize()
 		self:SetCollisionGroup(COLLISION_GROUP_WORLD)
 	end
 	self:DrawShadow(false)
+	self:SetLightColor(Vector(1,1,1))
+	self:SetLightBrightness(1)
 end
 
 hook.Add( "PhysgunPickup", "StormFox2.StreetLight.DisallowPickup", function( ply, ent )
@@ -50,7 +52,18 @@ local options = {
 	["ProjectedTexture"] = SPOTLIGHT
 }
 function ENT:SetupDataTables()
-	self:NetworkVar( "Int", 0, "LightType", { KeyName = "LightType",Edit = { type = "Combo", values = options } })
+	self:NetworkVar( "Int", 	0, "LightType", { 		KeyName = "LightType",	Edit = { type = "Combo", values = options } })
+	self:NetworkVar( "Vector",	0, "LightColor",{ 		KeyName = "LightColor",	Edit = { type = "VectorColor" } } )
+	self:NetworkVar( "Float",	0, "LightBrightness",{ 	KeyName = "Brightness",	Edit = { type = "Float", min = 0, max = 10 } } )
+end
+
+function ENT:CanProperty(_, str)
+	if str == "skin" then return false
+	elseif str == "drive" then return false
+	elseif str == "collision" then return false
+	elseif str == "persist" then return true
+	end
+	return true
 end
 
 if CLIENT then
@@ -87,6 +100,7 @@ if CLIENT then
 		if _STORMFOX2_PTLIGHT.used > Max_SpotLight then return end -- Max 4
 		local pfent = _STORMFOX2_PTLIGHT.ents[_STORMFOX2_PTLIGHT.used]
 		if IsValid(pfent) then
+			pfent:SetEnableShadows( _STORMFOX2_PTLIGHT.used < Max_ShadowLight )
 			return pfent, _STORMFOX2_PTLIGHT.used
 		end
 		_STORMFOX2_PTLIGHT.ents[_STORMFOX2_PTLIGHT.used] = ProjectedTexture()
@@ -173,9 +187,14 @@ if CLIENT then
 
 	local m_spot = Material('stormfox2/effects/spotlight')
 	local m_flash = Material('stormfox2/effects/flashlight_a')
-	function ENT:DrawPoint(dist, add, size)
-		size = size or 80
+	function ENT:DrawPoint(dist, add, size, ignoreB)
+		size = (size or 80) * (not ignoreB and self:GetLightBrightness() or 1)
+		local v = self:GetLightColor()
 		col.a = 255 * dist
+		col.r = v.x * 255
+		col.g = v.y * 255
+		col.b = v.z * 255
+		
 		render.SetMaterial(m_spot)
 		if add then
 			render.DrawSprite(self:GetPos() + add, size, size, col)
@@ -190,9 +209,13 @@ if CLIENT then
 		if not fake then
 			local pEnt, id = RequestLight()
 			if not IsValid(pEnt) then return end
-			local bright = math.Round(dist * 2, 1)
-			if self._lastB == bright and (self._lastID or -1) == id then return end
+			local v = self:GetLightColor()
+			local bright = math.Round(dist * 2, 1) * self:GetLightBrightness()
+			if self._lastB == bright and (self._lastID or -1) == id and self._r == v.x and self._g == v.y and self._b == v.z then return end
 			self._lastB = bright
+			self._r = v.x 
+			self._g = v.y 
+			self._b = v.z
 			pEnt:SetBrightness(bright)
 			local pos, dis, norm = self:TraceDown()
 			local up = self:GetAngles():Up()
@@ -201,12 +224,14 @@ if CLIENT then
 			pEnt:SetAngles(norm:Angle())
 			pEnt:SetFarZ( dis * 1.2 ) 
 			pEnt:SetTexture( "effects/flashlight001" )
+			pEnt:SetColor(Color(v.x * 255, v.y * 255, v.z * 255))
 			pEnt:Update()
 			self._lastID = id
 		else
 			local pos, dis = self:TraceDown()
 			local up = self:GetAngles():Up()
-			c_flash.a = 15 * dist
+			c_flash.a = math.min(255, 15 * dist * self:GetLightBrightness())
+			local v = self:GetLightColor()
 			if c_flash.a <= 0 then return end
 			local s = (dis - 20) * 1.6
 			render.SetMaterial(m_flash)
@@ -221,7 +246,12 @@ if CLIENT then
 		local dot = up:Dot(vNorm2)
 		local abs_dot = math.abs(dot)
 		if abs_dot < 0.9 then
-			col.a = dist * 255 * math.Clamp(0.9 - abs_dot,0,1)
+			local a = dist * 255 * math.Clamp(0.9 - abs_dot,0,1)
+			col.a = math.Clamp(a * self:GetLightBrightness(), 0, 255)
+			local v = self:GetLightColor()
+			col.r = v.x * 255
+			col.g = v.y * 255
+			col.b = v.z * 255
 			render.SetMaterial(m_lamp)
 			--local m = (pos - self:GetPos()):GetNormalized()
 			--render.StartBeam( 3 )
@@ -232,7 +262,7 @@ if CLIENT then
 			render.DrawBeam(self:GetPos(),pos , dis * 0.8, 0, 0.99, col)
 		end
 		if dot < 0 then
-			self:DrawPoint(dist * -dot, vNorm2 * 15 - up * 2, dis / 3)
+			self:DrawPoint(dist * -dot, vNorm2 * 15 - up * 2, dis / 3, true)
 		end
 	end
 	function ENT:DrawLight(dist,vPos,vAng,vNorm)
@@ -264,6 +294,8 @@ else -- Save
 				ent:GetLightType(),
 				ent:GetPos(),
 				ent:GetAngles(),
+				ent:GetLightColor(),
+				ent:GetLightBrightness()
 			})
 		end
 		local out = util.TableToJSON( tab )
@@ -280,6 +312,9 @@ else -- Save
 			ent:SetPos(v[2])
 			ent:SetAngles(v[3])
 			ent:Spawn()	
+			if not v[4] then v[4] = Vector(1,1,1) end
+			ent:SetLightColor(Vector(v[4].x, v[4].y, v[4].z))
+			ent:SetLightBrightness(v[5] or 1)
 		end
 	end )
 end
