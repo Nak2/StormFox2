@@ -2086,7 +2086,6 @@ do
 		end
 		-- Add space at bottom
 		for sBName, pnl in pairs(p_right.sub) do
-			
 			pnl.bottom = pnl:AddTitle("")
 		end
 	end
