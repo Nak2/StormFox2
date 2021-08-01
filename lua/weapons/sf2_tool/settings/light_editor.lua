@@ -1,4 +1,5 @@
 local TOOL = {}
+TOOL.RealName  = "Light Editor"
 TOOL.PrintName = "#sf_tool.light_editor"
 TOOL.ToolTip = "#sf_tool.light_editor.desc"
 TOOL.NoPrintName = false
@@ -294,6 +295,8 @@ else
 		end
 	end
 	function TOOL:RightClick(tr)
+		if self:IsContextMenuOpen() then return end -- Don't delete the entity if you rightclick it for properties.
+		-- Delete all lights for the given model (If not valid, then do nothing)
 		local select_all =  input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL )
 		if select_all then
 			if selectedData.Model then
@@ -301,10 +304,11 @@ else
 			end
 			return
 		end
+		-- Delete the entity we look at
 		if selectedData.deleteEnt then
 			self:DeleteLight(selectedData.deleteEnt)
 			self:DeleteLight(selectedData.deleteEnt2)
-		else
+		else -- If no entity, then swap the lighttype.
 			default_lighttype = default_lighttype + 1
 			if default_lighttype > 3 then default_lighttype = 1 end
 		end

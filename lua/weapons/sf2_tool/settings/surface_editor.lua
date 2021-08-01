@@ -1,5 +1,6 @@
 
 local TOOL = {}
+TOOL.RealName  = "Surface Editor"
 TOOL.PrintName = "#sf_tool.surface_editor"
 TOOL.ToolTip = "#sf_tool.surface_editor.desc"
 TOOL.NoPrintName = false

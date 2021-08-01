@@ -78,6 +78,21 @@ function SWEP:RemoveGhost()
 	self:SetGhost()
 end
 
+-- Context menu
+do
+	local v = false
+	hook.Add("OnContextMenuOpen", "StormFox2.Tool.COpen", function()
+		v = true
+	end)
+	hook.Add("OnContextMenuClose", "StormFox2.Tool.CClose", function()
+		v = false
+	end)
+
+	function SWEP:IsContextMenuOpen()
+		return v
+	end
+end
+
 hook.Add("PreDrawHalos", "StormFox2.GhostHalo", function()
 	local wep = LocalPlayer():GetActiveWeapon()
 	if not wep or not IsValid(wep) then return end
