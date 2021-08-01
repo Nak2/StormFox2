@@ -22,7 +22,7 @@ StormFox2.Time = StormFox2.Time or {}
 	StormFox2.Setting.AddSV("start_time",-1,nil,"Time")
 	StormFox2.Setting.SetType("start_time","Time_toggle")
 
-	StormFox2.Setting.AddSV("time_speed",60,nil,"Time",0) -- Temp removed 3600 time restriction
+	StormFox2.Setting.AddSV("time_speed",60,nil,"Time",0, 1088000) -- Temp removed 3600 time restriction
 	StormFox2.Setting.SetType( "time_speed", "Float")
 
 	StormFox2.Setting.AddSV("real_time",false,nil,"Time")
