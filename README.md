@@ -11,7 +11,7 @@ You can also install from this repository via this link [here.][2]
 
 This project is licensed under the [GNU General Public License v3.0][3]
 
-## Still in beta
+## Bugs and errors
 Please report any bugs via the issue tracker.
 
 Changelogs can be found on the Steam Workshop Page [here.][4]
