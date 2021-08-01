@@ -124,6 +124,7 @@ function ENT:Initialize()
 	self:SetMaterial( "stormfox2/effects/ice_water" )
 	self:SetPos(Vector(0,0,0))
 	self:PhysicsInitMultiConvex(STORMFOX_WATERMESHCOLLISON)
+	self:GetPhysicsObjectNum(0):SetMaterial('ice')
 	local phys = self:GetPhysicsObject()
 	self:SetMoveType( MOVETYPE_NONE )
 	if ( IsValid( phys ) ) then
