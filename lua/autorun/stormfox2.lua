@@ -18,7 +18,7 @@ StormFox2 = {}
 StormFox2.WorkShopVersion = false--game.IsDedicated()
 StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443"
 --<Var> StormFox's Version number
-	StormFox2.Version = 2.25
+	StormFox2.Version = 2.26
 	StormFox2.Loaded = false
 
 --[[<Shared>-----------------------------------------------------------------
@@ -27,7 +27,30 @@ StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=
 	local env_color = SERVER and Color(138,223,255) or Color(230,217,111)
 	function StormFox2.Msg(...)
 		local a = {...}
-		MsgC(Color(155,155,255),"[StormFox2] ",env_color,unpack( a ),"\n")
+		table.insert(a, 1, env_color)
+		local t = {}
+		local last = 0
+		for _, v in ipairs(a) do
+			local cur = 0
+			if type(v) == "string" then
+				cur = 1
+			elseif type(v) == "table" then
+				cur = 2
+			end
+			if last == cur then
+				if cur == 1 then
+					t[#t] = t[#t] .. " " .. v
+					break
+				elseif cur == 2 then
+					t[#t] = v
+					break
+				end
+			end
+			last = cur
+			table.insert(t,v)
+		end
+		MsgC(Color(155,155,255),"[StormFox2] ",unpack( t ))
+		MsgN()
 	end
 --[[<Shared>-----------------------------------------------------------------
 	Prints a warning in the console. Can also cause an error.
