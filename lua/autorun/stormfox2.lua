@@ -5,10 +5,19 @@ if StormFox and StormFox.Version < 2 or file.Exists("autorun/stormfox_autorun.lu
 end
 -- While sv_skyname is fixed, I still want this to be first.
 if SERVER then
-	local con = GetConVar("sf_use_2dskybox")
-	if not con or con:GetInt() ~= 1 then
-		RunConsoleCommand("sv_skyname", "painted")
+	local function checkVar(conname, default)
+		local con = GetConVar(conname)
+		if not con then return default end
+		return con:GetBool()
 	end
+	hook.Add("stormfox2.postfunction", "stormfox2.skynameinit", function()
+		local enable 	= checkVar("sf_enable", true)
+		local enablesky = checkVar('sf_enable_skybox', true)
+		local skybox2d 	= not checkVar("sf_use_2dskybox", false)
+		if enable and enablesky and skybox2d then
+			RunConsoleCommand("sv_skyname", "painted")
+		end
+	end)
 end
 
 --[[-------------------------------------------------------------------------
