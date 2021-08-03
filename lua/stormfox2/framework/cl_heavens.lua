@@ -4,6 +4,7 @@ local clamp,max,min = math.Clamp,math.max,math.min
 StormFox2.Sun = StormFox2.Sun or {}
 StormFox2.Moon = StormFox2.Moon or {}
 StormFox2.Sky = StormFox2.Sky or {}
+local sunVisible
 
 -- Pipe Dawg
 	--[[-------------------------------------------------------------------
@@ -35,7 +36,7 @@ StormFox2.Sky = StormFox2.Sky or {}
 		end
 		local tab = {["direction"] = Vector(0,0,0),["obstruction"] = 0}
 			tab.direction = StormFox2.Sun.GetAngle():Forward()
-			tab.obstruction = sunVisible * (StormFox2.Sun.GetColor().a / 255)
+			tab.obstruction = (sunVisible or 0) * (StormFox2.Sun.GetColor().a / 255)
 		return tab
 	end
 
