@@ -1,6 +1,7 @@
 -- Rain and cloud is nearly the same.
 local fog = StormFox2.Weather.Add( "Fog" )
 fog:Set("fogDistance", 150)
+fog:Set("fogIndoorDistance", 600)
 if CLIENT then
 	function fog.Think()
 		local p = StormFox2.Weather.GetPercent()
