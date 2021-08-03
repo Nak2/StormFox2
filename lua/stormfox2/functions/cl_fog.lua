@@ -114,7 +114,7 @@ local SkyFog = function(scale)
 	render.FogMode( 1 )
 	render.FogStart( getFogStart() * scale )
 	render.FogEnd( getFogEnd() * scale )
-	render.FogMaxDensity( _fD - tD )
+	render.FogMaxDensity( (_fD - tD) * 0.999 )
 	render.FogColor( f_Col.r,f_Col.g,f_Col.b )
 	return true
 end
