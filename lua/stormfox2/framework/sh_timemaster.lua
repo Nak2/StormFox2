@@ -145,25 +145,34 @@ StormFox2.Time = StormFox2.Time or {}
 	--[[-------------------------------------------------------------------------
 	Returns a number between 0 and 1400. Where 0 and 1400 is midnight.
 	---------------------------------------------------------------------------]]
-	local c
-	function StormFox2.Time.Get(bNearestSecond)
-		if bNearestSecond and c then
-			return c
-		end
-		if TIME_SPEED <= 0 then
-			if bNearestSecond then
-				if c then return c end
-				c = math.ceil(BASETIME)
-				return c
+	do
+		local _base, _whole
+		local function _get(bNearestSecond)
+			if TIME_SPEED <= 0 then
+				_base = BASETIME
+				_whole = math.ceil(BASETIME)
+				if bNearestSecond then
+					return _whole
+				end
+				return _base
 			end
-			return BASETIME
+			local n = (CurTime() - BASETIME) * TIME_SPEED
+			_base = n % 1440
+			_whole = math.ceil(_base)
+			if bNearestSecond then return _whole end
+			return _base
 		end
-		local n = (CurTime() - BASETIME) * TIME_SPEED
-		c = math.ceil(n % 1440)
-		if bNearestSecond then return c end
-		return n % 1440
+		function StormFox2.Time.Get(bNearestSecond)
+			if _base then
+				return bNearestSecond and _whole or _base
+			end
+			return _get(bNearestSecond)
+		end
+		timer.Create("StormFox2.time.cache", 0, 0, function() 
+			_base = nil 
+			_whole= nil 
+		end)
 	end
-	timer.Create("StormFox2.time.cache", 0, 0, function() c = nil end)
 	--[[-------------------------------------------------------------------------
 	Returns the given or current time in a string format.
 	---------------------------------------------------------------------------]]

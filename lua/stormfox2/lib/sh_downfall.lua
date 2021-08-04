@@ -2,7 +2,7 @@
 	downfall_meta:GetNextParticle()
 
 ---------------------------------------------------------------------------]]
-local max,min,t_insert,abs = math.max,math.min,table.insert,math.abs
+local max,min,t_insert,abs,clamp = math.max,math.min,table.insert,math.abs,math.Clamp
 
 -- Particle emitters
 if CLIENT then
@@ -276,6 +276,8 @@ do
 end
 
 if CLIENT then
+	local render_SetMaterial, render_DrawBeam, render_DrawSprite = render.SetMaterial, render.DrawBeam, render.DrawSprite
+
 	-- Creats a regular particle and returns it
 	function StormFox2.DownFall.AddParticle( sMaterial, vPos, bUse3D )
 		if bUse3D then
@@ -404,7 +406,7 @@ if CLIENT then
 		end
 		t:CalcPos()
 		self.num = self.num + 1
-		return t, (t.r_H or 200) * 2 / math.abs( cG ) -- Secondary is how long we thing it will take for the particle to die. We also want this to be steady.
+		return t, (t.r_H or 200) * 2 / abs( cG ) -- Secondary is how long we thing it will take for the particle to die. We also want this to be steady.
 	end
 	-- Returns the amount of particles spawned
 	function pt_meta:GetNumber()
@@ -460,18 +462,18 @@ if CLIENT then
 		else
 			self.cL = nil
 		end
-		render.SetMaterial(self.iMat)
+		render_SetMaterial(self.iMat)
 		if self.bBeam then
 			if self._renh then
 				if self._renh <= 0 then return end
 				local sr = 1 - self._renh
 				local sh = self:GetNorm() * self.h * 0.91
-				render.DrawBeam(pos - sh, pos - sh * sr, self.w, 0, self._renh, self.cL or self.c)
+				render_DrawBeam(pos - sh, pos - sh * sr, self.w, 0, self._renh, self.cL or self.c)
 			else
-				render.DrawBeam(pos - self:GetNorm() * self.h, pos, self.w, 0, 1, self.cL or self.c)
+				render_DrawBeam(pos - self:GetNorm() * self.h, pos, self.w, 0, 1, self.cL or self.c)
 			end
 		else
-			render.DrawSprite(pos, self.w, self.h, self.c)
+			render_DrawSprite(pos, self.w, self.h, self.c)
 		end
 	end
 	-- Checks the view
@@ -564,14 +566,15 @@ if CLIENT then
 		end
 	end
 	-- Renders all particles. t_sfp should be in render-order
+	local viewpos = Vector(0,0,0)
 	local function ParticleRender()
 		local v = StormFox2.util.GetCalcView().pos or EyePos()
-		local view = Vector(v.x,v.y,0)
-		
+		viewpos.x = v.x
+		viewpos.x = v.y
 		for _,t in ipairs(t_sfp) do
 		--	render.DrawLine(t[2]:GetPos(), t[2].endpos, color_white, true)
 			if t[2]:IsInsideView() then
-				t[2]:Render(view)
+				t[2]:Render(viewpos)
 			end
 		end
 	end
@@ -659,7 +662,7 @@ if CLIENT then
 	local sm_timer = 0.05
 	-- Returns the how many particles it should create pr 0.1 second
 	function StormFox2.DownFall.CalcTemplateTimer( tTemplate, nAimAmount )
-		local speed = math.abs( tTemplate.g * GLGravity() ) * 600
+		local speed = abs( tTemplate.g * GLGravity() ) * 600
 		--	print("FT",1 / FrameTime())
 		--	print("nAimAmount: " .. nAimAmount)
 		--	print("nAimAmountPrT: " .. nAimAmount * FrameTime())
@@ -681,7 +684,7 @@ if CLIENT then
 		if am >= nAimAmount then return emp_t end
 		if tTemplate.s_timer and tTemplate.s_timer > CurTime() then return emp_t end
 		tTemplate.s_timer = CurTime() + sm_timer
-		local b = math.min(1, am / nAimAmount) -- Full amount
+		local b = min(1, am / nAimAmount) -- Full amount
 		local n,at = StormFox2.DownFall.CalcTemplateTimer( tTemplate, nAimAmount  )-- How many times this need to run pr tick
 		local t = {}
 		local _d = math.Rand(nMaxDistance, nMinDistance)
@@ -718,7 +721,7 @@ if CLIENT then
 			local dis = part:GetPos():Distance(pos)
 			if dis * 1.2 > iRadius then continue end -- Adding just a bit more
 			if part.OnExplosion then
-				part:OnExplosion(pos, math.Clamp(1 - (dis / iRadius), 0, 1),iRadius, iMagnitude)
+				part:OnExplosion(pos, clamp(1 - (dis / iRadius), 0, 1),iRadius, iMagnitude)
 			end
 			part:_REM()
 			table.remove(t_sfp, i)
