@@ -14,7 +14,7 @@ local sunVisible
 		return sunVisible
 	end
 	-- Pixel are a bit crazy if called twice
-	hook.Add("Think","SunUpdater",function()
+	hook.Add("Think","StormFox2.Sun.PixUpdater",function()
 		if not StormFox2.Loaded then return end
 		if not _STORMFOX_SUNPIX then -- Create pixel
 			_STORMFOX_SUNPIX = util.GetPixelVisibleHandle()
@@ -28,15 +28,15 @@ local sunVisible
 	--<Ignore>
 	function util.GetSunInfo()
 		if not StormFox2.Loaded then -- In case we mess up
-			if SF_OLD_SUNINFO then
+			if SF_OLD_SUNINFO or not sunVisible then
 				return SF_OLD_SUNINFO()
 			else
 				return {}
 			end
 		end
-		local tab = {["direction"] = Vector(0,0,0),["obstruction"] = 0}
-			tab.direction = StormFox2.Sun.GetAngle():Forward()
-			tab.obstruction = (sunVisible or 0) * (StormFox2.Sun.GetColor().a / 255)
+		local tab = {
+			["direction"] = StormFox2.Sun.GetAngle():Forward(),
+			["obstruction"] = sunVisible * (StormFox2.Sun.GetColor().a / 255)}
 		return tab
 	end
 
