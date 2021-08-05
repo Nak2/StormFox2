@@ -27,8 +27,8 @@ local sunVisible
 	SF_OLD_SUNINFO = SF_OLD_SUNINFO or util.GetSunInfo() -- Just in case
 	--<Ignore>
 	function util.GetSunInfo()
-		if not StormFox2.Loaded then -- In case we mess up
-			if SF_OLD_SUNINFO or not sunVisible then
+		if not StormFox2.Loaded or not sunVisible then -- In case we mess up
+			if SF_OLD_SUNINFO then
 				return SF_OLD_SUNINFO()
 			else
 				return {}
