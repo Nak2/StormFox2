@@ -460,11 +460,13 @@ for _, conv in ipairs({"enable","maplight_auto", "maplight_lightenv", "maplight_
 end
 
 -- Allows us to use SetLight, without removing the lerp.
+local lil = true
 local function SetLightInternal(f, ignore_lightstyle)
 	if f < 0 then f = 0 elseif
 		f > 100 then f = 100 end
-	if f_mapLight == f then return end -- Ignore
+	if f_mapLight == f and lil == ignore_lightstyle then return end -- Ignore
 		f_mapLight = f
+		lil = ignore_lightstyle
 		c_last_char = convertToAZ(f)
 	if not init then return end
 	-- 2D Skybox
@@ -491,7 +493,6 @@ end
 --[[ Lerp light
 	People complain if we use lightStyle too much (Even with settings), so I've removed lerp from maps without light_environment.
 ]]
-
 -- Lerps the light towards the goal. Make "not_final" true if you're calling it rapidly.
 function StormFox2.Map.SetLightLerp(f, nLerpTime, not_final )
 	local smooth = StormFox2.Setting.GetCache("maplight_smooth",true)
@@ -559,7 +560,7 @@ if SERVER then
 			local delta = math.abs( SF_SKY_DAY - SF_SKY_NAUTICAL )
 			local f = StormFox2.Sky.GetLastStamp() / delta
 			if smooth then
-				mapLight = Lerp(f, day, night)
+				mapLight = Lerp((f + 0.5) / 2, day, night)
 				final = false
 			elseif f <= 0.5 then
 				mapLight = day
@@ -570,7 +571,9 @@ if SERVER then
 		f_mapLightRaw = mapLight
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
-		StormFox2.Map.SetLightLerp(newLight, nDelta or 0, final )
+		local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
+		local sec = (num * 3) / StormFox2.Time.GetSpeed()
+		StormFox2.Map.SetLightLerp(newLight, math.min(sec, nDelta or sec), final )
 	end)
 
 else -- Fake darkness. Since some maps are bright
@@ -596,7 +599,7 @@ else -- Fake darkness. Since some maps are bright
 			local delta = math.abs( SF_SKY_DAY - SF_SKY_NAUTICAL )
 			local f = StormFox2.Sky.GetLastStamp() / delta
 			if smooth then
-				mapLight = Lerp(f, day, night)
+				mapLight = Lerp((f + 0.5) / 2, day, night)
 				final = false
 			elseif f <= 0.5 then
 				mapLight = day
@@ -607,7 +610,9 @@ else -- Fake darkness. Since some maps are bright
 		f_mapLightRaw = mapLight
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
-		StormFox2.Map.SetLightLerp(newLight, nDelta or 0, final )
+		local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
+		local sec = (num * 3) / StormFox2.Time.GetSpeed()
+		StormFox2.Map.SetLightLerp(newLight, math.min(sec, nDelta or sec), final )
 	end)
 	
 	local function exp(n)
