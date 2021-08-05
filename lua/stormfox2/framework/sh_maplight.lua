@@ -498,7 +498,8 @@ function StormFox2.Map.SetLightLerp(f, nLerpTime, not_final )
 	local smooth = StormFox2.Setting.GetCache("maplight_smooth",true)
 	local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
 	-- No lights to smooth and/or setting is off
-	if not smooth or nLerpTime <= 5 or not f_mapLight or num <= 1 then
+	local _5sec = 0.08 * StormFox2.Time.GetSpeed()
+	if not smooth or nLerpTime <= _5sec or not f_mapLight or num <= 1 then
 		t = {}
 		SetLightInternal( f )
 		return
@@ -512,13 +513,13 @@ function StormFox2.Map.SetLightLerp(f, nLerpTime, not_final )
 	-- Start lerping ..
 	-- We make a time-list of said values.
 	local st = StormFox2.Time.Get()						-- Start Time
-	local st_lerpt = math.floor(nLerpTime / num)		-- Each "step"'s time
+	local st_lerpt = (nLerpTime / num)		-- Each "step"'s time
 	local st_lerp = math.abs(f_mapLight - f) / num -- Each "step"'s value
 	-- from: f_mapLight
 	-- to: f
 	for i = 0, num - 1 do
 		table.insert(t, {
-			math.ceil(st + (i * st_lerpt)) % 1440, 						-- Time when applied
+			(st + (i * st_lerpt)) % 1440, 						-- Time when applied
 			math.floor(math.Approach(f_mapLight, f, st_lerp * (i + 1))),-- The light value
 			i ~= num - 1 or not_final									-- Isn't last
 		})
@@ -572,7 +573,7 @@ if SERVER then
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
 		local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
-		local sec = (num * 3) / StormFox2.Time.GetSpeed()
+		local sec = (num * 3) * StormFox2.Time.GetSpeed()
 		StormFox2.Map.SetLightLerp(newLight, math.min(sec, nDelta or sec), final )
 	end)
 
@@ -611,7 +612,7 @@ else -- Fake darkness. Since some maps are bright
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
 		local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
-		local sec = (num * 3) / StormFox2.Time.GetSpeed()
+		local sec = (num * 3) * StormFox2.Time.GetSpeed()
 		StormFox2.Map.SetLightLerp(newLight, math.min(sec, nDelta or sec), final )
 	end)
 	
