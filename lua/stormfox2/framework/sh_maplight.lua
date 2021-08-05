@@ -127,12 +127,12 @@ local lastSetting = {}
 		end
 		local nextSet
 		mapLights[e_lightstyle]["change"] = function(lightLvl, full) -- We make this a 30sec timer, since lightstyle is so slow and laggy.
-			if not full then return end -- Ignore 'smoothness'
+			if not full then return end -- Ignore 'smoothness' light
 			if timer.Exists("sf_lightstyle") then
 				nextSet = convertToBZ(lightLvl)
 			else
 				SetLightStyle(convertToBZ(lightLvl))
-				timer.Create("sf_lightstyle", 30, 1, function()
+				timer.Create("sf_lightstyle", 5, 1, function()
 					if not nextSet then return end
 					SetLightStyle(nextSet)
 					nextSet = nil
@@ -360,30 +360,31 @@ local function SettingMapLight( lightlvl )
 	end
 end
 -- Called when lightlvl has changed
-local function ChangedMapLight( lightlvl, full)
+local function ChangedMapLight( lightlvl, isSmoothLight)
+	local LastUpdate = not isSmoothLight
 	if StormFox2.Setting.GetCache("maplight_auto", true) then
 		if StormFox2.Ent.light_environments then
-			ChangeMapLight(e_light_env, lightlvl, full)
+			ChangeMapLight(e_light_env, lightlvl, LastUpdate)
 			return true
 		else
-			ChangeMapLight(e_colormod, lightlvl, full)
+			ChangeMapLight(e_colormod, lightlvl, LastUpdate)
 		end
 	else
 		local a = false
 		if StormFox2.Setting.GetCache("maplight_dynamic", false) then
-			ChangeMapLight(e_lightdynamic, lightlvl, full)
+			ChangeMapLight(e_lightdynamic, lightlvl, LastUpdate)
 			a = true
 		end
 		if StormFox2.Setting.GetCache("maplight_lightstyle", false) then
-			ChangeMapLight(e_lightstyle, lightlvl, full)
+			ChangeMapLight(e_lightstyle, lightlvl, LastUpdate)
 			a = true
 		end
 		if StormFox2.Setting.GetCache("maplight_lightenv", false) then
-			ChangeMapLight(e_light_env, lightlvl, full)
+			ChangeMapLight(e_light_env, lightlvl, LastUpdate)
 			a = true
 		end
 		if StormFox2.Setting.GetCache("maplight_colormod", false) then
-			ChangeMapLight(e_colormod, lightlvl, full)
+			ChangeMapLight(e_colormod, lightlvl, LastUpdate)
 		end
 		return a
 	end
@@ -461,12 +462,12 @@ end
 
 -- Allows us to use SetLight, without removing the lerp.
 local lil = true
-local function SetLightInternal(f, ignore_lightstyle)
+local function SetLightInternal(f, isSmoothLight)
 	if f < 0 then f = 0 elseif
 		f > 100 then f = 100 end
-	if f_mapLight == f and lil == ignore_lightstyle then return end -- Ignore
+	if f_mapLight == f and lil == isSmoothLight then return end -- Ignore
 		f_mapLight = f
-		lil = ignore_lightstyle
+		lil = isSmoothLight
 		c_last_char = convertToAZ(f)
 	if not init then return end
 	-- 2D Skybox
@@ -478,7 +479,7 @@ local function SetLightInternal(f, ignore_lightstyle)
 			end
 		end
 	-- SetMapLight
-		ChangedMapLight(f, not ignore_lightstyle)
+		ChangedMapLight(f, isSmoothLight)
 		if CLIENT then SetDetailLight(f) end
 	-- Tell scripts to update
 		hook.Run("StormFox2.lightsystem.new", f)
@@ -494,7 +495,7 @@ end
 	People complain if we use lightStyle too much (Even with settings), so I've removed lerp from maps without light_environment.
 ]]
 -- Lerps the light towards the goal. Make "not_final" true if you're calling it rapidly.
-function StormFox2.Map.SetLightLerp(f, nLerpTime, not_final )
+function StormFox2.Map.SetLightLerp(f, nLerpTime, isSmooth )
 	local smooth = StormFox2.Setting.GetCache("maplight_smooth",true)
 	local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
 	-- No lights to smooth and/or setting is off
@@ -521,11 +522,10 @@ function StormFox2.Map.SetLightLerp(f, nLerpTime, not_final )
 		table.insert(t, {
 			(st + (i * st_lerpt)) % 1440, 						-- Time when applied
 			math.floor(math.Approach(f_mapLight, f, st_lerp * (i + 1))),-- The light value
-			i ~= num - 1 or not_final									-- Isn't last
+			i ~= num - 1 or isSmooth									-- Isn't last
 		})
 	end
 	--print("From:",f_mapLight, "TO:", f, "step:",st_lerp, "nums:",num)
-	--PrintTable(t)
 	--StormFox2.Map.SetLight( math.Approach(f_mapLight, f, n), true )
 end
 timer.Create("StormFox2.lightupdate", 1, 0, function()
@@ -551,7 +551,7 @@ if SERVER then
 		local minlight,maxlight = StormFox2.Setting.GetCache("maplight_min",0),StormFox2.Setting.GetCache("maplight_max",80) 	-- Settings
 		local smooth = StormFox2.Setting.GetCache("maplight_smooth",game.SinglePlayer())
 		-- Calc maplight
-		local final = true
+		local isSmooth = false
 		local stamp, mapLight = StormFox2.Sky.GetLastStamp()
 		if stamp >= SF_SKY_NAUTICAL then
 			mapLight = night
@@ -562,7 +562,7 @@ if SERVER then
 			local f = StormFox2.Sky.GetLastStamp() / delta
 			if smooth then
 				mapLight = Lerp((f + 0.5) / 2, day, night)
-				final = false
+				isSmooth = true
 			elseif f <= 0.5 then
 				mapLight = day
 			else
@@ -572,9 +572,8 @@ if SERVER then
 		f_mapLightRaw = mapLight
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
-		local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
-		local sec = (num * 3) * StormFox2.Time.GetSpeed()
-		StormFox2.Map.SetLightLerp(newLight, math.min(sec, nDelta or sec), final )
+		local sec = 15 * StormFox2.Time.GetSpeed()
+		StormFox2.Map.SetLightLerp(newLight, math.min(sec, nDelta or sec), isSmooth )
 	end)
 
 else -- Fake darkness. Since some maps are bright
@@ -590,7 +589,7 @@ else -- Fake darkness. Since some maps are bright
 			night,day = c:Get("mapNightLight",0), c:Get("mapDayLight",80)					-- Maplight
 		end
 		-- Calc maplight
-		local final = true
+		local isSmooth = false
 		local stamp, mapLight = StormFox2.Sky.GetLastStamp()
 		if stamp >= SF_SKY_NAUTICAL then
 			mapLight = night
@@ -601,7 +600,7 @@ else -- Fake darkness. Since some maps are bright
 			local f = StormFox2.Sky.GetLastStamp() / delta
 			if smooth then
 				mapLight = Lerp((f + 0.5) / 2, day, night)
-				final = false
+				isSmooth = true
 			elseif f <= 0.5 then
 				mapLight = day
 			else
@@ -611,9 +610,8 @@ else -- Fake darkness. Since some maps are bright
 		f_mapLightRaw = mapLight
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
-		local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
-		local sec = (num * 3) * StormFox2.Time.GetSpeed()
-		StormFox2.Map.SetLightLerp(newLight, math.min(sec, nDelta or sec), final )
+		local sec = 15 * StormFox2.Time.GetSpeed()
+		StormFox2.Map.SetLightLerp(newLight, math.min(sec, nDelta or sec), isSmooth )
 	end)
 	
 	local function exp(n)
