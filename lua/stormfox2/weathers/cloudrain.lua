@@ -158,13 +158,14 @@ do
 	--rain:SetSunStamp("fogEnd",2000,SF_SKY_BLUE_HOUR)
 	--rain:Set("fogDensity",1)
 	--rain:Set("fogStart",0)
-	--rain:Set("fogDistance", 2000)
-	rain:SetSunStamp("fogDistance",3000,	SF_SKY_DAY)
-	rain:SetSunStamp("fogDistance",3500,	SF_SKY_SUNSET)
-	rain:SetSunStamp("fogDistance",4000,	SF_SKY_NIGHT)
-	rain:SetSunStamp("fogDistance",3500,	SF_SKY_SUNRISE)
+	rain:Set("fogDistance", 2000)
+	rain:Set("fogIndoorDistance", 3000)
+--	rain:SetSunStamp("fogDistance",2000,	SF_SKY_DAY)
+--	rain:SetSunStamp("fogDistance",2500,	SF_SKY_SUNSET)
+--	rain:SetSunStamp("fogDistance",2000,	SF_SKY_NIGHT)
+--	rain:SetSunStamp("fogDistance",2500,	SF_SKY_SUNRISE)
 
-	rain:Set("fogIndoorDistance", 4000)
+
 	--rain:Set("fogColor", Color(135, 166, 175))
 end
 -- Window render
