@@ -96,7 +96,7 @@ end
 		end
 		local perc = bFinal and StormFox2.Weather.GetFinishPercent() or StormFox2.Weather.GetPercent()
 		local a = cW:Get('fogDistance')
-		if not a or perc == 0 then return getDefaultDistance() end
+		if not a or perc <= 0 then return getDefaultDistance() end
 		if perc >= 1 then return a end
 		return fogCalc(getDefaultDistance(), a, perc)
 	end
@@ -151,6 +151,11 @@ if SERVER then
 			StormFox2.Fog.SetZ(_fE * 2 + 100)
 		end
 	end)
+	timer.Create("StormFox2.Fog.SVUpdate", 2, 0, function()
+		local cWD = StormFox2.Weather.GetCurrent().Dynamic or {}
+		if cWD.fogDistance then return end
+		_fE = getAimDistance(true)
+	end)
 	-- Returns the fog-color.
 	function StormFox2.Fog.GetColor()
 		return StormFox2.Mixer.Get("fogColor", StormFox2.Mixer.Get("bottomColor",color_white) ) or color_white
@@ -201,7 +206,7 @@ end
 		if _fD <= 0 then return end
 		if not scale then scale = 1 end
 		if not fogEnabledCheck() then return end
-		f_Col = StormFox2.Mixer.Get("fogColor", StormFox2.Mixer.Get("bottomColor",color_white) )
+		f_Col = StormFox2.Mixer.Get("fogColor", StormFox2.Mixer.Get("bottomColor") )
 		-- Apply fog
 		local tD = StormFox2.Thunder.GetLight() / 2055
 		render.FogMode( 1 )
