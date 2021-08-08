@@ -50,6 +50,8 @@ local function GetVar( wWeather, sKey )
 	return v
 end
 
+StormFox2.Mixer.Blender = Blender
+
 function StormFox2.Mixer.Get( sKey, zDefault, cP )
 	if cache[sKey] ~= nil then return cache[sKey] end
 	if not StormFox2.Weather then return zDefault end
