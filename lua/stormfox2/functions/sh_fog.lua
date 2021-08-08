@@ -58,12 +58,13 @@ end
 			map_farZ = math.max(map_farZ, data.farz)
 			-- Calculate fog-brightness. We can use this to scale the map-distance up to match the fog.
 				local col_brightness = 1
+				local density = (data.fogmaxdensity or 1)
 				if data.fogcolor then
 					local fcol = string.Explode(" ", data.fogcolor)
 					col_brightness = (0.2126 * fcol[1] + 0.7152 * fcol[2] + 0.0722 * fcol[3]) / 255
 				end
-				col_brightness = col_brightness * (data.fogmaxdensity or 1)
-			map_distance = math.max((data.fogend or 6000) / col_brightness, map_distance)
+				density = density * col_brightness
+			map_distance = math.max(((data.fogend or 6000) / density), map_distance)
 		end
 		-- It is important we don't overshoot farZ
 		if map_farZ > 0 then
