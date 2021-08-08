@@ -365,7 +365,7 @@ local function Init(self)
 		end
 		function thunder:Paint(w,h)
 			local cW = StormFox2.Weather.GetCurrent()
-			local hasThunder = cW.thunder and true or false
+			local hasThunder = cW.Name ~= "Clear"
 			self._DEPRESSED = StormFox2.Thunder.IsThundering()
 			self._DISABLED = not hasThunder and not self._DEPRESSED
 			DrawButton(self,w,h)
@@ -379,7 +379,7 @@ local function Init(self)
 		end
 		function thunder:DoClick()
 			local cW = StormFox2.Weather.GetCurrent()
-			local hasThunder = cW.thunder and true or false
+			local hasThunder = cW.Name ~= "Clear"
 			local isth = StormFox2.Thunder.IsThundering()
 			if not isth and not hasThunder then
 				return
