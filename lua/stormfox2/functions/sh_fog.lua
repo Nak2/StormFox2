@@ -11,7 +11,7 @@ StormFox2.Setting.AddSV("allow_fog_change",engine.ActiveGamemode() == "sandbox",
 StormFox2.Fog = {}
 -- Local functions
 	local function fogEnabledCheck()
-		if not StormFox2.Setting.SFEnabled() then return end
+		if not StormFox2.Setting.SFEnabled() then return false end
 		if not StormFox2.Setting.GetCache("enable_svfog", true) then return false end
 		if not StormFox2.Setting.GetCache("allow_fog_change", false) then return true end
 		return StormFox2.Setting.GetCache("enable_fog", true)
