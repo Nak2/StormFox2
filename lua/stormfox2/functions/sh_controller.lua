@@ -346,9 +346,6 @@ local function Init(self)
 		function p:OnVal(x)
 			SetWeather(SF_SETWEATHER, {StormFox2.Weather.GetCurrent().Name, x / 100})
 		end
-		function p:Think2()
-			self._aimval = StormFox2.Weather.GetFinishPercent() * 100
-		end
 		function m_weather:PerformLayout(w, h)
 			w_button:SetWide(w * 0.7)
 			w_button:SetPos(w * 0.15,5)
