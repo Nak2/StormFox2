@@ -1,10 +1,12 @@
+
+local clamp,max,min,random = math.Clamp,math.max,math.min,math.random
 -- Rain and cloud is nearly the same.
 local cloudy = StormFox2.Weather.Add( "Cloud" )
 local rain = StormFox2.Weather.Add( "Rain", "Cloud" )
 	-- cloudy.spawnable = true Cloud is not spawnable. Since it is a "default" when it is cloudy
 	rain.spawnable = true
 	rain.thunder = function(percent) -- The amount of strikes pr minute
-		return percent > 0.5 and math.random(10) > 5 and percent * 3 or 0
+		return percent > 0.5 and random(10) > 5 and percent * 3 or 0
 	end
 -- Cloud icon
 do
@@ -130,13 +132,13 @@ end
 do
 	-- Day -- 
 		cloudy:SetSunStamp("topColor",Color(3.0, 2.9, 3.5),		SF_SKY_DAY)
-		cloudy:SetSunStamp("bottomColor",Color(20, 25, 25),	SF_SKY_DAY)
+	--	cloudy:SetSunStamp("bottomColor",Color(20, 25, 25),		SF_SKY_DAY)
 		cloudy:SetSunStamp("duskColor",Color(3, 2.9, 3.5),		SF_SKY_DAY)
 		cloudy:SetSunStamp("duskScale",1,						SF_SKY_DAY)
 		cloudy:SetSunStamp("HDRScale",0.33,						SF_SKY_DAY)
 	-- Night
 		cloudy:SetSunStamp("topColor",Color(0.4, 0.2, 0.54),	SF_SKY_NIGHT)
-		cloudy:SetSunStamp("bottomColor",Color(2.25, 2.25,2.25),SF_SKY_NIGHT)
+	--	cloudy:SetSunStamp("bottomColor",Color(2.25, 2.25,2.25),SF_SKY_NIGHT)
 		--cloudy:SetSunStamp("bottomColor",Color(14.3* 0.5,14.8* 0.5,15.2* 0.5),	SF_SKY_NIGHT)
 		cloudy:SetSunStamp("duskColor",Color(.4, .2, .54),		SF_SKY_NIGHT)
 		cloudy:SetSunStamp("duskScale",0,						SF_SKY_NIGHT)
@@ -152,21 +154,39 @@ do
 	cloudy:Set("enableThunder",  true)
 
 	rain:Set("mapDayLight",0)
+	local cDay, cNight = Color(20, 25, 25), Color(2.25, 2.25,2.25)
+	local n = 7
+	local cDayM, cNightM = Color(40 * 2, 50 * 2, 50 * 2), Color(2.25 * n, 2.25 * n,2.25 * n)
+	rain:Set("bottomColor",function(nStamp)
+		local temp = StormFox2.Temperature.Get()
+		if temp >= 0 then
+			return nStamp == SF_SKY_DAY and cDay or cNight
+		elseif temp <= -4 then
+			return nStamp == SF_SKY_DAY and cDayM or cNightM
+		end
+		local cRain = nStamp == SF_SKY_DAY and cDay or cNight
+		local cSnow = nStamp == SF_SKY_DAY and cDayM or cNightM
+		return StormFox2.Mixer.Blender(temp / 4 + 1, cSnow, cRain)
+	end)
 	--rain:SetSunStamp("fogEnd",800,SF_SKY_DAY)
 	--rain:SetSunStamp("fogEnd",800,SF_SKY_SUNRISE)
 	--rain:SetSunStamp("fogEnd",2000,SF_SKY_NIGHT)
 	--rain:SetSunStamp("fogEnd",2000,SF_SKY_BLUE_HOUR)
 	--rain:Set("fogDensity",1)
 	--rain:Set("fogStart",0)
-	rain:Set("fogDistance", 2000)
+	rain:Set("fogDistance", function()
+		local wF = StormFox2.Wind.GetForce()
+		local temp = clamp(StormFox2.Temperature.Get() / 4 + 1,0,1)
+		if wF <= 0 then return 2000 end
+		local multi = max(0, 26 - temp * 8)
+		return max(2000 - multi * wF,0)
+	end)
 	rain:Set("fogIndoorDistance", 3000)
 --	rain:SetSunStamp("fogDistance",2000,	SF_SKY_DAY)
 --	rain:SetSunStamp("fogDistance",2500,	SF_SKY_SUNSET)
 --	rain:SetSunStamp("fogDistance",2000,	SF_SKY_NIGHT)
 --	rain:SetSunStamp("fogDistance",2500,	SF_SKY_SUNRISE)
 
-
-	--rain:Set("fogColor", Color(135, 166, 175))
 end
 -- Window render
 local rain_t = StormFox2.Terrain.Create("rain")
@@ -184,11 +204,11 @@ do
 		surface.SetDrawColor(Color(255,255,255,255 * P))
 		surface.DrawTexturedRectUV(0,0, w, h, 0, c, s, c + s )
 		-- Create raindrop
-		if #raindrops < math.Clamp(QT * 10, 5 ,65 * P) and math.random(100) <= 90 then
-			local s = math.random(6,10)
-			local x,y = math.random(s, w - s * 2), math.random(s, h * 0.8)
-			local sp = math.random(10, 50)
-			local lif = CurTime() + math.random(3,5)
+		if #raindrops < math.Clamp(QT * 10, 5 ,65 * P) and random(100) <= 90 then
+			local s = random(6,10)
+			local x,y = random(s, w - s * 2), random(s, h * 0.8)
+			local sp = random(10, 50)
+			local lif = CurTime() + random(3,5)
 			local m = table.Random(raindrops_mat)
 			table.insert(raindrops, {x,y,s,m,sp,lif})
 		end
@@ -197,7 +217,7 @@ do
 		for i,v in ipairs(raindrops) do
 			local lif = (v[6] - CurTime()) * 10
 			local a_n = h - v[2] - v[3]
-			local a = math.min(25.5,math.min(a_n,lif)) * 10
+			local a = min(25.5,min(a_n,lif)) * 10
 			if a > 0 then
 				surface.SetMaterial(v[4])
 				surface.SetDrawColor(Color(255,255,255,a))
@@ -236,7 +256,7 @@ do
 		if StormFox2.Temperature.Get() > -2 then return false end
 		local P = 1 - StormFox2.Weather.GetPercent()
 		surface.SetMaterial(mat)
-		local lum = math.max(math.min(25 + StormFox2.Weather.GetLuminance(), 255),70)
+		local lum = max(min(25 + StormFox2.Weather.GetLuminance(), 255),70)
 		surface.SetDrawColor(Color(lum,lum,lum))
 		surface.DrawTexturedRect(0,h * 0.12 * P,w,h)
 	end
@@ -365,19 +385,20 @@ if CLIENT then
 	local multi_dis = 1200
 	local m2 = Material("particle/particle_smokegrenade1")
 	local tc = Color(150,150,150)
+	local snow_col = Color(255,255,255)
 	function rain.Think()
 		local P = StormFox2.Weather.GetPercent()
 		local L = StormFox2.Weather.GetLuminance()
 		local W = StormFox2.Wind.GetForce()
 		if StormFox2.DownFall.GetGravity() < 0 then return end -- Rain can't come from the ground.
 		local T = StormFox2.Temperature.Get() + 2
-		if T > 0 or T > math.random(-3, 0) then -- Spawn rain particles
+		if T > 0 or T > random(-3, 0) then -- Spawn rain particles
 			-- Set alpha
 			local s = 1.22 + 1.56 * P
 			StormFox2.Misc.rain_template:SetSize( s , 5.22 + 7.56 * P)
 			StormFox2.Misc.rain_template:SetColor(tc)
-			StormFox2.Misc.rain_template:SetAlpha(math.min(15 + 4 * P + L,255))
-			StormFox2.Misc.rain_template_medium:SetAlpha(math.min(15 + 4 * P + L,255)  /3)
+			StormFox2.Misc.rain_template:SetAlpha(min(15 + 4 * P + L,255))
+			StormFox2.Misc.rain_template_medium:SetAlpha(min(15 + 4 * P + L,255)  /3)
 			StormFox2.Misc.rain_template_multi:SetAlpha( L )
 			-- Spawn rain particles
 			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template, 10, 700, 10 + P * 900, 5, vNorm ) or {} ) do
@@ -386,7 +407,7 @@ if CLIENT then
 			-- Spawn distant rain
 			if P > 0.15 then
 				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, 250, 700, 10 + P * 300, 250, vNorm ) or {} ) do
-					local a = math.random(0,2)
+					local a = random(0,2)
 					if a > 0 then
 						if a > 1 then
 							v:SetMaterial( m_rain2 )
@@ -398,13 +419,13 @@ if CLIENT then
 					else
 						v:SetSize(  1.22 + 1.56 * P * math.Rand(1,3) * 10, 5.22 + 7.56 * P * 10 )
 					end
-					v:SetAlpha(math.min(15 + 4 * P + L,255) * 0.2)
+					v:SetAlpha(min(15 + 4 * P + L,255) * 0.2)
 				end
 			end
 			if P > (0.5 - W * 0.4) and L > 5 then
-				local dis = math.random(900 - W * 100 - P * 500,multi_dis)
-				local d = math.max(dis / multi_dis, 0.5)
-				local s = math.Rand(0.5,1) * math.max(0.7,P) * 300 * d
+				local dis = random(900 - W * 100 - P * 500,multi_dis)
+				local d = max(dis / multi_dis, 0.5)
+				local s = math.Rand(0.5,1) * max(0.7,P) * 300 * d
 				--StormFox2.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * .2)
 				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_multi, dis, multi_dis * 2, (90 + P * (250 + W)) / 2, s, vNorm ) or {} ) do
 					local d = v:GetDistance()
@@ -413,48 +434,58 @@ if CLIENT then
 					else
 						v:SetSize( d * .45, d)
 					end
-					if math.random(0,1) == 1 then
+					if random(0,1) == 1 then
 						v:SetMaterial(m2)
 					end
 				end
 			end
 		else
 			-- Spawn snow particles
-			local dis = math.random(40,500)
-			local d = math.min(dis / 500, 1)
-			local s = math.Rand(3,5) * d * math.max(0.7,P)
-			StormFox2.Misc.snow_template:SetSpeed( 1 * 0.15)
-			local n = math.max(math.min(L * 3, 255), 100)
-			local sC = Color(n,n,n)
-			StormFox2.Misc.snow_template:SetColor(sC)
-			StormFox2.Misc.snow_template_multi:SetColor(sC)
-			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template, 500, dis, 400 + P * 4600, 5, vNorm ) or {} ) do
+			local force_multi = max(1, (W / 6))
+			local snow_distance = min(random(40,500), StormFox2.Fog.GetEnd())
+			local d = min(snow_distance / 500, 1)
+			local snow_size = math.Rand(3,5) * d * max(0.7,P)
+			local s = math.Rand(3,5) * d * max(0.7,P)
+			local snow_speed = 0.15 * force_multi
+		
+			StormFox2.Misc.snow_template:SetSpeed( snow_speed )
+			local n = max(min(L * 3, 255), 150)
+			snow_col.r = n
+			snow_col.g = n
+			snow_col.b = n
+			StormFox2.Misc.snow_template:SetColor(snow_col)
+			StormFox2.Misc.snow_template_multi:SetColor(snow_col)
+			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template, 500, snow_distance, 400 + P * 4600, 5, vNorm ) or {} ) do
 				v:SetSize(  s, s )
-				v:SetSpeed( math.Rand(1, 2) * 0.15)
+				v:SetSpeed( math.Rand(1, 2) * snow_speed)
+				if snow_speed > 0.15 and random(snow_speed)> 0.15 then
+					v.hitType = SF_DOWNFALL_HIT_NIL
+				end
 			end
 			-- Spawn snow distant
 			if P > 0.15 then
-				local dis = math.random(300,900)
-				local d = math.max(dis / 900, 0.5)
-				local s = math.Rand(0.5,1) * math.max(0.7,P) * 500 * d
-				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template_multi, 900, dis, 190 + P * 550, s, vNorm ) or {} ) do
-					v:SetSize(  s, s * math.random(1,1.5) )
-					v:SetSpeed( math.Rand(1, 2) * 0.50 * d)
+				local snow_distance = min(random(300,900), StormFox2.Fog.GetEnd())
+				local d = max(snow_distance / 900, 0.5)
+				local snow_size = math.Rand(0.5,1) * max(0.7,P) * 500 * d
+				local snow_speed = 0.50 * d * force_multi
+				StormFox2.Misc.snow_template:SetSpeed( mult_speed )
+				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template_multi, 900, snow_distance, 190 + P * 550, s, vNorm ) or {} ) do
+					v:SetSize(  snow_size, snow_size )
+					v:SetSpeed( math.Rand(1, 2) * snow_speed)
 					v:SetRoll( math.Rand(0, 360))
-					if math.random(0,1) == 0 then
+					if random(0,1) == 0 then
 						v:SetMaterial(m_snowmulti2)
 					end
 				end
 			end
-			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, dis * 2, multi_dis * 2 , (90 + P * (20 + W)) / 2, s, vNorm ) or {} ) do
+			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, snow_distance * 2, snow_distance , (90 + P * (20 + W)) / 2, s, vNorm ) or {} ) do
 				local d = v:GetDistance()
 				if not d or d < 500 then 
 					v:SetSize(  225, 500 )
 				else
 					v:SetSize( d * .45, d)
 				end
-
-				if math.random(0,1) >= 0 then
+				if random(0,1) >= 0 then
 					v:SetMaterial(m2)
 				end
 			end
