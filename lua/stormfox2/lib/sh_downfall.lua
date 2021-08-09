@@ -180,7 +180,7 @@ do
 		t.mins.y = -nRadius
 		t.filter = filter or GetViewEntity()
 		local tr = util_TraceHull(t)
-		if tr and (tr.AllSolid or tr.StartSolid) then
+		if tr and (tr.AllSolid or tr.StartSolid or tr.HitSky) then
 			return
 		elseif nRadius > 5 and tr.Fraction * -norm.z < 0.0005 then -- About 150 hammer-units
 		--	print("Dis: " .. 262144 * tr.Fraction * -norm.z)
@@ -210,6 +210,13 @@ do
 			} )
 			if t.HitTexture == "TOOLS/TOOLSINVISIBLE" then return end
 			if t.HitSky then
+				-- In case there is the tiniest gab, ignore this.
+				if t.StartSolid then
+					local zDis = (t.HitPos.z - vFrom.z ) * (t.Fraction - t.FractionLeftSolid)
+					if zDis < 1 then
+						return nil, t.HitPos
+					end
+				end
 				return t.HitPos
 			end
 			if not t.Hit then return nil, last end
@@ -225,7 +232,7 @@ do
 		t.mask = mask
 		local sky,_ = FindSky(vFrom, -vNorm, 7)
 		if not sky then return vFrom, -2 end -- Unable to find a skybox above this position
-		return TraceDown(sky + vNorm * (nRadius + 1), vNorm * 262144, nRadius, filter)
+		return TraceDown(sky + vNorm * (nRadius * 4), vNorm * 262144, nRadius, filter)
 	end
 
 	-- Does the same as StormFox2.DownFall.CheckDrop, but will cache
@@ -248,13 +255,14 @@ do
 	local cos,sin,rad = math.cos, math.sin, math.rad
 	-- Calculates and locates a downfall-drop infront/nearby of the client.
 	-- #1 = Hit Position, #2 hitType, #3 The offset from view, #4 hitNormal
-	function StormFox2.DownFall.CalculateDrop( nDis, nSize, nTries, vNorm, ignoreVel, nMaxDistance )
+	local vZ = Vector(0,0,0)
+	function StormFox2.DownFall.CalculateDrop( nDis, nSize, nTries, vNorm, ignoreVel, nMaxDistance, tTemplate )
 		vNorm = vNorm or StormFox2.Wind.GetNorm()
 		local view = StormFox2.util.GetCalcView()
-		local v_vel = StormFox2.util.ViewEntity():GetVelocity() or Vector(0,0,0)
-		local v_pos = view.pos or Vector(0,0,0)
+		local v_vel = StormFox2.util.ViewEntity():GetVelocity() or vZ
+		local v_pos = (view.pos and Vector(view.pos.x, view.pos.y, view.pos.z) or vZ) + Vector(vNorm.x,vNorm.y,0) * -tTemplate:GetSpeed() * -200
 		if not ignoreVel then
-			v_pos = v_pos + Vector(v_vel.x,v_vel.y,0) / 3
+			v_pos = v_pos + Vector(v_vel.x,v_vel.y,0) / 2
 		end
 		for i = 1, nTries do
 			-- Get a random angle
@@ -372,7 +380,7 @@ if CLIENT then
 		return p_meta[key] or self.data[key]
 	end
 	-- Creates a particle from the template. Can return nil if something happen
-	function pt_meta:CreateParticle( vEndPos, vNorm, hitType, hitNorm )
+	function pt_meta:CreateParticle( vEndPos, vNorm, hitType, hitNorm, maxDistance )
 		local view = StormFox2.util.GetCalcView().pos
 		local z_view = view.z
 		local t = {}
@@ -404,7 +412,12 @@ if CLIENT then
 			t.endpos = vEndPos - view
 			t.bFollow = true
 		end
-		t:CalcPos()
+		
+		-- Check if outside
+		local p = t:CalcPos()
+		if maxDistance and p:Distance(Vector(view.x, view.y, p.z)) > maxDistance then
+			return
+		end
 		self.num = self.num + 1
 		return t, (t.r_H or 200) * 2 / abs( cG ) -- Secondary is how long we thing it will take for the particle to die. We also want this to be steady.
 	end
@@ -580,8 +593,8 @@ if CLIENT then
 	end
 
 	-- Adds a particle.
-	function StormFox2.DownFall.AddTemplateSimple( tTemplate, vEndPos, hitType, hitNorm, nDistance, vNorm )
-		local part = tTemplate:CreateParticle( vEndPos, vNorm, hitType, hitNorm )
+	function StormFox2.DownFall.AddTemplateSimple( tTemplate, vEndPos, hitType, hitNorm, nDistance, vNorm, maxDistance )
+		local part = tTemplate:CreateParticle( vEndPos, vNorm, hitType, hitNorm, maxDistance )
 		if not part then return end
 		if not nDistance then
 			local p = StormFox2.util.GetCalcView().pos
@@ -612,7 +625,7 @@ if CLIENT then
 			vNorm = Vector(vNorm.x, vNorm.y, vNorm.z) + Vector(math.Rand(-tTemplate._ra, tTemplate._ra),math.Rand(-tTemplate._ra, tTemplate._ra),0)
 			vNorm:GetNormal()
 		end
-		local vEnd, nHitType, vCenter, hitNorm, bRandomAge = StormFox2.DownFall.CalculateDrop( nDistance, traceSize, 1, vNorm, tTemplate.bFollow, nMaxDistance )
+		local vEnd, nHitType, vCenter, hitNorm, bRandomAge = StormFox2.DownFall.CalculateDrop( nDistance, traceSize, 1, vNorm, tTemplate.bFollow, nMaxDistance, tTemplate )
 		-- pos,n,offset, hitNorm
 		if not tTemplate.m_cache then tTemplate.m_cache = {} end
 		if not vEnd then 
@@ -637,7 +650,7 @@ if CLIENT then
 			local l = 1 - vNorm:Dot(v_d)  --* tTemplate.w * 1.1
 			vEnd = vEnd + vNorm * -l * 500
 		end
-		local part = StormFox2.DownFall.AddTemplateSimple( tTemplate, vEnd, nHitType, hitNorm, nDistance, vNorm )
+		local part = StormFox2.DownFall.AddTemplateSimple( tTemplate, vEnd, nHitType, hitNorm, nDistance, vNorm, nMaxDistance and nMaxDistance + 50 )
 		if not part then return false end
 		if bRandomAge or true then
 			local n = part.h / (part.r_H * 2)
