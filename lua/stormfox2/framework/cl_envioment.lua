@@ -1072,6 +1072,12 @@ local function env_corotinefunction()
 		end
 	-- is inside
 		is_inwind = StormFox2.Wind.IsEntityInWind(LocalPlayer(),true)
+		if not is_inwind then
+			local veh = LocalPlayer():GetVehicle()
+			if IsValid(veh) then
+				is_inwind =  StormFox2.Wind.IsEntityInWind(veh,true)
+			end
+		end
 		is_inside = not (is_inwind or UnderSky2(viewPos))
 	-- ZDis
 		local tr = PlyTrace( StormFox2.util.ViewEntity(), Vector( 0, 0, -16000))
