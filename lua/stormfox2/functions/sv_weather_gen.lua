@@ -96,6 +96,7 @@ do
 	local function SetWeatherFromJSON( sJSON )
 		local json = util.JSONToTable( sJSON ) or {}
 		if json.cod == "404" then return end -- Not found
+		if not json.main then return end
 		local timeZone = 0
 		if json.timezone then
 			timeZone = tonumber(json.timezone)
