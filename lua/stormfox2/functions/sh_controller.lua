@@ -269,6 +269,11 @@ local function addW( w_select, v, p )
 	end
 end
 
+local function versionGet()
+	if not StormFox2.Version then return "?" end
+	return string.format("%.2f", StormFox2.Version)
+end
+
 local function Init(self)
 	self:SetSize(180,432)
 	self:SetPos(math.min(ScrW() * 0.8, ScrW() - 180), ScrH() / 2 - 200)
@@ -279,7 +284,7 @@ local function Init(self)
 		surface.SetDrawColor(side_color)
 		surface.DrawRect(0,0,w,h)
 		-- Top
-		local t = "StormFox " .. (StormFox2.Version or "?")
+		local t = "StormFox " .. versionGet()
 		surface.SetDrawColor(p_col)
 		surface.DrawRect(0,0,w,24)
 
