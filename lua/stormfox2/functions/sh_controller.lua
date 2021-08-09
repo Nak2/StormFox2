@@ -147,6 +147,7 @@ local function OpenMenu( self )
 	end
 end
 
+local color_gray = Color(155,155,155)
 local function SliderNumber(self)
 	local p = vgui.Create("DPanel", self)
 	p:SetTall(18)
@@ -154,10 +155,14 @@ local function SliderNumber(self)
 	function p:Paint() end
 	function p:SetVal(n) self.val = n end
 	function p:GetVal() return self.val or 0 end
+	p._aimval = nil
 	AccessorFunc(p, "_min", "Min", FORCE_NUMBER)
 	AccessorFunc(p, "_max", "Max", FORCE_NUMBER)
 	p:SetMax(1)
 	p:SetMin(0)
+	function p:GetAP()
+		return (self._aimval - self:GetMin() ) / ( self:GetMax() - self:GetMin() )
+	end
 	function p:GetP()
 		return (self:GetVal() - self:GetMin() ) / ( self:GetMax() - self:GetMin() )
 	end
@@ -189,9 +194,19 @@ local function SliderNumber(self)
 	end
 	function slider:Paint(w,h)
 		local v = math.Clamp(p:GetP(), 0, 1)
-		draw.RoundedBox(30, 0, h / 2 - 3, w, 4, color_black)
-		draw.RoundedBox(30, 0, h / 2 - 3, w * v, 4, color_white)
-		draw.RoundedBox(30, w * v - 1, 0, 3, h, color_white)
+		local a = p._aimval and math.Clamp(p:GetAP(), 0, 1)
+		local pos = w * v
+		-- Background
+		draw.RoundedBox(30, 0, h / 2 - 3, w, 		4, color_black)
+		-- White
+		draw.RoundedBox(30, 0, h / 2 - 3, pos, 	4, color_white)
+		if a and v ~= a then
+			local pos2= w * a
+			local mi = math.min(pos, pos2)
+			draw.RoundedBox(30, mi, h / 2 - 3, math.abs(pos - pos2),4, color_gray)
+			draw.RoundedBox(30, pos2 - 1, 0, 3, h, color_gray)
+		end
+		draw.RoundedBox(30, pos - 1, 0, 3, h, color_white)
 	end
 	function p:PerformLayout(w, h)
 		button:SetPos(w - self._ta,0)
@@ -214,6 +229,9 @@ local function SliderNumber(self)
 		p:OnVal( p:GetVal() )
 	end
 	function slider:Think()
+		if p.Think2 then
+			p:Think2()
+		end
 		if not self._update then return end
 		local x,y = self:LocalCursorPos()
 		local f = math.Round(math.Clamp(x / self:GetWide(), 0, 1), 2)
@@ -328,6 +346,9 @@ local function Init(self)
 		function p:OnVal(x)
 			SetWeather(SF_SETWEATHER, {StormFox2.Weather.GetCurrent().Name, x / 100})
 		end
+		function p:Think2()
+			self._aimval = StormFox2.Weather.GetFinishPercent() * 100
+		end
 		function m_weather:PerformLayout(w, h)
 			w_button:SetWide(w * 0.7)
 			w_button:SetPos(w * 0.15,5)
@@ -391,7 +412,7 @@ local function Init(self)
 			end
 			SetWeather(SF_THUNDER, not isth)
 		end
-		-- Temperature
+	-- Temperature
 		local t = vgui.Create("DPanel", self)
 		t:SetTall(30)
 		t:Dock(TOP)
@@ -421,6 +442,7 @@ local function Init(self)
 		end
 		tempslider:SetVal( math.Round(StormFox2.Temperature.GetDisplay(),1) )
 		function tempslider:Think()
+			tempslider._aimval = math.Round(StormFox2.Temperature.GetDisplay(StormFox2.Data.GetFinal( "Temp", 20 )),1)
 			tempslider:SetVal( math.Round(StormFox2.Temperature.GetDisplay(),1) )
 		end
 	-- Wind Ang
@@ -515,7 +537,8 @@ local function Init(self)
 		function windslide:OnVal( num )
 			SetWeather(SF_SETWIND_F, num)
 		end
-		function windslide:Think()
+		function windslide:Think2()
+			windslide._aimval = StormFox2.Data.GetFinal( "Wind", 0 )
 			windslide:SetVal( StormFox2.Wind.GetForce() or 0 )
 		end
 	-- Time
