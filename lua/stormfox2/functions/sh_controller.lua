@@ -647,7 +647,10 @@ function StormFox2.Menu._OpenController()
 			self.btnClose:SetDisabled( false )
 			self:MakePopup()
 			self:SetSelected()
-		elseif self.enabled and not input.IsKeyDown(KEY_C) and (not self:HasHierarchicalFocus() or not inside) then
+		elseif self.enabled then
+			if input.IsKeyDown(KEY_C) then return end -- If KEY is down, don't disable
+			if self:HasHierarchicalFocus() and not self:HasFocus() then return end -- Typing in something. Don't disable.
+			if inside then return end -- Mouse is inside controller. Don't disable yet.
 			self.enabled = false
 			self.btnClose:SetDisabled( true )
 			self:SetMouseInputEnabled(false)
