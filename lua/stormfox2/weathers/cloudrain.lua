@@ -132,13 +132,13 @@ end
 do
 	-- Day -- 
 		cloudy:SetSunStamp("topColor",Color(3.0, 2.9, 3.5),		SF_SKY_DAY)
-	--	cloudy:SetSunStamp("bottomColor",Color(20, 25, 25),		SF_SKY_DAY)
+		cloudy:SetSunStamp("bottomColor",Color(20, 25, 25),		SF_SKY_DAY)
 		cloudy:SetSunStamp("duskColor",Color(3, 2.9, 3.5),		SF_SKY_DAY)
 		cloudy:SetSunStamp("duskScale",1,						SF_SKY_DAY)
 		cloudy:SetSunStamp("HDRScale",0.33,						SF_SKY_DAY)
 	-- Night
 		cloudy:SetSunStamp("topColor",Color(0.4, 0.2, 0.54),	SF_SKY_NIGHT)
-	--	cloudy:SetSunStamp("bottomColor",Color(2.25, 2.25,2.25),SF_SKY_NIGHT)
+		cloudy:SetSunStamp("bottomColor",Color(2.25, 2.25,2.25),SF_SKY_NIGHT)
 		--cloudy:SetSunStamp("bottomColor",Color(14.3* 0.5,14.8* 0.5,15.2* 0.5),	SF_SKY_NIGHT)
 		cloudy:SetSunStamp("duskColor",Color(.4, .2, .54),		SF_SKY_NIGHT)
 		cloudy:SetSunStamp("duskScale",0,						SF_SKY_NIGHT)
