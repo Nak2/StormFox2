@@ -17,6 +17,7 @@ local mask = bit.bor( CONTENTS_SOLID, CONTENTS_MOVEABLE, CONTENTS_MONSTER, CONTE
 local util_TraceHull,bit_band,Vector,IsValid = util.TraceHull,bit.band,Vector,IsValid
 
 StormFox2.DownFall = {}
+StormFox2.DownFall.Mask = mask
 
 SF_DOWNFALL_HIT_NIL = -1
 SF_DOWNFALL_HIT_GROUND = 0
