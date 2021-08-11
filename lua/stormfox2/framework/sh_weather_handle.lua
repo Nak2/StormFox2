@@ -357,3 +357,25 @@ function StormFox2.Weather.GetRainAmount()
 	if not StormFox2.Weather.IsRaining() then return 0 end
 	return StormFox2.Weather.GetPercent()
 end
+
+function StormFox2.Weather.HasDownfall()
+	local wT = StormFox2.Weather.GetCurrent()
+	if wT.Inherit == "Rain" then return true end
+	return wT.Name == "Rain"
+end
+
+-- Downfall
+function StormFox2.DownFall.IsEntityHit(eEnt, bDont_cache)
+	if not StormFox2.Weather.HasDownfall() then return false end
+	return (StormFox2.Wind.IsEntityInWind(eEnt,bDont_cache))
+end
+
+function StormFox2.DownFall.IsPointHit(vPos)
+	if not StormFox2.Weather.HasDownfall() then return false end
+	local t = util.TraceLine( {
+		start = vPos,
+		endpos = vPos + -StormFox2.Wind.GetNorm() * 262144,
+		mask = StormFox2.DownFall.Mask
+	} )
+	return t.HitSky
+end
