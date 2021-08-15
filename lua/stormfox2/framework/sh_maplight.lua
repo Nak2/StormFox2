@@ -553,12 +553,12 @@ if SERVER then
 		-- Calc maplight
 		local isSmooth = false
 		local stamp, mapLight = StormFox2.Sky.GetLastStamp()
-		if stamp >= SF_SKY_NAUTICAL then
+		if stamp >= SF_SKY_CEVIL then
 			mapLight = night
 		elseif stamp <= SF_SKY_DAY then
 			mapLight = day
 		else
-			local delta = math.abs( SF_SKY_DAY - SF_SKY_NAUTICAL )
+			local delta = math.abs( SF_SKY_DAY - SF_SKY_CEVIL )
 			local f = StormFox2.Sky.GetLastStamp() / delta
 			if smooth then
 				mapLight = Lerp((f + 0.5) / 2, day, night)
@@ -591,12 +591,12 @@ else -- Fake darkness. Since some maps are bright
 		-- Calc maplight
 		local isSmooth = false
 		local stamp, mapLight = StormFox2.Sky.GetLastStamp()
-		if stamp >= SF_SKY_NAUTICAL then
+		if stamp >= SF_SKY_CEVIL then
 			mapLight = night
 		elseif stamp <= SF_SKY_DAY then
 			mapLight = day
 		else
-			local delta = math.abs( SF_SKY_DAY - SF_SKY_NAUTICAL )
+			local delta = math.abs( SF_SKY_DAY - SF_SKY_CEVIL )
 			local f = StormFox2.Sky.GetLastStamp() / delta
 			if smooth then
 				mapLight = Lerp((f + 0.5) / 2, day, night)
