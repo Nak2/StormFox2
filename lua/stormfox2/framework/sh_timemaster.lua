@@ -29,6 +29,7 @@ StormFox2.Time = StormFox2.Time or {}
 	StormFox2.Setting.AddSV("real_time",false,nil,"Time")
 	StormFox2.Setting.AddSV("random_time",false,nil,"Time")	-- Makes the time random
 
+	StormFox2.Setting.AddSV("nighttime_multiplier",1,nil,"Time")	-- Miltiplies the time doing the night
 
 -- Time stamps
 	SF_NIGHT = 0
@@ -116,6 +117,7 @@ StormFox2.Time = StormFox2.Time or {}
 			TIME_SPEED = 1 / 60
 			StormFox2.Setting.Set("start_time",-1)
 			StormFox2.Setting.Set("random_time",false)
+			StormFox2.Setting.Set("nighttime_multiplier",false)
 			local dt = string.Explode(":",os.date("%H:%M:%S"))
 			local n = dt[1] * 60 + dt[2] + dt[3] / 60
 			StormFox2.Time.Set(n)
@@ -196,8 +198,11 @@ StormFox2.Time = StormFox2.Time or {}
 	--[[-------------------------------------------------------------------------
 	Returns the timespeed (1 = 60 ingame-seconds)
 	---------------------------------------------------------------------------]]
-	function StormFox2.Time.GetSpeed()
+	function StormFox2.Time.GetSpeed_RAW()
 		return TIME_SPEED
+	end
+	function StormFox2.Time.GetSpeed()
+		return TIME_SPEED * 60
 	end
 -- Easy functions
 	--[[-------------------------------------------------------------------------
@@ -418,4 +423,49 @@ if CLIENT then
 		local use_12 = StormFox2.Setting.GetCache("12h_display",default_12)
 		return StormFox2.Time.TimeToString(nTime,use_12)
 	end
+end
+
+-- Nighttime Multiplier
+if SERVER then
+	local lastMult
+	local function Enable()
+		lastMult = lastMult or StormFox2.Time.GetSpeed()
+		local n = StormFox2.Setting.Get("nighttime_multiplier", 1)
+		StormFox2.Time.SetSpeed(lastMult * n)
+		StormFox2.Msg("Nighttime Multiplier: " .. n)
+	end
+	local function Disable()
+		StormFox2.Time.SetSpeed(lastMult)
+		lastMult = nil
+		StormFox2.Msg("Disable Nighttime Multiplier")
+	end
+	local function StartMulti()
+		if lastMult then
+			Disable()
+		end
+		timer.Create("sf_nightmultiplier", 0.5, 0, function()
+			local op = StormFox2.Sun.IsUp()
+			if lastMult and op then
+				Disable()
+			elseif not lastMult and not op then
+				Enable()
+			end
+		end)
+	end
+	local function EndMulti()
+		timer.Destroy("sf_nightmultiplier")
+		if lastMult then
+			Disable()
+		end
+	end
+	if StormFox2.Setting.Get("nighttime_multiplier") then
+		StartMulti()
+	end
+	StormFox2.Setting.Callback("nighttime_multiplier",function(vVar)
+		if vVar == 1 || vVar <= 0 then
+			EndMulti()
+		else
+			StartMulti()
+		end
+	end,"sf_sttrigger")
 end
