@@ -109,7 +109,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 				g_SkyPaint:SetStarFade(0)
 			else
 				g_SkyPaint:SetDrawStars(true)
-				g_SkyPaint:SetStarSpeed((StormFox2.Mixer.Get("starSpeed") or 0.001) * StormFox2.Time.GetSpeed())
+				g_SkyPaint:SetStarSpeed((StormFox2.Mixer.Get("starSpeed") or 0.001) * StormFox2.Time.GetSpeed_RAW())
 				g_SkyPaint:SetStarFade(n)
 				g_SkyPaint:SetStarScale(StormFox2.Mixer.Get("starScale") or 0.5)
 				g_SkyPaint:SetStarTexture(StormFox2.Mixer.Get("starTexture","skybox/starfield"))

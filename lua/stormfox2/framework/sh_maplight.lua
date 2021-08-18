@@ -499,7 +499,7 @@ function StormFox2.Map.SetLightLerp(f, nLerpTime, isSmooth )
 	local smooth = StormFox2.Setting.GetCache("maplight_smooth",true)
 	local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
 	-- No lights to smooth and/or setting is off
-	local _5sec = 0.08 * StormFox2.Time.GetSpeed()
+	local _5sec = 0.08 * StormFox2.Time.GetSpeed_RAW()
 	if not smooth or nLerpTime <= _5sec or not f_mapLight or num <= 1 then
 		t = {}
 		SetLightInternal( f )
@@ -572,7 +572,7 @@ if SERVER then
 		f_mapLightRaw = mapLight
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
-		local sec = 15 * StormFox2.Time.GetSpeed()
+		local sec = 15 * StormFox2.Time.GetSpeed_RAW()
 		StormFox2.Map.SetLightLerp(newLight, math.min(sec, nDelta or sec), isSmooth )
 	end)
 
@@ -610,7 +610,7 @@ else -- Fake darkness. Since some maps are bright
 		f_mapLightRaw = mapLight
 		-- Apply settings
 		local newLight = minlight + mapLight * (maxlight - minlight) / 100
-		local sec = 15 * StormFox2.Time.GetSpeed()
+		local sec = 15 * StormFox2.Time.GetSpeed_RAW()
 		StormFox2.Map.SetLightLerp(newLight, math.min(sec, nDelta or sec), isSmooth )
 	end)
 	

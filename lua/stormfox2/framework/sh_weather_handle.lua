@@ -49,7 +49,7 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 	if nDelta and nDelta <= 0 then
 		nDelta = nil
 	elseif nDelta then
-		local sp = StormFox2.Time.GetSpeed()
+		local sp = StormFox2.Time.GetSpeed_RAW()
 		if sp > 0 then
 			nDelta = nDelta / sp
 		end

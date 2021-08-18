@@ -227,7 +227,7 @@ hook.Add("StormFox2.2DSkybox.CloudLayer","StormFox2.Client.Clouds",function(eye)
 		for k,v in ipairs(side_clouds) do
 			v[1]:SetVector("$color",vec)
 		end
-		local cloud_speed = StormFox2.Time.GetSpeed() * 0.1
+		local cloud_speed = StormFox2.Time.GetSpeed_RAW() * 0.1
 		local sideclouds = 10 * cl_amd
 		for i = 1,sideclouds do
 			local a = 1

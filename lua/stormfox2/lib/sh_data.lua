@@ -138,7 +138,7 @@ function StormFox2.Data.Set( sKey, zVar, nDelta )
 		return
 	end
 	-- If delta is 0 or below. (Or no prev data). Set it.
-	if not nDelta or nDelta <= 0 or StormFox_DATA[sKey] == nil or StormFox2.Time.GetSpeed() <= 0 then
+	if not nDelta or nDelta <= 0 or StormFox_DATA[sKey] == nil or StormFox2.Time.GetSpeed_RAW() <= 0 then
 		StormFox_AIMDATA[sKey] = nil
 		StormFox_DATA[sKey] = zVar
 		hook.Run("StormFox2.data.change",sKey,zVar)
@@ -148,7 +148,7 @@ function StormFox2.Data.Set( sKey, zVar, nDelta )
 	if StormFox_AIMDATA[sKey] then
 		StormFox_DATA[sKey] = StormFox2.Data.Get( sKey )
 	end
-	StormFox_AIMDATA[sKey] = {zVar, CurTime(), CurTime() + nDelta, StormFox2.Time.GetSpeed()}
+	StormFox_AIMDATA[sKey] = {zVar, CurTime(), CurTime() + nDelta, StormFox2.Time.GetSpeed_RAW()}
 	hook.Run("StormFox2.data.lerpstart",sKey,zVar, nDelta)
 	hook.Run("StormFox2.data.change", sKey, zVar, nDelta)
 end
@@ -175,7 +175,7 @@ end
 
 -- If time changes, we need to update the lerp values
 hook.Add("StormFox2.Time.Set", "StormFox2.datatimefix", function()
-	local nT = StormFox2.Time.GetSpeed()
+	local nT = StormFox2.Time.GetSpeed_RAW()
 	local c = CurTime()
 	if nT <= 0.001 then return end
 	for k,v in pairs( StormFox_AIMDATA ) do
