@@ -17,6 +17,7 @@
 
 	BASE_TIME is CurTime + StartTime
 ---------------------------------------------------------------------------]]
+local floor,ceil,random = math.floor, math.ceil, math.random
 StormFox2.Time = StormFox2.Time or {}
 -- Settings
 	StormFox2.Setting.AddSV("start_time",-1,nil,"Time")
@@ -90,14 +91,14 @@ StormFox2.Time = StormFox2.Time or {}
 		elseif not start or start < 0 then -- If there isn't a last time .. use mathrandom
 			local num = cookie.GetNumber("sf2_lasttime",-1)
 			if num < 0 then
-				num = math.random(1300)
+				num = random(1300)
 				StormFox2.Msg("Starting time: Random")
 			else
 				StormFox2.Msg("Starting time: Last Saved")
 			end
 			start = num
 		elseif StormFox2.Setting.Get("random_time",false) then
-			start = math.random(1, 1435)
+			start = random(1, 1435)
 			StormFox2.Msg("Starting time: Random")
 		else
 			StormFox2.Msg("Starting time: sf_start_time")
@@ -150,7 +151,7 @@ StormFox2.Time = StormFox2.Time or {}
 		local function _get(bNearestSecond)
 			if TIME_SPEED <= 0 then
 				_base = BASETIME
-				_whole = math.ceil(BASETIME)
+				_whole = ceil(BASETIME)
 				if bNearestSecond then
 					return _whole
 				end
@@ -158,7 +159,7 @@ StormFox2.Time = StormFox2.Time or {}
 			end
 			local n = (CurTime() - BASETIME) * TIME_SPEED
 			_base = n % 1440
-			_whole = math.ceil(_base)
+			_whole = ceil(_base)
 			if bNearestSecond then return _whole end
 			return _base
 		end
@@ -178,8 +179,8 @@ StormFox2.Time = StormFox2.Time or {}
 	---------------------------------------------------------------------------]]
 	function StormFox2.Time.TimeToString(nTime,bUse12Hour)
 		if not nTime then nTime = StormFox2.Time.Get(true) end
-		local h = math.floor(nTime / 60)
-		local m = math.floor(nTime - (h * 60))
+		local h = floor(nTime / 60)
+		local m = floor(nTime % 60 )
 		if not bUse12Hour then return h .. ":" .. (m < 10 and "0" or "") .. m end
 		local e = "PM"
 		if h < 12 or h == 0 then
@@ -224,10 +225,10 @@ StormFox2.Time = StormFox2.Time or {}
 	---------------------------------------------------------------------------]]
 	function StormFox2.Time.IsBetween(nFromTime,nToTime,nCurrentTime)
 		if not nCurrentTime then nCurrentTime = StormFox2.Time.Get() end
-		if nFromTime < nToTime then
-			return nTime <= nCurrentTime and nToTime >= nCurrentTime
+		if nFromTime > nToTime then
+			return nCurrentTime >= nFromTime or nCurrentTime <= nToTime
 		end
-		return nFromTime <= nCurrentTime or nToTime >= nCurrentTime
+		return nFromTime <= nCurrentTime and nToTime >= nCurrentTime
 	end
 	--[[-------------------------------------------------------------------------
 	Returns the time between Time and Time2 in numbers.
@@ -258,7 +259,7 @@ StormFox2.Time = StormFox2.Time or {}
 			--[[-------------------------------------------------------------------------
 			Gets called on a new day.
 			---------------------------------------------------------------------------]]
-			hook.Run("StormFox2.Time.NextDay", 1 + math.floor(TIME_SPEED / 2880))
+			hook.Run("StormFox2.Time.NextDay", 1 + floor(TIME_SPEED / 2880))
 			num = nTime
 		else
 			num = nTime
@@ -274,6 +275,40 @@ StormFox2.Time = StormFox2.Time or {}
 	function StormFox2.Time.GetStamp(nTime)
 		if not nTime then nTime = StormFox2.Time.Get() end
 		return timeToStamp(nTime)
+	end
+
+	--[[
+		Simple hour, minute, second and AM / PM
+	]]
+	function StormFox2.Time.GetHours( nTime, b12Hour )
+		if not nTime then nTime = StormFox2.Time.Get() end
+		if not b12Hour then return floor( nTime / 60 ) end
+		local h = floor( nTime / 60 )
+		if h == 0 then
+			h = 12
+		elseif h > 12 then
+			h = h - 12
+		end
+		return h
+	end
+
+	function StormFox2.Time.GetMinutes( nTime )
+		if not nTime then nTime = StormFox2.Time.Get() end
+		return floor( nTime % 60 )
+	end
+
+	function StormFox2.Time.GetSeconds( nTime )
+		if not nTime then nTime = StormFox2.Time.Get() end
+		return floor( nTime % 1 ) * 60
+	end
+
+	function StormFox2.Time.GetAMPM( nTime )
+		if not nTime then nTime = StormFox2.Time.Get() end
+		local h = floor( nTime / 60 )
+		if h < 12 or h == 0 then
+			return "AM"
+		end
+		return "PM"
 	end
 
 -- Network
