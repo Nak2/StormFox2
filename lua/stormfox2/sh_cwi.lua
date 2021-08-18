@@ -4,7 +4,7 @@
 	Still WIP!
 ]]
 
-local Version = 0.01
+local Version = 0.02
 if CWI and CWI.Version > Version then return end
 
 CWI = {}
@@ -38,8 +38,8 @@ CWI.WeatherMod = "StormFox 2"
 	]]
 	CWI.GetTimeSpeed = StormFox2.Time.GetSpeed
 	-- Easy day/night variables
-	CWI.IsDay = StormFox2.Time.IsDay
-	CWI.IsNight = StormFox2.Time.IsNight
+	CWI.IsDay = StormFox2.Sun.IsUp
+	CWI.IsNight = function() return not StormFox2.Sun.IsUp() end
 
 -- Weather
 	--[[
@@ -68,6 +68,29 @@ CWI.WeatherMod = "StormFox 2"
 	CWI.IsRaining = StormFox2.Weather.IsRaining
 	CWI.IsSnowing = StormFox2.Weather.IsSnowing
 
+-- Time Functions
+	function CWI.GetHours( bUse12Hour )
+		if not bUse12Hour then return math.floor( CWI.GetTime() / 60 ) end
+		local h = math.floor( CWI.GetTime() / 60 )
+		local b = ( h < 12 or h == 0 ) and "AM" or "PM"
+		if h == 0 then
+			h = 12
+		elseif h > 12 then
+			h = h - 12
+		end
+		return h, b
+	end
+	function CWI.GetMinutes()
+		return math.floor( CWI.GetTime() % 60 )
+	end
+	function CWI.GetSeconds()
+		return math.floor( CWI.GetTime() % 1 ) * 60
+	end
+	function CWI.TimeToString( bUse12Hour )
+		local h, e = CWI.GetHours( bUse12Hour )
+		return h .. ":" .. CWI.GetMinutes() .. (e and " " .. e or "")
+	end
+
 --[[
 	Hook: CWI.NewWeather, weatherName
 ]]
@@ -83,4 +106,11 @@ end)
 ]]
 hook.Add("StormFox2.Time.NextDay", "CWI.CallNewDay", function( nDay )
 	hook.Run("CWI.NewDay", nDay)
+end)
+
+--[[
+	Hook: CWI.Init
+]]
+hook.Add("stormfox2.postinit", "SFCWI.Init", function()
+	hook.Run("CWI.Init")
 end)
