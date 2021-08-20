@@ -38,7 +38,7 @@ CWI.WeatherMod = "StormFox 2"
 	]]
 	CWI.GetTimeSpeed = StormFox2.Time.GetSpeed
 	-- Easy day/night variables
-	CWI.IsDay = StormFox2.Sun.IsUp
+	CWI.IsDay = function() return StormFox2.Sun.IsUp() end
 	CWI.IsNight = function() return not StormFox2.Sun.IsUp() end
 
 -- Weather
@@ -105,7 +105,7 @@ end)
 	Hook: CWI.NewDay, dayNumber 0 - 365
 ]]
 hook.Add("StormFox2.Time.NextDay", "CWI.CallNewDay", function( nDay )
-	hook.Run("CWI.NewDay", nDay)
+	hook.Run("CWI.NewDay")
 end)
 
 --[[
