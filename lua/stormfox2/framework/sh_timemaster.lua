@@ -458,8 +458,11 @@ if SERVER then
 			Disable()
 		end
 	end
-	if StormFox2.Setting.Get("nighttime_multiplier") then
-		StartMulti()
+	do
+		local v = StormFox2.Setting.Get("nighttime_multiplier", 1)
+		if v ~= 1 and v > 0 then
+			StartMulti()
+		end
 	end
 	StormFox2.Setting.Callback("nighttime_multiplier",function(vVar)
 		if vVar == 1 || vVar <= 0 then
