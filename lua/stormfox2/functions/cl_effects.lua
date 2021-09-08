@@ -66,6 +66,7 @@ do
 	-- The most optiomal way is to check within the renderhook.
 	local function RunEffect(ply)
 		if not StormFox2.Setting.GetCache("enable_breath") then return end
+		if not StormFox2.Setting.SFEnabled() then return end
 		if StormFox2.Temperature.Get() > threshold then return end -- Breaht is visible at 7.2C or below
 		if (ply._sfbreath or 0) >= CurTime() then return end
 		local cE = CheckEffect( ply )

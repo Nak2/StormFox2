@@ -638,6 +638,7 @@ else -- Fake darkness. Since some maps are bright
 	end
 	local fade = 0
 	hook.Add("RenderScreenspaceEffects","StormFox2.Light.MapMat",function()
+		if not StormFox2.Setting.SFEnabled() then return end
 		-- How old is the GPU!?
 		if not render.SupportsPixelShaders_2_0() then return end
 		local a = 1 - StormFox2.Map.GetLightRaw() / 100
