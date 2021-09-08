@@ -34,9 +34,12 @@ local str = [[
 	sf_tool.name=StormFox2 Tool
 	sf_tool.desc=Allows you to edit StormFox2 map settings.
 	sf_tool.surface_editor=Surface Editor
-	sf_tool.surface_editor.desc=Allows you to edit surface-types
+	sf_tool.surface_editor.desc=Allows you to edit surface-types.
+	sf_tool.light_editor=Light Editor
+	sf_tool.light_editor.desc=Allows you to add/remove sf-lights.
 	sf_enable_breath=Enables breath
 	sf_enable_breath.desc=Makes players breath visible in cold.
+	
 	
 	#Settings
 	sf_enable=Enable StormFox
@@ -143,6 +146,9 @@ local str = [[
 	sf_random_time.desc=Sets the time randomly on server-launch.
 	sf_time_speed=Time speed
 	sf_time_speed.desc=Multiplies the in-game seconds with the given number.
+	sf_nighttime_multiplier=Night time-speed
+	sf_nighttime_multiplier.desc=Multiplies the timespeed doing the night. (Can be imprecise)
+	
 	#Sun
 	sf_sunrise=SunRise
 	sf_sunrise.desc=Sets the time the sun rises.
@@ -221,7 +227,7 @@ local str = [[
 	sf_temp_range.desc=The min and max temperature.
 	sf_temp_acc=Temperature change.
 	sf_temp_acc.desc=The max temperature changes pr day.
-	]]
+]]
 
 for k, v in ipairs( string.Explode("\n", str)) do
 	if string.match(v, "%s-#") then continue end

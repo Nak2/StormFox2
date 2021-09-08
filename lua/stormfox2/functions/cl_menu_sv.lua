@@ -383,6 +383,7 @@ local tabs = {
 		board:AddSetting("random_time")
 		board:AddSetting("start_time")
 		board:AddSetting("time_speed")
+		board:AddSetting("nighttime_multiplier")
 		board:AddTitle("#sun")
 		board:AddSetting("sunrise")
 		board:AddSetting("sunset")
