@@ -155,11 +155,11 @@ do
 		-- Check if we inherit
 		if not self.Inherit then return nil end
 		if not Weathers[self.Inherit] then return nil end -- Inherit is invalid
-		if table.HasValue(in_list, self.Inherit) then -- Loop detected
-			StormFox2.Warning("WeatherData loop detected! [" .. table.concat(in_list, "]->[") .. "]->[" .. self.Inherit .. "]")
+		if in_list[self.Inherit] == true then -- Loop detected
+			StormFox2.Warning("WeatherData loop detected! multiple occurences of : " .. self.Inherit)
 			return
 		end
-		table.insert(in_list, self.Name)
+		in_list[self.Name] = true
 		local a,b,c,d,e = Weathers[self.Inherit]:Get(sKey, SUNSTAMP)
 		in_list = {}
 		return a,b,c,d,e
