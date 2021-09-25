@@ -189,6 +189,7 @@ do
 
 end
 -- Window render
+local rain_normal_material = Material("stormfox2/effects/window/rain_normal")
 local rain_t = StormFox2.Terrain.Create("rain")
 do
 	local raindrops = {}
@@ -199,7 +200,7 @@ do
 		local QT = StormFox2.Client.GetQualityNumber()
 		local P = StormFox2.Weather.GetPercent()
 		-- Base
-		surface.SetMaterial(Material("stormfox2/effects/window/rain_normal"))
+		surface.SetMaterial(rain_normal_material)
 		local c = (-SysTime() / 1000) % 1
 		surface.SetDrawColor(Color(255,255,255,255 * P))
 		surface.DrawTexturedRectUV(0,0, w, h, 0, c, s, c + s )
