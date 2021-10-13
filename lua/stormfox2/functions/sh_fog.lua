@@ -118,7 +118,7 @@ if SERVER then
 			return 
 		end
 		if not num then num = map_farZ end
-		for k,v in ipairs( StormFox2.Ent.env_fog_controllers ) do
+		for k,v in ipairs( StormFox2.Ent.env_fog_controllers or {} ) do
 			if not IsValid(v) then continue end
 			v:SetKeyValue("farz", num)
 		end
