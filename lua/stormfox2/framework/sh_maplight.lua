@@ -500,22 +500,29 @@ function StormFox2.Map.SetLightLerp(f, nLerpTime, isSmooth )
 	local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
 	-- No lights to smooth and/or setting is off
 	local _5sec = 0.08 * StormFox2.Time.GetSpeed_RAW()
+	t = {}
 	if not smooth or nLerpTime <= _5sec or not f_mapLight or num <= 1 then
-		t = {}
 		SetLightInternal( f )
 		return
 	end
 	-- Are we trying to lerp towards current value?
 	if f_mapLight and f_mapLight == f then
-		t = {}
 		return
 	end
-	t = {}
 	-- Start lerping ..
 	-- We make a time-list of said values.
 	local st = StormFox2.Time.Get()						-- Start Time
-	local st_lerpt = (nLerpTime / num)		-- Each "step"'s time
-	local st_lerp = math.abs(f_mapLight - f) / num -- Each "step"'s value
+	local st_lerpt = nLerpTime / num					-- Each "step"'s time
+	-- Too fast of a light change. Can bug out.
+	if st_lerpt < 5 then -- Set the each step to min 5 seconds.
+		st_lerpt = 5
+		num = math.floor(nLerpTime / 5)
+		if num <= 1 then -- Only change once.
+			SetLightInternal( f )
+			return
+		end
+	end
+	local st_lerp = math.abs(f_mapLight - f) / num 		-- Each "step"'s value
 	-- from: f_mapLight
 	-- to: f
 	for i = 0, num - 1 do
