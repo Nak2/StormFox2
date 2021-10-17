@@ -440,7 +440,7 @@ do
 	local function tryInit()
 		if not chicken or not egg then return end
 		SettingMapLight(f_mapLight)
-		hook.Run("StormFox2.lightsystem.new", f_mapLight)
+		hook.Run("StormFox2.lightsystem.new", f_mapLight, f_mapLightRaw)
 		if CLIENT then SetDetailLight(f_mapLight) end
 		init = true
 	end
@@ -482,7 +482,7 @@ local function SetLightInternal(f, isSmoothLight)
 		ChangedMapLight(f, isSmoothLight)
 		if CLIENT then SetDetailLight(f) end
 	-- Tell scripts to update
-		hook.Run("StormFox2.lightsystem.new", f)
+		hook.Run("StormFox2.lightsystem.new", f, f_mapLightRaw)
 end
 
 local t = {}
