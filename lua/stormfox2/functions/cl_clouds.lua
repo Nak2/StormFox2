@@ -166,6 +166,9 @@ local eye_mult = -.0001
 		sky_rts[i] = GetRenderTargetEx( "StormFox_Sky" .. i, texscale, texscale, 1, MATERIAL_RT_DEPTH_NONE, 2, CREATERENDERTARGETFLAGS_UNFILTERABLE_OK, IMAGE_FORMAT_RGBA8888)
 		offset[i] = {i * 99,i * 33}
 	end
+	local function safeCall(...)
+		hook.Run("StormFox2.2DSkybox.CloudLayerRender", ...)
+	end
 	local function UpdateCloudMaterial(layer,cloud_alpha)
 		local blend = true
 		local d_seed = layer * 33
@@ -176,14 +179,17 @@ local eye_mult = -.0001
 		-- Render RT texture
 			surface.SetMaterial(cloudbig)
 			surface.SetDrawColor(Color(255,255,255,cloud_alpha))
-			render.SetColorMaterial()
 			--surface.DrawTexturedRect(0,0,texscale,texscale)
 			DrawTextureRectWindow(texscale,texscale,offset[layer][1] + d_seed,offset[layer][2] + d_seed)
+			-- If we error in here, gmod will crash.
+			local b, reason = pcall(safeCall, texscale, texscale, layer)
+			if not b then ErrorNoHalt(reason) end
 		-- Mask RT tex
-			RTMask()
-				surface.SetDrawColor(Color(255,255,255,255 - cloud_alpha))
-				surface.SetMaterial(cloudbig)
-				DrawTextureRectWindow(texscale,texscale,offset[layer][1] + d_seed,offset[layer][2] + d_seed)
+		--	RTMask()
+		--		surface.SetDrawColor(Color(255,255,255,255 - cloud_alpha))
+		--		surface.SetMaterial(cloudbig)
+		--		DrawTextureRectWindow(texscale,texscale,offset[layer][1] + d_seed,offset[layer][2] + d_seed)
+
 		-- End RT tex
 			RTEnd(sky_mats[layer])
 		render.PopFilterMag()

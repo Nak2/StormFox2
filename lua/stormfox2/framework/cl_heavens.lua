@@ -76,6 +76,7 @@ local sunVisible
 			end
 			hook.Run("StormFox2.2DSkybox.CloudBox",		c_pos)
 			hook.Run("StormFox2.2DSkybox.CloudLayer",	c_pos)
+			hook.Run("StormFox2.2DSkybox.PostCloudLayer",c_pos)
 			hook.Run("StormFox2.2DSkybox.FogLayer",	c_pos)
 			render.SuppressEngineLighting(false)
 			render.SetLightingMode( 0 )
