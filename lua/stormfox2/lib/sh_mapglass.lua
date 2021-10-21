@@ -184,25 +184,37 @@ StormFox2.Map = {}
 		f:Seek(lump.fileofs)
 		return lump.filelen
 	end
--- Find soundscape in PAK
-	local function PAKSearch(f,len)
-		local data = f:Read(len)
-		if not data then return end
-		local found = false
-		for s in string.gmatch( data, "scripts\\soundscapes_.-txt.-PK" ) do
-			if not found then
-				found = true
-				StormFox2.Msg("Found custom soundscapes:")
-			end
-			local fil = string.match(s,"scripts\\soundscapes_.-txt")
-			local file_name = string.GetFileFromFilename(fil or "") or ""
-			StormFox2.Msg(file_name)
-			if #file_name > 0 then
-				_STORMFOX_MAP__SoundScapes = _STORMFOX_MAP__SoundScapes or {}
-				_STORMFOX_MAP__SoundScapes[file_name] = s:sub(#fil + 1,#s - 4)
-			end
+-- Find soundscape in PAK ( No need, Rubat was kind to add PAK search. )
+	-- Min size: 26
+	--[[
+	local function ReadPakFile(f)
+		if f:ReadByte() ~= 80 or f:ReadByte() ~= 75 or f:ReadByte() ~= 3 or f:ReadByte() ~= 4 then
+			return
 		end
+		-- Skip to the uncompressed filesize
+		f:Seek(f:Tell() + 18)
+		local file_size = f:ReadLong()
+		local name_len = f:ReadShort()
+		local fil_data = f:ReadShort()
+		local filename = f:Read(name_len)
+		f:Seek(f:Tell() + fil_data + file_size)
+		return filename
 	end
+
+	local function GetPAKFiles(f, size)
+		--size = file.Size("mapdata.txt", "DATA")
+		--local f = file.Open("mapdata.txt", "rb", "DATA")
+		print("Locating scriptfiles within PAK: [".. string.NiceSize(size ) .. "]")
+		local tab = {}
+		for i = 1, size / 26 do
+			local filname = ReadPakFile(f)
+			if not filname then break end
+			if not string.match(filname, "^scripts/soundscapes_") then continue end
+			table.insert(tab, filname)
+		end
+		--f:Close()
+		return tab
+	end]]
 -- Load BSP data.
 	local function GetBSPData(str)
 		local s = SysTime()
@@ -235,7 +247,14 @@ StormFox2.Map = {}
 			end
 		-- Read entities (LUMP 0)
 			SF_BSPDATA.Entities = {}
-			local data = GetLump(f,lumps[1])
+			-- Check for lmp file
+			local data
+			if file.Exists("maps/" .. game.GetMap() .. "_l_0.lmp", "GAME") then
+				StormFox2.Msg("Reading lmp EntityLump file.")
+				data = file.Read("maps/" .. game.GetMap() .. "_l_0.lmp", "GAME")
+			else
+				data = GetLump(f,lumps[1])
+			end		
 			if string.sub(data,0,4) == "LZMA" then -- No, util.Decompress doesn't work.
 				local len = SetToLump(f,lumps[1])
 				local de_data = lzma_decode(f)
@@ -254,6 +273,7 @@ StormFox2.Map = {}
 						t.angles = util.StringToType(t.angles or "0 0 0","Angle")
 						local c = util.StringToType(t.rendercolor or "255 255 255","Vector")
 						t.rendercolor = Color(c.x,c.y,c.z)
+						t.raw = s
 					table.insert(SF_BSPDATA.Entities,t)
 				end
 			else
@@ -397,11 +417,9 @@ StormFox2.Map = {}
 			end
 		-- PAK search
 			local len = SetToLump(f,lumps[41])
-			--if len > 10 then
-				--StormFox2.Msg("Found mapdata, might take a few more seconds.") -- Ignore this for now
-				--PAKSearch(f,len)
-			--end
-			--pak_data = f:Read(len)
+			if len > 10 then
+				SF_BSPDATA._hasPak = true
+			end
 		-- Planes
 		--	local planes = {}
 		--	local len = SetToLump(f,lumps[2])
@@ -449,6 +467,12 @@ StormFox2.Map = {}
 	---------------------------------------------------------------------------]]
 	function StormFox2.Map.Textures()
 		return SF_BSPDATA.Textures or {}
+	end
+	--[[-------------------------------------------------------------------------
+	Returns the filtered textures from the mapfile.
+	---------------------------------------------------------------------------]]
+	function StormFox2.Map.HasPAK()
+		return SF_BSPDATA._hasPak or false
 	end
 -- Type Guesser function
 	local blacklist = {"gravelfloor002b","swift/","sign","indoor","foliage","model","dirtfloor005c","dirtground010","concretefloor027a","swamp","sand","concret"}
