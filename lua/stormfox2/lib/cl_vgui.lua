@@ -1981,9 +1981,24 @@ do
 		p_left.buttons["workshop"] = b
 		function b:DoClick()
 			gui.OpenURL( StormFox2.WorkShopURL )
-		end
+		end		
 		if not StormFox2.WorkShopURL then
 			b:SetDisabled(true)
+		end
+
+		do
+			local b = vgui.Create("DButton", p_left)
+			b:Dock(BOTTOM)
+			b:SetTall(40)
+			b:SetText("")
+			b.icon = Material("stormfox2/discord.png")
+			b.text = "Discord"
+			b.Paint = side_button
+			b.r = 180
+			p_left.buttons["discord"] = b
+			function b:DoClick()
+				gui.OpenURL( "https://discord.gg/mefXXt4u9E" )
+			end		
 		end
 	
 		local used = {}
