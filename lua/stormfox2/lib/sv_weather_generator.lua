@@ -373,7 +373,7 @@ end
 -- Sets the upcoming weather
 hook.Add("Think", "StormFox2.weather.weeklogic", function()
 	if not StormFox2.Setting.GetCache("enable", true) or not StormFox2.Setting.GetCache("auto_weather", false) then return end
-	if not week["temp"] then return false end -- Not generated yet
+	if not week["temp"] then return end -- Not generated yet
 	local time = StormFox2.Time.Get()
 	local speed = StormFox2.Time.GetSpeed_RAW()
 	if speed == 0 then speed = 0.001 end
