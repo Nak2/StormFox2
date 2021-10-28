@@ -301,7 +301,7 @@ else -- Save
 		local out = util.TableToJSON( tab )
 		StormFox2.FileWrite(file_location, out)
 	end)
-	hook.Add( "InitPostEntity", "tormFox2.Streetlights.Load", function()
+	hook.Add( "InitPostEntity", "StormFox2.Streetlights.Load", function()
 		local fil = file.Read(file_location, "DATA" )
 		if not fil then return end
 		local tab = util.JSONToTable( fil )
