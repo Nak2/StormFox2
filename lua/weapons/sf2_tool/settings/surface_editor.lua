@@ -13,12 +13,14 @@ local function FindTexture( str )
 	if str == "**studio**" then return end
 	if str:sub(0,5) == "tools" then return end
 	local mat = Material(str)
-	local t = mat:GetString( "$basetexture" ) or mat:GetString( "$basetexture2" )
-	if not t then return end
-	if StormFox2.Terrain.HasMaterialChanged(mat) then -- We havve replaced this material. Lets get the basetexture
-		return StormFox2.Terrain.GetOriginalTexture(mat)
-	end
-	return t
+	--if str:sub(0,5) == "maps/" and false then -- This is a hammer thingy
+	--	str = mat:GetString( "$basetexture" ) or mat:GetString( "$basetexture2" )
+	--	mat = Material(str)
+	--	if StormFox2.Terrain.HasMaterialChanged(mat) then -- We havve replaced this material. Lets get the basetexture
+	--		return StormFox2.Terrain.GetOriginalTexture(mat)
+	--	end
+	--end
+	return str
 end
 
 local cross = Material("gui/cross.png")
@@ -96,8 +98,15 @@ function TOOL:ScreenRender( w, h )
 	local tex = FindTexture(tr.HitTexture)
 	if tex then
 		mat:SetTexture("$basetexture", tex)
+		-- In case this material doesn't have a valid texture, it might be only a material.
+		if not mat:GetTexture("$basetexture") then
+			local m = Material(tex)
+			local tryTex = StormFox2.Terrain.GetOriginalTexture(m) or m:GetTexture("$basetexture")
+			if tryTex then
+				mat:SetTexture("$basetexture", tryTex)
+			end
+		end
 		local tData = SF_TEXTDATA[tex]
-
 		surface.SetMaterial(mat)
 		surface.SetDrawColor(color_white)
 		surface.DrawTexturedRect(w * 0.1,h * 0.2,w * 0.8,h * 0.7)
