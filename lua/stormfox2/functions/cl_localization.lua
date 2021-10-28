@@ -40,7 +40,6 @@ local str = [[
 	sf_enable_breath=Enables breath
 	sf_enable_breath.desc=Makes players breath visible in cold.
 	
-	
 	#Settings
 	sf_enable=Enable StormFox
 	sf_enable.desc=Enable / Disable StormFox 2
@@ -49,7 +48,7 @@ local str = [[
 	sf_allow_csenable=Allow Clients to disable StormFox 2
 	sf_allow_csenable.desc=Enabling this will allow clients to disable StormFox 2.
 	
-	sf_mthreadwarning=These settings can boost your FPS:\n%s\nWarning\: Might crash some older AMD CPUs!
+	sf_mthreadwarning=These settings can boost your FPS:\n%s\nWarning\: This Might crash on some older AMD CPUs!
 	sf_holdc=Hold C
 	sf_weatherpercent=Weather Amount
 	sf_setang=Set Angle
@@ -59,8 +58,8 @@ local str = [[
 	sf_map.light_environment.check=This map support fast lightchanges.
 	sf_map.light_environment.problem=This map will cause lagspikes for clients, when the light changes.
 	sf_map.env_wind.none=This map doesn't support windgusts.
-	sf_map.logic_relay.check=This map has custome day/night relays.
-	sf_map.logic_relay.none=This map doens't have custome day/night relays.
+	sf_map.logic_relay.check=This map has custom day/night relays.
+	sf_map.logic_relay.none=This map doens't have custom day/night relays.
 	sf_windmove_players=Affect players
 	sf_windmove_players.desc=Affect player movment in strong wind.
 	sf_windmove_foliate=Affect Foliate
@@ -70,7 +69,7 @@ local str = [[
 	sf_windmove_props_break=Damage Props
 	sf_windmove_props_break.desc=Props will take damage in the wind.
 	sf_windmove_props_makedebris=Change CollisionGroup
-	sf_windmove_props_makedebris.desc=Will make props change collisiongroup, recuding lag.
+	sf_windmove_props_makedebris.desc=Will make props change collisiongroup, reducing lag.
 	sf_windmove_props_unfreeze=Unfreeze props.
 	sf_windmove_props_unfreeze.desc=Unfreeze props being moved by the wind.
 	sf_windmove_props_unweld=Unweld props.
@@ -102,7 +101,6 @@ local str = [[
 	sf_darken_2dskybox.desc=Match the skybox brightness with the map.
 	sf_random_round_weather=Random weather each round.
 	sf_random_round_weather.desc=Gamemodes like TTT will have random weathers between each round.
-	
 	
 	#Details
 	sf_quality_target=FPS Target
@@ -182,8 +180,6 @@ local str = [[
 	sf_modifyshadows_rate=Modify shadow rate
 	sf_modifyshadows_rate.desc=The seconds between each shadow-update.
 	
-	
-	
 	sf_extra_lightsupport=Extra Lightsupport
 	sf_extra_lightsupport.desc=Utilize engine.LightStyle to change the map-light. This can cause lag-spikes, but required on certain maps.
 	
@@ -200,6 +196,11 @@ local str = [[
 	sf_footprint_distance.desc=Max render distance for footprints.
 	sf_footprint_max=Max Footprints
 	sf_footprint_max.desc=Max amount of footprints
+	
+	sf_edit_tonemap=Enable tonemap
+	sf_edit_tonemap.desc=Allow StormFox to edit the tonemap.
+	sf_enable_wateroverlay=Render water overlay
+	sf_enable_wateroverlay.desc=Enables water-overlay for weather-types.
 	
 	sf_extra_darkness=Extra Darkness
 	sf_extra_darkness.desc=Adds a darkness-filter to make bright maps darker.
@@ -226,7 +227,7 @@ local str = [[
 	sf_temp_range=Temperature range
 	sf_temp_range.desc=The min and max temperature.
 	sf_temp_acc=Temperature change.
-	sf_temp_acc.desc=The max temperature changes pr day.
+	sf_temp_acc.desc=The max temperature changes pr day.	
 ]]
 
 for k, v in ipairs( string.Explode("\n", str)) do

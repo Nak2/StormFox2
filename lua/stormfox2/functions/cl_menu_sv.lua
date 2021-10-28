@@ -536,6 +536,7 @@ local tabs = {
 	[4] = {"Effects","#effects",(Material("stormfox2/hud/menu/settings.png")),function(board)
 		board:AddTitle(language.GetPhrase("#map") .. language.GetPhrase("#light"))
 		board:AddSetting("maplight_smooth")
+		board:AddSetting("edit_tonemap")
 		local l = vgui.Create("DLabel",board)
 		l:DockMargin(15,0,0,0)
 		l:Dock(TOP)
@@ -633,6 +634,7 @@ local tabs = {
 		board:AddTitle("#effects_pp")
 		board:AddSetting("overwrite_extra_darkness")
 		board:AddSetting("enable_ice")
+		board:AddSetting("enable_wateroverlay")
 		board:AddSetting("footprint_enablelogic")
 
 		board:AddTitle("fog")
