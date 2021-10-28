@@ -387,7 +387,7 @@ StormFox2.Map = {}
 				local len = SetToLump(f,lumps[44])
 				local tex = {}
 				for s in string.gmatch( f:Read(len), "[^%z]+" ) do
-					table.insert(tex, s)
+					table.insert(tex, s:lower())
 				end
 				SF_BSPDATA.TextureArray = tex
 				-- BOM, Easy .. now load the textdata (LUMP 2)
