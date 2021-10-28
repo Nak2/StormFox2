@@ -420,7 +420,7 @@ if CLIENT then
 end
 
 -- Returns light-variables
-local f_mapLight = 80
+local f_mapLight = StormFox2.Setting.GetCache("maplight_max",80)
 local f_mapLightRaw = 100
 local c_last_char = 'm'
 function StormFox2.Map.GetLight()
@@ -433,6 +433,13 @@ function StormFox2.Map.GetLightChar()
 	return c_last_char
 end
 
+local function getMaxLight(curLight)
+	if curLight <= 0 then return 0 end
+	local n = StormFox2.Setting.GetCache("maplight_max",80)
+	if n <= 0 then return 0 end
+	return math.Clamp(curLight / n, 0, 1) * 100
+end
+
 -- On launch. Setup light
 local init = false
 do
@@ -440,7 +447,7 @@ do
 	local function tryInit()
 		if not chicken or not egg then return end
 		SettingMapLight(f_mapLight)
-		hook.Run("StormFox2.lightsystem.new", f_mapLight, f_mapLightRaw)
+		hook.Run("StormFox2.lightsystem.new", f_mapLight, getMaxLight(f_mapLight))
 		if CLIENT then SetDetailLight(f_mapLight) end
 		init = true
 	end
@@ -482,7 +489,7 @@ local function SetLightInternal(f, isSmoothLight)
 		ChangedMapLight(f, isSmoothLight)
 		if CLIENT then SetDetailLight(f) end
 	-- Tell scripts to update
-		hook.Run("StormFox2.lightsystem.new", f, f_mapLightRaw)
+		hook.Run("StormFox2.lightsystem.new", f, getMaxLight(f))
 end
 
 local t = {}
