@@ -1,4 +1,7 @@
 
+StormFox2.Setting.AddSV("edit_tonemap", true, nil, "Effects")
+
+if CLIENT then return end
 StormFox2.ToneMap = {}
 --SetBloomScale
 -- On load data
@@ -70,10 +73,26 @@ function StormFox2.ToneMap.Reset()
 	StormFox2.ToneMap.SetTonemapRateScale( 1 )
 end
 
-hook.Add("StormFox2.lightsystem.new", "StormFox2.ToneMap-Controller", function(lightlvl, lightlvlraw)
-	if not StormFox2.Setting.SFEnabled() then
+local function getMaxLight()
+	local c = StormFox2.Weather.Get("Clear")
+	return c:Get("mapDayLight",80)
+end
+
+local function ToneMapUpdate( lightlvlraw, var )
+	if not StormFox2.Setting.SFEnabled() or not (var or StormFox2.Setting.GetCache("edit_tonemap", true)) then
 		StormFox2.ToneMap.Reset()
 	else
 		StormFox2.ToneMap.SetExposureScale( lightlvlraw / 100 )
 	end
+end
+
+local last_Raw = 100
+-- Toggle tonemap with setting
+StormFox2.Setting.Callback("edit_tonemap",function(enabled)
+	ToneMapUpdate(last_Raw, enabled)
+end,"sf_edit_tonemap")
+-- Save the last raw-lightlvl and update the tonemap
+hook.Add("StormFox2.lightsystem.new", "StormFox2.ToneMap-Controller", function(lightlvl, lightlvl_raw)
+	last_Raw = lightlvl_raw
+	ToneMapUpdate(lightlvl_raw)
 end)
