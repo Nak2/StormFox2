@@ -2,6 +2,7 @@ local INVALID_VERTS = 0
 local WATER_VERTS = 1
 
 StormFox2.Setting.AddSV("enable_ice",not game.IsDedicated())
+StormFox2.Setting.AddSV("enable_wateroverlay",true, nil, "Effects")
 
 --[[-------------------------------------------------------------------------
 Localize

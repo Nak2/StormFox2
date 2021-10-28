@@ -11,6 +11,7 @@ local METAL_ROOF_VERTS = 4
 StormFox2.Setting.AddCL("window_enable",render.SupportsPixelShaders_2_0())
 StormFox2.Setting.AddCL("window_distance",800, nil, nil, 0, 4000)
 StormFox2.Setting.AddSV("enable_ice",not game.IsDedicated())
+StormFox2.Setting.AddSV("enable_wateroverlay",true, nil, "Effects")
 
 --[[-------------------------------------------------------------------------
 Adds a window model for SF to use.
@@ -1215,6 +1216,7 @@ function StormFox2.Environment._SETMapIce(s)
 	b = s
 end
 function StormFox2.Environment.DrawWaterOverlay(bSkyBox)
+	if not StormFox2.Setting.GetCache("enable_wateroverlay", true) or not StormFox2.Setting.SFEnabled() then return end
 	if not STORMFOX_WATERMESH_SKYBOX then return false end -- Invalid mesh.
 	if StormFox2.Environment.HasMapIce() then return false end -- Ice is on the map
 	if bSkyBox then
