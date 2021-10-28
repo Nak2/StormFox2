@@ -386,19 +386,8 @@ StormFox2.Map = {}
 			else
 				local len = SetToLump(f,lumps[44])
 				local tex = {}
-				local r = true
-				for i = 1,len do
-					local c = string.char(f:ReadByte())
-					if not string.match(c,"[%z]") then
-						if r then
-							tex[#tex] = (tex[#tex] or "") .. c
-						else
-							tex[#tex + 1] = c
-							r = true
-						end
-					else
-						r = false
-					end
+				for s in string.gmatch( f:Read(len), "[^%z]+" ) do
+					table.insert(tex, s)
 				end
 				SF_BSPDATA.TextureArray = tex
 				-- BOM, Easy .. now load the textdata (LUMP 2)
@@ -410,7 +399,7 @@ StormFox2.Map = {}
 					dtexdata_t.nameStringTableID = f:ReadLong()
 					dtexdata_t.width, dtexdata_t.height = f:ReadLong(),f:ReadLong()
 					dtexdata_t.view_width, dtexdata_t.view_height = f:ReadLong(),f:ReadLong()
-					dtexdata_t.texture = tex[dtexdata_t.nameStringTableID] or "" -- Add the texture array
+					dtexdata_t.texture = tex[dtexdata_t.nameStringTableID + 1] or "" -- Add the texture array
 					table.insert(texdata_t,dtexdata_t)
 				end
 				SF_BSPDATA.Textures = texdata_t
@@ -502,7 +491,7 @@ Generates the texture-table used by StormFox2.
 	local function GenerateTextureTree()
 		local tree = {}
 		-- Load all textures
-			for _,tex_string in ipairs(StormFox2.Map.AllTextures()) do
+			for _,tex_string in pairs(StormFox2.Map.AllTextures()) do
 				if tree[tex_string:lower()] then continue end
 				local mat = Material(tex_string)
 				if not mat then continue end
