@@ -1,5 +1,5 @@
 
-StormFox2.Setting.AddSV("edit_tonemap", true, nil, "Effects")
+StormFox2.Setting.AddSV("edit_tonemap", false, nil, "Effects")
 
 if CLIENT then return end
 StormFox2.ToneMap = {}
