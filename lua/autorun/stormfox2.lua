@@ -176,5 +176,6 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 		table.insert(ExtraFilters,"env_wind")
 		table.insert(ExtraFilters,"env_skypaint")
 		table.insert(ExtraFilters,"sf_soundscape")
+		table.insert(ExtraFilters,"stormfox_streetlight_invisible")
 		STORMFOX_CLEANUPMAP(dontSendToClients,ExtraFilters)
 	end
