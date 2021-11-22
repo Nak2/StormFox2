@@ -48,7 +48,6 @@ function StormFox2.Weather.Add( sName, sInherit )
 	t.Static = {}
 	t.Dynamic = {}
 	t.SunStamp = {}
-	StormFox2.Msg("Weather added: " .. sName)
 	return t
 end
 
