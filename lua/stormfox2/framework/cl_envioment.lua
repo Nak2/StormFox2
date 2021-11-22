@@ -301,18 +301,30 @@ Generate meshes and env-points out from the map-data.
 			end
 			return nocull,transparent
 		end
-		local function PlyTrace( ent, vec )
+		local function IsMaterialEmpty( t )
+			return t.HitTexture == "TOOLS/TOOLSINVISIBLE" or t.HitTexture == "**empty**" or t.HitTexture == "TOOLS/TOOLSNODRAW"
+		end
+		local up = Vector( 0, 0, -16000)
+		local function PlyTrace( ent )
 			local m,ma = ent:OBBMins(), ent:OBBMaxs()
 			m.z = 0
 			ma.z = 5
-			return util.TraceHull( {
-				start = ent:GetPos(),
-				endpos = ent:GetPos() + vec,
-				filter = ent:GetPos(),
-				mins = m,
-				maxs = ma,
-				collisiongroup = COLLISION_GROUP_PLAYER
-			} )
+			local from = ent:GetPos()
+			local lastResult
+			for i = 1, 3 do
+				local tr = util.TraceHull({
+					start = from,
+					endpos = from + up,
+					filter = ent,
+					mins = m,
+					maxs = ma,
+					collisiongroup = COLLISION_GROUP_PLAYER
+				})
+				if not IsMaterialEmpty(tr) then return tr end
+				from = tr.HitPos + tr.Normal 
+				lastResult = lastResult or tr
+			end
+			return lastResult
 		end
 		local nocull = false
 		local function IsTransparent( iMat )
@@ -1185,7 +1197,7 @@ end
 Returns the clients height over ground.
 ---------------------------------------------------------------------------]]
 function StormFox2.Environment.GetZHeight( bForceUpdate )
-	local tr = PlyTrace( StormFox2.util.ViewEntity(), Vector( 0, 0, -16000))
+	local tr = PlyTrace( StormFox2.util.ViewEntity())
 	if not tr.Hit then
 		z_distance = 16000
 	else
