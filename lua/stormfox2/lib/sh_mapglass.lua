@@ -346,6 +346,9 @@ end
 	end
 
 	local function SaveCache()
+		if not file.Exists("stormfox2/cache", "DATA") then
+			file.CreateDir("stormfox2/cache")
+		end
 		local f = file.Open(CACHE_FIL, "wb", "DATA")
 		if not f then Stormfox2.Warning("Unable to save cache!") end
 		f:Write("SF2")
