@@ -169,6 +169,9 @@ do
 		end
 		return m_t[ str ]
 	end
+	local function IsMaterialEmpty( t )
+		return t.HitTexture == "TOOLS/TOOLSINVISIBLE" or t.HitTexture == "**empty**" or t.HitTexture == "TOOLS/TOOLSNODRAW"
+	end
 	-- Returns a raindrop pos from a sky position. #2 is hittype: -1 = no hit, 0 = ground, 1 = water, 2 = glass.
 	local function TraceDown(pos, norm, nRadius, filter)
 		nRadius = nRadius or 1
@@ -202,16 +205,20 @@ do
 
 	-- Returns the skypos. If it didn't find the sky it will return last position as #2
 	local function FindSky(vFrom, vNormal, nTries)
-		local last
+		local last,lastFakeSky
 		for i = 1,nTries do
 			local t = util.TraceLine( {
 				start = vFrom,
 				endpos = vFrom + vNormal * 262144,
 				mask = MASK_SOLID_BRUSHONLY
 			} )
-			if t.HitTexture == "TOOLS/TOOLSINVISIBLE" then return end
+			if not t.Hit then break end -- Just empty void from this point on
+			-- Check if we're in the void
+			if t.HitPos.z > 32768 then break end -- Max map-size is 32768^2
+			--if t.HitTexture == "TOOLS/TOOLSINVISIBLE" then return end
+			-- We found the sky!
 			if t.HitSky then
-				-- In case there is the tiniest gab, ignore this.
+				-- In case there is the tiniest gab between skybox and the last brush, ignore it.
 				if t.StartSolid then
 					local zDis = (t.HitPos.z - vFrom.z ) * (t.Fraction - t.FractionLeftSolid)
 					if zDis < 1 then
@@ -220,9 +227,18 @@ do
 				end
 				return t.HitPos
 			end
-			if not t.Hit then return nil, last end
+			-- Check for fake sky. Some maps don't have a brush called "skybox" .. for some reason.
+			if IsMaterialEmpty(t) and not t.HitSky then
+				-- Check if far away
+				lastFakeSky = lastFakeSky or t.HitPos
+			else
+				lastFakeSky = nil
+			end
 			last = t.HitPos
 			vFrom = t.HitPos + vNormal
+		end
+		if lastFakeSky then
+			return lastFakeSky
 		end
 		return nil, last
 	end
@@ -743,4 +759,109 @@ if CLIENT then
 	end)
 end
 
+-- 2D
+if CLIENT and false then
+	local meta = {}
+	AccessorFunc(meta, "_x", "X")
+	AccessorFunc(meta, "_y", "y")
+	AccessorFunc(meta, "_w", "Width")
+	AccessorFunc(meta, "_h", "Height")
+	AccessorFunc(meta, "_mat", "Material")
+	AccessorFunc(meta, "_a", "Angle")
+	AccessorFunc(meta, "_l", "Life")
+	AccessorFunc(meta, "_as", "AngleSpeed")
+	AccessorFunc(meta, "_c", "Color")
+	AccessorFunc(meta, "_g", "Weight") -- Will make gravity effect it.
+	function meta:SetSize( nSize )
+		self:SetWidth( mSize )
+		self:SetHeight( mSize )
+	end
+	function meta:SetVelocity( nXSpeed, nYSpeed )
+		self._vx = nXSpeed
+		self._vy = nYSpeed
+	end
+	function meta:SetFade( nBool )
+		self._f = nBool
+	end
+	function meta:SetPos( x, y )
+		self._x = x
+		self._y = y
+	end
+	function StormFox2.DownFall.CreateScreenParticle(mMat)
+		local t = {}
+		-- Mat
+		t._mat = mMat
+		-- Pos
+		t._x = 0
+		t._y = 0
+		t._w = 32
+		t._h = 32
+		-- Ang
+		t._a = 0
+		t._as = 0
+		-- Vel
+		t._vx = 0
+		t._vy = 0
+		-- Grav
+		t._g = 0
+		-- Should fade
+		t._f = true
+		-- Col
+		t._c = color_white
+		setmetatable(t, meta)
+		return t
+	end
+	function StormFox2.DownFall.AddScreenParticle(obj2D, posx, posy)
+		local t = {}
+		-- Pos
+		t._x = posx
+		t._y = posy
+		t._w = 32
+		t._h = 32
+		-- Ang
+		t._a = 0
+		t._as = 0
+		-- Vel
+		t._vx = 0
+		t._vy = 0
+		-- Grav
+		t._g = 0
+		-- Should fade
+		t._f = true
+		-- Col
+		t._c = color_white
+		setmetatable(t, meta)
+		table.insert(_STORMFOX_SCE2d, {t, CurTime()})
+		return t
+	end
+	hook.Add("HUDPaintBackground", "StormFox2.Downfall.2D_Rain", function()
+		if #_STORMFOX_SCE2d < 1 then return end
+		-- In
+		if LocalPlayer() and LocalPlayer():WaterLevel() >= 3 then
 
+		end
+
+		local del = {}
+		local screenGrav = 1
+		for id, p in ipairs( _STORMFOX_SCE2d ) do
+			local o = p[1]
+			local t = CurTime() - p[4] + o:GetLife()
+			-- Check if dead
+			if t <= 0 or p[3] > ScrH() then -- Dead or outside
+				table.insert(del, id)
+				continue
+			end
+			-- Move
+			local g = o._g and o._g * screenGrav or 0
+			_STORMFOX_SCE2d[id][2] = p[2] + o._vx * FrameTime()
+			_STORMFOX_SCE2d[id][3] = p[3] + (o._vy + g) * FrameTime()
+			o:SetAngle( o:GetAngle() + o._ys )
+			-- Render
+			if o._f then
+
+			end
+			surface.SetDrawColor(o._c.r, o._c.g, o._c.b, o._c.a)
+
+		end
+	end)
+end
