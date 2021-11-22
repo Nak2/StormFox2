@@ -31,11 +31,21 @@ if CLIENT then
 		view.ang = Angle(0,0,0)
 		view.fov = 0
 		view.drawviewer = false
+	local otherPos, otherAng, otherFOV 
+	local a = true
 	hook.Add("RenderScene", "StormFox2.util.EyeHack", function(pos, ang,fov)
-		view.pos = pos or EyePos()
-		view.ang = ang or EyeAngles()
-		view.fov = fov or 90
+		if not a then return end
+		otherPos, otherAng, otherFOV = pos, ang,fov
+		a = false
+	end)
+
+	hook.Add("PostRender", "StormFox2.util.EyeHack", function()
+		local tab = render.GetViewSetup and render.GetViewSetup() or {}
+		view.pos = tab.origin or otherPos or EyePos()
+		view.ang = tab.angles or otherAng or EyeAngles()
+		view.fov = tab.fov or otherFOV or 90
 		view.drawviewer = LocalPlayer():ShouldDrawLocalPlayer()
+		a = true
 	end)
 	--[[<Client>-----------------------------------------------------------------
 	Returns the last calcview result.
