@@ -1,438 +1,471 @@
 --[[-------------------------------------------------------------------------
-Reads the BSP.
-Useful: https://github.com/NicolasDe/AlienSwarm/blob/c5a2d3fa853c726d040032ff2c7b90c8ed8d5d84/src/public/bspfile.h
-		https://developer.valvesoftware.com/wiki/Source_BSP_File_Format
+CoffeeLib BSP @ Nak 2021
 
-Tested from HL1 to CS:GO maps.
+DO NOT USE THIS WITHOUT MY PERMISSON IN YOUR PROJECT!
+If you wish the utilize the same functions, you can download CoffeeLib seperate to your server.
 
-Remember to read StormFox2's license before using this.
 ---------------------------------------------------------------------------]]
+-- Check for cache
+--StormFox2.FileWrite("stormfox2/cache/" .. game.GetMap() .. ".dat", DATA)
 StormFox2.Map = {}
--- Local vars
-	local file = table.Copy(file)
-	local Vector = Vector
-	local Color = Color
-	local table = table.Copy(table)
-	local string = table.Copy(string)
-	local util = table.Copy(util)
-	local isl4dmap
-	SF_BSPDATA = SF_BSPDATA or {}
+SF_BSPDATA = SF_BSPDATA or {}
+local function ReadVector(f)
+	return Vector( f:ReadFloat(), f:ReadFloat(), f:ReadFloat() )
+end
+local CACHE_VERSION = 1
+local CACHE_FIL = "stormfox2/cache/" .. game.GetMap() .. ".dat"
+local CRC = tonumber(util.CRC(file.Read("maps/" .. game.GetMap() .. ".bsp","GAME")))
 
-	local NO_TYPE = -1
-	local DIRTGRASS_TYPE = 0
-	local ROOF_TYPE = 1
-	local ROAD_TYPE = 2
-	local PAVEMENT_TYPE = 3
+-- Enums
+local NO_TYPE = -1
+local DIRTGRASS_TYPE = 0
+local ROOF_TYPE = 1
+local ROAD_TYPE = 2
+local PAVEMENT_TYPE = 3
 
-	local CONTENTS_WATER = 0x20
-	local CONTENTS_WINDOW = 0x2
-	local CONTENTS_SOLID = 0x1
--- Read functions
-	local function ReadBits( f, bits ) -- save.WriteInt
-		local b = f:Read(bits)
-		local i = 0
-		for n,v in ipairs( {string.byte(b,1,bits)} ) do
-			i = i + v * (256 ^ (n - 1) )
-		end
-		if i > 2147483647 then i = i - 4294967296 end
-		return i
-	end
-	local function ReadVec( f )
-		return Vector( f:ReadFloat(),f:ReadFloat(),f:ReadFloat())
-	end
-	local function unsigned( val, length )
-		if not val then return end
-	    if val < 0 then
-	        val = val + 2^(length * 8)
-	    end
-	    return val
-	end
-	local function unsigned_short(f)
-		return unsigned(f:ReadShort(),2)
-	end
-	local function unsigned_char(f)
-		return unsigned(f:ReadByte(),1)
-	end
-	local function unsigned_int(f)
-		return unsigned(ReadBits(f,4),4)
-	end
-	local function lzma_decode(f)
-		if f:Read(4) ~= "LZMA" then return end
-		local actualSize = f:ReadLong()
-		local lzmaSize = f:ReadLong() -- lzmaSize
-		local t = {}
-		for i = 1,5 do
-			table.insert(t, unsigned_char(f))
-		end
-		local str = f:Read( lzmaSize )
-		local buf = file.Open("buf.txt", "wb", "DATA");
-		for _, v in ipairs(t) do
-		    buf:WriteByte(v);
-		end
-		buf:WriteULong(actualSize);    -- this is actually a 64bit int, but i can't write those with gmod functions
-		buf:WriteULong(0);             -- filling in the unused bytes
-		buf:Write(str);
-		buf:Close();
-		return util.Decompress(file.Read("buf.txt"))
-	end
-	local function ReadStaticProp(f,version,m, staticSize)
-		local s = f:Tell()
-		local t = {}
-		-- Version 4
-			t.Origin = ReadVec(f)											-- Vector (3 float) 12 bytes
-			t.Angles = Angle( f:ReadFloat(),f:ReadFloat(),f:ReadFloat() )	-- Angle (3 float) 	12 bytes
-		-- Version 4
-			t.PropType = m[unsigned_short(f) + 1]					-- unsigned short 			2 bytes
-			t.First_leaf = unsigned_short(f)						-- unsigned short 			2 bytes
-			t.LeafCount = unsigned_short(f)							-- unsigned short 			2 bytes
-			t.Solid = unsigned_char(f)								-- unsigned char 			1 byte
-			t.Flags = unsigned_char(f)								-- unsigned char 			1 byte
-			t.Skin = f:ReadLong()									-- int 						4 bytes
-			t.FadeMinDist = f:ReadFloat()							-- float 					4 bytes
-			t.FadeMaxDist = f:ReadFloat()							-- float 					4 bytes
-			t.LightingOrigin = ReadVec(f)							-- Vector (3 float) 		12 bytes
-																	-- 56 bytes used
-		-- Version 5
-			if version >= 5 then
-				t.ForcedFadeScale = f:ReadFloat()					-- float 					4 bytes
-			end
-																	-- 60 bytes used
-		-- Version 6 and 7
-			if version >= 6 and version <= 7 then
-				t.MinDXLevel = unsigned_short(f)					-- unsigned short 			2 bytes
-				t.MaxDXLevel = unsigned_short(f)					-- unsigned short 			2 bytes
-		-- Version 8
-			elseif version >= 8 then
-				t.MinCPULevel = unsigned_char(f)					-- unsigned char 			1 byte
-				t.MaxCPULevel = unsigned_char(f)					-- unsigned char 			1 byte
-				t.MinGPULevel = unsigned_char(f)					-- unsigned char 			1 byte
-				t.MaxGPULevel = unsigned_char(f)					-- unsigned char 			1 byte
-			end
-		-- Version 7
-			if version >= 7 then 									-- color32 ( 32-bit color) 	4 bytes
-				t.DiffuseModulation = Color( f:ReadByte(),f:ReadByte(),f:ReadByte(),f:ReadByte() )
-			end
-		-- Somewhere between here are a lot of troubles. Lets reverse and start from the bottom it to be sure.
-			local bSkip = 0
-		-- Version 11 								UniformScale [4 bytes]
-			if version >= 11 then
-				f:Seek(s + staticSize - 4)
-				t.Scale = f:ReadFloat()
-				bSkip = bSkip + 4
-			else
-				t.Scale = 1 -- Scale is not supported in lower versions
-			end
-		-- Version 10+ (Bitflags) 					FlagsEx [4 bytes]
-			if version >= 10 then -- unsigned int
-				f:Seek(s + staticSize - bSkip - 4)
-				t.flags = unsigned_int(f)
-				bSkip = bSkip + 4
-			end
-		-- Version 9 and 10 						DisableX360 [4 bytes]
-			if version >= 9 and version <= 10 then
-				f:Seek(s + staticSize - bSkip - 4)
-				t.DisableX360 = ReadBits(f , 4)				-- bool (4 bytes)
-			end
-		return t,f:Tell() - s + bSkip
-	end
-	local function ReadLump( f, version )
-		local t = {}
-		if version ~= 21 then
-			t.fileofs = f:ReadLong()
-			t.filelen = f:ReadLong()
-			t.version = f:ReadLong()
-			t.fourCC = ReadBits(f,4)
-		else-- "People might share the new maps for other games. What do we do?"
-			-- "Just switch up the lump data a bit. But only for L4D2. So nothing is compatible ..."
-			if isl4dmap == nil then
-				-- Check if it is a l4d map. The first lump is Entities, and there are always at least one.
+-- Generator
+local GetBSPData, LoadENTLump
+do
+	local meta = {}
+	meta.__index = meta
+
+	-- Local functions
+		local function ReadLumpHeader( BSP, f )
+			local t = {}
+			if BSP.version ~= 21 or BSP._isL4D2 == false then
+				t.fileofs = f:ReadLong()
+				t.filelen = f:ReadLong()
+				t.version = f:ReadLong()
+				t.fourCC  = f:ReadLong()
+			elseif BSP._isL4D2 == true then
+				t.version = f:ReadLong()
+				t.fileofs = f:ReadLong()
+				t.filelen = f:ReadLong()
+				t.fourCC = f:ReadLong()
+			else -- Try and figure it out
 				local fileofs = f:ReadLong() -- Version
 				local filelen = f:ReadLong() -- fileofs
 				local version = f:ReadLong() -- filelen
-				t.fourCC = ReadBits(f,4) -- fourcc
-				if fileofs <= 8 then -- We are already 8 bytes in. Therefore this is invalid and must be a l4d2 map.
-					isl4dmap = true
+				t.fourCC  = f:ReadLong()
+				if fileofs <= 8 then
+					BSP._isL4D2 = true
 					t.version = fileofs
 					t.fileofs = filelen
 					t.filelen = version
 				else
-					isl4dmap = false
+					BSP._isL4D2 = false
 					t.fileofs = fileofs
 					t.filelen = filelen
 					t.version = version
 				end
-			elseif isl4dmap == true then
-				t.version = f:ReadLong()
-				t.fileofs = f:ReadLong()
-				t.filelen = f:ReadLong()
-				t.fourCC = ReadBits(f,4)
-			elseif isl4dmap == false then
-				t.fileofs = f:ReadLong()
-				t.filelen = f:ReadLong()
-				t.version = f:ReadLong()
-				t.fourCC = ReadBits(f,4)
 			end
+			return t		
 		end
-		return t
-	end
--- Lump functions
-	local function GetLump( f , lump)
-		f:Seek(lump.fileofs)
-		return f:Read(lump.filelen)
-	end
-	local function SetToLump( f , lump)
-		f:Seek(lump.fileofs)
-		return lump.filelen
-	end
--- Find soundscape in PAK ( No need, Rubat was kind to add PAK search. )
-	-- Min size: 26
-	--[[
-	local function ReadPakFile(f)
-		if f:ReadByte() ~= 80 or f:ReadByte() ~= 75 or f:ReadByte() ~= 3 or f:ReadByte() ~= 4 then
-			return
-		end
-		-- Skip to the uncompressed filesize
-		f:Seek(f:Tell() + 18)
-		local file_size = f:ReadLong()
-		local name_len = f:ReadShort()
-		local fil_data = f:ReadShort()
-		local filename = f:Read(name_len)
-		f:Seek(f:Tell() + fil_data + file_size)
-		return filename
-	end
 
-	local function GetPAKFiles(f, size)
-		--size = file.Size("mapdata.txt", "DATA")
-		--local f = file.Open("mapdata.txt", "rb", "DATA")
-		print("Locating scriptfiles within PAK: [".. string.NiceSize(size ) .. "]")
-		local tab = {}
-		for i = 1, size / 26 do
-			local filname = ReadPakFile(f)
-			if not filname then break end
-			if not string.match(filname, "^scripts/soundscapes_") then continue end
-			table.insert(tab, filname)
-		end
-		--f:Close()
-		return tab
-	end]]
--- Load BSP data.
-	local function GetBSPData(str)
-		local s = SysTime()
-		table.Empty(SF_BSPDATA)
-		str = game.GetMap()
-		if not string.match(str,".bsp$") then
-			str = str .. ".bsp"
-		end
-		local fil = "maps/" .. str
-		if not file.Exists(fil,"GAME") then
-			StormFox2.Warning("Unable to located mapfile!")
-			return false
-		end
-		local f = file.Open(fil,"rb","GAME")
-		-- BSP file header
-			if f:Read(4) ~= "VBSP" then -- Invalid
-				StormFox2.Warning("Mapfile is not a source map!")
-				f:Close()
-				return false
-			end
-			SF_BSPDATA.version = ReadBits(f,4)
-			if SF_BSPDATA.version > 21 then
-				StormFox2.Warning("What year is it? SF is too old to read those maps.")
-				f:Close()
-				return false
-			end
-			local lumps = {}
-			for i = 1,64 do
-				lumps[i] = ReadLump(f,SF_BSPDATA.version)
-			end
-		-- Read entities (LUMP 0)
-			SF_BSPDATA.Entities = {}
-			-- Check for lmp file
-			local data
-			if file.Exists("maps/" .. game.GetMap() .. "_l_0.lmp", "GAME") then
-				StormFox2.Msg("Reading lmp EntityLump file.")
-				data = file.Read("maps/" .. game.GetMap() .. "_l_0.lmp", "GAME")
-			else
-				data = GetLump(f,lumps[1])
-			end		
-			if string.sub(data,0,4) == "LZMA" then -- No, util.Decompress doesn't work.
-				local len = SetToLump(f,lumps[1])
-				local de_data = lzma_decode(f)
-				if type(de_data) ~= "string" then
-					StormFox2.Warning("Map is LZMA compressed and SF wasn't able to load the map.")
-					f:Close()
-					return false
+		local function CreateStaticProp(f, version, m, staticSize)
+			local s = f:Tell()
+			local obj = {}
+			-- Version 4
+				obj.Origin = f:ReadVector()								-- Vector (3 float) 12 bytes
+				obj.Angles = Angle( f:ReadFloat(),f:ReadFloat(),f:ReadFloat() )	-- Angle (3 float) 	12 bytes
+			-- Version 4
+				obj.PropType = m[f:ReadUShort() + 1]					-- unsigned short 			2 bytes
+				obj.First_leaf = f:ReadUShort()						-- unsigned short 			2 bytes
+				obj.LeafCount = f:ReadUShort()							-- unsigned short 			2 bytes
+				obj.Solid = f:ReadByte()								-- unsigned char 			1 byte
+				obj.Flags = f:ReadByte()								-- unsigned char 			1 byte
+				obj.Skin = f:ReadLong()									-- int 						4 bytes
+				obj.FadeMinDist = f:ReadFloat()							-- float 					4 bytes
+				obj.FadeMaxDist = f:ReadFloat()							-- float 					4 bytes
+				obj.LightingOrigin = f:ReadVector()							-- Vector (3 float) 		12 bytes
+																		-- 56 bytes used
+			-- Version 5
+				if version >= 5 then
+					obj.ForcedFadeScale = f:ReadFloat()					-- float 					4 bytes
 				end
-				data = de_data
-			end
-			if data then
-				for s in string.gmatch( data, "%{.-%\n}" ) do
-					local t = util.KeyValuesToTable("t" .. s)
-					-- Convert a few things to make it easier
-						t.origin = util.StringToType(t.origin or "0 0 0","Vector")
-						t.angles = util.StringToType(t.angles or "0 0 0","Angle")
-						local c = util.StringToType(t.rendercolor or "255 255 255","Vector")
-						t.rendercolor = Color(c.x,c.y,c.z)
-						t.raw = s
-					table.insert(SF_BSPDATA.Entities,t)
+																		-- 60 bytes used
+			-- Version 6 and 7
+				if version >= 6 and version <= 7 then
+					obj.MinDXLevel = f:ReadUShort()					-- unsigned short 			2 bytes
+					obj.MaxDXLevel = f:ReadUShort()					-- unsigned short 			2 bytes
+			-- Version 8
+				elseif version >= 8 then
+					obj.MinCPULevel = f:ReadByte()					-- unsigned char 			1 byte
+					obj.MaxCPULevel = f:ReadByte()					-- unsigned char 			1 byte
+					obj.MinGPULevel = f:ReadByte()					-- unsigned char 			1 byte
+					obj.MaxGPULevel = f:ReadByte()					-- unsigned char 			1 byte
 				end
-			else
-				StormFox2.Warning("Invalid BSP data. SF is unable to process the file.")
-				f:Close()
-				return false
+			-- Version 7
+				if version >= 7 then 									-- color32 ( 32-bit color) 	4 bytes
+					obj.DiffuseModulation = Color( f:ReadByte(),f:ReadByte(),f:ReadByte(),f:ReadByte() )
+				end
+			-- Somewhere between here are a lot of troubles. Lets reverse and start from the bottom it to be sure.
+				local bSkip = 0
+			-- Version 11 								UniformScale [4 bytes]
+				if version >= 11 then
+					f:Seek(s + staticSize - 4)
+					obj.UniformScale = f:ReadFloat()
+					bSkip = bSkip + 4
+				else
+					obj.UniformScale = 1 -- Scale is not supported in lower versions
+				end
+			-- Version 10+ (Bitflags) 					FlagsEx [4 bytes]
+				if version >= 10 then -- unsigned int
+					f:Seek(s + staticSize - bSkip - 4)
+					obj.flags = f:ReadULong()
+					bSkip = bSkip + 4
+				end
+			-- Version 9 and 10 						DisableX360 [4 bytes]
+				if version >= 9 and version <= 10 then
+					f:Seek(s + staticSize - bSkip - 4)
+					obj.DisableX360 = f:ReadLong()		-- bool (4 bytes)
+				end
+			return obj,f:Tell() - s + bSkip
+		end
+
+		function meta:SeekLump(f, num )
+			local h = self.lumpheader[ num + 1 ]
+			assert(h, "Can't locate lump!")
+			assert(h.fileofs > 8 or h.filelen < 1, "Invalid bytes in lumpheader!" .. num)
+			f:Seek(h.fileofs)
+			return h.filelen
+		end
+
+		function meta:ReadLump(f, num )
+			local len = self:SeekLump(f, num )
+			local data = f:Read( len )
+			return data
+		end
+
+		function meta:LZMAReadLump(f, num )
+			self:SeekLump(f, num )
+			if f:Read(4):lower() ~= "lzma" then
+				return self:ReadLump(f, num )
 			end
-		-- Read game lump (LUMP 35) This is for static props and other things
-			local len = SetToLump(f,lumps[36])
-			local count = f:ReadLong()
-			local GameLump = {}
-			for i = 1,count do
-				GameLump[i] = {
+			local actualSize = f:ReadLong()
+			local lzmaSize = f:ReadLong() -- lzmaSize
+			local t = {}
+			for i = 1,5 do
+				table.insert(t, unsigned_char(f))
+			end
+			local str = f:Read( lzmaSize )
+			local buf = file.Open("sf_buffer.txt", "wb", "DATA");
+			for _, v in ipairs(t) do
+				buf:WriteByte(v);
+			end
+			buf:WriteULong(actualSize);    -- this is actually a 64bit int, but i can't write those with gmod functions
+			buf:WriteULong(0);             -- filling in the unused bytes
+			buf:Write(str);
+			buf:Close();
+
+			return util.Decompress(file.Read("sf_buffer.txt"))
+		end
+
+		function meta:ReadGameLumpHeader( f )
+			if self._gamelump then return self._gamelump end
+			self._gamelump = {}
+			local len = self:SeekLump(f, 35 )
+			local pos = f:Tell()
+			for i = 1, math.min(64, f:ReadLong() ) do
+				self._gamelump[i] = {
 					id = f:ReadLong(),
-					flags = unsigned_short(f),
-					version = unsigned_short(f),
+					flags = f:ReadUShort(),
+					version = f:ReadUShort(),
 					fileofs = f:ReadLong(),
 					filelen = f:ReadLong()
 				}
 			end
-			local staticprop_lump = -1
-			local staticprop_version = -1
-			-- Locate the static prop lump
-			for i = 1,count do
-				if GameLump[i].id == 1936749168 then -- 1936749168 = 'sprp'
-					staticprop_lump = i
-					staticprop_version = GameLump[i].version
+			return self._gamelump
+		end
+
+		function meta:FindGameLump(f,  gLumpID )
+			local t = self:ReadGameLumpHeader( f )
+			local m
+			for k, v in ipairs( t ) do
+				if v.id == gLumpID then
+					m = k
 					break
 				end
 			end
-			SF_BSPDATA.StaticProps = {}
-			if staticprop_lump >= 0 then
-				-- Read the static prop models
-					f:Seek(GameLump[staticprop_lump].fileofs)
-					local n = f:ReadLong() -- Number of models
+			return t[m]
+		end
+
+	-- Textures and materials
+		do
+			local max_data = 256000
+			function meta:GetTextures(f)
+				if self.lumpdata[43] then
+					return self.lumpdata[43]
+				end
+				self.lumpdata[43] = {}
+				local data = self:LZMAReadLump(f, 43)
+				if #data > max_data then
+					error("BSP's TexDataStringData is invalid!")
+				end
+				for s in string.gmatch( data, "[^%z]+" ) do
+					table.insert(self.lumpdata[43], s:lower())
+				end
+				return self.lumpdata[43]
+			end
+		end
+
+		function LoadENTLump( data )
+			local a = {}
+			for s in string.gmatch( data, "%{.-%\n}" ) do
+				local t = util.KeyValuesToTable("t" .. s)
+				-- Convert a few things to make it easier
+					t.origin = util.StringToType(t.origin or "0 0 0","Vector")
+					t.angles = util.StringToType(t.angles or "0 0 0","Angle")
+					local c = util.StringToType(t.rendercolor or "255 255 255","Vector")
+					t.rendercolor = Color(c.x,c.y,c.z)
+					t.raw = s
+				table.insert(a,t)
+			end
+			return a
+		end
+
+	-- Load functions
+		function GetBSPData()
+			--print("Loading file")
+			local mapfile = "maps/"..game.GetMap() .. ".bsp"
+			local f = file.Open(mapfile,"rb","GAME")
+			if not f then StormFox2.Warning("Unable to load mapfile!") return {} end
+			-- Read the header
+			if f:Read(4) ~= "VBSP" then
+				f:Close()
+				error("File not BSP format!")
+			end
+			local BSP = {}
+			setmetatable(BSP, meta)
+			BSP.version = f:ReadLong()
+			assert( BSP.version <= 21, "BSP is too new" )
+			-- Read Lump Header
+			BSP.lumpheader = {}
+			BSP.lumpdata = {}
+			for i = 1, 64 do
+				BSP.lumpheader[i] = ReadLumpHeader( BSP, f )
+			end
+			-- Ent
+			local data = BSP:LZMAReadLump(f, 0 )
+			BSP.Entities = LoadENTLump( data )
+			-- Static prosp
+				BSP.StaticProps = {}
+				local t = BSP:FindGameLump( f, 1936749168 ) -- 1936749168 == "sprp"
+				if not t then return {} end -- No gamelump. Must be empty.
+				-- Read the models
+					f:Seek( t.fileofs )
 					local m = {}
-					if n < 99999 then -- Safty first
-						for i = 1,n do
-							local model = ""
-							for i2 = 1,128 do
-								local c = string.char(f:ReadByte())
-								if string.match(c,"[%w_%-%.%/]") then
-									model = model .. c
-								end
+					local n = f:ReadLong() -- Number of models
+					if n > 16384 then
+						ErrorNoHalt(game.GetMap() .. ".BSP has more than 16384 models!")
+						f:Close()
+						return {}
+					end
+					for i = 1,n do
+						local model = ""
+						for i2 = 1,128 do
+							local c = string.char(f:ReadByte())
+							if string.match(c,"[%w_%-%.%/]") then
+								model = model .. c
 							end
-							m[i] = model
 						end
+						m[i] = model
+					end
+				-- Read the leafs ( Unused )
+					local n = f:ReadLong()
+					for i = 1, n do
+						f:ReadShort() -- Unsigned
+					end
+				-- Read static props
+					local count = f:ReadLong()
+					if count > 16384 then
+						ErrorNoHalt(game.GetMap() .. ".BSP has more than 16384 static props!")
 					else
-						StormFox2.Warning("Can't read the maps static props.")
-					end
-				-- Locate the leafs
-					if #m > 0 then
-						local n = f:ReadLong()
-						for i = 1,n do
-							unsigned_short(f)
-						end
-					end
-				-- Static prop lump
-					if #m > 0 then
-						local count = f:ReadLong()
-						local endPos = GameLump[staticprop_lump].filelen + GameLump[staticprop_lump].fileofs
+						local endPos = t.filelen + t.fileofs
 						local staticSize = (endPos - f:Tell()) / count
 						local staticStart = f:Tell()
 						local staticUsed = 0
-						if count > 16385 then
-							StormFox2.Warning("Can't read the maps static props. [Crazy amount]")
-						else
-							for i = 0, count - 1 do
-								-- This is to try and get as much valid data we can.
-								f:Seek(staticStart + staticSize * i)
-								local t,sizeused = ReadStaticProp(f,staticprop_version,m, staticSize)
-								staticUsed = sizeused
-								table.insert(SF_BSPDATA.StaticProps,t)
-							end
-						end
-						--print("staticprop_version",staticprop_version)
-						if staticUsed == staticSize then
-							--print("StaticMatch: ",staticSize)
-						else
-							StormFox2.Warning("Static props doesn't match version! Size[" .. staticSize .. " bytes]")
-							if staticUsed < staticSize then
-								--print("Bytes unread: ", staticSize - staticUsed)
-							else
-								--print("Bytes overused: ", staticUsed - staticSize)
-							end
+						for i = 0, count - 1 do
+							-- This is to try and get as much valid data we can.
+							f:Seek(staticStart + staticSize * i)
+							local sObj, sizeused = CreateStaticProp(f,t.version, m, staticSize)
+							staticUsed = sizeused
+							sObj.Index = table.insert(BSP.StaticProps,sObj) - 1
 						end
 					end
-			end
-		-- Textures are tricky. You have to load them with LUMP 2, then LUMP 43 for the position in LUMP 44
-		-- Too complex .. lets just load the mapmaterial array
-			local len = SetToLump(f,lumps[44])
-			-- Check to see if the data is LZMA compressed
-			local check = ""
-			for i = 1, 4 do
-				check = check .. string.char(f:ReadByte())
-			end
-			if check == "LZMA" then -- No, util.Decompress doesn't work.
-				SetToLump(f,lumps[44])
-				local de_data = lzma_decode(f)
-				if not de_data then
-					StormFox2.Warning("Failed to decompress LZMA map-data. SF couldn't load the mapfile!")
-					f:Close()
-					return false
-				else
-					SF_BSPDATA.TextureArray = {}
-					for s in string.gmatch( de_data, "[^%z]+" ) do
-						table.insert(SF_BSPDATA.TextureArray, s:lower())
-					end
-				end
-			else
-				local len = SetToLump(f,lumps[44])
-				local tex = {}
-				for s in string.gmatch( f:Read(len), "[^%z]+" ) do
-					table.insert(tex, s:lower())
-				end
-				SF_BSPDATA.TextureArray = tex
-				-- BOM, Easy .. now load the textdata (LUMP 2)
-				local len = SetToLump(f,lumps[3]) / 32
-				local texdata_t = {}
-				for i = 1,len do
-					local dtexdata_t = {}
-					dtexdata_t.reflectivity = ReadVec(f)
-					dtexdata_t.nameStringTableID = f:ReadLong()
-					dtexdata_t.width, dtexdata_t.height = f:ReadLong(),f:ReadLong()
-					dtexdata_t.view_width, dtexdata_t.view_height = f:ReadLong(),f:ReadLong()
-					dtexdata_t.texture = tex[dtexdata_t.nameStringTableID + 1] or "" -- Add the texture array
-					table.insert(texdata_t,dtexdata_t)
-				end
-				SF_BSPDATA.Textures = texdata_t
-			end
-		-- PAK search
-			local len = SetToLump(f,lumps[41])
-			if len > 10 then
-				SF_BSPDATA._hasPak = true
-			end
-		-- Planes
-		--	local planes = {}
-		--	local len = SetToLump(f,lumps[2])
-		--	f:ReadByte()
-		--	f:ReadByte()
-		--	for i = 1,len / 20 do
-		--		local n = ReadVec(f) 		-- Normal 12 bytes
-		--		local d = f:ReadFloat()		-- Float  4 bytes
-		--		local t = f:ReadLong() 		-- Type   4 bytes
-		--		--print(t)
-		--		table.insert(planes, {n, d, t})
-		--	end
-		--	print("PLANES LENGH", len % 20)
-		f:Close()
-		StormFox2.Msg("Took " .. (SysTime() - s) .. " seconds to load the mapdata.")
+				-- We calculate the amount of static props within this space. It is more stable.
+			-- Textures
+				BSP.TextureArray = BSP:GetTextures(f)
+			f:Close()
+			return BSP
+		end
+end
+
+-- Local functions
+	local function ValidateCache( fil )
+		if not fil then return false end
+		if fil:Read(3) ~= "SF2" then return false end
+		if fil:ReadUShort() ~= CACHE_VERSION then return false end
+		if fil:ReadULong() ~= CRC then return false end
 		return true
 	end
--- MAP functions
+
+	local function WriteData( f, str )
+		f:WriteULong(#str)
+		f:Write(str)
+	end
+
+	local function ReadData(f)
+		local n = f:ReadULong()
+		return f:Read(n)
+	end
+
+	local function LoadCache()
+		if not file.Exists(CACHE_FIL, "DATA")then
+			return
+		end
+		-- Check if valid
+		local f = file.Open(CACHE_FIL, "rb", "DATA")
+		if not ValidateCache(f) then
+			StormFox2.Warning("Map cache is invalid! Regenerating ..")
+			f:Close()
+			return
+		end
+		local SF_BSPDATA = {}
+		SF_BSPDATA.version = f:ReadLong()
+		-- Entities
+		SF_BSPDATA.Entities = util.JSONToTable(ReadData(f))
+		-- Static props
+		SF_BSPDATA.StaticProps = util.JSONToTable(ReadData(f))
+		-- Textures
+		SF_BSPDATA.TextureArray = util.JSONToTable(ReadData(f))
+		SF_BSPDATA._hasPak = f:ReadBool()
+
+		f:Close()
+		return SF_BSPDATA
+	end
+
+	local function SaveCache()
+		local f = file.Open(CACHE_FIL, "wb", "DATA")
+		if not f then Stormfox2.Warning("Unable to save cache!") end
+		f:Write("SF2")
+		f:WriteUShort(CACHE_VERSION)
+		f:WriteULong(CRC)
+		f:ReadLong(SF_BSPDATA.version)
+		-- Ent
+		WriteData(f, util.TableToJSON(SF_BSPDATA.Entities))
+		-- Static
+		WriteData(f, util.TableToJSON(SF_BSPDATA.StaticProps))
+		-- Textures
+		WriteData(f, util.TableToJSON(SF_BSPDATA.TextureArray))
+		f:WriteBool(SF_BSPDATA._hasPak)
+		f:Close()
+	end
+
+	local function LoadMap()
+		SF_BSPDATA = LoadCache() -- Try and load cache
+		if SF_BSPDATA then  -- Managed to load
+			SF_BSPDATALOADED = true
+		else
+			-- Load map ..
+			if CoffeeLib and false then
+				StormFox2.Msg("Generating map cache using CoffeeLib ..")
+				local BSP = Map.ReadBSP()
+				SF_BSPDATA = {}
+				SF_BSPDATA.version = BSP:GetVersion()
+				SF_BSPDATA.Entities = BSP:GetEntities()
+				SF_BSPDATA.StaticProps = BSP:GetStaticProps()
+				SF_BSPDATA.TextureArray = BSP:GetTextures()
+				SF_BSPDATALOADED = true
+				SaveCache()
+			else
+				StormFox2.Msg("Generating new map cache ..")
+				SF_BSPDATA = GetBSPData()
+				SF_BSPDATALOADED = true
+				if SF_BSPDATA then SaveCache() end
+			end
+		end
+		-- Check for entity lump file
+		if file.Exists("maps/" .. game.GetMap() .. "_l_0.lmp", "GAME") then
+			StormFox2.Msg("Reading lmp EntityLump file.")
+			SF_BSPDATA.Entities = LoadENTLump( file.Read("maps/" .. game.GetMap() .. "_l_0.lmp", "GAME") )
+		end	
+	end
+-- Load map
+LoadMap()
+-- Texture Generator
+-- Type Guesser function
+local blacklist = {"gravelfloor002b","swift/","sign","indoor","foliage","model","dirtfloor005c","dirtground010","concretefloor027a","swamp","sand","concret"}
+local function GetTexType(str)
+	str = str:lower()
+	if str == "error" then return NO_TYPE end
+	for _,bl in ipairs(blacklist) do
+		if string.find(str,bl,nil,true) then return NO_TYPE end
+	end
+	-- Dirt grass and gravel
+		if string.find(str,"grass") then return DIRTGRASS_TYPE end
+		if string.find(str,"dirt") then return DIRTGRASS_TYPE end
+		if string.find(str,"gravel") then return DIRTGRASS_TYPE end
+		if string.find(str,"ground") then return DIRTGRASS_TYPE end
+	-- Roof
+		if string.find(str,"roof") then return ROOF_TYPE end
+	-- Road
+		if string.find(str,"road") then return ROAD_TYPE end
+		if string.find(str,"asphalt") then return ROAD_TYPE end
+	-- Pavement This is disabled, since it messes most maps up
+		--if string.find(str,"pavement") or string.find(str,"cobble") or string.find(str,"concretefloor") then return PAVEMENT_TYPE end
+	return NO_TYPE
+end
+--[[-------------------------------------------------------------------------
+Generates the texture-table used by StormFox2.
+---------------------------------------------------------------------------]]
+local function GenerateTextureTree()
+	local tree = {}
+	-- Load all textures
+		for _,tex_string in pairs(StormFox2.Map.AllTextures()) do
+			if tree[tex_string] then continue end
+			local mat = Material(tex_string)
+			if not mat then continue end
+			local tex1,tex2 = mat:GetTexture("$basetexture"),mat:GetTexture("$basetexture2")
+			if not tex1 and not tex2 then continue end
+			-- Guess from the textures
+				if tex1 and not tex1:IsError() then
+					local t = GetTexType(tex1:GetName())
+					if t ~= NO_TYPE then
+						tree[tex_string] = {}
+						tree[tex_string][1] = t
+					end
+				end
+				if tex2 and not tex2:IsError() then
+					local t = GetTexType(tex2:GetName())
+					if t ~= NO_TYPE then
+						tree[tex_string] = tree[tex_string] or {}
+						tree[tex_string][2] = t
+					end
+				end
+		end
+	return tree
+end
+--[[-------------------------------------------------------------------------
+Returns a list of map-textures that should be replaced.
+NO_TYPE = -1
+DIRTGRASS_TYPE = 0
+ROOF_TYPE = 1
+ROAD_TYPE = 2
+PAVEMENT_TYPE = 3
+---------------------------------------------------------------------------]]
+function StormFox2.Map.GetTextureTree()
+	return SF_TEXTDATA or {}
+end
+
+-- Small StormFox Functions
 	--[[-------------------------------------------------------------------------
 	Returns the mapversion.
 	---------------------------------------------------------------------------]]
 	function StormFox2.Map.Version()
 		return SF_BSPDATA.version or -1
 	end
+
 	--[[-------------------------------------------------------------------------
 	Returns the entities from the mapfile.
 	---------------------------------------------------------------------------]]
@@ -463,72 +496,10 @@ StormFox2.Map = {}
 	function StormFox2.Map.HasPAK()
 		return SF_BSPDATA._hasPak or false
 	end
--- Type Guesser function
-	local blacklist = {"gravelfloor002b","swift/","sign","indoor","foliage","model","dirtfloor005c","dirtground010","concretefloor027a","swamp","sand","concret"}
-	local function GetTexType(str)
-		str = str:lower()
-		if str == "error" then return NO_TYPE end
-		for _,bl in ipairs(blacklist) do
-			if string.find(str,bl,nil,true) then return NO_TYPE end
-		end
-		-- Dirt grass and gravel
-			if string.find(str,"grass") then return DIRTGRASS_TYPE end
-			if string.find(str,"dirt") then return DIRTGRASS_TYPE end
-			if string.find(str,"gravel") then return DIRTGRASS_TYPE end
-			if string.find(str,"ground") then return DIRTGRASS_TYPE end
-		-- Roof
-			if string.find(str,"roof") then return ROOF_TYPE end
-		-- Road
-			if string.find(str,"road") then return ROAD_TYPE end
-			if string.find(str,"asphalt") then return ROAD_TYPE end
-		-- Pavement This is disabled, since it messes most maps up
-			--if string.find(str,"pavement") or string.find(str,"cobble") or string.find(str,"concretefloor") then return PAVEMENT_TYPE end
-		return NO_TYPE
-	end
---[[-------------------------------------------------------------------------
-Generates the texture-table used by StormFox2.
----------------------------------------------------------------------------]]
-	local function GenerateTextureTree()
-		local tree = {}
-		-- Load all textures
-			for _,tex_string in pairs(StormFox2.Map.AllTextures()) do
-				if tree[tex_string:lower()] then continue end
-				local mat = Material(tex_string)
-				if not mat then continue end
-				local tex1,tex2 = mat:GetTexture("$basetexture"),mat:GetTexture("$basetexture2")
-				if not tex1 and not tex2 then continue end
-				-- Guess from the textures
-					if tex1 and not tex1:IsError() then
-						local t = GetTexType(tex1:GetName())
-						if t ~= NO_TYPE then
-							tree[tex_string:lower()] = {}
-							tree[tex_string:lower()][1] = t
-						end
-					end
-					if tex2 and not tex2:IsError() then
-						local t = GetTexType(tex2:GetName())
-						if t ~= NO_TYPE then
-							tree[tex_string:lower()] = tree[tex_string:lower()] or {}
-							tree[tex_string:lower()][2] = t
-						end
-					end
-			end
-		return tree
-	end
---[[-------------------------------------------------------------------------
-Returns a list of map-textures that should be replaced.
-	NO_TYPE = -1
-	DIRTGRASS_TYPE = 0
-	ROOF_TYPE = 1
-	ROAD_TYPE = 2
-	PAVEMENT_TYPE = 3
----------------------------------------------------------------------------]]
-	function StormFox2.Map.GetTextureTree()
-		return SF_TEXTDATA or {}
-	end
---[[-------------------------------------------------------------------------
-Gets all entities with the given class from the mapfile. 
----------------------------------------------------------------------------]]
+
+	--[[-------------------------------------------------------------------------
+	Gets all entities with the given class from the mapfile. 
+	---------------------------------------------------------------------------]]
 	function StormFox2.Map.FindClass(sClass)
 		local t = {}
 		for k,v in pairs(SF_BSPDATA.Entities) do
@@ -538,9 +509,9 @@ Gets all entities with the given class from the mapfile.
 		end
 		return t
 	end
---[[-------------------------------------------------------------------------
-Gets all entities with the given name from the mapfile. 
----------------------------------------------------------------------------]]
+	--[[-------------------------------------------------------------------------
+	Gets all entities with the given name from the mapfile. 
+	---------------------------------------------------------------------------]]
 	function StormFox2.Map.FindTargetName(sTargetName)
 		local t = {}
 		for k,v in pairs(SF_BSPDATA.Entities) do
@@ -550,9 +521,9 @@ Gets all entities with the given name from the mapfile.
 		end
 		return t
 	end
---[[-------------------------------------------------------------------------
-Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
----------------------------------------------------------------------------]]
+	--[[-------------------------------------------------------------------------
+	Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
+	---------------------------------------------------------------------------]]
 	function StormFox2.Map.FindEntity(eEnt)
 		local c = eEnt:GetClass()
 		local h_id = eEnt:GetKeyValues().hammerid
@@ -564,9 +535,9 @@ Returns the mapdata for the given entity. Will be nil if isn't a map-created ent
 		end
 		return
 	end
---[[-------------------------------------------------------------------------
-Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
----------------------------------------------------------------------------]]
+	--[[-------------------------------------------------------------------------
+	Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
+	---------------------------------------------------------------------------]]
 	function StormFox2.Map.FindEntsInSphere(vPos,nRadius)
 		local t = {}
 		nRadius = nRadius^2
@@ -577,9 +548,9 @@ Returns the mapdata for the given entity. Will be nil if isn't a map-created ent
 		end
 		return t
 	end
---[[-------------------------------------------------------------------------
-Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
----------------------------------------------------------------------------]]
+	--[[-------------------------------------------------------------------------
+	Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
+	---------------------------------------------------------------------------]]
 	function StormFox2.Map.FindStaticsInSphere(vPos,nRadius)
 		local t = {}
 		nRadius = nRadius^2
@@ -590,9 +561,9 @@ Returns the mapdata for the given entity. Will be nil if isn't a map-created ent
 		end
 		return t
 	end
---[[-------------------------------------------------------------------------
-Locates an entity with the given hammer_id from the mapfile. 
----------------------------------------------------------------------------]]
+	--[[-------------------------------------------------------------------------
+	Locates an entity with the given hammer_id from the mapfile. 
+	---------------------------------------------------------------------------]]
 	function StormFox2.Map.FindHammerid(nHammerID)
 		for k,v in pairs(ents.GetAll()) do
 			local h_id = v:GetKeyValues().hammerid
@@ -603,7 +574,7 @@ Locates an entity with the given hammer_id from the mapfile.
 		end
 		return
 	end
--- Map functions 
+	-- Map functions 
 	local min,max,sky,sky_scale,has_Sky,map_radius = Vector(0,0,0),Vector(0,0,0),Vector(0,0,0),1,false
 	--[[-------------------------------------------------------------------------
 	Returns the maxsize of the map.
@@ -704,108 +675,104 @@ Locates an entity with the given hammer_id from the mapfile.
 	function StormFox2.Map.HasSnow()
 		return bSnow
 	end
-	-- Parse and load the mapfile (Only once)
-	if SF_BSPDATALOADED ~= true then
-		SF_BSPDATALOADED = GetBSPData()
-		if not SF_BSPDATALOADED then return end
+
+--[[-------------------------------------------------------------------------
+Controls map relays easier
+	dusk = night_events
+	dawn = day_events
+---------------------------------------------------------------------------]]
+local relay = {}
+hook.Add("StormFox2.InitPostEntity", "StormFox2.MapInteractions.Init", function()
+	-- Locate all logic_relays on the map
+	for _,ent in ipairs( ents.FindByClass("logic_relay") ) do
+		local name = ent:GetName()
+		name = string.match(name, "-(.+)$") or name
+		if name == "dusk" then name = "night_events" end
+		if name == "dawn" then name = "day_events" end
+		if not relay[name] then relay[name] = {} end
+		table.insert(relay[name], ent)
 	end
-	--[[-------------------------------------------------------------------------
-	Controls map relays easier
-		dusk = night_events
-		dawn = day_events
-	---------------------------------------------------------------------------]]
-	local relay = {}
-	hook.Add("StormFox2.InitPostEntity", "StormFox2.MapInteractions.Init", function()
-		-- Locate all logic_relays on the map
-		for _,ent in ipairs( ents.FindByClass("logic_relay") ) do
-			local name = ent:GetName()
-			name = string.match(name, "-(.+)$") or name
-			if name == "dusk" then name = "night_events" end
-			if name == "dawn" then name = "day_events" end
-			if not relay[name] then relay[name] = {} end
-			table.insert(relay[name], ent)
+end)
+if SERVER then
+	function StormFox2.Map.CallLogicRelay(sName,b)
+		if sName == "dusk" then sName = "night_events" end
+		if sName == "dawn" then sName = "day_events" end
+		if b ~= nil and b == false then
+			sName = sName .. "_off"
 		end
-	end)
-	if SERVER then
-		function StormFox2.Map.CallLogicRelay(sName,b)
-			if sName == "dusk" then sName = "night_events" end
-			if sName == "dawn" then sName = "day_events" end
-			if b ~= nil and b == false then
-				sName = sName .. "_off"
-			end
-			if not relay[sName] then return end
-			for _, ent in ipairs(relay[sName]) do
-				if not IsValid(ent) then continue end
-				ent:Fire( "Trigger", "" );
-			end
-		end
-		local l_w
-		function StormFox2.Map.w_CallLogicRelay( name )
-			name = string.lower( name )
-			if l_w then
-				if l_w == name then 
-					return
-				else -- Turn "off" the last logic relay
-					StormFox2.Map.CallLogicRelay("weather_" .. l_w, false)
-				end
-			end
-			StormFox2.Map.CallLogicRelay("weather_onchange")
-			l_w = name
-			StormFox2.Map.CallLogicRelay("weather_" .. name, true)
-		end
-		function StormFox2.Map.HasLogicRelay(sName,b)
-			if sName == "dusk" then sName = "night_events" end
-			if sName == "dawn" then sName = "day_events" end
-			if b ~= nil and b == false then
-				sName = sName .. "_off"
-			end
-			return relay[sName] and true or false
-		end
-	else -- Clients don't know the relays
-		local t = {}
-		for k,v in ipairs(StormFox2.Map.FindClass("logic_relay")) do
-			local sName = v.targetname
-			if not sName then break end
-			if sName == "dusk" then sName = "night_events" end
-			if sName == "dawn" then sName = "day_events" end
-			t[sName] = true
-		end
-		function StormFox2.Map.HasLogicRelay(sName,b)
-			if sName == "dusk" then sName = "night_events" end
-			if sName == "dawn" then sName = "day_events" end
-			return t[sName] and true or false
+		if not relay[sName] then return end
+		for _, ent in ipairs(relay[sName]) do
+			if not IsValid(ent) then continue end
+			ent:Fire( "Trigger", "" );
 		end
 	end
+	local l_w
+	function StormFox2.Map.w_CallLogicRelay( name )
+		name = string.lower( name )
+		if l_w then
+			if l_w == name then 
+				return
+			else -- Turn "off" the last logic relay
+				StormFox2.Map.CallLogicRelay("weather_" .. l_w, false)
+			end
+		end
+		StormFox2.Map.CallLogicRelay("weather_onchange")
+		l_w = name
+		StormFox2.Map.CallLogicRelay("weather_" .. name, true)
+	end
+	function StormFox2.Map.HasLogicRelay(sName,b)
+		if sName == "dusk" then sName = "night_events" end
+		if sName == "dawn" then sName = "day_events" end
+		if b ~= nil and b == false then
+			sName = sName .. "_off"
+		end
+		return relay[sName] and true or false
+	end
+else -- Clients don't know the relays
+	local t = {}
+	for k,v in ipairs(StormFox2.Map.FindClass("logic_relay")) do
+		local sName = v.targetname
+		if not sName then break end
+		if sName == "dusk" then sName = "night_events" end
+		if sName == "dawn" then sName = "day_events" end
+		t[sName] = true
+	end
+	function StormFox2.Map.HasLogicRelay(sName,b)
+		if sName == "dusk" then sName = "night_events" end
+		if sName == "dawn" then sName = "day_events" end
+		return t[sName] and true or false
+	end
+end
 -- Generates the texture-tree
-	--if not SF_TEXTDATAMAP or table.Count(SF_TEXTDATAMAP) < 1 then
-		SF_TEXTDATAMAP = GenerateTextureTree()
-	--end
+--if not SF_TEXTDATAMAP or table.Count(SF_TEXTDATAMAP) < 1 then
+	SF_TEXTDATAMAP = GenerateTextureTree()
+--end
 -- Find some useful variables we can use
-	if StormFox2.Map.Entities()[1] then
-		max = util.StringToType( StormFox2.Map.Entities()[1]["world_maxs"], "Vector" )
-		min = util.StringToType( StormFox2.Map.Entities()[1]["world_mins"], "Vector" )
-		map_radius = math.max(max.x, max.y, max.z, -min.x, -min.y, -min.z) * 1.41
-		bCold = StormFox2.Map.Entities()[1]["coldworld"] and true or false
-	else
-		StormFox2.Warning("This map doesn't have an entity lump! Might cause some undocumented behaviors.")
-		-- gm_flatgrass
-		max = Vector(15360, 15360, -12288)
-		min = Vector(15360, 15360, -12800)
-		map_radius = 15360 * 1.41
-		bCold = false
+if StormFox2.Map.Entities()[1] then
+	max = util.StringToType( StormFox2.Map.Entities()[1]["world_maxs"], "Vector" )
+	min = util.StringToType( StormFox2.Map.Entities()[1]["world_mins"], "Vector" )
+	map_radius = math.max(max.x, max.y, max.z, -min.x, -min.y, -min.z) * 1.41
+	bCold = StormFox2.Map.Entities()[1]["coldworld"] and true or false
+else
+	StormFox2.Warning("This map doesn't have an entity lump! Might cause some undocumented behaviors.")
+	-- gm_flatgrass
+	max = Vector(15360, 15360, -12288)
+	min = Vector(15360, 15360, -12800)
+	map_radius = 15360 * 1.41
+	bCold = false
+end
+local sky_cam = StormFox2.Map.FindClass("sky_camera")[1]
+if sky_cam then
+	has_Sky = true
+	sky = util.StringToType( sky_cam.origin, "Vector" )
+	sky_scale = tonumber(sky_cam.scale) or 1
+end
+for _,tab in pairs(StormFox2.Map.Textures()) do
+	if string.find(tab.nameStringTableID:lower(), "snow") then
+		bSnow = true
+		break
 	end
-	local sky_cam = StormFox2.Map.FindClass("sky_camera")[1]
-	if sky_cam then
-		has_Sky = true
-		sky = util.StringToType( sky_cam.origin, "Vector" )
-		sky_scale = tonumber(sky_cam.scale) or 1
-	end
-	for _,tab in pairs(StormFox2.Map.Textures()) do
-		if string.find(tab.texture:lower(), "snow") then
-			bSnow = true
-			break
-		end
-	end
+end
 
 -- Modify the texture tree, if there are changes
 --[[
