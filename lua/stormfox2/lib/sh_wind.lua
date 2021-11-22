@@ -201,6 +201,20 @@ end
 --[[-------------------------------------------------------------------------
 Checks if an entity is out in the wind (or rain). Caches the result for 1 second.
 ---------------------------------------------------------------------------]]
+local function IsMaterialEmpty( t )
+	return t.HitTexture == "TOOLS/TOOLSINVISIBLE" or t.HitTexture == "**empty**" or t.HitTexture == "TOOLS/TOOLSNODRAW"
+end
+local function ET_II(pos, vec, mask, filter) -- Ignore invisble brushes 'n stuff'
+	local lastT
+	for i = 1, 3 do
+		local t, a = ET(pos, vec, mask, filter)
+		if not IsMaterialEmpty(t) and t.Hit then return t, a end
+		lastT = lastT or t
+		pos = t.HitPos
+	end
+	lastT.HitSky = true
+	return lastT
+end
 local max_dis = 32400
 function StormFox2.Wind.IsEntityInWind(eEnt,bDont_cache)
 	if not IsValid(eEnt) then return end
@@ -212,7 +226,7 @@ function StormFox2.Wind.IsEntityInWind(eEnt,bDont_cache)
 		end
 	end
 	local pos = eEnt:OBBCenter() + eEnt:GetPos()
-	local tr = ET(pos, windNorm * -640000, MASK_SHOT, eEnt)
+	local tr = ET_II(pos, windNorm * -640000, MASK_SHOT, eEnt)
 	local hitSky = tr.HitSky
 	local dis = tr.HitPos:DistToSqr( pos )
 	if not hitSky and dis >= max_dis then -- So far away. The wind would had gone around. Check if we're outside.
