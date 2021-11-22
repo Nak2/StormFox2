@@ -363,10 +363,12 @@ if CLIENT then
 	
 	-- Update the rain templates every 10th second
 	function rain.TickSlow()
-		local P = StormFox2.Weather.GetPercent()
+		local W = StormFox2.Wind.GetForce()
+		local P = StormFox2.Weather.GetPercent() * (0.5 + W / 30)
 		local L = StormFox2.Weather.GetLuminance()
 		local T = StormFox2.Temperature.Get() + 2
 		local TL = StormFox2.Thunder.GetLight()
+		
 		local TP = math.Clamp(T / 4,0,1)
 
 		rain_outside:SetVolume( P * TP )
