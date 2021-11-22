@@ -398,8 +398,8 @@ if CLIENT then
 			local s = 1.22 + 1.56 * P
 			StormFox2.Misc.rain_template:SetSize( s , 5.22 + 7.56 * P)
 			StormFox2.Misc.rain_template:SetColor(tc)
-			StormFox2.Misc.rain_template:SetAlpha(min(15 + 4 * P + L,255))
-			StormFox2.Misc.rain_template_medium:SetAlpha(min(15 + 4 * P + L,255)  /3)
+			StormFox2.Misc.rain_template:SetAlpha(min(200 + 15 * P + L,255))
+			StormFox2.Misc.rain_template_medium:SetAlpha(min(150 + 15 * P + L,255)  /3)
 			StormFox2.Misc.rain_template_multi:SetAlpha( L )
 			-- Spawn rain particles
 			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template, 10, 700, 10 + P * 900, 5, vNorm ) or {} ) do
