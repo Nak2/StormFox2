@@ -15,6 +15,7 @@ end
 local CACHE_VERSION = 1
 local CACHE_FIL = "stormfox2/cache/" .. game.GetMap() .. ".dat"
 local CRC = tonumber(util.CRC(file.Read("maps/" .. game.GetMap() .. ".bsp","GAME")))
+StormFox2.Map.CRC = CRC
 
 -- Enums
 local NO_TYPE = -1
