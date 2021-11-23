@@ -322,6 +322,7 @@ end
 	end
 
 	local function LoadCache()
+		if true then return false end
 		if not file.Exists(CACHE_FIL, "DATA")then
 			return
 		end
@@ -347,6 +348,7 @@ end
 	end
 
 	local function SaveCache()
+		if true then return end
 		if not file.Exists("stormfox2/cache", "DATA") then
 			file.CreateDir("stormfox2/cache")
 		end
