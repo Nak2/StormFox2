@@ -4,4 +4,5 @@
 	"$translucent" 0
 	"$surfaceprop" "metal"
 	"$model" 1
+	"$halflambert" 1
 }

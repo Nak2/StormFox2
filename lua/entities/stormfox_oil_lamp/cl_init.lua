@@ -57,13 +57,16 @@ function ENT:Think()
 	self.nextFlame = CurTime() + (ran(5,10) / 200)
 	createFlame(self)
 	if (self.t2 or 0) <= CurTime() then
-		self.t2 = CurTime() + ran(0.2,0.5)
+		self.t2 = CurTime() + rand(0.2,0.5)
 		local dlight = DynamicLight( self:EntIndex() )
 		if ( dlight ) then
 			local c = self:GetColor()
+			local h,s,l = c:ToHSL(color)
+			l = math.Clamp(rand(l - 0.2, l + 0.2), 0, 1)
+			c = HSVToColor(h,s,l)
 			dlight.pos = self:LocalToWorld(Vector(rand(-0.6,0.6), rand(-0.6,0.6), 10))
-			dlight.r = math.Clamp(ran(c.r - 20, c.r + 20), 0, 255)
-			dlight.g = math.Clamp(ran(c.g - 40, c.g + 40), 0, 255)
+			dlight.r = c.r
+			dlight.g = c.g
 			dlight.b = c.b
 			dlight.brightness = 2 - ml / 200
 			dlight.Decay = 0
