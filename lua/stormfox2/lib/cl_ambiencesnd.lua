@@ -142,7 +142,7 @@ function StormFox2.Ambience.ForcePlay( snd, nVolume, playbackSpeed )
 	p_br[snd] = playbackSpeed or 1
 end
 hook.Add("Think", "StormFox2.Ambiences.Logic", function()
-	if not StormFox2 or not StormFox2.Weather then return end
+	if not StormFox2 or not StormFox2.Weather or not StormFox2.Weather.GetCurrent then return end
 	local c = StormFox2.Weather.GetCurrent()
 	local v_pos = StormFox2.util.GetCalcView().pos
 	local env = StormFox2.Environment.Get()
