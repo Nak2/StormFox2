@@ -1,0 +1,12 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "stormfox2/models/oillamp_glass"
+	"$translucent" 1
+	"$surfaceprop" "glass"
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[ 1 1 1 ]"
+	"$model" 1
+	"$nocull" 1
+}
+
+

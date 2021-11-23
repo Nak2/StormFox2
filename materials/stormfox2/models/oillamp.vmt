@@ -1,0 +1,7 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "stormfox2/models/oillamp"
+	"$translucent" 0
+	"$surfaceprop" "metal"
+	"$model" 1
+}
