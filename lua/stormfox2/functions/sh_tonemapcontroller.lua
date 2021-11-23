@@ -1,5 +1,6 @@
 
 StormFox2.Setting.AddSV("edit_tonemap", false, nil, "Effects")
+local ForcedOFF = true
 
 if CLIENT then return end
 StormFox2.ToneMap = {}
@@ -79,7 +80,7 @@ local function getMaxLight()
 end
 
 local function ToneMapUpdate( lightlvlraw, var )
-	if not StormFox2.Setting.SFEnabled() or not (var or StormFox2.Setting.GetCache("edit_tonemap", true)) then
+	if ForcedOFF or not StormFox2.Setting.SFEnabled() or not (var or StormFox2.Setting.GetCache("edit_tonemap", true)) then
 		StormFox2.ToneMap.Reset()
 	else
 		StormFox2.ToneMap.SetExposureScale( lightlvlraw / 100 )
