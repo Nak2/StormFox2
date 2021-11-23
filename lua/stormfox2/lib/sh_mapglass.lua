@@ -67,7 +67,7 @@ do
 			local s = f:Tell()
 			local obj = {}
 			-- Version 4
-				obj.Origin = f:ReadVector()								-- Vector (3 float) 12 bytes
+				obj.Origin = ReadVector(f)								-- Vector (3 float) 12 bytes
 				obj.Angles = Angle( f:ReadFloat(),f:ReadFloat(),f:ReadFloat() )	-- Angle (3 float) 	12 bytes
 			-- Version 4
 				obj.PropType = m[f:ReadUShort() + 1]					-- unsigned short 			2 bytes
@@ -78,7 +78,7 @@ do
 				obj.Skin = f:ReadLong()									-- int 						4 bytes
 				obj.FadeMinDist = f:ReadFloat()							-- float 					4 bytes
 				obj.FadeMaxDist = f:ReadFloat()							-- float 					4 bytes
-				obj.LightingOrigin = f:ReadVector()							-- Vector (3 float) 		12 bytes
+				obj.LightingOrigin = ReadVector(f)							-- Vector (3 float) 		12 bytes
 																		-- 56 bytes used
 			-- Version 5
 				if version >= 5 then
