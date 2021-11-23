@@ -177,11 +177,11 @@ do
 	rain:Set("fogDistance", function()
 		local wF = StormFox2.Wind.GetForce()
 		local temp = clamp(StormFox2.Temperature.Get() / 4 + 1,0,1)
-		if wF <= 0 then return 2000 end
+		if wF <= 0 then return 6000 end
 		local multi = max(0, 26 - temp * 8)
-		return max(2000 - multi * wF,0)
+		return max(6000 - multi * wF,0)
 	end)
-	rain:Set("fogIndoorDistance", 3000)
+	rain:Set("fogIndoorDistance", 5500)
 --	rain:SetSunStamp("fogDistance",2000,	SF_SKY_DAY)
 --	rain:SetSunStamp("fogDistance",2500,	SF_SKY_SUNSET)
 --	rain:SetSunStamp("fogDistance",2000,	SF_SKY_NIGHT)
