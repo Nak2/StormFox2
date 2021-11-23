@@ -400,7 +400,7 @@ if CLIENT then
 			local s = 1.22 + 1.56 * P
 			StormFox2.Misc.rain_template:SetSize( s , 5.22 + 7.56 * P)
 			StormFox2.Misc.rain_template:SetColor(tc)
-			StormFox2.Misc.rain_template:SetAlpha(min(200 + 15 * P + L,255))
+			StormFox2.Misc.rain_template:SetAlpha(min(100 + 15 * P + L,255))
 			StormFox2.Misc.rain_template_medium:SetAlpha(min(150 + 15 * P + L,255)  /3)
 			StormFox2.Misc.rain_template_multi:SetAlpha( L )
 			-- Spawn rain particles
