@@ -11,7 +11,7 @@ do
 	end
 	
 	local function DoEffect(ply, size)
-		if not _STORMFOX_PEM2d then return end -- Just in case
+		if not _STORMFOX_PEM then return end -- Just in case
 		local pos, ang
 		local e = 1
 		if ply ~= StormFox2.util.ViewEntity() then -- "Someone else"
@@ -34,7 +34,7 @@ do
 			end
 		end
 		local l = StormFox2.Map.GetLight() / 100
-		local p = _STORMFOX_PEM2d:Add(table.Random(m_mats),pos)
+		local p = _STORMFOX_PEM["2D"]:Add(table.Random(m_mats),pos)
 			p:SetStartSize(1)
 			p:SetEndSize(size)
 			p:SetStartAlpha(math.min(255, 15 + math.random(55,135) * l * e))

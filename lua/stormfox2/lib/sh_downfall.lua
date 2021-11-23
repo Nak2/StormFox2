@@ -6,10 +6,33 @@ local max,min,t_insert,abs,clamp = math.max,math.min,table.insert,math.abs,math.
 
 -- Particle emitters
 if CLIENT then
-	_STORMFOX_PEM = _STORMFOX_PEM or ParticleEmitter(Vector(0,0,0),true)
-	_STORMFOX_PEM2d = _STORMFOX_PEM2d or ParticleEmitter(Vector(0,0,0))
-	_STORMFOX_PEM:SetNoDraw(true)
-	_STORMFOX_PEM2d:SetNoDraw(true)
+	_STORMFOX_PEM = _STORMFOX_PEM or {}
+	local tab = {
+		__index = function(self, b)
+			if b == "3D" then
+				if IsValid(self._PEM) then return self._PEM end
+				self._PEM = ParticleEmitter(Vector(0,0,0),true)
+				self._PEM:SetNoDraw(true)
+				return self._PEM
+			elseif b == "2D" then
+				if IsValid(self._PEM2D) then return self._PEM2D end
+				self._PEM2D = ParticleEmitter(Vector(0,0,0))
+				self._PEM2D:SetNoDraw(true)
+				return self._PEM2D
+			end
+		end
+	}
+	setmetatable(_STORMFOX_PEM, tab)
+	timer.Create("StormFox2.ParticleFlush", 60 * 2, 0, function()
+		if _STORMFOX_PEM._PEM2D then
+			_STORMFOX_PEM._PEM2D:Finish()
+			_STORMFOX_PEM._PEM2D = nil
+		end
+		if _STORMFOX_PEM._PEM then
+			_STORMFOX_PEM._PEM:Finish()
+			_STORMFOX_PEM._PEM = nil
+		end
+	end)
 end
 
 -- Downfall mask
@@ -306,9 +329,9 @@ if CLIENT then
 	-- Creats a regular particle and returns it
 	function StormFox2.DownFall.AddParticle( sMaterial, vPos, bUse3D )
 		if bUse3D then
-			return _STORMFOX_PEM:Add( sMaterial, vPos )
+			return _STORMFOX_PEM["3D"]:Add( sMaterial, vPos )
 		end
-		return _STORMFOX_PEM2d:Add( sMaterial, vPos )
+		return _STORMFOX_PEM["2D"]:Add( sMaterial, vPos )
 	end
 	
 	-- Particle Template. Particles "copy" these values when they spawn.
@@ -736,8 +759,12 @@ if CLIENT then
 	hook.Add("PostDrawTranslucentRenderables", "StormFox2.Downfall.Render", function(depth,sky)
 		if depth or sky then return end -- Don't render in skybox or depth.
 		-- Render particles on the floor
-		_STORMFOX_PEM:Draw()
-		_STORMFOX_PEM2d:Draw()
+		if _STORMFOX_PEM._PEM2D then
+			_STORMFOX_PEM._PEM2D:Draw()
+		end
+		if _STORMFOX_PEM._PEM then
+			_STORMFOX_PEM._PEM:Draw()
+		end		
 		if LocalPlayer():WaterLevel() >= 3 then return end -- Don't render SF particles under wanter.
 		ParticleRender() -- Render sf particles
 	end)
