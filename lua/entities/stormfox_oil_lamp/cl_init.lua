@@ -61,13 +61,11 @@ function ENT:Think()
 		local dlight = DynamicLight( self:EntIndex() )
 		if ( dlight ) then
 			local c = self:GetColor()
-			local brightness = 2 - ml / 200
-			print(brightness)
 			dlight.pos = self:LocalToWorld(Vector(rand(-0.6,0.6), rand(-0.6,0.6), 10))
 			dlight.r = math.Clamp(ran(c.r - 20, c.r + 20), 0, 255)
 			dlight.g = math.Clamp(ran(c.g - 40, c.g + 40), 0, 255)
 			dlight.b = c.b
-			dlight.brightness = brightness
+			dlight.brightness = 2 - ml / 200
 			dlight.Decay = 0
 			dlight.Size = 256 * (-ml / 100 + 2)
 			dlight.DieTime = self.t2 + 0.5
