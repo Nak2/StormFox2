@@ -593,6 +593,7 @@ if SERVER then
 else -- Fake darkness. Since some maps are bright
 
 	hook.Add("StormFox2.weather.postchange", "StormFox2.weather.setlight", function( sName ,nPercentage, nDelta )
+		if not StormFox2.Map or not StormFox2.Map.SetLightLerp then return end
 		local minlight,maxlight = StormFox2.Setting.GetCache("maplight_min",0),StormFox2.Setting.GetCache("maplight_max",80) 	-- Settings
 		local smooth = StormFox2.Setting.GetCache("maplight_smooth",game.SinglePlayer())
 		local night, day
