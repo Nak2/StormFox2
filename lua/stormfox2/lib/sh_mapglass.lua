@@ -4,6 +4,8 @@ CoffeeLib BSP @ Nak 2021
 DO NOT USE THIS WITHOUT MY PERMISSON IN YOUR PROJECT!
 If you wish the utilize the same functions, you can download CoffeeLib seperate to your server.
 
+CoffeeLib also come with more utility functions.
+
 ---------------------------------------------------------------------------]]
 -- Check for cache
 --StormFox2.FileWrite("stormfox2/cache/" .. game.GetMap() .. ".dat", DATA)
@@ -12,10 +14,15 @@ SF_BSPDATA = SF_BSPDATA or {}
 local function ReadVector(f)
 	return Vector( f:ReadFloat(), f:ReadFloat(), f:ReadFloat() )
 end
-local CACHE_VERSION = 1
+local CACHE_VERSION = 2
 local CACHE_FIL = "stormfox2/cache/" .. game.GetMap() .. ".dat"
-local CRC = tonumber(util.CRC(file.Read("maps/" .. game.GetMap() .. ".bsp","GAME")))
-StormFox2.Map.CRC = CRC
+local CRC = tonumber(file.Size( "maps/" .. game.GetMap() .. ".bsp","GAME" )) -- or tonumber(util.CRC(file.Read("maps/" .. game.GetMap() .. ".bsp","GAME")))
+local file = table.Copy(file)
+local Vector = Vector
+local Color = Color
+local table = table.Copy(table)
+local string = table.Copy(string)
+local util = table.Copy(util)
 
 -- Enums
 local NO_TYPE = -1
@@ -25,7 +32,7 @@ local ROAD_TYPE = 2
 local PAVEMENT_TYPE = 3
 
 -- Generator
-local GetBSPData, LoadENTLump
+local GetBSPData
 do
 	local meta = {}
 	meta.__index = meta
@@ -195,23 +202,19 @@ do
 		do
 			local max_data = 256000
 			function meta:GetTextures(f)
-				if self.lumpdata[43] then
-					return self.lumpdata[43]
-				end
-				self.lumpdata[43] = {}
+				local t = {}
 				local data = self:LZMAReadLump(f, 43)
 				if #data > max_data then
 					error("BSP's TexDataStringData is invalid!")
 				end
 				for s in string.gmatch( data, "[^%z]+" ) do
-					table.insert(self.lumpdata[43], s:lower())
+					table.insert(t, s:lower())
 				end
-				return self.lumpdata[43]
+				return t
 			end
 		end
 
-		function LoadENTLump( data )
-			local a = {}
+		local function LoadENTLump( data, tab )
 			for s in string.gmatch( data, "%{.-%\n}" ) do
 				local t = util.KeyValuesToTable("t" .. s)
 				-- Convert a few things to make it easier
@@ -220,78 +223,85 @@ do
 					local c = util.StringToType(t.rendercolor or "255 255 255","Vector")
 					t.rendercolor = Color(c.x,c.y,c.z)
 					t.raw = s
-				table.insert(a,t)
+				table.insert(tab,t)
 			end
-			return a
 		end
 
 	-- Load functions
 		function GetBSPData()
 			--print("Loading file")
-			local mapfile = "maps/"..game.GetMap() .. ".bsp"
-			local f = file.Open(mapfile,"rb","GAME")
-			if not f then StormFox2.Warning("Unable to load mapfile!") return {} end
+				local mapfile = "maps/"..game.GetMap() .. ".bsp"
+				local f = file.Open(mapfile,"rb","GAME")
+				if not f then StormFox2.Warning("Unable to load mapfile!") return {} end
 			-- Read the header
-			if f:Read(4) ~= "VBSP" then
-				f:Close()
-				error("File not BSP format!")
-			end
-			local BSP = {}
-			setmetatable(BSP, meta)
-			BSP.version = f:ReadLong()
-			assert( BSP.version <= 21, "BSP is too new" )
+				if f:Read(4) ~= "VBSP" then
+					f:Close()
+					error("File not BSP format!")
+				end
+				local BSP = {}
+				setmetatable(BSP, meta)
+				BSP.version = f:ReadLong()
+				assert( BSP.version <= 21, "BSP is too new" )
 			-- Read Lump Header
-			BSP.lumpheader = {}
-			BSP.lumpdata = {}
-			for i = 1, 64 do
-				BSP.lumpheader[i] = ReadLumpHeader( BSP, f )
-			end
+				BSP.lumpheader = {}
+				for i = 1, 64 do
+					BSP.lumpheader[i] = ReadLumpHeader( BSP, f )
+				end
 			-- Ent
-			local data = BSP:LZMAReadLump(f, 0 )
-			BSP.Entities = LoadENTLump( data )
+				do
+					local data
+					BSP.Entities = {}
+					if file.Exists("maps/" .. game.GetMap() .. "_l_0.lmp", "GAME") then
+						StormFox2.Msg("Reading lmp EntityLump file.")
+						data = file.Read("maps/" .. game.GetMap() .. "_l_0.lmp", "GAME")
+					else
+						data = BSP:LZMAReadLump(f, 0 )
+					end
+					LoadENTLump( data, BSP.Entities )
+				end
 			-- Static prosp
 				BSP.StaticProps = {}
-				local t = BSP:FindGameLump( f, 1936749168 ) -- 1936749168 == "sprp"
-				if not t then return {} end -- No gamelump. Must be empty.
-				-- Read the models
-					f:Seek( t.fileofs )
-					local m = {}
-					local n = f:ReadLong() -- Number of models
-					if n > 16384 then
-						ErrorNoHalt(game.GetMap() .. ".BSP has more than 16384 models!")
-						f:Close()
-						return {}
-					end
-					for i = 1,n do
-						local model = ""
-						for i2 = 1,128 do
-							local c = string.char(f:ReadByte())
-							if string.match(c,"[%w_%-%.%/]") then
-								model = model .. c
+				do
+					local t = BSP:FindGameLump( f, 1936749168 ) -- 1936749168 == "sprp"
+					if not t then t = {} end -- No static props? Must be empty or something
+					-- Read the models
+						f:Seek( t.fileofs )
+						local m = {}
+						local n = f:ReadLong() -- Number of models
+						if n > 16384 then
+							ErrorNoHalt(game.GetMap() .. ".BSP has more than 16384 models!")
+						else
+							for i = 1,n do
+								local model = ""
+								for i2 = 1,128 do
+									local c = string.char(f:ReadByte())
+									if string.match(c,"[%w_%-%.%/]") then
+										model = model .. c
+									end
+								end
+								m[i] = model
 							end
 						end
-						m[i] = model
-					end
-				-- Read the leafs ( Unused )
-					local n = f:ReadLong()
-					for i = 1, n do
-						f:ReadShort() -- Unsigned
-					end
-				-- Read static props
-					local count = f:ReadLong()
-					if count > 16384 then
-						ErrorNoHalt(game.GetMap() .. ".BSP has more than 16384 static props!")
-					else
-						local endPos = t.filelen + t.fileofs
-						local staticSize = (endPos - f:Tell()) / count
-						local staticStart = f:Tell()
-						local staticUsed = 0
-						for i = 0, count - 1 do
-							-- This is to try and get as much valid data we can.
-							f:Seek(staticStart + staticSize * i)
-							local sObj, sizeused = CreateStaticProp(f,t.version, m, staticSize)
-							staticUsed = sizeused
-							sObj.Index = table.insert(BSP.StaticProps,sObj) - 1
+					-- Read the leafs ( Unused )
+						for i = 1, f:ReadLong() do
+							f:ReadShort() -- Unsigned
+						end
+					-- Read static props
+						local count = f:ReadLong()
+						if count > 16384 then
+							ErrorNoHalt(game.GetMap() .. ".BSP has more than 16384 static props!")
+						else
+							local endPos = t.filelen + t.fileofs
+							local staticSize = (endPos - f:Tell()) / count
+							local staticStart = f:Tell()
+							local staticUsed = 0
+							for i = 0, count - 1 do
+								-- This is to try and get as much valid data we can.
+								f:Seek(staticStart + staticSize * i)
+								local sObj, sizeused = CreateStaticProp(f,t.version, m, staticSize)
+								staticUsed = sizeused
+								sObj.Index = table.insert(BSP.StaticProps,sObj) - 1
+							end
 						end
 					end
 				-- We calculate the amount of static props within this space. It is more stable.
@@ -322,17 +332,17 @@ end
 	end
 
 	local function LoadCache()
-		if true then return false end
 		if not file.Exists(CACHE_FIL, "DATA")then
 			return
 		end
 		-- Check if valid
 		local f = file.Open(CACHE_FIL, "rb", "DATA")
 		if not ValidateCache(f) then
-			StormFox2.Warning("Map cache is invalid! Regenerating ..")
+			StormFox2.Warning("Map cache is invalid / outdated! Regenerating ..")
 			f:Close()
 			return
 		end
+		StormFox2.Msg("Loading map cache ..")
 		local SF_BSPDATA = {}
 		SF_BSPDATA.version = f:ReadLong()
 		-- Entities
@@ -348,12 +358,11 @@ end
 	end
 
 	local function SaveCache()
-		if true then return end
 		if not file.Exists("stormfox2/cache", "DATA") then
 			file.CreateDir("stormfox2/cache")
 		end
 		local f = file.Open(CACHE_FIL, "wb", "DATA")
-		if not f then Stormfox2.Warning("Unable to save cache!") end
+		if not f then Stormfox2.Warning("Unable to save map cache!") end
 		f:Write("SF2")
 		f:WriteUShort(CACHE_VERSION)
 		f:WriteULong(CRC)
@@ -365,6 +374,7 @@ end
 		-- Textures
 		WriteData(f, util.TableToJSON(SF_BSPDATA.TextureArray))
 		f:WriteBool(SF_BSPDATA._hasPak)
+		StormFox2.Msg("Saved map cache.")
 		f:Close()
 	end
 
@@ -391,11 +401,6 @@ end
 				if SF_BSPDATA then SaveCache() end
 			end
 		end
-		-- Check for entity lump file
-		if file.Exists("maps/" .. game.GetMap() .. "_l_0.lmp", "GAME") then
-			StormFox2.Msg("Reading lmp EntityLump file.")
-			SF_BSPDATA.Entities = LoadENTLump( file.Read("maps/" .. game.GetMap() .. "_l_0.lmp", "GAME") )
-		end	
 	end
 -- Load map
 LoadMap()
