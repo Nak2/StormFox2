@@ -327,12 +327,14 @@ end
 	end
 
 	local function ReadData(f)
-		local n = f:ReadULong()
+		local n = f:ReadULong() or 0
+		if n < 1 then return "" end
 		return f:Read(n)
 	end
 
 	local function LoadCache()
-		if not file.Exists(CACHE_FIL, "DATA")then
+		if true then return end
+		if not file.Exists(CACHE_FIL, "DATA") then
 			return
 		end
 		-- Check if valid
@@ -346,11 +348,11 @@ end
 		local SF_BSPDATA = {}
 		SF_BSPDATA.version = f:ReadLong()
 		-- Entities
-		SF_BSPDATA.Entities = util.JSONToTable(ReadData(f))
+		SF_BSPDATA.Entities = util.JSONToTable(ReadData(f)) or {}
 		-- Static props
-		SF_BSPDATA.StaticProps = util.JSONToTable(ReadData(f))
+		SF_BSPDATA.StaticProps = util.JSONToTable(ReadData(f)) or {}
 		-- Textures
-		SF_BSPDATA.TextureArray = util.JSONToTable(ReadData(f))
+		SF_BSPDATA.TextureArray = util.JSONToTable(ReadData(f)) or {}
 		SF_BSPDATA._hasPak = f:ReadBool()
 
 		f:Close()
@@ -358,6 +360,7 @@ end
 	end
 
 	local function SaveCache()
+		if true then return end
 		if not file.Exists("stormfox2/cache", "DATA") then
 			file.CreateDir("stormfox2/cache")
 		end
