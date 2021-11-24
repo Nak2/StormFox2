@@ -57,10 +57,16 @@ function ENT:SpawnFunction( ply, tr, ClassName )
 
 end
 
+-- Tells clients to render flame or not
 function ENT:SetOn(boolean)
 	if self.on == boolean then return end
 	self:SetNWInt("on",boolean and 1 or 0)
 	self.on = boolean
+	if boolean then
+		self:EmitSound("ambient/fire/mtov_flame2.wav", 50, 110, 0.2)
+	else
+		self:EmitSound("ambient/atmosphere/hole_hit4.wav", 50, 50,0.4)
+	end
 end
 
 local function sendMsg( act, msg )
@@ -70,15 +76,11 @@ end
 
 function ENT:Use( act )
 	if self:WaterLevel() < 1 and not self:IsOn() then
-		if self:GetNWInt("on") ~= 1 then
-			self:EmitSound("ambient/fire/mtov_flame2.wav", 50, 110, 0.2)
-		end
 		self:SetOn(true)
 		sendMsg( act, "Always on" )
 	elseif self:IsOn() then
 		self:SetOn(false)
 		sendMsg( act, "On at night" )
-		self:EmitSound("ambient/atmosphere/hole_hit4.wav", 50, 50,0.4)
 	end
 end
 
