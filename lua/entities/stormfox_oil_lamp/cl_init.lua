@@ -61,7 +61,7 @@ function ENT:Think()
 		local dlight = DynamicLight( self:EntIndex() )
 		if ( dlight ) then
 			local c = self:GetColor()
-			local h,s,l = c:ToHSL(color)
+			local h,s,l = ColorToHSL(color)
 			l = math.Clamp(rand(l - 0.2, l + 0.2), 0, 1)
 			c = HSVToColor(h,s,l)
 			dlight.pos = self:LocalToWorld(Vector(rand(-0.6,0.6), rand(-0.6,0.6), 10))
