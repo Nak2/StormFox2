@@ -206,7 +206,7 @@ local function IsMaterialEmpty( t )
 end
 local function ET_II(pos, vec, mask, filter) -- Ignore invisble brushes 'n stuff'
 	local lastT
-	for i = 1, 3 do
+	for i = 1, 5 do
 		local t, a = ET(pos, vec, mask, filter)
 		if not IsMaterialEmpty(t) and t.Hit then return t, a end
 		lastT = lastT or t
