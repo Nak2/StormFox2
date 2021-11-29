@@ -1,0 +1,9 @@
+"UnlitGeneric"
+{
+	"$basetexture" "models/props_c17/metalladder001"
+	"$detail" "models/props_c17/metalglobelightoff01"
+	"$detailscale" 1
+	"$detailblendmode" 2
+	"$selfillum" 1
+}
+

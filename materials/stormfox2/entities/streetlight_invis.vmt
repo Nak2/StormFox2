@@ -1,0 +1,7 @@
+"UnlitGeneric"
+{
+	"$basetexture" "models/props_c17/lamp_standard01"
+	"$basetexturetransform" "center .5 .5 scale 1 0.5 rotate 0 translate 0 0.8"
+	"$surfaceprop"  "metal"
+	"$selfillum" 1
+}

@@ -67,17 +67,40 @@ function ENT:CanProperty(_, str)
 end
 
 if CLIENT then
-	local c_outline = Material("model_color")
-	function ENT:DrawSelfCheck()
+	local base_mat = Material("stormfox2/entities/streetlight_invis")
+	local base_mat2 = Material("stormfox2/entities/streetlight_invis_point")
+	local base_mat3 = Material("stormfox2/entities/streetlight_invis_beam")
+	local equip_tool = false
+	local d_tab = {}
+	hook.Add("PostRender", "StormFox2.StreetLights.Update", function()
+		d_tab = {}
+		equip_tool = false
 		local wep = LocalPlayer():GetActiveWeapon()
 		if not wep or not IsValid(wep) then return end
 		if wep:GetClass() ~= "sf2_tool" then return end
-		render.SetLightingMode(2)
-			render.MaterialOverride(c_outline)
-			self:DrawModel()
-			render.MaterialOverride()
-		render.SetLightingMode(0)
+		equip_tool = true
+		d_tab = ents.FindByClass("stormfox_streetlight_invisible")
+	end)
+	hook.Add("PreDrawHalos", "StormFox2.StreetLights.Halo", function()
+		if not equip_tool then return end
+		if not d_tab or #d_tab < 1 then return end
+		halo.Add( d_tab, color_white, 2, 2, 1, true,true )
+	end)
+	
+	function ENT:DrawSelfCheck()
+		if not equip_tool then return end
+		render.SetMaterial(base_mat)
+		render.DrawBox(self:GetPos(), self:GetAngles(), self:OBBMins(), self:OBBMaxs(), color_white)
+		if self:GetLightType() == POINTLIGHT then
+			render.SetMaterial(base_mat2)
+		else
+			render.SetMaterial(base_mat3)
+		end
+		local s = self:OBBMaxs().x
+		local f = self:GetAngles():Up()
+		render.DrawQuadEasy(self:GetPos() + -f * s * 1.005, -f, s * 2, s * 2, color_white, 0)
 	end
+
 	-- We use a variable to tell if we should render any lights nearby. Since it can be is costly.
 	local m_render = false
 	local sorter = function(a,b)
