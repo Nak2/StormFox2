@@ -84,3 +84,37 @@ do
 		RunEffect( LP )
 	end)
 end
+
+-- Depth Filter
+local W,H = ScrW(), ScrH()
+local depth_r = GetRenderTarget("SF_DepthFilter", W,H, true)
+local depthLayer = Material( "stormfox2/shader/depth_layer" )
+local a = 0
+hook.Add("StormFox2.weather.postchange", "StormFox2.DepthFilter.Reset", function()
+	a = 0
+end)
+hook.Add( "RenderScreenspaceEffects", "StormFox2.DepthFilter", function()
+	local dFr = StormFox2.Weather.GetCurrent().DepthFilter 
+	if not dFr then 
+		a = 0
+		return
+	end
+	if StormFox2.Environment.Get().outside then
+		a = math.Approach(a, 1, FrameTime() * .8)
+	else
+		a = math.Approach(a, 0, FrameTime() * 5) -- Quick fadeaway
+	end
+	if a <= 0 then return end
+	render.PushRenderTarget( depth_r )
+		render.Clear( 0,0,0,0, true, true)
+		cam.Start2D()
+			dFr(W,H, a)
+		cam.End2D()
+	render.PopRenderTarget()
+
+	render.CopyRenderTargetToTexture( render.GetFullScreenDepthTexture() )
+	depthLayer:SetTexture("$basetexture", depth_r)
+	depthLayer:SetFloat("$alpha", a)
+	render.SetMaterial( depthLayer )
+	render.DrawScreenQuad()
+end )
