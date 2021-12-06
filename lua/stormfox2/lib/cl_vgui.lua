@@ -250,7 +250,7 @@ do
 			else
 				self._downvalue = math.Clamp(math.Round(val,3), min, max)
 			end
-		elseif self:GetValue() < 0 then -- Unset
+		elseif self:GetValue() < 0 and false then -- Unset
 			local p = ((math.sin(SysTime() * 3) + 1) / 2) 
 			val = min + p * max
 		else
@@ -499,6 +499,23 @@ do
 		if h == maxH then return end
 		self:SetTall(maxH + 5)
 	end
+	function PANEL:HideTitle( bool )
+		if bool == false then
+			self.label_name:Show()
+			for _, v in ipairs( self:GetChildren() ) do
+				local x, y = v:GetPos()
+				v:SetPos(x, y + self.label_name:GetTall())
+			end
+		else
+			self.label_name:Hide()
+			for _, v in ipairs( self:GetChildren() ) do
+				local x, y = v:GetPos()
+				v:SetPos(x, y - self.label_name:GetTall())
+			end
+		end
+		self:InvalidateLayout()
+		return self
+	end
 	PANEL.Paint = empty
 	function PANEL:SetSetting( sName, sType, Description )
 		sType = sType or StormFox2.Setting.GetType( sName )
@@ -628,9 +645,14 @@ do
 		--self.text:SetConVar( sName )
 		function self.text:OnEnter( val )
 			val = string.match(val, "[%d%.-]+") or val
-			local clamp = math.Clamp(tonumber( val ), _sfobj:GetMin(), _sfobj:GetMax())
-			_sfobj:SetValue(clamp)
-			self:SetText(tostring(clamp))
+			if _sfobj:GetMin() then
+				val = math.max(_sfobj:GetMin(), val)
+			end
+			if _sfobj:GetMax() then
+				val = math.min(_sfobj:GetMax(), val)
+			end
+			_sfobj:SetValue(val)
+			self:SetText(tostring(val))
 		end
 		return self
 	end
@@ -1715,7 +1737,7 @@ do
 			end
 			for sName, v in pairs( search_tab ) do
 				local phrase = language.GetPhrase( sName )
-				if string.find(string.lower(phrase),string.lower(val)) then
+				if string.find(string.lower(phrase),string.lower(val), nil, true) then
 					if OnlyTitles and v[3]~=t_mat then continue end
 					table.insert(tab, {sName, v[1], v[2]})
 					local op = self.result:AddOption( phrase )

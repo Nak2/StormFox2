@@ -463,7 +463,7 @@ local tabs = {
 		board:AddSetting("max_weathers_prweek")
 		board:AddTitle("#temperature")
 		board:AddSetting("max_temp"):SetMin(-10)
-		board:AddSetting("min_temp"):SetMin(-10)
+		board:AddSetting("min_temp"):SetMin(-10):SetMax(30)
 
 		board:AddSetting("temp_acc")
 	
@@ -605,48 +605,21 @@ local tabs = {
 		l:SetText(niceName(language.GetPhrase("#light") .. " " .. language.GetPhrase("#options")))
 		l:SetDark(true)
 		l:SetFont("DermaDefaultBold")
-		local p = vgui.Create("DPanel", board)
-		p:SetTall(120)
-		p:Dock(TOP)
-		p:DockMargin(24,0,0,0)
-		p.Paint = empty
 		do
-			local auto = vgui.Create("SF_Setting_Bool", p)
-			auto:SetSetting('maplight_auto')
-			auto:Dock(TOP)
-			local space = vgui.Create("DPanel", p)
-			space:Dock(TOP)
-			space:SetTall(10)
-			space.Paint = empty		
-			local lenv = vgui.Create("SF_Setting_Bool", p)
-			lenv:SetSetting('maplight_lightenv')
-			lenv:Dock(TOP)
+			local auto 		= board:AddSetting("maplight_auto"):HideTitle()
+			local lenv		= board:AddSetting("maplight_lightenv"):HideTitle()
+			local colormod 	= board:AddSetting("maplight_colormod"):HideTitle()
+			local dynamic 	= board:AddSetting("maplight_dynamic"):HideTitle()
+			local lightstyle= board:AddSetting("maplight_lightstyle"):HideTitle()
 
-			local colormod = vgui.Create("SF_Setting_Bool", p)
-			colormod:SetSetting('maplight_colormod')
-			colormod:Dock(TOP)
-
-			local dynamic = vgui.Create("SF_Setting_Bool", p)
-			dynamic:SetSetting('maplight_dynamic')
-			dynamic:Dock(TOP)
-
-			local lightstyle = vgui.Create("SF_Setting_Bool", p)
-			lightstyle:SetSetting('maplight_lightstyle')
-			lightstyle:Dock(TOP)
-
-			board:MarkUsed("maplight_auto")
-			board:MarkUsed("maplight_lightenv")
-			board:MarkUsed("maplight_colormod")
-			board:MarkUsed("maplight_dynamic")
-			board:MarkUsed("maplight_lightstyle")
+			local c_auto = StormFox2.Setting.GetObject('maplight_auto')
+			local c_lenv = StormFox2.Setting.GetObject('maplight_lightenv')
+			local c_colo = StormFox2.Setting.GetObject('maplight_colormod')
+			local c_dyna = StormFox2.Setting.GetObject('maplight_dynamic')
+			local c_ligh = StormFox2.Setting.GetObject('maplight_lightstyle')
 			local warning = vgui.Create("DImage", lightstyle)
-			function p:Think()
-				local c_auto = StormFox2.Setting.GetCache('maplight_auto')
-				local c_lenv = StormFox2.Setting.GetCache('maplight_lightenv')
-				local c_colo = StormFox2.Setting.GetCache('maplight_colormod')
-				local c_dyna = StormFox2.Setting.GetCache('maplight_dynamic')
-				local c_ligh = StormFox2.Setting.GetCache('maplight_lightstyle')
-				if c_auto then
+			function l:Think()
+				if c_auto:GetValue() then
 					lenv:SetDisabled(true)
 					colormod:SetDisabled(true)
 					dynamic:SetDisabled(true)
@@ -656,7 +629,7 @@ local tabs = {
 					lenv:SetDisabled(false)
 					dynamic:SetDisabled(false)
 					lightstyle:SetDisabled(false)
-					if c_dyna then
+					if c_dyna:GetValue() then
 						lenv:SetDisabled(true)
 						lightstyle:SetDisabled(true)
 					end
@@ -887,3 +860,5 @@ function StormFox2.Menu.OpenSV()
 end
 -- Request the server if we're allowed
 concommand.Add('stormfox2_svmenu', StormFox2.Menu.OpenSV, nil, "Opens SF serverside menu")
+
+StormFox2.Menu._OpenSV()
