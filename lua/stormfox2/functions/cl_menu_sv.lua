@@ -462,9 +462,8 @@ local tabs = {
 		board:AddSetting("addnight_temp")
 		board:AddSetting("max_weathers_prweek")
 		board:AddTitle("#temperature")
-		board:AddSetting("min_temp"):SetMin(-10)
 		board:AddSetting("max_temp"):SetMin(-10)
-		
+		board:AddSetting("min_temp"):SetMin(-10)
 
 		board:AddSetting("temp_acc")
 	
@@ -888,7 +887,3 @@ function StormFox2.Menu.OpenSV()
 end
 -- Request the server if we're allowed
 concommand.Add('stormfox2_svmenu', StormFox2.Menu.OpenSV, nil, "Opens SF serverside menu")
-
-timer.Simple(1, function()
-	StormFox2.Menu._OpenSV()
-end)
