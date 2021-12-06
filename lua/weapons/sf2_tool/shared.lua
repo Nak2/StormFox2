@@ -123,13 +123,12 @@ function SWEP:DoShootEffect( tr, bFirstTimePredicted )
 end
 
 if SERVER then
-	util.AddNetworkString("sf2_tool")
 	local function dofunction(ply, wep, tool, data)
 		StormFox2.Msg(ply:GetName(),color_white," used",tool.RealName or "SF2 Tool.")
 		tool.SendFunc( wep, unpack( data ) )
 		wep:DoShootEffect(ply:GetEyeTrace(),IsFirstTimePredicted())
 	end
-	net.Receive("sf2_tool", function(len, ply)
+	net.Receive(StormFox2.Net.Tool, function(len, ply)
 		local wep = ply:GetActiveWeapon()
 		if not IsValid(wep) then return end
 		if wep:GetClass() ~= "sf2_tool" then return end
@@ -139,7 +138,7 @@ if SERVER then
 	end)
 else
 	function SWEP.SendFunc( ... )
-		net.Start("sf2_tool")
+		net.Start(StormFox2.Net.Tool)
 			net.WriteTable({...})
 		net.SendToServer()
 	end

@@ -178,8 +178,9 @@ do
 		local wF = StormFox2.Wind.GetForce()
 		local temp = clamp(StormFox2.Temperature.Get() / 4 + 1,0,1)
 		if wF <= 0 then return 6000 end
+		local tempDist = 2000 + temp * 5200
 		local multi = max(0, 26 - temp * 8)
-		return max(6000 - multi * wF,0)
+		return max(tempDist - multi * wF,0)
 	end)
 	rain:Set("fogIndoorDistance", 5500)
 --	rain:SetSunStamp("fogDistance",2000,	SF_SKY_DAY)
@@ -358,7 +359,7 @@ if CLIENT then
 	local m_snowmulti = Material("stormfox2/effects/snow-multi.png")
 	local m_snowmulti2 = Material("stormfox2/effects/snow-multi2.png")
 	
-	
+
 	-- Make the distant rain start higer up.
 	
 	-- Update the rain templates every 10th second
@@ -432,6 +433,7 @@ if CLIENT then
 				--StormFox2.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * .2)
 				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_multi, dis, multi_dis * 2, (90 + P * (250 + W)) / 2, s, vNorm ) or {} ) do
 					local d = v:GetDistance()
+					v:SetAlpha(255)
 					if not d or d < 500 then 
 						v:SetSize(  225, 500 )
 					else
@@ -445,7 +447,7 @@ if CLIENT then
 		else
 			-- Spawn snow particles
 			local force_multi = max(1, (W / 6))
-			local snow_distance = min(random(40,500), StormFox2.Fog.GetEnd())
+			local snow_distance = min(random(140,500), StormFox2.Fog.GetEnd())
 			local d = min(snow_distance / 500, 1)
 			local snow_size = math.Rand(3,5) * d * max(0.7,P)
 			local s = math.Rand(3,5) * d * max(0.7,P)
@@ -458,7 +460,8 @@ if CLIENT then
 			snow_col.b = n
 			StormFox2.Misc.snow_template:SetColor(snow_col)
 			StormFox2.Misc.snow_template_multi:SetColor(snow_col)
-			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template, 500, snow_distance, 400 + P * 4600, 5, vNorm ) or {} ) do
+			local max_normal = 40 * P * (50 - W)
+			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template, 200, snow_distance, max_normal, 5, vNorm ) or {} ) do
 				v:SetSize(  s, s )
 				v:SetSpeed( math.Rand(1, 2) * snow_speed)
 				if snow_speed > 0.15 and random(snow_speed)> 0.15 then
@@ -467,12 +470,13 @@ if CLIENT then
 			end
 			-- Spawn snow distant
 			if P > 0.15 then
+				local max_multi = 10 * (P - 0.15) * (70 - W)
 				local snow_distance = min(random(300,900), StormFox2.Fog.GetEnd())
 				local d = max(snow_distance / 900, 0.5)
 				local snow_size = math.Rand(0.5,1) * max(0.7,P) * 500 * d
-				local snow_speed = 0.50 * d * force_multi
+				local snow_speed = 0.15 * d * force_multi
 				StormFox2.Misc.snow_template:SetSpeed( mult_speed )
-				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template_multi, 900, snow_distance, 190 + P * 550, s, vNorm ) or {} ) do
+				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template_multi, 500, snow_distance / 1, max_multi, s, vNorm ) or {} ) do
 					v:SetSize(  snow_size, snow_size )
 					v:SetSpeed( math.Rand(1, 2) * snow_speed)
 					v:SetRoll( math.Rand(0, 360))
@@ -481,7 +485,8 @@ if CLIENT then
 					end
 				end
 			end
-			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, snow_distance * 2, snow_distance , (90 + P * (20 + W)) / 2, s, vNorm ) or {} ) do
+			local max_fog =  (90 + P * (20 + (W / 80) * 102))
+			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, snow_distance, snow_distance * 2 , max_fog, s, vNorm ) or {} ) do
 				local d = v:GetDistance()
 				if not d or d < 500 then 
 					v:SetSize(  225, 500 )
@@ -493,6 +498,81 @@ if CLIENT then
 				end
 			end
 		end
+	end
+	
+
+-- Render Filter (Screen filter, this is additive)
+	local blizard = Material("stormfox2/effects/blizzard.png", "noclamp")
+	local storm = Material("stormfox2/effects/rainstorm.png", "noclamp")
+	local sx,sy = 0,0
+	local rx,ry,rx2,ry2 = 0,0,0,0
+		--surface.SetDrawColor( Color(255,255,255,34 * a) )
+		--surface.SetMaterial( snowMulti )
+		--surface.DrawTexturedRectUV( 0, 0, ScrW(), ScrH() ,c2,0 + c,2 + c2,2 + c)
+		--surface.DrawTexturedRectUV( 0, 0, ScrW(), ScrH() ,-c2 + c4,0 + c3,1 - c2 + c4,1 + c3)
+	local up = Vector(0,0,1)
+	
+	local function setMaterialRoll(mat, roll, u, v)
+		local matrix = Matrix()
+		local w = mat:Width() 
+		local h = mat:Height() 
+		matrix:SetAngles(Angle(0,roll,0))
+		matrix:Translate(Vector(u, v, 0))
+		mat:SetMatrix("$basetexturetransform", matrix)
+	end
+	function rain.DepthFilter(w, h, a)
+		local windDir = (-StormFox2.Wind.GetNorm()):Angle()
+		local rainscale = (StormFox2.Temperature.Get() + 2) / 2
+
+		local ad = math.AngleDifference(StormFox2.Wind.GetYaw() + 180, StormFox2.util.GetCalcView().ang.y)
+		local ada = math.sin(math.rad(ad))
+		-- 0 = directly into the wind
+		-- 1 = directly to the side of the wind
+
+		-- 0 = not moving at all
+		-- 1 = max movment
+		local A = EyeAngles():Forward()
+		local B = windDir:Forward()
+		local D = math.abs(A:Dot(B))
+		local C = 1 - D
+		local P = StormFox2.Weather.GetPercent()
+		local W = math.min(1, StormFox2.Wind.GetForce() / 60)
+
+		local B2 = windDir:Right()
+		local D2 = (A:Dot(B2))
+
+		if rainscale > -1 then
+			local WP = math.min(1, P) -- 0 - 1 Wimdy
+			local wind_x = ada * -C * 4 * WP
+			local wind_y = -8 * math.max(0.5, WP)
+			local roll = (windDir.p - 270) * -D2 * 0.8
+			rx = (rx + FrameTime() * wind_x) % 1
+			ry = (ry + FrameTime() * wind_y) % 1
+			setMaterialRoll(storm, 180 - roll + 3, rx, ry)
+			surface.SetMaterial( storm )
+			surface.SetDrawColor( Color(255,255,255,84 * a * math.max(0.1, W) * WP * math.max(C,0)) )
+			local s,s2 = 1.5, 1.8
+			surface.DrawTexturedRectUV( 0, 0, ScrW(), ScrH(), 0, 0,0 + s, 0 + s)
+		--	surface.DrawTexturedRectUV( 0, 0, ScrW(), ScrH(), rx,ry, rx + s2,ry + s2)
+		elseif rainscale < 1  then
+			local WP = math.min(1, W)
+			local wind_x = ada * -C * 4 * WP
+			local wind_y = -8 * math.max(0.5, WP)
+			local roll = (windDir.p - 270) * -ada
+			sx = (sx + FrameTime() * wind_x) % 1
+			sy = (sy + FrameTime() * wind_y) % 1
+			setMaterialRoll(blizard, 180 - roll + 14, w / 2, h / 2)
+			surface.SetDrawColor( Color(255,255,255,144 * a * math.max(WP,0.1) * ((P) * 1.15) ) )
+			surface.SetMaterial( blizard )
+			surface.DrawTexturedRectUV( 0, 0, ScrW(), ScrH(), sx, sy, 2 + sx, 2 + sy)
+			surface.DrawTexturedRectUV( 0, 0, ScrW(), ScrH(), -sx, sy, 1 - sx, 1 + sy)
+
+
+		--	surface.SetDrawColor( Color(255,255,255,255 * a * WP * D ) )
+		--	surface.DrawTexturedRectUV( 0, 0, ScrW(), ScrH(), 0, 0, 1, 1)
+		--	surface.DrawTexturedRectUV( 0, 0, ScrW(), ScrH(), 0, 0, 0.6, 0.6)
+		end
+		--print(">",w,h,a)
 	end
 
 -- Render water

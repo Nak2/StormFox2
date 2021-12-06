@@ -10,8 +10,6 @@ function StormFox2.Thunder.GetActivity() -- The amount of strikes pr minute
 end
 
 if SERVER then
-	util.AddNetworkString("StormFox2.thunder")
-
 	local THUNDER_MAKE_SKYBOX = 0
 	local THUNDER_TRACE_ERROR = 1
 	local THUNDER_SUCCESS = 2
@@ -150,7 +148,7 @@ if SERVER then
 		local n_Length = math.Rand(.4,0.7)
 		local n_Light = math.random(200, 250)
 
-		net.Start("StormFox2.thunder")
+		net.Start(StormFox2.Net.Thunder)
 			net.WriteBool( true )
 			net.WriteUInt(#tList, 5)
 			for i = 1, #tList do
@@ -230,7 +228,7 @@ if SERVER then
 		end
 		local n_Length = bLight and math.Rand(.4,0.7) or 0
 		local n_Light = bLight and math.random(150, 250) or 0
-		net.Start("StormFox2.thunder")
+		net.Start( StormFox2.Net.Thunder )
 			net.WriteBool( false )
 			net.WriteVector( pos )
 			net.WriteFloat(n_Length)
@@ -397,7 +395,7 @@ else
 
 	end
 	local Sway = 120
-	net.Receive("StormFox2.thunder", function(len)
+	net.Receive( StormFox2.Net.Thunder, function(len)
 		local b_Strike = net.ReadBool()
 		if b_Strike then
 			local tList = {}

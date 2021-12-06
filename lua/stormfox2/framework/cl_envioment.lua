@@ -745,7 +745,7 @@ Generate meshes and env-points out from the map-data.
 				if not data.PropType or not IsWinModel(data.PropType) then continue end
 				local min,max = GetWindowModel(data.PropType)
 
-				local scale = data.Scale or 1
+				local scale = data.UniformScale or data.Scale or 1
 				local n = data.Angles:Forward()
 				local t1 = {pos = Vector(min.x,min.y,min.z) * scale, u = 0, v = 1, normal = n}
 				local t2 = {pos = Vector(min.x,min.y,max.z) * scale, u = 0, v = 0, normal = n}

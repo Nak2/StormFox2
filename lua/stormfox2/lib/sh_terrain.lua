@@ -48,10 +48,6 @@ local CURRENT_TERRAIN
 function StormFox2.Terrain.GetCurrent()
 	return CURRENT_TERRAIN
 end
--- Terrain is an object that changes the map e.g; Snow
-if SERVER then
-	util.AddNetworkString("StormFox2.terrain")
-end
 -- Returns the terrain.
 function StormFox2.Terrain.Get( sName )
 	if not sName then return end
@@ -202,7 +198,7 @@ function StormFox2.Terrain.Reset( bNoUpdate )
 	end
 	CURRENT_TERRAIN = nil
 	if SERVER and not bNoUpdate then
-		net.Start("StormFox2.terrain")
+		net.Start(StormFox2.Net.Terrain)
 			net.WriteString( "" )
 		net.Broadcast()
 	end
@@ -257,7 +253,7 @@ end
 function meta:Apply()
 	CURRENT_TERRAIN = self
 	if SERVER then
-		net.Start("StormFox2.terrain")
+		net.Start(StormFox2.Net.Terrain)
 			net.WriteString( CURRENT_TERRAIN.Name )
 		net.Broadcast()
 	end
@@ -280,13 +276,13 @@ end
 
 -- NET
 if SERVER then
-	net.Receive("StormFox2.terrain", function(len, ply) -- OI, what terrain?
-		net.Start("StormFox2.terrain")
+	net.Receive(StormFox2.Net.Terrain, function(len, ply) -- OI, what terrain?
+		net.Start(StormFox2.Net.Terrain)
 			net.WriteString( CURRENT_TERRAIN and CURRENT_TERRAIN.Name or "" )
 		net.Send(ply)
 	end)
 else
-	net.Receive("StormFox2.terrain", function(len)
+	net.Receive(StormFox2.Net.Terrain, function(len)
 		local sName = net.ReadString()
 		local b = StormFox2.Terrain.Set( sName )
 	--"Terrain Recived: ", sName, b)
@@ -295,7 +291,7 @@ else
 	-- Ask the server
 	hook.Add("StormFox2.InitPostEntity", "StormFox2.terrain.init", function()
 		timer.Simple(1, function()
-			net.Start("StormFox2.terrain")
+			net.Start(StormFox2.Net.Terrain)
 				net.WriteBit(1)
 			net.SendToServer()
 		end)

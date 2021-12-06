@@ -17,25 +17,20 @@ StormFox2.Sky = StormFox2.Sky 	or {}
 	Sets the time for sunrise.
 	---------------------------------------------------------------------------]]
 	function StormFox2.Sun.SetSunRise(nTime)
-		if StormFox2.Sun.GetSunRise() == nTime then return end
-		StormFox2.Network.Set("sun_sunrise",nTime)
+		StormFox2.Setting.Set("sunrise", nTime)
 	end
-	StormFox2.Setting.Callback("sunrise",StormFox2.Sun.SetSunRise,"StormFox2.heaven.sunrise")
 	--[[-------------------------------------------------------------------------
 	Sets the tiem for sunsets.
 	---------------------------------------------------------------------------]]
 	function StormFox2.Sun.SetSunSet(nTime)
-		if StormFox2.Sun.GetSunSet() == nTime then return end
-		StormFox2.Network.Set("sun_sunset",nTime)
+		StormFox2.Setting.Set("sunset", nTime)
 	end
-	StormFox2.Setting.Callback("sunset",StormFox2.Sun.SetSunSet,"StormFox2.heaven.sunset")
 	--[[-------------------------------------------------------------------------
 	Sets the sunyaw. This will also affect the moon.
 	---------------------------------------------------------------------------]]
 	function StormFox2.Sun.SetYaw(nYaw)
-		StormFox2.Network.Set("sun_yaw",nYaw)
+		StormFox2.Setting.Set("sunyaw",nYaw)
 	end
-	StormFox2.Setting.Callback("sunyaw",StormFox2.Sun.SetYaw,"StormFox2.heaven.sunyaw")
 	--[[-------------------------------------------------------------------------
 	Sets the sunsize. (Normal is 30)
 	---------------------------------------------------------------------------]]
@@ -51,25 +46,17 @@ StormFox2.Sky = StormFox2.Sky 	or {}
 
 -- Moon
 	--[[-------------------------------------------------------------------------
-	Sets the moon-offset it gains each day. (Default 7.5)
+	Sets the moon phase, and increases it once pr day
 	---------------------------------------------------------------------------]]
-	function StormFox2.Moon.SetDaysForFullCycle(nVar)
-		StormFox2.Network.Set("moon_cycle",360 / nVar)
-	end
-
 	hook.Add("StormFox2.Time.NextDay","StormFox2.MoonPhase",function()
-		local d = StormFox2.Data.Get("moon_magicnumber",0) + StormFox2.Data.Get("moon_cycle",12.203)
-		StormFox2.Network.Set("moon_magicnumber",d % 360)
+		StormFox2.Moon.SetPhase( StormFox2.Moon.GetPhase() + 1 )
 	end)
 
-	local a = 7.4 / 7
-	function StormFox2.Moon.SetPhase( moon_phase, nTime )
-		local day_f = (nTime or StormFox2.Time.Get()) / 1440
-		local day_n = day_f + StormFox2.Date.GetYearDay()
-		local pitch = ((day_n * a) % 8) * 360	-- Current moon angle
-		local dif = pitch - GetSunPitch(nTime) + 180
-		StormFox2.Network.Set("magic_moonnumber",dif)
+	function StormFox2.Moon.SetPhase( moon_phase )
+		StormFox2.Network.Set("moon_phase",moon_phase % 8)
 	end
+
+	StormFox2.Moon.SetPhase( math.random(0, 7) )
 
 -- Skybox
 local function SkyTick(b)

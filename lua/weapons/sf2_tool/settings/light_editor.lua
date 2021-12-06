@@ -64,16 +64,16 @@ local function SpawnMissingLight(pos, ang, i_type)
 end
 
 local function StaticLocal(v, pos, ang)
-	return LocalToWorld(pos * (v.Scale or 1), ang, v.Origin, v.Angles)
+	return LocalToWorld(pos * (v.UniformScale or v.Scale or 1), ang, v.Origin, v.Angles)
 end
 
 local function StaticLightPos(v)
 	local tab = t_models[v.PropType]
 	if not tab then return end -- Unknown
-	local pos, ang = StaticLocal(v, tab[1] * v.Scale, tab[2])
+	local pos, ang = StaticLocal(v, tab[1] * (v.UniformScale or v.Scale), tab[2])
 	local spos, ang2
 	if tab[4] then
-		spos, ang2 = StaticLocal(v, tab[4] * v.Scale, tab[5] or tab[2])
+		spos, ang2 = StaticLocal(v, tab[4] * (v.UniformScale or v.Scale), tab[5] or tab[2])
 	end
 	return pos, ang, spos, ang2
 end
@@ -87,7 +87,7 @@ local function FindStaticProps(pos, dis)
 	local t = {}
 	for k, v in ipairs(ls) do
 		if t_models[v.PropType] then
-			table.insert(t, {v.PropType, v.Origin, v.Angles, v.Scale, v.Origin:DistToSqr(pos)})
+			table.insert(t, {v.PropType, v.Origin, v.Angles, v.UniformScale or v.Scale or 1, v.Origin:DistToSqr(pos)})
 		else
 			--print(v.PropType)
 		end
@@ -222,6 +222,7 @@ else
 				ghost = self._swep:SetGhost(mdl, pos, ang)
 				ghost:SetMaterial(a_outline)
 				if ghost then -- If ghost
+					scale = scale or 1
 					-- Check if ent is there
 					ghost:SetModelScale(scale)
 					ghost:SetColor(Color(255,255,255,255))

@@ -197,6 +197,9 @@ end
 
 -- Load the weathers once lib is done.
 hook.Add("stormfox2.postlib", "stormfox2.loadweathers", function()
+
+	StormFox2.Setting.AddSV("moonsize",30,nil,"Effects", 5, 500)
+
 	hook.Run("stormfox2.preloadweather", w_meta)
 	for _,fil in ipairs(file.Find("stormfox2/weathers/*.lua","LUA")) do
 		if SERVER then

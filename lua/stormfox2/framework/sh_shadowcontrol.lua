@@ -2,10 +2,8 @@
 StormFox2.Setting.AddSV("modifyshadows",true,nil, "Effects")
 StormFox2.Setting.AddSV("modifyshadows_rate",game.IsDedicated() and 2 or 0.25,nil, "Effects", 0, 10)
 StormFox2.Setting.SetType("modifyshadows_rate", "float")
-if SERVER then
-	util.AddNetworkString("StormFox2.shadowup")
-else
-	net.Receive("StormFox2.shadowup", function()
+if CLIENT then
+	net.Receive(StormFox2.Net.Shadows, function()
 		timer.Simple(0.2, function()
 			for k, ent in ipairs(ents.GetAll()) do
 				ent:MarkShadowAsDirty()
@@ -30,7 +28,7 @@ function StormFox2.Shadows.SetAngle( nPitch )
 	for _,ent in ipairs( StormFox2.Ent.shadow_controls ) do
 		ent:Fire( "SetAngles" , str , 0 )
 	end
-	net.Start("StormFox2.shadowup")
+	net.Start(StormFox2.Net.Shadows)
 	net.Broadcast()
 end
 function StormFox2.Shadows.SetColor( cColor )

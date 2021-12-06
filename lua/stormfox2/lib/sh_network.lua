@@ -6,11 +6,10 @@ StormFox2.Network = {}
 StormFox_NETWORK = {}		-- Var
 
 if SERVER then
-	util.AddNetworkString("StormFox2.network")
 	function StormFox2.Network.Set( sKey, zVar, nDelta )
 		StormFox2.Data.Set(sKey, zVar, nDelta)
 		if StormFox_NETWORK[sKey] == zVar then return end
-		net.Start("StormFox2.network")
+		net.Start(StormFox2.Net.Network)
 			net.WriteBool(true)
 			net.WriteString(sKey)
 			net.WriteType(zVar)
@@ -20,7 +19,7 @@ if SERVER then
 	end
 	function StormFox2.Network.ForceSet( sKey, zVar, nDelta )
 		StormFox2.Data.Set(sKey, zVar, nDelta)
-		net.Start("StormFox2.network")
+		net.Start(StormFox2.Net.Network)
 			net.WriteBool(true)
 			net.WriteString(sKey)
 			net.WriteType(zVar)
@@ -29,17 +28,17 @@ if SERVER then
 		StormFox_NETWORK[sKey] = zVar
 	end
 	local tickets = {}
-	net.Receive("StormFox2.network", function(len, ply)
+	net.Receive(StormFox2.Net.Network, function(len, ply)
 		if tickets[ply] then return end
 		tickets[ply] = true
-		net.Start("StormFox2.network")
+		net.Start(StormFox2.Net.Network)
 			net.WriteBool(false)
 			net.WriteTable(StormFox_NETWORK)
 		net.Send(ply)
 		hook.Run("StormFox2.data.initspawn", ply)
 	end)
 else
-	net.Receive("StormFox2.network", function(len)
+	net.Receive(StormFox2.Net.Network, function(len)
 		if net.ReadBool() then
 			local sKey = net.ReadString()
 			local zVar = net.ReadType()
@@ -54,7 +53,7 @@ else
 	end)
 	-- Ask the server what data we have
 	hook.Add("StormFox2.InitPostEntity", "StormFox2.network", function()
-		net.Start("StormFox2.network")
+		net.Start(StormFox2.Net.Network)
 		net.SendToServer()
 	end)
 end

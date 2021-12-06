@@ -90,10 +90,13 @@ local W,H = ScrW(), ScrH()
 local depth_r = GetRenderTarget("SF_DepthFilter", W,H, true)
 local depthLayer = Material( "stormfox2/shader/depth_layer" )
 local a = 0
-hook.Add("StormFox2.weather.postchange", "StormFox2.DepthFilter.Reset", function()
+local l
+hook.Add("StormFox2.weather.postchange", "StormFox2.DepthFilter.Reset", function(b)
+	if l and l == b then return end
+	l = b
 	a = 0
 end)
-hook.Add( "RenderScreenspaceEffects", "StormFox2.DepthFilter", function()
+hook.Add( "StormFox2.DepthFilterRender", "StormFox2.DepthFilter", function()
 	local dFr = StormFox2.Weather.GetCurrent().DepthFilter 
 	if not dFr then 
 		a = 0

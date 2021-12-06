@@ -68,7 +68,6 @@ local sunVisible
 			render.SetLightingMode( 2 )
 			if not use_2d or not sky then
 				hook.Run("StormFox2.2DSkybox.StarRender",	c_pos)
-
 				-- hook.Run("StormFox2.2DSkybox.BlockStarRender",c_pos)
 				hook.Run("StormFox2.2DSkybox.SunRender",		c_pos) -- No need to block, shrink the sun.		
 
@@ -111,18 +110,19 @@ local sunVisible
 		local lastCurrentPhase = -1
 		local lastMoonMat
 		local function RenderMoonPhase(rotation,currentPhase)
+			
 			--currentPhase = SF_MOON_FIRST_QUARTER - 0.01
 			if currentPhase == SF_MOON_NEW then return end -- New moon. No need to render.
 			-- Check if there is a need to re-render
-				local moonMat = StormFox2.Data.Get("moonTexture",lastMoonMat)
-				if type(moonMat) ~= "IMaterial" then return end -- Something went wrong. Lets wait.
+				local moonMat = StormFox2.Mixer.Get("moonTexture",lastMoonMat)
+				if type(moonMat) ~= "string" then return end -- Something went wrong. Lets wait.
 				if lastCurrentPhase == currentPhase and lastMoonMat and lastMoonMat == moonMat then
 					-- Already rendered
 					return true
 				end
 				lastCurrentPhase = currentPhase
-				lastMoonMat = moonMat:GetName()
-			
+				lastMoonMat = moonMat
+				moonMat = Material(moonMat)
 			render.PushRenderTarget( RTMoonTexture )
 			render.OverrideAlphaWriteEnable( true, true )
 
@@ -199,31 +199,38 @@ local sunVisible
 			CurrentMoonTexture:SetTexture("$basetexture",RTMoonTexture)
 		end
 	hook.Add("StormFox2.2DSkybox.Moon","StormFox2.RenderMoon",function(c_pos)
+		local phase = StormFox2.Moon.GetPhase()
+		if phase <= 0 then return end
 		local moonScale = StormFox2.Mixer.Get("moonSize",20)
 		local moonAng = StormFox2.Moon.GetAngle()
 		local N = moonAng:Forward()
 		local NN = -N
 		local sa = moonAng.y
 		-- Render texture
-			-- Calc moonphase from pos
-			local currentPhase,moonTowardSun = StormFox2.Moon.GetPhase()
-			local C = StormFox2.Moon.GetAngle()
-				C.r = 0
 			-- currentYaw
-				local v,ang = WorldToLocal(moonTowardSun:Forward(),Angle(0,0,0),Vector(0,0,0),C)
-				ang = v:AngleEx(C:Forward()):Forward()
-				local roll = math.deg(math.atan2(ang.z,ang.y))
-			RenderMoonPhase( -sa - roll + ((moonAng.p < 270 and moonAng.p > 90) and 180 or 0)   ,currentPhase)
+			RenderMoonPhase( ((moonAng.p < 270 and moonAng.p > 90) and 180 or 0),phase)
 		local c = StormFox2.Mixer.Get("moonColor",Color(205,205,205))
-		local a = StormFox2.Mixer.Get("skyVisibility",100)
-		if moonAng.p > 190 then
-			gda = clamp((moonAng.p - 190) / 10,0,1)
-		elseif moonAng.p < 350 then
-			gda = 1 - clamp((moonAng.p - 350) / 10,0,1)
-		end
+		local a = StormFox2.Mixer.Get("skyVisibility",100) * 2
 		-- Dark moonarea
 	--	PrintTable(CurrentMoonTexture:GetKeyValues())
 		render.SetMaterial( CurrentMoonTexture )
 		local aa = max(0,(3.125 * a) - 57.5)
 		render.DrawQuadEasy( N * 200, NN, moonScale , moonScale, Color(c.r,c.g,c.b, aa ), sa )
 	end)
+
+if true then return end
+-- Render Sky
+local scale = 256 * 1.5
+local galixmat = Material("stormfox2/effects/nightsky3")
+local c = Color(255,255,255)
+hook.Add("StormFox2.2DSkybox.StarRender", "StormFox2.2DSkyBox.NS", function(c_pos)
+	render.SetMaterial( galixmat )
+	c.a = StormFox2.Mixer.Get("starFade",100) * 2.55
+	c.a = 255
+	local p = (0.001) * StormFox2.Time.GetSpeed_RAW()
+	local ang = Angle((RealTime() * p) % 360,0,0)
+	local n = ang:Forward() * 256
+--	render.DrawQuadEasy(n, -n, scale * 4, scale, c, (ang.p < 270 and ang.p > 90) and 30 or 30 + 180)
+--	render.DrawSphere(Vector(0,0,0), -10, 30, 30, c)
+
+end)

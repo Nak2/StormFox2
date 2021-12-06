@@ -154,7 +154,7 @@ do
 			local lzmaSize = f:ReadLong() -- lzmaSize
 			local t = {}
 			for i = 1,5 do
-				table.insert(t, unsigned_char(f))
+				table.insert(t, f:ReadByte())
 			end
 			local str = f:Read( lzmaSize )
 			local buf = file.Open("sf_buffer.txt", "wb", "DATA");

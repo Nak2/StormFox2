@@ -85,7 +85,7 @@ end
 
 -- Send a request to change the weather
 local function SetWeather( uID, var )
-	net.Start("StormFox2.permission")
+	net.Start( StormFox2.Net.Permission )
 		net.WriteUInt(1, 1)	-- SF_SERVEREDIT
 		net.WriteUInt(uID, 4)
 		net.WriteType(var)
@@ -539,62 +539,20 @@ local function Init(self)
 			windslide:SetVal( StormFox2.Wind.GetForce() or 0 )
 		end
 	-- Time
-		local t = vgui.Create("DPanel", self)
-		t:SetTall(26)
-		t:Dock(TOP)
-		t:DockMargin(padding,padding_y,padding,0)
-		local text = language.GetPhrase("#set_time")
-		t.text = string.upper(text[1]) .. string.sub(text, 2)
-		function t:Paint(w,h)
-			surface.SetFont("SF2.W_Button")
-			local tw,th = surface.GetTextSize(self.text)
-			surface.SetTextColor(color_white)
-			surface.SetTextPos(w / 2 - tw / 2,th / 2 - 2)
-			surface.DrawText(self.text)
+		local p = vgui.Create("DPanel", self)
+		p:SetTall(40)
+		p.Paint = function() end
+		local t = vgui.Create("SF_TIME", p)
+		function t:Think()
+			self:SetValue( StormFox2.Time.Get() )
 		end
-		local use_12 = StormFox2.Setting.GetCache("12h_display",false)
-		local p = vgui.Create("DButton", self)
-		p:SetText("")
-		p:SetTall(26)
-		p:DockMargin(padding,0,padding,0)
+		function t:OnNewValue( var )
+			SetWeather( SF_SETTIME, var )
+		end
 		p:Dock(TOP)
-		function p:Paint(w,h)
-			DrawButton(self,w,h)
-			local t = StormFox2.Time.GetDisplay()
-			surface.SetFont("SF2.W_Button")
-			local tw,th = surface.GetTextSize(t)
-			surface.SetTextColor(color_white)
-			surface.SetTextPos(w / 2 - tw / 2, h / 2 - th/2)
-			surface.DrawText(t)
-		end
-		function p:DoClick()
-			if IsValid(self._m) then
-				self._m:Remove()
-			end
-			self._m = vgui.Create("DTextEntry", self)
-			self._m:SetWide( self:GetWide() )
-			self._m:SetTall( self:GetTall() )
-			self._m:SetText( StormFox2.Time.GetDisplay() )
-			self._m._f = false
-			
-			function self._m:Think()
-				if self._f and not self:HasFocus() then
-					self:Remove()
-				elseif not self._f and self:HasFocus() then
-					self._f = true
-				end
-			end
-			self._m:RequestFocus()
-
-			self._m.OnEnter = function( self )
-				local v = StormFox2.Time.StringToTime( self:GetValue() )
-				if v then
-					SetWeather(SF_SETTIME, v)
-				end
-				self:Remove()
-			end
-
-		end
+		t:SetPos( 20 ,10)
+		t:SetWide( 140 )
+		
 end
 
 -- Caht status
@@ -671,7 +629,6 @@ function StormFox2.Menu.CloseController()
 		_SF_CONTROLLER:Remove()
 	end
 end
-
 concommand.Add('stormfox2_controller', StormFox2.Menu.OpenController, nil, "Opens SF controller menu")
 -- Controller
 	list.Set( "DesktopWindows", "StormFoxController", {

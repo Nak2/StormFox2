@@ -149,7 +149,6 @@ local SF_UPDATE_WEATHER = 0
 local SF_INIT_WEATHER 	= 1
 
 if SERVER then
-	util.AddNetworkString("StormFox2.weather")
 	local l_data
 	function StormFox2.Weather.Set( sName, nPercentage, nDelta )
 		if not StormFox2.Setting.GetCache("enable", true) then return end -- Just in case
@@ -177,7 +176,7 @@ if SERVER then
 			nPercentage = 1
 		end
 		lastSet = CurTime()
-		net.Start("StormFox2.weather")
+		net.Start( StormFox2.Net.Weather )
 			net.WriteBit(SF_UPDATE_WEATHER)
 			net.WriteUInt( math.max(0, StormFox2.Data.GetLerpEnd( "w_Percentage" )), 32)
 			net.WriteFloat(nPercentage)
@@ -191,9 +190,9 @@ if SERVER then
 		StormFox2.Data.Set("w_Percentage",nPercentage,nDelta)
 		return true
 	end
-	net.Receive("StormFox2.weather", function(len, ply) -- OI, what weather?
+	net.Receive( StormFox2.Net.Weather, function(len, ply) -- OI, what weather?
 		local lerpEnd = StormFox2.Data.GetLerpEnd( "w_Percentage" )
-		net.Start("StormFox2.weather")
+		net.Start( StormFox2.Net.Weather )
 			net.WriteBit(SF_INIT_WEATHER)
 			net.WriteUInt( math.max(0, StormFox2.Data.GetLerpEnd( "w_Percentage" )), 32)
 			net.WriteFloat( CurrentPercent )
@@ -272,7 +271,7 @@ else
 		svWeather = nil
 		hasLocalWeather = false
 	end
-	net.Receive("StormFox2.weather", function(len)
+	net.Receive( StormFox2.Net.Weather, function(len)
 		local flag = net.ReadBit() == SF_UPDATE_WEATHER
 		local wTarget = net.ReadUInt(32)
 		local nPercentage = net.ReadFloat()
@@ -304,7 +303,7 @@ else
 	end)
 	-- Ask the server what weather we have
 	hook.Add("StormFox2.InitPostEntity", "StormFox2.terrain", function()
-		net.Start("StormFox2.weather")
+		net.Start( StormFox2.Net.Weather )
 		net.SendToServer()
 	end)
 end

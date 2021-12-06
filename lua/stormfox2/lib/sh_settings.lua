@@ -5,159 +5,307 @@ Handle settings and convert convars.
 	- Hooks: StormFox2.Setting.Change 		sName, vVarable
 ---------------------------------------------------------------------------]]
 StormFox2.Setting = {}
-local cache = {}
-local settings = {}
-local settings_ov = {}
-local settings_env = {}
-local settings_group = {}
-local settings_desc = {}
-local callback_func = {}
-local callBack = function(sName,oldvar,newvar)
-	local sName = string.match(sName,"sf_(.+)")
-	if not sName or not settings[sName] or not callback_func[sName] then return end
-	-- Convert newvar
-		local vVar
-		if settings[sName] == "number" then
-			vVar = tonumber(newvar)
-		elseif settings[sName] == "string" then
-			vVar = newvar
-		elseif settings[sName] == "boolean" then
-			vVar = newvar == "1"
-		else
-			vVar = util.StringToType(newvar,settings[sName])
+-- Local functions and var
+
+	local NET_ALLSETTINGS 	= 0
+	local NET_UPDATE		= 1
+
+	local settingCallback = {}
+	local settings = {}
+	local cache = {}
+
+	local ValueToString, StringToValue
+	do
+		function StringToValue( str, _type )
+			_type = _type:lower()
+			if ( _type == "vector" )						then return Vector( str ) end
+			if ( _type == "angle" )							then return Angle( str ) end
+			if ( _type == "float" or _type == "number" )	then return tonumber( str ) end
+			if ( _type == "int" )							then return math.Round( tonumber( str ) ) end
+			if ( _type == "bool" or _type == "boolean" )	then return tobool( str ) end
+			if ( _type == "string" )						then return tostring( str ) end
+			if ( _type == "entity" )						then return Entity( str ) end
+			StormFox2.Warning("Unable parse: " .. _type, true)
 		end
-	-- Convert oldvar
-		local vOldVar
-		if oldvar then
-			if settings[sName] == "number" then
-				vOldVar = tonumber(oldvar)
-			elseif settings[sName] == "string" then
-				vOldVar = oldvar
-			elseif settings[sName] == "boolean" then
-				vOldVar = oldvar == "1"
-			else
-				vOldVar = util.StringToType(oldvar,settings[sName])
-			end
-		end
-	-- Call
-	for sID,fFunc in pairs(callback_func[sName]) do
-		if not isstring(sID) then
-			if IsValid(sID) then
-				fFunc(vVar,vOldVar,sName, sID)
-			else
-				callback_func[sName][sID] = nil
-			end
-		else
-			fFunc(vVar,vOldVar,sName, sID)
+		function ValueToString( var, _type )
+			_type = (_type or type( var )):lower()
+			if _type == "vector" or _type == "angle" then return string.format( "%.2f %.2f %.2f", var:Unpack() ) end
+			if _type == "number" or _type == "float" then return util.NiceFloat( var ) end
+			if _type == "int" then var = math.Round( var ) end
+			return tostring( var )
 		end
 	end
-end
-if SERVER then
-	util.AddNetworkString("StormFox2.setting")
-end
-
-local gm_settings -- Allows gamemodes to overwrite the settings
-hook.Add("PostGamemodeLoaded", "StormFox2.Settings.PGL", function()
-	hook.Run("StormFox2.Settings.PGL")
-	gm_settings = gmod.GetGamemode().SF2_Settings
-	if not gm_settings then return end
-	-- Remove all callbacks and caches for the given setting.
-	for sName,var in pairs( gm_settings ) do
-		if string.sub(sName, 0, 3) == "sf_" then
-			sName = string.sub(sName, 4)
-		end
-		callback_func[sName] = nil
-		cache[sName] = StormFox2.Setting.Get(sName,var)
-		-- Need to reset timespeed.
-		if sName == "time_speed" and StormFox2.Time.SetSpeed then
-			StormFox2.Time.SetSpeed(tonumber(var) or 1)
-		end
-	end
-end)
-
---[[<Shared>-----------------------------------------------------------------
-Adds a server setting that will sync with clients
-vDefaultVar is the default setting, do note that the Get function will convert to the type given.
-
-Note: This has to be called on the clients too.
----------------------------------------------------------------------------]]
-function StormFox2.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nMax)
-	settings[sName] = type(vDefaultVar)
-	settings_env[sName] = true
-	settings_group[sName] = sGroup and string.lower(sGroup)
-	if not sDescription then
-		sDescription = "sf_" .. sName .. ".desc"
-	end
-	settings_desc[sName] = sDescription
-
-	if settings[sName] == "boolean" then		
-		vDefaultVar = vDefaultVar and "1" or "0"
-		nMin = 0
-		nMax = 1
-	else
-		vDefaultVar = tostring(vDefaultVar)
-	end
-	CreateConVar("sf_" .. sName, vDefaultVar, {FCVAR_ARCHIVE + FCVAR_NOTIFY + FCVAR_REPLICATED}, sDescription, nMin, nMax)
-	-- FCVAR_REPLICATED Convars doesn't call callbacks on the client.
+-- Load the settings
+	local mapFile, defaultFile
 	if SERVER then
-		cvars.RemoveChangeCallback( "sf_" .. sName,"sf_networkcall" )
-		cvars.AddChangeCallback("sf_" .. sName,function(convar,oldvar,newvar)
-			net.Start("StormFox2.setting")
-				net.WriteString(sName)
-				net.WriteString(newvar)
-				net.WriteString(oldvar)
-			net.Broadcast()
-		end,"sf_networkcall")
+		mapFile, defaultFile = "stormfox2/sv_settings/" .. game.GetMap() .. ".json", "stormfox2/sv_settings/default.json"
+	else
+		mapFile, defaultFile = "stormfox2/cl_settings/" .. game.GetMap() .. ".json", "stormfox2/cl_settings/default.json"
 	end
-end
-if CLIENT then
-	--[[<Shared>-----------------------------------------------------------------
-	Adds a client setting.
-	vDefaultVar is the default setting, do note that the Get function will convert to the type given.
-	---------------------------------------------------------------------------]]
-	function StormFox2.Setting.AddCL(sName,vDefaultVar,sDescription, sGroup, nMin, nMax)
-		settings[sName] = type(vDefaultVar)
-		settings_env[sName] = false
-		settings_group[sName] = sGroup and string.lower(sGroup)
-		if not sDescription then
-			sDescription = "sf_" .. sName .. ".desc"
+	local settingsFile = file.Exists(mapFile, "DATA") and mapFile or defaultFile
+	local fileData = {}
+	if file.Exists(settingsFile, "DATA") then
+		fileData = util.JSONToTable( file.Read(settingsFile, "DATA") or "" ) or {}
+	end
+	local blockSaveFile = false
+	local function saveToFile()
+		if blockSaveFile then return end
+		local data = {}
+		for sName, obj in pairs( settings ) do
+			if CLIENT and obj:IsServer() then continue end -- If you're the client, ignore server settings		
+			data[sName] = obj:GetString()
 		end
-		settings_desc[sName] = sDescription
-		if settings[sName] == "boolean" then
-			vDefaultVar = vDefaultVar and "1" or "0"
-			nMin = nMin or 0
-			nMax = nMax or 1
+		StormFox2.FileWrite( settingsFile, util.TableToJSON(data, true) )
+	end
+
+-- Meta Table
+local meta = {}
+	meta.__index = meta
+	AccessorFunc(meta, "group", "Group")
+	AccessorFunc(meta, "desc", "Description")
+	function meta:GetName()
+		return self.sName
+	end
+	function meta:GetValue()
+		return self.value
+	end
+	function meta:GetDescription()
+		return self.desc
+	end
+	function meta:IsSecret()
+		return self.isSecret or false
+	end
+	function meta:SetValue( var )
+		if self:GetValue() == var then return self end -- Ignore
+		StormFox2.Setting.Set(self:GetName(), var)
+		return self
+	end
+	function meta:GetDefault()
+		return self.default
+	end
+	function meta:Revert()
+		self:SetValue( self:GetDefault() )
+	end
+	function meta:IsServer()
+		return self.server
+	end
+	function meta:GetType()
+		return self.type
+	end
+	function meta:SetMenuType( sType, tSortOrter )
+		StormFox2.Setting.SetType( self:GetName(), sType, tSortOrter )
+		return self
+	end
+	function meta:GetMin()
+		return self.min
+	end
+	function meta:GetMax()
+		return self.max
+	end
+	function meta:GetString()
+		return ValueToString(self:GetValue(), self:GetType())
+	end
+	function meta:IsFuzzyOn()
+		if not self:GetValue() then return false end
+		if self.type == "number" then
+			if self:GetValue() <= ( self:GetMin() or 0 ) then return false end
+		end
+		return true
+	end
+	function meta:SetFuzzyOn()
+		if self.type == "boolean" then
+			self:SetValue( true )
+		elseif self.type == "number" then
+			local lowest = ( self:GetMin() or 0 )
+			self:SetValue( lowest + 1 )
+		end
+		return self
+	end
+	function meta:SetFuzzyOff()
+		if self.type == "boolean" then
+			self:SetValue( false )
+		elseif self.type == "number" then
+			local lowest = ( self:GetMin() or 0 )
+			self:SetValue( lowest )
+		end
+		return self
+	end
+	function meta:SetFromString( str, type )
+		self:SetValue( StringToValue( str, type or self.type ) )
+		return self
+	end
+	function meta:AddCallback(fFunc,sID)
+		StormFox2.Setting.Callback(self:GetName(),fFunc,sID)
+	end
+	-- Ties the setting to others. Does require all to be booleans or form of toggles
+	do
+		local radioTab = {}
+		local radioTabDefault = {}
+		local blockLoop = false
+		local function callBack(vVar, oldVar, sName, id)
+			if blockLoop then return end -- Another setting made you change. Don't run.
+			local obj = settings[sName]
+			if not obj then StormFox2.Warning("Invalid radio-setting!", true) end
+			local a = radioTab[sName]
+			if not a then return end
+			-- Make sure we turned "on"
+				if not obj:IsFuzzyOn() then -- We got turned off. Make sure at least one is on
+					if not blockLoop then -- Turned off, and we didn't get called by others
+						local default = a[1] -- First one in list. This is to ensure self never get set.
+						for _, other in ipairs( a ) do
+							if other:IsFuzzyOn() then return end -- One of the others are on. Ignore.
+							if radioTabDefault[other:GetName()] then -- I'm the default one
+								default = other
+							end
+						end
+						-- All other settings are off. Try and switch the default on.
+						if default:GetName() == sName then -- Tell the settings we can't be turned off
+							return false
+						else
+							default:SetFuzzyOn()
+						end
+					end
+					return
+				end
+			blockLoop = true
+			-- Tell the others we turned on, and they have to turn off
+				for _, other in ipairs( a ) do
+					if other:GetName() == obj:GetName() then continue end -- Just to make sure we don't loop around
+					other:SetFuzzyOff()
+				end
+			blockLoop = false
+		end
+		local callOthers = true
+		-- Makes all settings turn off, if one of them are turned on.
+		function meta:SetRadioAll( ... )
+			if self:IsServer() and CLIENT then  -- Not your job to keep track.
+				self._radioB = true
+				for _, other in ipairs( { ... } ) do
+					other._radioB = true
+				end
+				return self
+			end
+			local a = {}
+			-- Make sure the arguments doesn't contain itself and all is from the same realm.
+			local f = { ... }
+			for _, other in ipairs( f ) do
+				if other:GetName() == self:GetName() then continue end -- Don't include self
+				if other:IsServer() ~= self:IsServer() then -- Make sure same realm
+					StormFox2.Warning(other:GetName() .. " tried to tie itself to a setting from another realm!")
+					continue
+				end
+				table.insert(a, other)
+			end
+			if #a < 1 then StormFox2.Warning(self:GetName() .. " tried to tie itself to nothing!",true) end
+			-- Tell the other settings to do the same
+			if callOthers then
+				callOthers = false
+				for _, other in ipairs( a ) do
+					other:SetRadio( self, unpack( a ) )
+				end
+				callOthers = true
+			end
+			radioTab[self:GetName()] = a
+			StormFox2.Setting.Callback(self:GetName(),callBack,"radio_setting")
+			return self
+		end
+		function meta:SetRadioDefault() -- Turn on if all others are off
+			radioTabDefault[self:GetName()] = true
+			return self
+		end
+		function meta:IsRadio()
+			return (radioTab[self:GetName()] or self._radioB) and true or false
+		end
+		-- Tells these settings to turn off, if this setting is turned on
+		function meta:SetRadio( ... )
+			if self:IsServer() and CLIENT then  -- Not your job to keep track.
+				self._radioB = true
+				return self
+			end
+			local a = {}
+			-- Make sure the arguments doesn't contain itself and all is from the same realm.
+			for _, other in ipairs( { ... } ) do
+				if other:GetName() == self:GetName() then continue end -- Don't include self
+				if other:IsServer() ~= self:IsServer() then -- Make sure same realm
+					StormFox2.Warning(other:GetName() .. " tried to tie itself to a setting from another realm!")
+					continue
+				end
+				table.insert(a, other)
+			end
+			if #a < 1 then StormFox2.Warning(self:GetName() .. " tried to tie itself to nothing!",true) end
+			radioTab[self:GetName()] = a
+			StormFox2.Setting.Callback(self:GetName(),callBack,"radio_setting")
+			return self
+		end
+	end
+
+-- Creates a setting and returns the setting-object
+function StormFox2.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nMax)
+	if settings[sName] then return settings[sName] end -- Already added
+	local t = {}
+		setmetatable(t, meta)
+		t.sName = sName
+		t.type = type(vDefaultVar)
+		if SERVER then
+			t.value = fileData[sName] and StringToValue(fileData[sName], t.type)
+			if not t.value then -- Check convar before setting the setting.
+				local con = GetConVar("sf_" .. sName)
+				if con then
+					t.value = StringToValue(con:GetString(), t.type) or DefaultVar
+				else
+					t.value = vDefaultVar
+				end
+			end
 		else
-			vDefaultVar = tostring(vDefaultVar)
+			t.value = vDefaultVar
 		end
-		CreateConVar("sf_" .. sName, vDefaultVar, {FCVAR_ARCHIVE}, sDescription, nMin, nMax)
+		t.default = vDefaultVar
+		t.server = true
+		t.min = nMin
+		t.max = nMax
+		t:SetGroup( sGroup )
+		t:SetDescription( sDescription )
+	settings[sName] = t
+	return t
+end
+
+-- Creates a setting and returns the setting-object
+if CLIENT then
+	function StormFox2.Setting.AddCL(sName,vDefaultVar,sDescription,sGroup, nMin, nMax)
+		if settings[sName] then return settings[sName] end -- Already added
+		local t = {}
+			setmetatable(t, meta)
+			t.sName = sName
+			t.type = type(vDefaultVar)
+			if CLIENT then
+				t.value = fileData[sName] and StringToValue(fileData[sName], t.type)
+				if not t.value then
+					local con = GetConVar("sf_" .. sName)
+					if con then
+						t.value = StringToValue(con:GetString(), t.type) or DefaultVar
+					else
+						t.value = vDefaultVar
+					end
+				end
+			end
+			t.default = vDefaultVar
+			t.server = false
+			t.min = nMin
+			t.max = nMax
+			t:SetGroup( sGroup )
+			t:SetDescription( sDescription )
+		settings[sName] = t
+		return t
 	end
 end
+
 --[[<Shared>-----------------------------------------------------------------
 Tries to onvert to the given defaultvar to match the setting.
 ---------------------------------------------------------------------------]]
-local w_list = {"float","int","vector","angle","bool","string","entity"}
 function StormFox2.Setting.StringToType( sName, sString )
-	if type(sString) == "boolean" then
-		sString = sString and "1" or "0"
-	end
-	if not settings[sName] then return sString end -- No idea
-	if settings[sName] == "number" then
-		return tonumber(sString)
-	elseif settings[sName] == "string" then
-		return sString
-	elseif settings[sName] == "boolean" then
-		return sString == "1"
-	else
-		local st = (settings[sName] or type(vDefaultVar) or vDefaultVar):lower()
-		if st == "boolean" then st = "bool"
-		elseif st == "number" then st = "float" end
-		if table.HasValue(w_list, st) then
-			return util.StringToType(sString,st)
-		else
-			return sString
-		end
-	end
+	local obj = settings[sName]
+	if not obj then return sString end -- No idea
+	return StringToValue( sString, obj.type )
 end
 
 --[[<Shared>-----------------------------------------------------------------
@@ -165,30 +313,15 @@ Returns a setting and will try to convert to the given defaultvar type.
 Secondary will be true, if the setting isn't there.
 ---------------------------------------------------------------------------]]
 function StormFox2.Setting.Get(sName,vDefaultVar)
-	local con = GetConVar("sf_" .. sName)
-	local str
-	if gm_settings and gm_settings[sName] then
-		str = gm_settings[sName]
-	elseif con then
-		str = con:GetString()
-	end
-	if not con or not str then return vDefaultVar, true end
-	if settings[sName] == "number" then
-		return tonumber(str) or vDefaultVar
-	elseif settings[sName] == "string" then
-		return str or vDefaultVar
-	elseif settings[sName] == "boolean" then
-		return str == "1"
-	else
-		local st = (settings[sName] or type(vDefaultVar) or vDefaultVar):lower()
-		if st == "boolean" then st = "bool"
-		elseif st == "number" then st = "float" end
-		if table.HasValue(w_list, st) then
-			return util.StringToType(str,st) or vDefaultVar
-		else
-			return str or vDefaultVar
-		end
-	end
+	local obj = settings[sName]
+	if not obj then return vDefaultVar end
+	return obj:GetValue()
+end
+--[[<Shared>-----------------------------------------------------------------
+Returns hte setting object.
+---------------------------------------------------------------------------]]
+function StormFox2.Setting.GetObject(sName)
+	return settings[sName]
 end
 --[[<Shared>-----------------------------------------------------------------
 Sets a StormFox setting
@@ -196,49 +329,148 @@ Sets a StormFox setting
 local w_list = {
 	"openweathermap_key", "openweathermap_real_lat", "openweathermap_real_lon"
 }
-settings["openweathermap_key"] = "string"
-settings["openweathermap_real_lat"] = "string"
-settings["openweathermap_real_lon"] = "string"
+--value_type["openweathermap_key"] = "string"
+--value_type["openweathermap_real_lat"] = "string"
+--value_type["openweathermap_real_lon"] = "string"
 
-function StormFox2.Setting.Set(sName,vVar)
-	if string.sub(sName, 0, 3) == "sf_" then
-		sName = string.sub(sName, 4)
-	end
-	if gm_settings and gm_settings[sName] then -- Gamemode overwrites this change.
-		StormFox2.Warning("Can't change setting. Gamemode overwrites " .. sName .. "!")
-		return
-	end 
-	if sName == "openweathermap_real_city" then
-		StormFox2.WeatherGen.APISetCity( vVar )
-		return
-	elseif sName == "cvslist" then
-		StormFox2.Setting.SetCVS( vVar )
-		return
-	end
-	if not table.HasValue(w_list, sName) and not settings[sName] then return false,"Not a stormfox setting" end -- Not a stormfox setting
-	local con = GetConVar("sf_" .. sName)
-	if not con then return false,"Is not a convar" end
-	if CLIENT and settings_env[sName]then -- Ask the server
-		if StormFox2.Permission then
-			StormFox2.Permission.RequestSetting(sName, vVar)
+local function CallBack( sName, newVar, oldVar)
+	if not settingCallback[sName] then return end
+	for id, fFunc in pairs( settingCallback[sName] ) do
+		if isstring(id) or IsValid(id) then
+			fFunc(newVar, oldVar, sName, id)
+		else -- Invalid
+			settingCallback[sName][id] = nil
 		end
-		return false
 	end
-	-- Check if the type is correct
-	if type(vVar) ~= settings[sName] then return false,"Not same type" end -- Is not a valid string, type
-	-- Convert to string
-	if type(vVar) == "boolean" then
-		vVar = vVar and "1" or "0"
-	else
-		vVar = tostring(vVar)
-	end
-	RunConsoleCommand( "sf_" .. sName, vVar)
+end
+
+function StormFox2.Setting.Set(sName,vVar, bDontSave)
+	-- Special "settings"
+		if sName == "openweathermap_real_city" then
+			StormFox2.WeatherGen.APISetCity( vVar )
+			return
+		elseif sName == "cvslist" then
+			StormFox2.Setting.SetCVS( vVar )
+			return
+		end
+	-- Check if valid
+		local obj = settings[sName]
+		if not obj then
+			StormFox2.Warning("Invalid setting: " .. sName .. "!")
+			return false
+		end
+	-- Check the variable
+		if obj.type ~= type(vVar) then
+			if type(vVar) == "string" then -- Try and convert it
+				vVar = StringToValue( vVar, obj.type )
+			else
+				StormFox2.Warning("Invalid variable: " .. sName .. "!")
+				return false
+			end
+			if not vVar then return false end -- Failed
+		end
+	-- Check min and max
+		if obj.type == "number" and obj.min then
+			vVar = math.max(vVar, obj.min)
+		end
+		if obj.type == "number" and obj.max then
+			vVar = math.min(vVar, obj.max)
+		end
+	-- Check for duplicates
+		local oldVar = obj:GetValue()
+		if oldVar == vVar then return end -- Same value, ignore
+	-- We need to ask the server to change this setting. This isn't ours
+		if CLIENT and obj:IsServer() then
+			if StormFox2.Permission then
+				StormFox2.Permission.RequestSetting(sName, vVar)
+			else
+				StormFox2.Warning("Unable to ask server to change: " .. sName .. "!")
+			end
+			return false
+		end
+	-- Save the value
+		-- Make callbacks
+		local oB = blockSaveFile -- Editing a setting, might change others. Only save after we're done
+		blockSaveFile = true
+			local oldVar = obj.value
+			obj.value = vVar
+			-- Callback
+			CallBack(sName, vVar, oldVar)
+		blockSaveFile = oB -- We're done changing settings, save if we can
+		if not blockSaveFile and not bDontSave then
+			saveToFile()
+		end
+		cache[sName] = nil -- Delete cache
+	 -- Tell all clients about it
+		if SERVER and not obj:IsSecret() then
+			net.Start( StormFox2.Net.Settings )
+				net.WriteUInt(NET_UPDATE, 3)
+				net.WriteString(sName)
+				net.WriteType(vVar)
+			net.Broadcast()
+		end
 	--[[<Shared>------------------------------------------------------------------
 	Gets called when a StormFox setting changes.
-	Note that this hook will not run on clients, if the variable is changed serverside.
 	---------------------------------------------------------------------------]]
-	hook.Run("StormFox2.Setting.Change",sName,vVar)
+		hook.Run("StormFox2.Setting.Change",sName,vVar, oldVar)
 	return true
+end
+-- Server and Clientside NET
+if CLIENT then
+	net.Receive(StormFox2.Net.Settings,function(len)
+		local _type = net.ReadUInt(3)
+		if _type == NET_UPDATE then
+			local sName = net.ReadString()
+			local var = net.ReadType()
+			local obj = settings[sName]
+			if not obj then
+				StormFox2.Warning("Server tried to set an unknown setting: " .. sName)
+				return
+			end
+			if not obj:IsServer() then
+				StormFox2.Warning("Server tried to set a clientside setting: " .. sName)
+			else
+				local oldVar = obj.value
+				obj.value = var
+				cache[sName] = var
+				-- Callback
+				CallBack(sName, var, oldVar)
+				hook.Run("StormFox2.Setting.Change",sName,obj.value,oldVar)
+			end
+		elseif _type == NET_ALLSETTINGS then
+			local tab = net.ReadTable() -- I'm lazy
+			for sName, vVar in pairs( tab ) do
+				local obj = settings[sName]
+				if not obj then
+					StormFox2.Warning("Server tried to set an unknown setting: " .. sName)
+					continue
+				end
+				if not obj:IsServer() then -- This is a clientside setting
+					StormFox2.Warning("Server tried to set a clientside setting: " .. sName)
+				else
+					local oldVar = obj.value
+					obj.value = vVar
+					cache[sName] = vVar
+					-- Callback
+					CallBack(sName, vVar, oldVar)
+					hook.Run("StormFox2.Setting.Change",sName,obj.value,oldVar)
+				end
+			end
+		end
+	end)
+else
+	hook.Add("StormFox2.data.initspawn", "StormFox2.setting.send", function( ply )
+		net.Start( StormFox2.Net.Settings )
+			net.WriteUInt(NET_ALLSETTINGS, 3)
+			for sName, obj in pairs( settings ) do
+				if obj:IsSecret() then continue end
+				net.WriteType( sName )
+				net.WriteType( obj:GetValue() )
+			end
+			-- End of table
+			net.WriteType( nil )
+		net.Send(ply)
+	end)
 end
 --[[<Shared>-----------------------------------------------------------------
 Calls the function when the given setting changes.
@@ -248,73 +480,64 @@ Unlike convars, this will also be triggered on the clients too.
 Note: Variables get converted automatically 
 ---------------------------------------------------------------------------]]
 function StormFox2.Setting.Callback(sName,fFunc,sID)
-	if gm_settings and gm_settings[sName] then return end -- Gamemode overwrites this change.
-	if not sID then sID = "default" end
-	if not callback_func[sName] then
-		cvars.RemoveChangeCallback( "sf_" .. sName,"callback" )
-		cvars.AddChangeCallback("sf_" .. sName,callBack,"callback")
-		callback_func[sName] = {} 
-	end
-	callback_func[sName][sID] = fFunc
+	if not settingCallback[sName] then settingCallback[sName] = {} end
+	settingCallback[sName][sID or "default"] = fFunc
 end
--- Fix clients not calling callbacks when servervars change.
-if CLIENT then
-	net.Receive("StormFox2.setting",function(len)
-		local sName = net.ReadString()
-		local newvar = net.ReadString()
-		local oldvar = net.ReadString()
-		if not callback_func[sName] then return end
-		if gm_settings and gm_settings[sName] then return end -- Gamemode overwrites this change.
-		callBack("sf_" .. sName,oldvar,newvar)
-	end)
-end
+
+--hook.Add("StormFox2.Setting.Change", "StormFox2.Setting.Callbacks", function(sName, vVar, oldVar)
+	--if not settingCallback[sName] then return end
+	--for id, fFunc in pairs( settingCallback[sName] ) do
+	--	fFunc(vVar, oldVar, sName, id)
+	--end
+--end)
 --[[<Shared>------------------------------------------------------------------
 Same as StormFox2.Setting.Get, however this will cache the result.
 This is faster than looking it up constantly.
 ---------------------------------------------------------------------------]]
 function StormFox2.Setting.GetCache(sName,vDefaultVar)
-	if cache[sName] ~= nil then return cache[sName] end
-	StormFox2.Setting.Callback(sName,function(vVar)
-		cache[sName] = vVar
-	end,"cache")
-	local a,b = StormFox2.Setting.Get(sName,vDefaultVar)
-	if b then return a end -- Setting hasn't loaded yet. Wait caching it.
-	if a == nil then -- Just in case
-		cache[sName] = vDefaultVar
-	else
-		cache[sName] = a
-	end
-	return cache[sName]
+	if cache[sName] then return cache[sName] end
+	local var = StormFox2.Setting.Get(sName,vDefaultVar)
+	cache[sName] = var
+	return var
 end
 
+function StormFox2.Setting.GetDefault(sName)
+	local obj = settings[sName]
+	if not obj then return nil end
+	return obj:GetDefault()
+end
 function StormFox2.Setting.GetAll()
 	return table.GetKeys( settings )
 end
 function StormFox2.Setting.GetAllServer()
-	if SERVER then
-		return table.GetKeys( settings )
-	end
+	-- Server only has server settings
+	if SERVER then return StormFox2.Setting.GetAll() end
+	-- Make list
 	local t = {}
-	for k,v in pairs(settings_env) do
-		if not v then continue end
-		table.insert(t, k)
+	for sName,obj in pairs(settings) do
+		if not obj:IsServer() then continue end
+		table.insert(t, sName)
 	end
 	return t
 end
 if CLIENT then
 	function StormFox2.Setting.GetAllClient()
 		local t = {}
-		for k,v in pairs(settings_env) do
-			if v then continue end
-			table.insert(t, k)
+		for sName,obj in pairs(settings) do
+			if obj:IsServer() then continue end
+			table.insert(t, sName)
 		end
 		return t
 	end
 end
 
--- Returns the valuetype of the setting
+-- Returns the valuetype of the setting. This can allow special types like tables .. ect
+local type_override = {}
 function StormFox2.Setting.GetType( sName )
-	return settings_ov[sName] or settings[sName], settings_group[sName]
+	if type_override[sName] then return type_override[sName] end
+	local obj = settings[sName]
+	if not obj then return end
+	return obj.type
 end
 --[[ Type:
 	- number
@@ -329,48 +552,33 @@ end
 	- Time_toggle
 ]]
 function StormFox2.Setting.SetType( sName, sType, tSortOrter )
-	if type(sType) == "nil" then
-		StormFox2.Warning("Can't make ConVar a nil-type!")
+	if type(sType) == "nil" then -- Reset it
+		StormFox2.Warning("Can't make the setting a nil-type!")
 	end
 	if type(sType) == "boolean" then
-		settings_ov[sName] = "boolean"
+		type_override[sName] = "boolean"
 	elseif type(sType) == "number" then
-		settings_ov[sName] = "number"
+		type_override[sName] = "number"
 	elseif type(sType) == "table" then -- A table is a list of options
-		settings_ov[sName] = {sType, tSortOrter}
+		type_override[sName] = {sType, tSortOrter}
 	else
 		if sType == "bool" then
-			settings_ov[sName] = "boolean"
+			type_override[sName] = "boolean"
 		else
-			settings_ov[sName] = string.lower(sType)
+			type_override[sName] = string.lower(sType)
 		end
 	end
-end
-
--- Returns true if the given setting is overwritten by the current gamemode.
-function StormFox2.Setting.IsGMSetting( sName )
-	if string.sub(sName, 0, 3) == "sf_" then
-		sName = string.sub(sName, 4)
-	end
-	return gm_settings and gm_settings[sName] and true or false
-end
-
--- Returns a list that the current gamemode overwrites or nil if none.
-function StormFox2.Setting.GetGMSettings()
-	return gm_settings
 end
 
 -- Resets all stormfox settings to default.
 if SERVER then
 	function StormFox2.Setting.Reset()
-		for _, sName in ipairs(StormFox2.Setting.GetAllServer()) do
-			local con = GetConVar( "sf_" .. sName )
-			if not con then
-				StormFox2.Warning("Invalid setting: " .. sName .. ".")
-				continue
-			end
-			con:Revert()
+		blockSaveFile = true
+		for sName, obj in pairs(setting) do
+			obj:Revert()
 		end
+		blockSaveFile = false
+		saveToFile()
 		StormFox2.Warning("All settings were reset to default values. You should restart!")
 		cache = {}
 	end
@@ -380,16 +588,16 @@ if SERVER then
 	end)
 else
 	function StormFox2.Setting.Reset()
+		blockSaveFile = true
 		for _, sName in ipairs(StormFox2.Setting.GetAllClient()) do
-			local con = GetConVar( "sf_" .. sName )
-			if not con then
-				StormFox2.Warning("Invalid setting: " .. sName .. ".")
-				continue
-			end
-			con:Revert()
+			local obj = setting[sName]
+			if not obj then continue end
+			obj:Revert()
 		end
-		cache = {}
+		blockSaveFile = false
+		saveToFile()
 		StormFox2.Warning("All settings were reset to default values. You should rejoin!")
+		cache = {}
 	end
 end
 
@@ -397,46 +605,40 @@ end
 if SERVER then
 	function StormFox2.Setting.SetCVS( str )
 		local t = string.Explode(",", str)
+		blockSaveFile = true
 		for i = 1, #t, 2 do
 			local sName, var = t[i], t[i+1] or nil
 			if string.len(sName) < 1 or not var then continue end
-			local con = GetConVar( "sf_" .. sName )
-			if not con then
+			if not is_server[sName] then
 				StormFox2.Warning("Invalid setting: " .. sName .. ".")
 				continue
 			else
-				con:SetString( var )
+				StormFox2.Setting.Set(sName, var)
 			end
 		end
-		StormFox2.Warning("All settings were set to input. You should restart!")
+		blockSaveFile = false
+		saveToFile()
+		StormFox2.Warning("All settings were updated. You should restart!")
 	end
 end
 
 local exlist = {"openweathermap_real_lat", "openweathermap_real_lon", "openweathermap_key"}
 function StormFox2.Setting.GetCVS()
 	local c = ""
-	for _, sName in ipairs(StormFox2.Setting.GetAllServer()) do
-		if table.HasValue(exlist, sName) then continue end
-		local con = GetConVar( "sf_" .. sName )
-		if not con then
-			StormFox2.Warning("Invalid setting: " .. sName .. ".")
-			continue
-		end
-		c = c .. sName .. "," .. con:GetString() .. ","
+	for sName, obj in pairs(settings) do
+		if obj:IsSecret() then continue end
+		if not obj:IsServer() then continue end
+		c = c .. sName .. "," .. obj:GetString() .. ","
 	end
 	return c
 end
 
 function StormFox2.Setting.GetCVSDefault()
 	local c = ""
-	for _, sName in ipairs(StormFox2.Setting.GetAllServer()) do
-		if table.HasValue(exlist, sName) then continue end
-		local con = GetConVar( "sf_" .. sName )
-		if not con then
-			StormFox2.Warning("Invalid setting: " .. sName .. ".")
-			continue
-		end
-		c = c .. sName .. "," .. con:GetDefault() .. ","
+	for sName, obj in pairs(settings) do
+		if obj:IsSecret() then continue end -- Justi n case, so people don't share hidden settings
+		if not obj:IsServer() then continue end
+		c = c .. sName .. "," .. ValueToString(obj:GetDefault(), obj:GetType()) .. ","
 	end
 	return c
 end

@@ -22,7 +22,7 @@ end
 
 local mapPointList = {
 	{"light_environment", 		StormFox2.Ent.light_environments,		["check"] ="#sf_map.light_environment.check",["problem"] = "#sf_map.light_environment.problem"},
-	{"env_wind", 				StormFox2.Ent.env_winds,					["none"]  ="#sf_map.env_wind.none"},
+	{"env_wind", 				StormFox2.Ent.env_winds,				["none"]  ="#sf_map.env_wind.none"},
 	{"shadow_control", 			StormFox2.Ent.shadow_controls},
 	{"env_tonemap_controllers", StormFox2.Ent.env_tonemap_controllers},
 	{"logic_relay", 			hasMapLogic,							["check"] = "#sf_map.logic_relay.check", ["none"] = "#sf_map.logic_relay.none"}
@@ -78,7 +78,7 @@ local function ResetPromt( paste )
 		LocalPlayer():EmitSound("buttons/button6.wav")
 		local s = StormFox2.Setting.GetCVSDefault()
 		self.paste:SetText(s)
-		net.Start("StormFox2.permission")
+		net.Start( StormFox2.Net.Permission )
 			net.WriteUInt(0, 1)
 			net.WriteString( "sf_cvslist" )
 			net.WriteType(s)
@@ -243,6 +243,19 @@ local m_warni = Material("icon16/bullet_error.png")
 local m_none  = Material("icon16/cancel.png")
 local m_bu 	= Material("gui/workshop_rocket.png")
 local c_bu = Color(155,155,155)
+
+--					Day			Night
+local quick_time = {
+	{"sf_default" 		, StormFox2.Setting.GetObject("day_length"):GetDefault(), StormFox2.Setting.GetObject("night_length"):GetDefault(), "icon16/package.png"},
+	{"sf_stoptime" 		, 0			, 0			, "icon16/clock_pause.png" },
+	--{"sf_real_time" 	, 12 * 60	, 12 * 60	, "icon16/clock_link.png"}, Most likely kiiinda useless. Since we got sunset and sunrise.
+	{"sf_alwaysday" 	, 12		, -1		, "icon16/weather_sun.png"},
+	{"sf_alwaysnight" 	, -1		, 12		, "icon16/drink.png"},
+	{"GTA" 				, 24		, 24		, "icon16/cd.png" },		-- 48 mins for a full day
+	{"Far Cry 6" 		, 30		, 30		, "icon16/cd.png" },		-- 30 for each
+	{"The Forest"		, 24		, 12		, "icon16/cd.png" },		-- 30 for each
+	{"Factorio" 		, 6.95+2.5	, 2 + 2.5	, "icon16/cd.png" }	-- ½ of Dusk and dawn is split 1.5 + 3.5 = 5 = 2.5 for each
+}
 local tabs = {
 	[1] = {"Start","#start",(Material("stormfox2/hud/menu/dashboard.png")),function(board)
 		board:AddTitle(language.GetPhrase("#map") .. " " .. language.GetPhrase("#support"))
@@ -252,7 +265,7 @@ local tabs = {
 		dash:Dock(TOP)
 		dash:SetTall(100)
 		
-		local p = vgui.Create("SF_HudRing", dash)
+		local p = vgui.Create("SF_Setting_Ring", dash)
 			p:SetText(math.Round(mapPoint / maxMapPoint, 3) * 100 .. "%")
 			p:SetSize(74, 74)
 			p:SetPos(24,10)
@@ -379,11 +392,60 @@ local tabs = {
 	end},
 	[2] = {"Time","#time",(Material("stormfox2/hud/menu/clock.png")),function(board)
 		board:AddTitle("#time")
+		board:AddSetting("continue_time")
 		board:AddSetting("real_time")
 		board:AddSetting("random_time")
 		board:AddSetting("start_time")
-		board:AddSetting("time_speed")
-		board:AddSetting("nighttime_multiplier")
+		
+
+		-- Quick select
+		local quick = vgui.Create("SF_Setting",board)
+		local tab = {quick}
+		quick:Dock(TOP)
+		quick:SetTitle("sf_quickselect")
+		quick:SetDescription("sf_quickselect.desc")
+		do
+			local cbox = vgui.Create("DComboBox", quick)
+			cbox:SetPos(14,16)
+			local length = 70
+			cbox:SetText("#options")
+			cbox:SetSortItems(false)
+			surface.SetFont("DermaDefault")
+			for _, var in ipairs(quick_time) do
+				local game = var[1]
+				local panel = cbox:AddChoice(game, {var[2], var[3]}, false, var[4])
+				length = math.max(length, surface.GetTextSize(game) + 70)
+			end
+			cbox:SetWide(length)
+			function cbox:OnSelect( index, val, data )
+				local day, night = data[1], data[2]
+				StormFox2.Setting.Set("day_length", day)
+				StormFox2.Setting.Set("night_length", night)
+			end
+			quick:MoveDescription( length + 14, 6 )	 
+		end
+		local time = vgui.Create("DPanel",board)
+		time:Dock(TOP)
+		function time:Paint(w,h)
+			surface.SetTextColor(color_black)
+			surface.SetTextPos(40,00)
+			surface.SetFont("SF_Menu_H2")
+			surface.DrawText(StormFox2.Time.GetDisplay())
+		end
+		table.insert(tab, board:AddSetting("day_length"):SetMax( 60 ) )
+		table.insert(tab, board:AddSetting("night_length"):SetMax( 60  ) ) 
+		if StormFox2.Setting.Get("real_time") then
+			for _, v in ipairs( tab ) do
+				v:SetDisabled( true )
+			end
+		end
+		StormFox2.Setting.Callback("real_time",function(var)
+			for _, v in ipairs( tab ) do
+				v:SetDisabled( var )
+			end
+		end,quick)
+		--board:AddSetting("time_speed")
+		--board:AddSetting("nighttime_multiplier")
 		board:AddTitle("#sun")
 		board:AddSetting("sunrise")
 		board:AddSetting("sunset")
@@ -400,9 +462,10 @@ local tabs = {
 		board:AddSetting("addnight_temp")
 		board:AddSetting("max_weathers_prweek")
 		board:AddTitle("#temperature")
-		local temp = board:AddSetting({"min_temp", "max_temp"}, "temperature", "sf_temp_range")
-		temp:SetMin(-10)
-		temp:SetMax(32)
+		board:AddSetting("min_temp"):SetMin(-10)
+		board:AddSetting("max_temp"):SetMin(-10)
+		
+
 		board:AddSetting("temp_acc")
 	
 		board:AddTitle("OpenWeatherMap API")
@@ -549,30 +612,29 @@ local tabs = {
 		p:DockMargin(24,0,0,0)
 		p.Paint = empty
 		do
-			local auto = vgui.Create("SFConVar_Bool", p)
-			auto:SetConvar('maplight_auto')
+			local auto = vgui.Create("SF_Setting_Bool", p)
+			auto:SetSetting('maplight_auto')
 			auto:Dock(TOP)
-			auto:HideTitle()
 			local space = vgui.Create("DPanel", p)
 			space:Dock(TOP)
 			space:SetTall(10)
 			space.Paint = empty		
-			local lenv = vgui.Create("SFConVar_Bool", p)
-			lenv:SetConvar('maplight_lightenv')
+			local lenv = vgui.Create("SF_Setting_Bool", p)
+			lenv:SetSetting('maplight_lightenv')
 			lenv:Dock(TOP)
-			lenv:HideTitle()
-			local colormod = vgui.Create("SFConVar_Bool", p)
-			colormod:SetConvar('maplight_colormod')
+
+			local colormod = vgui.Create("SF_Setting_Bool", p)
+			colormod:SetSetting('maplight_colormod')
 			colormod:Dock(TOP)
-			colormod:HideTitle()
-			local dynamic = vgui.Create("SFConVar_Bool", p)
-			dynamic:SetConvar('maplight_dynamic')
+
+			local dynamic = vgui.Create("SF_Setting_Bool", p)
+			dynamic:SetSetting('maplight_dynamic')
 			dynamic:Dock(TOP)
-			dynamic:HideTitle()
-			local lightstyle = vgui.Create("SFConVar_Bool", p)
-			lightstyle:SetConvar('maplight_lightstyle')
+
+			local lightstyle = vgui.Create("SF_Setting_Bool", p)
+			lightstyle:SetSetting('maplight_lightstyle')
 			lightstyle:Dock(TOP)
-			lightstyle:HideTitle()
+
 			board:MarkUsed("maplight_auto")
 			board:MarkUsed("maplight_lightenv")
 			board:MarkUsed("maplight_colormod")
@@ -722,7 +784,7 @@ local tabs = {
 		end
 		function setsetting.DoClick()
 			-- paste:GetText()
-			net.Start("StormFox2.permission")
+			net.Start( StormFox2.Net.Permission )
 				net.WriteUInt(0, 1)
 				net.WriteString( "sf_cvslist" )
 				net.WriteType(paste:GetText())
@@ -802,38 +864,6 @@ local function switch(sName, tab)
 	cookie.Set("sf2_lastmenusv", sName)
 	return pnl
 end
-local function addSetting(sName, pPanel, _type, _description)
-	local setting
-	if type(_type) == "table" then
-		setting = vgui.Create("SFConVar_Enum", pPanel)
-	elseif _type == "boolean" then
-		setting = vgui.Create("SFConVar_Bool", pPanel)
-	elseif _type == "float" then
-		setting = vgui.Create("SFConVar_Float", pPanel)
-	elseif _type == "special_float" then
-		setting = vgui.Create("SFConVar_Float_Toggle", pPanel)
-	elseif _type == "number" then
-		setting = vgui.Create("SFConVar_Number", pPanel)
-	elseif _type == "time" then
-		setting = vgui.Create("SFConVar_Time", pPanel)
-	elseif _type == "string" then
-		setting = vgui.Create("SFConVar_String", pPanel)
-	elseif _type == "time_toggle" then
-		setting = vgui.Create("SFConVar_Time_Toggle", pPanel)
-	elseif _type == "temp" or _type == "temperature" then
-		setting = vgui.Create("SFConVar_Temp", pPanel)
-	else
-		StormFox2.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
-		return
-	end
-	if not setting then
-		StormFox2.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
-		return
-	end
-	--local setting = _type == "boolean" and vgui.Create("SFConVar_Bool", board) or  vgui.Create("SFConVar", board)
-	setting:SetConvar(sName, _type, _description)
-	return setting
-end
 
 local t_mat = "icon16/font.png"
 local s_mat = "icon16/cog.png"
@@ -858,3 +888,7 @@ function StormFox2.Menu.OpenSV()
 end
 -- Request the server if we're allowed
 concommand.Add('stormfox2_svmenu', StormFox2.Menu.OpenSV, nil, "Opens SF serverside menu")
+
+timer.Simple(1, function()
+	StormFox2.Menu._OpenSV()
+end)

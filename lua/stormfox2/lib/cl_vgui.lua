@@ -1,23 +1,30 @@
 
 
+-- Local settings
+local bg_color = Color(255,255,255)
+local slider_col = Color(91,156,214)
+local b_alpha = Color(0,0,0,60)
+local c_alpha = Color(0,0,0,20)
+
+
 -- Add SF Setting vgui
 local function empty() end
 local function wrapText(sText, wide)
 	wide = wide - 10
 	local tw,th = surface.GetTextSize(language.GetPhrase(sText))
 	local lines,b = 1, false
-	local s = ""
+	local tab = {""}
 	for w in string.gmatch(sText, "[^%s,]+") do
-		local tt = s .. (b and " " or "") .. w
+		local tt = tab[#tab] .. (b and " " or "") .. w
 		if surface.GetTextSize(tt) >= wide then
-			s = s .. "\n" .. w
+			table.insert(tab, w)
 			lines = lines + 1
 		else
-			s = tt
+			tab[#tab] = tt
 		end
 		b = true
 	end
-	return s, lines
+	return tab, lines
 end
 local function niceName(sName)
 	sName = string.Replace(sName, "_", " ")
@@ -38,6 +45,15 @@ local function makeTempDisplay( panel )
 	end
 end
 
+-- Functions to convert the temperature to the clients settings
+local function valToTemp( val )
+	return StormFox2.Temperature.GetDisplay(val) .. StormFox2.Temperature.GetDisplaySymbol()
+end
+
+local function tempToVal( val )
+	return StormFox2.Temperature.Convert(StormFox2.Temperature.GetDisplayType(),"celsius",val)
+end
+
 local function PaintOver(self, w, h)
 	--surface.SetDrawColor(color_black)
 	--surface.DrawOutlinedRect(0,0,w,h)
@@ -52,36 +68,56 @@ local function PaintOver(self, w, h)
 	surface.DrawRect(0,0,w,h)
 end
 
-local function SetSFConVar( convar, str )
-	if StormFox2.Setting.IsGMSetting(convar) then return end
-	if string.sub(convar, 0, 3) == "sf_" then
-		convar = string.sub(convar, 4)
-	end
-	local var = StormFox2.Setting.StringToType( convar, str )
-	StormFox2.Setting.Set(convar, var)
-end
-
-local function ConVarChanged( PANEL, strNewValue )
-	if ( !PANEL.m_strConVar ) then return end
-	SetSFConVar(PANEL.m_strConVar, strNewValue)
-end
-
 local function FindPercent( x, a, b )
 	return (x - a) / (b - a)
 end
 
-local function SliderApply(self)
-	local col = self.Label:GetTextStyleColor()
-	if ( self.Label:GetTextColor() ) then col = self.Label:GetTextColor() end
-	local col = table.Copy( col )
-	col.a = 100 -- Fade it out a bit so it looks right
-	if self.Slider.SetNotchColor then
-		self.Slider:SetNotchColor( a )
-	end
+local function FindPercentClam( x, a, b )
+	return math.Clamp(FindPercent( x, a, b ), 0, 1)
 end
 
-local b_alpha = Color(0,0,0,100)
 
+
+local vgui_Create
+do
+	local function overrideConVar( PANEL )
+		function PANEL:SetConVar( sName )
+			self._sfobj = StormFox2.Setting.GetObject( sName )
+		end
+		function PANEL:ConVarChanged( strNewValue )
+			if not self._sfobj then return end
+			self._sfobj:SetFromString( strNewValue )
+		end
+		-- Todo: Think only every 0.1 seconds?
+		function PANEL:ConVarStringThink()
+			if not self._sfobj then return end
+			if self.m_LV ~= nil and self._sfobj:GetValue() == self.m_LV then return end
+			self.m_LV = self._sfobj:GetValue()
+			self:SetValue( self._sfobj:GetString() )
+		end
+		function PANEL:ConVarNumberThink()
+			if not self._sfobj then return end
+			if self.m_NV ~= nil and self._sfobj:GetValue() == self.m_NV then return end
+			self.m_NV = self._sfobj:GetValue()
+			self:SetValue( tonumber(num) )
+		end
+	end
+	local function overrideAll( PANEL )
+		if not IsValid( PANEL ) then return end
+		if PANEL.ConVarChanged then
+			overrideConVar(PANEL)
+		end
+		for _, v in ipairs( PANEL:GetChildren() ) do
+			overrideAll( v )
+		end
+	end
+	function vgui_Create( str_type, self )
+		local PANEL = vgui.Create( str_type, self )
+		-- Override convar functions
+			overrideAll(PANEL)
+		return PANEL
+	end
+end
 
 -- Title
 do
@@ -89,946 +125,1287 @@ do
 	PANEL.PaintOver = PaintOver
 	derma.DefineControl( "SFTitle", "", PANEL, "DLabel" )
 end
--- String
+-- Slider
 do
+	local cir_size = 14
+	local barSize = 6
+	local shadowSize = 18
+	local sh = Material("vgui/slider")
+	local barSpace = 7
+
 	local PANEL = {}
-	PANEL.Paint = empty
-	function PANEL:Init()
-		self:DockMargin(5,0,10,0)
-		--self.Paint = empty
-		local l = vgui.Create( "DLabel", self )
-		local b = vgui.Create("DTextEntry", self)
-		local d = vgui.Create( "DLabel", self )
-		l:SetText("Unknown ConVar")
-		self._des = "This is an unset ConVar panel."
-		d:SetText(self._des)
-		l:SetColor(color_black)
-		l:SetFont("DermaDefaultBold")
-		l:SizeToContents()
-		l:InvalidateLayout(true)
-		l:Dock(TOP)
-		b:SetPos(5, l:GetTall() + 2)
-		b:SetWide(150)
-		d:SetPos(74, l:GetTall() + 2)
-		d:SetDark(true)
-		d:SizeToContents()
-		self:SetTall(l:GetTall() + 34)
-		self._l = l
-		self._b = b	
-		self._d = d
-		
-		self._w = 64
-		self:InvalidateLayout(true)
+	AccessorFunc(PANEL, "min", "Min")
+	AccessorFunc(PANEL, "max", "Max")
+	AccessorFunc(PANEL, "value", "Value")
+	AccessorFunc(PANEL, "float", "Float")
+	-- Make sure we set a flag, if edited
+	function PANEL:SetMin( v )
+		self._set = true
+		self.min = v
 	end
-	function PANEL:SetConvar( sName, sType, sDesc )
-		local con = GetConVar( "sf_" .. sName )
-		self._l:SetText( "#sf_" .. sName )
-		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
-		self._b:SetText( con:GetString())
-		function self._b:OnEnter( str )
-			SetSFConVar(sName, tostring(str))
+	function PANEL:SetMax( v )
+		self._set = true
+		self.max = v
+	end
+	function PANEL:Init()
+		self:SetValue( -1 )
+		self:SetMin(0)
+		self:SetMax(1)
+		self._set = false -- Reset flag
+		self:SetCursor( "hand" )
+		self._flagOff = false
+	end
+	function PANEL:GetValueFromPercent( p )
+		local range = self:GetMax() - self:GetMin()
+		return self:GetMin() + range * p
+	end
+	function PANEL:GetPercentFromValue( var )
+		return FindPercentClam( var, self:GetMin(), self:GetMax() )
+	end
+	function PANEL:GetPercentFromPoint( xPos )
+		local bar_width = self:GetWide() - barSpace * 2
+		local range = self:GetMax() - self:GetMin()
+		return math.Clamp((xPos - barSpace) / bar_width, 0, 1)
+	end
+	function PANEL:GetPointFromPercent( p )
+		local bar_width = self:GetWide() - barSpace * 2
+		return barSpace + bar_width * p
+	end
+	local m_cir = Material("vgui/circle")
+
+	-- Tells the slider that -1, is used to indecate it can be turned off
+	function PANEL:SetFlagOff( bool )
+		self._flagOff = bool
+		self:SetMin(0)
+	end
+
+	function PANEL:SetSetting( sName, sType, Description )
+		self._sfobj = StormFox2.Setting.GetObject( sName )
+		if not self._sfobj then return end
+		-- If we haven't edited the min / max, then use the convars setting. If not then make a range.
+		local min = self._set and self:GetMin() or self._sfobj:GetMin() or 0
+		local max = self._set and self:GetMax() or self._sfobj:GetMax() or self._sfobj:GetDefault() or 1
+		if self._flagOff then
+			self:SetMin(0)
+		else
+			self:SetMin(min)
 		end
-		if StormFox2.Setting.IsGMSetting(sName) then
-			self._b:SetDisabled( true )
+		self:SetMax(max)
+		local target = math.Clamp(self._sfobj:GetValue(), min, max)
+		self:SetValue(target)
+	end
+
+	function PANEL:Think()
+		if not self._sfobj then return end
+		local range = self:GetMax() - self:GetMin()
+		local target = self._sfobj:GetValue()
+		if self._flagOff and target <= 0 then
+			target = 0
 		end
-		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, self)
-			self._b:SetText(vVar)
-		end,self)
-		self:InvalidateLayout(true)
+		local delta = math.abs(self:GetValue() - target)
+		self:SetValue( math.Approach(self:GetValue(), target, FrameTime() * math.max(range * 0.1, delta * 10)) )
+	end
+
+	function PANEL:OnMousePressed( keyCode )
+		if keyCode ~= MOUSE_LEFT then return end
+		self._down = true
+		self:MouseCapture( true )
+	end
+
+	function PANEL:OnMouseReleased( keyCode )
+		if keyCode == MOUSE_RIGHT then
+			local menu = DermaMenu(false, self) 
+			menu:AddOption( "Reset", function()
+				self._sfobj:Revert()
+				end):SetIcon( "icon16/package.png" )
+			menu:Open()
+			return true		
+		elseif keyCode == MOUSE_LEFT then
+			if not self._down then return end
+			self._down = false
+			self:MouseCapture( false )
+			if not self._sfobj then return end
+
+			local val = self:GetValueFromPercent(self:GetPercentFromPoint( self:CursorPos() ))
+			if not self:GetFloat() then
+				val = math.Round(val, 0)
+			else
+				val = math.Round(val, 3)
+			end
+			self._sfobj:SetValue(val)
+			self:SetValue(val)
+		end
+	end	
+	function PANEL:Paint(w, h)
+		local bar_width = w - barSpace * 2
+		local bar_y = math.Round(h / 2)
+		local val
+		local min, max = self:GetMin(), self:GetMax()
+		if self._flagOff and self:GetValue() < 0 then
+			val = 0
+		elseif self._down then
+			val = self:GetValueFromPercent(self:GetPercentFromPoint( self:CursorPos() ))
+			if not self:GetFloat() then
+				self._downvalue = math.Clamp(math.Round(val), min, max)
+			else
+				self._downvalue = math.Clamp(math.Round(val,3), min, max)
+			end
+		elseif self:GetValue() < 0 then -- Unset
+			local p = ((math.sin(SysTime() * 3) + 1) / 2) 
+			val = min + p * max
+		else
+			val = self:GetValue()
+		end
+		local percentage = FindPercentClam( val , self:GetMin() or 0, max or 1 )
+		if percentage < 1 then
+			draw.RoundedBox(30, barSpace, bar_y - barSize / 2, bar_width ,barSize, b_alpha)
+		end
+		if percentage > 0 then
+			draw.RoundedBox(30, barSpace, bar_y - barSize / 2, bar_width * percentage, barSize, slider_col)
+		end 
+
+		local cir_x = self:GetPointFromPercent( percentage )
+		surface.SetMaterial(sh)
+		surface.SetDrawColor(c_alpha)
+		surface.DrawTexturedRectRotated(cir_x, bar_y, shadowSize, shadowSize,0)
+		surface.DrawTexturedRectRotated(cir_x, bar_y, shadowSize + 2, shadowSize + 2,0)
+		surface.SetMaterial(m_cir)
+		if self._down then
+			surface.SetDrawColor(slider_col)
+		else
+			surface.SetDrawColor(bg_color)
+		end
+		surface.DrawTexturedRectRotated(cir_x, bar_y, cir_size, cir_size,0)
+	end
+derma.DefineControl( "SF_Slider", "", PANEL, "DPanel" )
+
+-- DoubleSlider
+	local PANEL = {}
+	AccessorFunc(PANEL, "min", "Min")
+	AccessorFunc(PANEL, "max", "Max")
+	AccessorFunc(PANEL, "value", "MinValue")
+	AccessorFunc(PANEL, "value2", "MaxValue")
+	AccessorFunc(PANEL, "float", "Float")
+	function PANEL:Init()
+		self:SetMinValue( 0 )
+		self:SetMaxValue( 0 )
+		self:SetMin(0)
+		self:SetMax(1)
+		self:SetCursor( "hand" )
+	end
+	local m_cir = Material("vgui/circle")
+
+	function PANEL:SetSettingMin( sName, sType, Description )
+		self._sfobj = StormFox2.Setting.GetObject( sName )
+		if not self._sfobj then return end
+		local min = self._sfobj:GetMin() or self:GetMin() or 0
+		self:SetMin(min)
+		self:SetMax(math.max(min, self:GetMax() or 1))
+	end
+
+	function PANEL:SetSettingMax( sName, sType, Description )
+		self._sfobj2 = StormFox2.Setting.GetObject( sName )
+		if not self._sfobj2 then return end
+		local max = self._sfobj:GetMax() or self:GetMax() or 1
+		self:SetMax(max)
+		self:SetMin(max, self:GetMax() or 1)
+	end
+
+	function PANEL:Think()
+		if not self._sfobj then return end
+		if not self._sfobj2 then return end
+		local range = self:GetMax() - self:GetMin()
+		-- Min
+			local delta = math.abs(self:GetMinValue() - self._sfobj:GetValue())
+			self:SetMinValue( math.Approach(self:GetMinValue(), self._sfobj:GetValue(), FrameTime() * math.max(range * 0.1, delta * 10)) )
+		-- Max 
+			local delta = math.abs(self:GetMaxValue() - self._sfobj2:GetValue())
+			self:SetMaxValue( math.Approach(self:GetMaxValue(), self._sfobj2:GetValue(), FrameTime() * math.max(range * 0.1, delta * 10)) )
+	end
+
+	local cir_size = 14
+	local barSize = 6
+	local shadowSize = 18
+	local sh = Material("vgui/slider")
+	local barSpace = 7
+	function PANEL:OnMousePressed( keyCode )
+		if keyCode ~= MOUSE_LEFT then return end
+		-- Select the closest type
+		local cur_p = self:GetPercentFromPoint( self:CursorPos() )
+		local percentage = FindPercentClam( (self:GetMinValue() + self:GetMaxValue()) / 2 , self:GetMin() or 0, self:GetMax() or 1 ) -- Center
+		if cur_p < percentage then
+			self._down = 1 -- Min
+		else
+			self._down = 2 -- Max
+		end
+		self:MouseCapture( true )
+	end
+	function PANEL:OnMouseReleased( keyCode )
+		if keyCode ~= MOUSE_LEFT then return end
+		if not self._down then return end
+		
+		self:MouseCapture( false )
+		if not self._sfobj then return end
+
+		local val = self:GetValueFromPercent(self:GetPercentFromPoint( self:CursorPos() ))
+		if not self:GetFloat() then
+			val = math.Round(val, 0)
+		else
+			val = math.Round(val, 3)
+		end
+		if self._down == 0 then
+			self._sfobj:SetValue(val)
+			self:SetMinValue(val)
+		else
+			self._sfobj2:SetValue(val)
+			self:SetMaxValue(val)
+		end
+		self._down = false
+	end	
+	function PANEL:Paint(w, h)
+		local bar_width = w - barSpace * 2
+		local bar_y = math.Round(h / 2)
+		local valMin, valMax = self:GetMinValue(), self:GetMaxValue()
+		if self._down then
+			local val = self:GetValueFromPercent(self:GetPercentFromPoint( self:CursorPos() ))
+			if not self:GetFloat() then
+				self._downvalue = math.Clamp(math.Round(val), self:GetMin(), self:GetMax())
+			else
+				self._downvalue = math.Clamp(math.Round(val,3), self:GetMin(), self:GetMax())
+			end
+			if self._down == 1 then
+				valMin = val
+			else
+				valMax = val
+			end
+		end
+		local minP = FindPercentClam( valMin , self:GetMin() or 0, self:GetMax() or 1 )
+		local maxP = FindPercentClam( valMax , self:GetMin() or 0, self:GetMax() or 1 )
+
+		-- BG bar
+		draw.RoundedBox(30, barSpace, bar_y - barSize / 2, bar_width ,barSize, b_alpha)
+
+		local cir_x = self:GetPointFromPercent( minP )
+		local cir_x2 = self:GetPointFromPercent( maxP )
+
+		draw.RoundedBox(30, cir_x, bar_y - barSize / 2, cir_x2 - cir_x, barSize, slider_col)
+
+		-- Min
+			surface.SetMaterial(sh)
+			surface.SetDrawColor(c_alpha)
+			surface.DrawTexturedRectRotated(cir_x, bar_y, shadowSize, shadowSize,0)
+			surface.DrawTexturedRectRotated(cir_x, bar_y, shadowSize + 2, shadowSize + 2,0)
+			surface.SetMaterial(m_cir)
+			if self._down then
+				surface.SetDrawColor(slider_col)
+			else
+				surface.SetDrawColor(bg_color)
+			end
+			surface.DrawTexturedRectRotated(cir_x, bar_y, cir_size, cir_size,0)
+		-- Max
+			surface.SetMaterial(sh)
+			surface.SetDrawColor(c_alpha)
+			surface.DrawTexturedRectRotated(cir_x2, bar_y, shadowSize, shadowSize,0)
+			surface.DrawTexturedRectRotated(cir_x2, bar_y, shadowSize + 2, shadowSize + 2,0)
+			surface.SetMaterial(m_cir)
+			if self._down then
+				surface.SetDrawColor(slider_col)
+			else
+				surface.SetDrawColor(bg_color)
+			end
+			surface.DrawTexturedRectRotated(cir_x2, bar_y, cir_size, cir_size,0)		
+	end
+	derma.DefineControl( "SF_DoubleSlider", "", PANEL, "SF_Slider" )
+end
+-- Description Box
+do
+	local lineHeight
+	local function getLineHeight()
+		if lineHeight then return lineHeight end
+		surface.SetFont("DermaDefault")
+		local ws,hs = surface.GetTextSize("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+		lineHeight = hs
+		return hs
+	end
+	local PANEL = {}
+	function PANEL:Init()
+		self.t_text = {}
+		self.text = "No description"
+	end
+	function PANEL:SetText( str )
+		self.text = str
+		surface.SetFont("DermaDefault")
+		local t_text, lines = wrapText(str, self:GetWide())
+		self:SetTall(lines * getLineHeight())
+		self.t_text = t_text
 	end
 	function PANEL:PerformLayout(w, h)
-		local text, lines = wrapText(self._des, self:GetWide() - self._b:GetWide())
-		self._d:SetPos(10 + self._b:GetWide(), self._l:GetTall() + 2)
-		self._d:SetText(text)
-		self._d:SizeToContents()
-		self._desr = text
-		local h = math.max( 40, 10 + lines * 20)
-		if lines == 1 then
-			self._d:SetTall(22)
-		end
-		self:SetTall( h )
+		surface.SetFont("DermaDefault")
+		local t_text, lines = wrapText(self.text, w)
+		self:SetTall(lines * getLineHeight())
+		self.t_text = t_text
 	end
-	PANEL.PaintOver = PaintOver
-	derma.DefineControl( "SFConVar_String", "", PANEL, "DPanel" )
+	function PANEL:GetTextLines()
+		if not self.t_text then return 1 end
+		return math.max(1, #self.t_text)
+	end
+	function PANEL:Paint(w, h)
+		surface.SetDrawColor(color_white)
+		surface.DrawRect(0,0,w,h)
+		surface.SetFont("DermaDefault")
+		surface.SetTextColor(color_black)
+		for y, str in ipairs( self.t_text ) do
+			surface.SetTextPos(0, (y - 1) * getLineHeight() )
+			surface.DrawText( str )
+		end
+	end
+	derma.DefineControl( "SF2_TextBox", "", PANEL, "DPanel" )
 end
--- Table
+-- Setting Tab
 do
 	local PANEL = {}
+	PANEL.PaintOver = PaintOver
+	--PANEL.Paint = empty
+	function PANEL:Init()
+		self:DockMargin(5,0,10,0)
+		local label_name = vgui_Create( "DLabel", self )
+			label_name:SetText("Unknown Setting")
+			label_name:SetColor(color_black)
+			label_name:SetFont("DermaDefaultBold")
+			label_name:SizeToContents()
+			label_name:Dock(TOP)
+			self.label_name = label_name
+		local description = vgui_Create( "SF2_TextBox", self )
+			description:SetText("No description.")
+			description:SetPos(25, label_name:GetTall() + 2)
+			self.description = description
+		self._SetSetting = self.SetSetting
+		self:DockMargin(15,0,15,5)
+	end
+	function PANEL:SetTitle( str )
+		self.label_name:SetText( language.GetPhrase(str) or str )
+	end
+	function PANEL:SetDescription( str )
+		self.description:SetText( language.GetPhrase(str) or str )
+	end
+	function PANEL:PerformLayout(w, h)
+		local maxH = 0
+		local x = self.description:GetPos()
+		self.description:SetWide(w - x)
+		for _, v in ipairs( self:GetChildren() ) do
+			local x, y = v:GetPos()
+			maxH = math.max(maxH, y + v:GetTall())
+		end
+		if h == maxH then return end
+		self:SetTall(maxH + 5)
+	end
+	PANEL.Paint = empty
+	function PANEL:SetSetting( sName, sType, Description )
+		sType = sType or StormFox2.Setting.GetType( sName )
+		local obj = StormFox2.Setting.GetObject( sName )
+		local tName = Description and "#" .. Description or (obj and "sf_" .. obj:GetName()) or "Unknown"
+		self.label_name:SetText( language.GetPhrase(tName) or tName )
+		self.description:SetText( language.GetPhrase(tName .. ".desc") or "Unknown" )
+		for _, v in ipairs( self:GetChildren() ) do
+			if not v.SetSetting then continue end
+			v:SetSetting( sName, sType, Description )
+		end
+	end
+	function PANEL:MoveDescription( x, y )
+		self.description:SetX(math.max(25, 10 + x))
+		if y then
+			self.description:SetY(self.label_name:GetTall() + math.max(2, y))
+		end
+	end
+	derma.DefineControl( "SF_Setting", "", PANEL, "DPanel" )
+end
+
+-- Boolean setting 
+do
+	local PANEL = {}
+	function PANEL:Init()
+		self.check = vgui_Create("DCheckBox", self)
+		self.check:SetPos(5,14)
+		function self.check:DoClick() -- If we're a radio-type. Never turn off.
+			if not self._sfobj then return end
+			if self:GetChecked() and self._block then return end
+			self._sfobj:SetValue( not self:GetChecked() )
+		end
+		function self.check:DragMousePress( keyCode )
+			if keyCode ~= MOUSE_RIGHT then return end
+			local menu = DermaMenu(false, self) 
+			menu:AddOption( "Reset", function()
+				self._sfobj:Revert()
+				end):SetIcon( "icon16/package.png" )
+			menu:Open()
+		end
+		function self.check:Think()
+			if not self._sfobj then return end
+			self:SetChecked(self._sfobj:GetValue())
+		end
+	end
+	function PANEL:SetSetting( sName, sType, Description )
+		self:_SetSetting( sName, sType, Description ) -- Set title and textbox
+		self.check._sfobj = StormFox2.Setting.GetObject(sName)
+		self.check._block = self.check._sfobj:IsRadio()
+		
+	end
+	derma.DefineControl( "SF_Setting_Bool", "", PANEL, "SF_Setting" )
+end
+
+-- String setting
+do
+	local PANEL = {}
+	function PANEL:Init()
+		self.text = vgui_Create("DTextEntry", self)
+		self.text:SetPos(5,14)
+		self.text:SetWide(120)
+		self:MoveDescription(120)
+	end
+	function PANEL:SetSetting( sName, sType, Description )
+		self:_SetSetting( sName, sType, Description ) -- Set title and textbox
+		self.text:SetConVar( sName )
+		return self
+	end
+	derma.DefineControl( "SF_Setting_String", "", PANEL, "SF_Setting" )
+end
+
+-- Float setting
+local barLength = 220 + 50
+do
+	local PANEL = {}
+	function PANEL:Init()
+		self.text = vgui_Create("DTextEntry", self)
+		self.text:SetNumeric(true)
+		self.text:SetDrawLanguageID( false )
+		self.slider = vgui_Create("SF_Slider", self)
+		self.slider:SetPos(5,14)
+		self.slider:SetWide(barLength)
+		self.slider:SetFloat(true)
+		self.text:SetPos(barLength + 8,18)
+		self.text:SetSize(55,18)
+		self:MoveDescription(barLength + 60, 6)
+		self._isTemp = false
+	end
+	function PANEL:SetMin( v )
+		self.slider:SetMin( v )
+		return self
+	end
+	function PANEL:SetMax( v )
+		self.slider:SetMax( v )
+		return self
+	end
+	function PANEL:SetTemperature(bool)
+		self._isTemp = bool
+		return self
+	end
+	function PANEL:Think()
+		if not self._sfobj then return end
+		if self.slider._down and self.slider._downvalue then
+			local text
+			if self._isTemp then
+				text = self.slider._downvalue and valToTemp(self.slider._downvalue) or "?"
+			else
+				text = self.slider._downvalue
+			end
+			self.text:SetText(text)
+		elseif not self.text:IsEditing() then
+			local text
+			if self._flagoff and self._sfobj:GetValue() <= (self._sfobj:GetMin() or -1) then
+				text = ""
+			elseif self._isTemp then
+				text = valToTemp(self._sfobj:GetValue())
+			else
+				text = self._sfobj:GetValue()
+			end
+			self.text:SetText(text)
+		end
+	end
+	function PANEL:SetSetting( sName, sType, Description )
+		local _sfobj = StormFox2.Setting.GetObject( sName )
+		self._sfobj = _sfobj
+		self:_SetSetting( sName, sType, Description ) -- Set title and textbox
+		--self.text:SetConVar( sName )
+		function self.text:OnEnter( val )
+			val = string.match(val, "[%d%.-]+") or val
+			local clamp = math.Clamp(tonumber( val ), _sfobj:GetMin(), _sfobj:GetMax())
+			_sfobj:SetValue(clamp)
+			self:SetText(tostring(clamp))
+		end
+		return self
+	end
+	derma.DefineControl( "SF_Setting_Float", "", PANEL, "SF_Setting" )
+end
+-- Int setting
+do
+	local PANEL = {}
+	function PANEL:Init()
+		self.text = vgui_Create("DTextEntry", self)
+		self.text:SetNumeric(true)
+		self.text:SetDrawLanguageID( false )
+		self.slider = vgui_Create("SF_Slider", self)
+		self.slider:SetPos(5,14)
+		self.slider:SetWide(barLength)
+		self.text:SetPos(barLength + 8,18)
+		self.text:SetSize(55,18)
+		self:MoveDescription(barLength + 60, 6)
+		self._isTemp = false
+	end
+	function PANEL:SetMin( v )
+		self.slider:SetMin( v )
+		return self
+	end
+	function PANEL:SetMax( v )
+		self.slider:SetMax( v )
+		return self
+	end
+	function PANEL:SetTemperature(bool)
+		self._isTemp = bool
+		return self
+	end
+	function PANEL:Think()
+		if not self._sfobj then return end
+		if self.slider._down and self.slider._downvalue then
+			local text
+			if self._isTemp then
+				text = self.slider._downvalue and valToTemp(self.slider._downvalue) or "?"
+			else
+				text = self.slider._downvalue
+			end
+			self.text:SetText(text)
+		elseif not self.text:IsEditing() then
+			local text
+			if self._isTemp then
+				text = valToTemp(self._sfobj:GetValue())
+			else
+				text = self._sfobj:GetValue()
+			end
+			self.text:SetText(text)
+		end
+	end
+	function PANEL:SetSetting( sName, sType, Description )
+		local _sfobj = StormFox2.Setting.GetObject( sName )
+		self._sfobj = _sfobj
+		self:_SetSetting( sName, sType, Description ) -- Set title and textbox
+		--self.text:SetConVar( sName )
+		function self.text:OnEnter( val )
+			val = string.match(val, "[%d%.-]+") or val
+			local clamp = math.Clamp(tonumber( val ), _sfobj:GetMin(), _sfobj:GetMax())
+			_sfobj:SetValue(clamp)
+			self:SetText(tostring(clamp))
+		end
+		return self
+	end
+	derma.DefineControl( "SF_Setting_Int", "", PANEL, "SF_Setting" )
+end
+-- Table / Enums
+do
 	local sortNum = function(a,b)
 		if type(a) == "boolean" then
 			return a or b
 		end
-		return a>b 
+		return a>b
 	end
 	local sortStr = function(a,b) return a<b end
-	
-	PANEL.Paint = empty
+
+	local PANEL = {}
 	function PANEL:Init()
-		self:DockMargin(5,0,10,0)
-		--self.Paint = empty
-		local l = vgui.Create( "DLabel", self )
-		local b = vgui.Create("DComboBox", self)
-		b:SetSortItems(false)
-		local d = vgui.Create( "DLabel", self )
-		l:SetText("Unknown ConVar")
-		self._des = "This is an unset ConVar panel."
-		d:SetText(self._des)
-		l:SetColor(color_black)
-		l:SetFont("DermaDefaultBold")
-		l:SizeToContents()
-		l:InvalidateLayout(true)
-		l:Dock(TOP)
-		b:SetPos(5, l:GetTall() + 2)
-		d:SetPos(74, l:GetTall() + 2)
-		d:SetDark(true)
-		d:SizeToContents()
-		self:SetTall(l:GetTall() + 34)
-		self._l = l
-		self._b = b	
-		self._d = d
-		self._w = 64
-		self:InvalidateLayout(true)
+		self.cbox = vgui_Create("DComboBox", self)
+		self.cbox:SetPos(5,14)
+		self.cbox:SetSize(80,20)
+		self:MoveDescription(80)
 	end
-	function PANEL:SetConvar( sName, sType, sDesc )
+	function PANEL:SetSetting( sName, sType, Description )
+		sType = sType or StormFox2.Setting.GetType( sName )
 		local tab, sortorder = sType[1], sType[2]
-		local con = GetConVar( "sf_" .. sName )
-		self._l:SetText( "#sf_" .. sName )
-		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
-		local options = table.GetKeys(tab)
-		local w = 64
-		local sort_func = tonumber(con:GetString()) and sortNum or sortStr
-		surface.SetFont(self:GetFont() or "DermaDefault")
-		if not sortorder then -- In case we don't sort
+		self._options = tab
+		self:_SetSetting( sName, sType, Description ) -- Set title and textbox
+		self.cbox:SetConVar( sName )
+		local options = table.GetKeys( tab )
+		local _sfobj = StormFox2.Setting.GetObject( sName )
+		self._sfobj = _sfobj
+		local s_type = type(_sfobj:GetValue())
+		local sort_func = (s_type == "number" or s_type == "boolean") and sortNum or sortStr
+		-- Change width to match the options
+		do
+			surface.SetFont("DermaDefault")
+			local width = 80 -- Min size
+			for k,v in pairs(options) do
+				local text = niceName( language.GetPhrase(tab[v]) )
+				local tw = surface.GetTextSize(text) + 24
+				width = math.max(width, tw)
+			end
+			self.cbox:SetWide(width)
+			self:MoveDescription(width)
+		end
+		if not sortorder then -- We don't have an order
 			table.sort(options, sort_func)
 			for k,v in ipairs(options) do
 				local text = niceName( language.GetPhrase(tab[v]))
-				self._b:AddChoice( text, v, con:GetInt() == v )
-				local tw = surface.GetTextSize(text) + 24
-				w = math.max(w, tw)
+				self.cbox:AddChoice( text, v, _sfobj:GetValue() == v )
 			end
 		else
 			for _,v in ipairs(sortorder) do
 				local text = niceName( language.GetPhrase(tab[v] or "UNKNOWN"))
-				self._b:AddChoice( text, v, con:GetInt() == v )
-				local tw = surface.GetTextSize(text) + 24
-				w = math.max(w, tw)
+				self.cbox:AddChoice( text, v, _sfobj:GetValue() == v )
 			end
 			if #sortorder ~= #tab then -- Add the rest
 				table.sort(options, sort_func)
 				for _,v in ipairs(options) do
 					if table.HasValue(sortorder, v) then continue end
 					local text = niceName( language.GetPhrase(tab[v]))
-					self._b:AddChoice( text, v, con:GetInt() == v )
-					local tw = surface.GetTextSize(text) + 24
-					w = math.max(w, tw)
+					self.cbox:AddChoice( text, v, _sfobj:GetValue() == v )
 				end
 			end
 		end
-		function self._b:OnSelect( index, text, data )
-			if type(data) == "nil" then -- Somehow we didn't get the value, try and locate it from button
-				data = table.KeyFromValue(tab, string.lower(text))
-			elseif type(data) == "boolean" then
-				data = data and 1 or 0
-			end
-			SetSFConVar(sName, tostring(data))
+		function self.cbox:OnSelect( index, text, data )
+			if not data then data = false end -- Somehow, false doesn't get returned
+			_sfobj:SetValue(data)
 		end
-		local text = tab[con:GetString()] or tab[con:GetFloat()] or tab[con:GetBool()] or con:GetString()
-		self._b:SetText(niceName( language.GetPhrase(sDesc or text)))
-		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, self)
-			if type(vVar) == "boolean" then
-				vVar = vVar and 1 or 0
-			end
-			local text = tab[vVar] or tab[tostring(vVar)] or vVar
-			self._b:SetText(niceName( language.GetPhrase(text)))
-		end,self)
-		if StormFox2.Setting.IsGMSetting(sName) then
-			self._b:SetDisabled( true )
-		end
-		self._w = w
-		self._b:SetWide(w)
-		self:InvalidateLayout(true)
+		return self
 	end
-	function PANEL:PerformLayout(w, h)
-		surface.SetFont("DermaDefault")
-		local text, lines = wrapText(self._des, self:GetWide() - self._b:GetWide())
-		self._d:SetPos(10 + self._b:GetWide(), self._l:GetTall() + 2)
-		self._d:SetText(text)
-		self._d:SizeToContents()
-		self._desr = text
-		local h = math.max( 40, 10 + lines * 20)
-		if lines == 1 then
-			self._d:SetTall(22)
-		end
-		self:SetTall( h )
+	function PANEL:Think()
+		if not self._sfobj or not self._options then return end
+		self.cbox:SetText(self._options[self._sfobj:GetValue()] or "?")
 	end
-	PANEL.PaintOver = PaintOver
-	derma.DefineControl( "SFConVar_Enum", "", PANEL, "DPanel" )
+	derma.DefineControl( "SF_Setting_Enum", "", PANEL, "SF_Setting" )
 end
--- Boolean
+-- Float-Special (CheckBox makes it lowest or -1)
 do
 	local PANEL = {}
-	PANEL.Paint = empty
+	local OldPanel = vgui.GetControlTable("SF_Setting_Float")
+	local mat = Material("icon16/cross.png")
 	function PANEL:Init()
-		self:DockMargin(5,0,10,0)
-		--self.Paint = empty
-		local l = vgui.Create( "DLabel", self )
-		local b = vgui.Create("DCheckBox", self)
-		local d = vgui.Create( "DLabel", self )
-		l:SetText("Unknown ConVar")
-		self._des = "This is an unset ConVar panel."
-		d:SetText(self._des)
-		l:SetColor(color_black)
-		l:SetFont("DermaDefaultBold")
-		l:SizeToContents()
-		l:InvalidateLayout(true)
-		l:Dock(TOP)
-		b:SetPos(5, l:GetTall() + 2)
-		d:SetPos(25, l:GetTall() + 2)
-		d:SetDark(true)
-		d:SizeToContents()
-		self:SetTall(l:GetTall() + 30)
-		self._l = l
-		self._b = b	
-		self._d = d
-		self:InvalidateLayout(true)
-	end
-	function PANEL:HideTitle()
-		self._l:Remove()
-		self._l = nil
-		self._b:SetPos(5, 0)
-		self._d:SetPos(25, 0)
-		self:InvalidateLayout()
-	end
-	function PANEL:SetConvar( sName,_,sDesc )
-		local con = GetConVar( "sf_" .. sName )
-		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
-		self._b:SetConVar( "sf_" .. sName )
-		function self._b:DoClick()
-			SetSFConVar(sName, not self:GetChecked())
+		self.check = vgui_Create("DCheckBox", self)
+		self.check:SetPos(5,18)
+		self.slider:SetPos(5 + 18,14)
+		self.text:SetPos(barLength + 8,18)
+		self.slider:SetWide(barLength - 18)
+		self.slider:SetFlagOff( true ) -- Tells the slider that anything below -1, is disabled
+		self._flagoff = true
+		function self.text:PaintOver(w,h)
+			if #self:GetText() > 0 or self:IsHovered() then return end
+			surface.SetMaterial(mat)
+			surface.SetDrawColor(color_white)
+			surface.DrawTexturedRect(w / 2 - 8, h / 2 - 8, 16, 16)
 		end
-		if StormFox2.Setting.IsGMSetting(sName) then
-			self._b:SetDisabled( true )
+		function self.check:DoClick() -- If we're a radio-type. Never turn off.
+			if self:GetChecked() and self._block then return end
+			self:Toggle()
 		end
-		self._b.ConVarChanged = ConVarChanged
-		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
-		self:InvalidateLayout(true)
+		self:MoveDescription(barLength + 60, 6)
 	end
-	function PANEL:PerformLayout(w, h)
-		surface.SetFont("DermaDefault")
-		local text, lines = wrapText(language.GetPhrase(self._des), self:GetWide())
-		self._d:SetText(text)
-		self._d:SizeToContents()
-		self._desr = text
-		if self._l then
-			self:SetTall(10 + lines * 20)
-		else
-			self:SetTall(lines * 20)
-		end
+	function PANEL:SetMin( v )
+		self.slider:SetMin( v )
+		return self
 	end
-	PANEL.PaintOver = PaintOver
-	derma.DefineControl( "SFConVar_Bool", "", PANEL, "DPanel" )
-end
--- Float
-do
-	local PANEL = {}
-	PANEL.Paint = empty
-	function PANEL:Init()
-		self:DockMargin(5,0,10,0)
-		--self.Paint = empty
-		local l = vgui.Create( "DLabel", self )
-		local b = vgui.Create("DNumSlider", self)
-		b.ApplySchemeSettings = SliderApply
-		b.Label:Dock(NODOCK)
-		b.PerformLayout = empty
-		local d = vgui.Create( "DLabel", self )
-		l:SetText("Unknown ConVar")
-		self._des = "This is an unset ConVar panel."
-		d:SetText(self._des)
-		l:SetColor(color_black)
-		l:SetFont("DermaDefaultBold")
-		l:SizeToContents()
-		l:InvalidateLayout(true)
-		l:Dock(TOP)
-		b:SetPos(5, l:GetTall())
-		b:SetWide(300)
-		d:SetPos(305, l:GetTall() + 2)
-		d:SetDark(true)
-		d:SizeToContents()
-		self:SetTall(l:GetTall() + 34)
-		self._l = l
-		self._b = b	
-		self._d = d
-		b.TextArea:SetDrawLanguageID( false )
-		self:InvalidateLayout(true)
+	function PANEL:SetMax( v )
+		self.slider:SetMax( v )
+		return self
 	end
-	function PANEL:SetConvar( sName, _, sDesc )
-		local con = GetConVar( "sf_" .. sName )
-		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
-		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
+	function PANEL:Think()
+		if not self._sfobj then return end
+		OldPanel["Think"](self)
+		local min = self._sfobj:GetMin() or -1
+		self.check:SetChecked(self._sfobj:GetValue() > min)
+	end
 
-		self._b:SetMin(con:GetMin() or 0)
-		self._b:SetMax(con:GetMax() or 1)
-		self._b.Scratch.ConVarChanged = ConVarChanged
-		self._b.TextArea.ConVarChanged = ConVarChanged
-		if not StormFox2.Setting.IsGMSetting(sName) then
-			self._b:SetConVar( "sf_" .. sName )
-			self._b.ConVarChanged = ConVarChanged
+	function PANEL:SetSetting( sName, sType, Description )
+		self:_SetSetting( sName, sType, Description ) -- Set title and textbox
+		local _sfobj = StormFox2.Setting.GetObject( sName )
+		self._sfobj = _sfobj
+		--self.text:SetConVar( sName )
+		self.check._block = _sfobj:IsRadio()
+		function self.text:OnEnter( val )
+			val = string.match(val, "[%d%.-]+") or val
+			local clamp = math.Clamp(tonumber( val ), _sfobj:GetMin(), _sfobj:GetMax())
+			_sfobj:SetValue(clamp)
+			self:SetText(tostring(clamp))
 		end
-	end
-	function PANEL:PerformLayout(w, h)
-		surface.SetFont("DermaDefault")
-		local text, lines = wrapText(self._des, self:GetWide() )
-		self._d:SetText(text)
-		self._d:SizeToContents()
-		self._desr = text
-		local h = math.max(10 + lines * 20, 44)
-		self:SetTall(h)
-	end
-	PANEL.PaintOver = PaintOver
-	derma.DefineControl( "SFConVar_Float", "", PANEL, "DPanel" )
-end
--- Float-Special
-do
-	local PANEL = {}
-	PANEL.Paint = empty
-	function PANEL:Init()
-		self:DockMargin(5,0,10,0)
-		--self.Paint = empty
-		local l = vgui.Create( "DLabel", self )
-		local b = vgui.Create("DNumSlider", self)
-		b.ApplySchemeSettings = SliderApply
-		local t = vgui.Create("DCheckBox", self)
-		t.b = b
-		b.TextArea:SetDrawLanguageID( false )
-		b.Label:Dock(NODOCK)
-		b.PerformLayout = empty
-		local d = vgui.Create( "DLabel", self )
-		l:SetText("Unknown ConVar")
-		self._des = "This is an unset ConVar panel."
-		d:SetText(self._des)
-		l:SetColor(color_black)
-		l:SetFont("DermaDefaultBold")
-		l:SizeToContents()
-		l:InvalidateLayout(true)
-		l:Dock(TOP)
-		b:SetPos(20, l:GetTall())
-		b:SetWide(280)
-		d:SetPos(295, l:GetTall() + 2)
-		t:SetPos(5, l:GetTall() + 8)
-		d:SetDark(true)
-		d:SizeToContents()
-		self:SetTall(l:GetTall() + 34)
-		self._l = l
-		self._b = b	
-		self._d = d
-		self._t = t
-		self:InvalidateLayout(true)
-	end
-	function PANEL:SetConvar( sName, _, sDesc )
-		local con = GetConVar( "sf_" .. sName )
-		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
-		self._des = language.GetPhrase(sDesc and sDesc .. "desc" or con:GetHelpText() or "Unknown")
-		self._b:SetConVar( "sf_" .. sName )
-		self._b.ConVarChanged = ConVarChanged
-		self._b.Scratch.ConVarChanged = ConVarChanged
-		self._b.TextArea.ConVarChanged = ConVarChanged
-		self._b:SetMinMax( con:GetMin() or 0, con:GetMax() or 1)
-		function self._t:DoClick()
-			if con:GetFloat() >= 0 then
-				SetSFConVar(sName, -1)
+		function self.check:DoClick()
+			local min = _sfobj:GetMin() or -1
+			local b = _sfobj:GetValue() > 0
+			if b then
+				_sfobj:SetValue(min)
 			else
-				SetSFConVar(sName, 0.5)
+				local n = math.max(_sfobj:GetDefault(), 1)
+				_sfobj:SetValue(n)
 			end
 		end
-		if StormFox2.Setting.IsGMSetting(sName) then
-			self._b:SetDisabled( true )
-		end
-		function self._t:Think()
-			b = con:GetFloat() >= 0
-			self:SetChecked( b )
-			self.b:SetEnabled( b )
-		end
-		self:InvalidateLayout(true)
+		return self
 	end
-	function PANEL:PerformLayout(w, h)
-		surface.SetFont("DermaDefault")
-		local text, lines = wrapText(self._des, self:GetWide() - 280)
-		self._d:SetText(text)
-		self._d:SizeToContents()
-		self._desr = text
-		local h = math.max(10 + lines * 20, 44)
-		self:SetTall(h)
-	end
-	PANEL.PaintOver = PaintOver
-	derma.DefineControl( "SFConVar_Float_Toggle", "", PANEL, "DPanel" )
+	derma.DefineControl( "SF_Setting_FloatSpecial", "", PANEL, "SF_Setting_Float" )
 end
--- Number
-do
+-- Time Object
 	local PANEL = {}
-	PANEL.Paint = empty
-	function PANEL:Init()
-		self:DockMargin(5,0,10,0)
-		--self.Paint = empty
-		local l = vgui.Create( "DLabel", self )
-		local d = vgui.Create( "DLabel", self )
-		l:SetText("Unknown ConVar")
-		l:SetColor(color_black)
-		l:SetFont("DermaDefaultBold")
-		l:SizeToContents()
-		d:SetText("Unknown ConVar")
-		d:SetColor(color_black)
-		d:SetPos(5, l:GetTall() + 2)
-		d:SizeToContents()
-		l:InvalidateLayout(true)
-		l:Dock(TOP)
-		self:SetTall(l:GetTall() + 34)
-		self._l = l
-		self._d = d
-	end
-	function PANEL:SetConvar( sName,_, sDesc )
-		local con = GetConVar( "sf_" .. sName )
-		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
-		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
-		self._dw = 0
-		local nMin, nMax = con:GetMin(), con:GetMax()
-		-- Regular number
-		if not nMax then
-			self._type = false
-			local n = vgui.Create("DNumberWang", self)
-			n:SetPos(5, self._l:GetTall() + 2)
-			n:SetValue( con:GetInt() )
-			n:SetWide(64)
-			n:SetMax(nil)
-			self._dw = 64
-			n:SetConVar( "sf_" .. sName )
-			n:SetDrawLanguageID( false )
-			n.ConVarChanged = ConVarChanged
-			if StormFox2.Setting.IsGMSetting(sName) then
-				n:SetDisabled( true )
-			end
-			self._d:SetPos(74,self._l:GetTall() + 4)
-			if nMin then n:SetMin(nMin) end
+	local function OnMousePressed( self, mcode )
+		if ( mcode == MOUSE_LEFT ) then
+			self:OnGetFocus()
 		else
-			self._type = true
-			local b = vgui.Create("DNumSlider", self)
-			b.ApplySchemeSettings = SliderApply
-			b.Label:Dock(NODOCK)
-			b.PerformLayout = empty
-			b:SetPos(5, self._l:GetTall())
-			b:SetWide(300)
-			self._dw = 300
-			b:SetDecimals( 0 )
-			if nMin then b:SetMin(nMin) end
-			b:SetMax(nMax)
-			b:SetConVar( "sf_" .. sName  )
-			b.Scratch.ConVarChanged = ConVarChanged
-			b.TextArea.ConVarChanged = ConVarChanged
-			b.TextArea:SetDrawLanguageID( false )
-			b.ConVarChanged = ConVarChanged
-			if StormFox2.Setting.IsGMSetting(sName) then
-				b:SetDisabled( true )
-			end
-			self._d:SetPos(305, self._l:GetTall() + 2)
+			local menu = DermaMenu(false, self.base) 
+			local obj = StormFox2.Setting.GetObject("12h_display")
+			local text = (obj:GetValue() and "24-" or "12-") .. language.GetPhrase("clock")
+			menu:AddOption( text, function()
+				obj:SetValue( not obj:GetValue())
+				end):SetIcon( "icon16/clock.png" )
+			return true
 		end
-		self:InvalidateLayout(true)
 	end
-	function PANEL:PerformLayout(w, h)
-		surface.SetFont("DermaDefault")
-		local text, lines = wrapText(self._des or "UNKNOWN", self:GetWide() - self._dw)
-		self._d:SetText(text)
-		self._d:SizeToContents()
-		self._desr = text
-		local h = math.max(10 + lines * 20, 44)
-		self:SetTall(h)
+	local function NewPaint(self, w, h, off)
+		surface.SetFont("SF2_TimeSet")
+		local tex = (self:GetValue() or "")
+		local tw,th = surface.GetTextSize(tex)
+		
+		surface.SetTextColor(color_black)
+		surface.SetTextPos(w / 2 - tw / 2,h / 2 - th / 2)
+		
+		if self:HasFocus() then
+			local e = (math.Round(SysTime() % 1) == 1 and "_" or "")
+			surface.DrawText( tex .. e )
+		else
+			surface.DrawText( tex )
+		end
 	end
-	PANEL.PaintOver = PaintOver
-	derma.DefineControl( "SFConVar_Number", "", PANEL, "DPanel" )
-end
+
+	function PANEL:BGThink()
+		if self.lastDisplay ~= cDis then
+			self:InvalidateLayout()
+			self.lastDisplay = cDis
+		end
+		local _12 = StormFox2.Setting.Get("12h_display")
+		if not self.hour:IsEditing() and not self.hour._SETONLOST then
+			local h = StormFox2.Time.GetHours( self.value, _12 )
+			if h < 10 then h = "0" .. h end
+			self.hour:SetText(h)
+		end
+		if not self.min:IsEditing() then
+			local m = StormFox2.Time.GetMinutes( self.value )
+			if m < 10 then m = "0" .. m end
+			self.min:SetText(m)
+		end
+		if _12 then
+			self.ampm:SetText( StormFox2.Time.GetAMPM() )
+		end
+	end
+
+	function PANEL:Init()
+		self.bg = vgui_Create("DPanel",self)
+		function self.bg:IsSelected() return false end
+		function self.bg:GetToggle() return false end
+		local hour = vgui.Create("DTextEntry", self.bg)
+		self.hour = hour
+		local min = vgui.Create("DTextEntry", self.bg)
+		self.min = min
+		self.ampm = vgui.Create("DButton", self)
+		function self.bg:Paint( w, h )
+			local cDis = StormFox2.Setting.Get("12h_display")
+			self.Hovered  = hour.Hovered or min.Hovered
+			self.Depressed= hour:IsEditing() or min:IsEditing()
+			derma.SkinHook( "Paint", "Button", self, w, h )
+			surface.SetFont("SF2_TimeSet")
+			local tw,th = surface.GetTextSize(":")
+		
+			surface.SetTextColor(color_black)
+			surface.SetTextPos(w / 2 - tw / 2,h / 2 - th / 2 - 2)
+			surface.DrawText(":")
+		end
+		function self.hour.OnGetFocus(self)
+			local tex = self._SETONFOC or ""
+			self:SetValue(tex)
+			self:SetCaretPos(#tex)
+			self._SETONFOC = nil
+		end
+		self.min.OnGetFocus = self.hour.OnGetFocus
+		function self.min:OnLoseFocus()
+			if hour._SETONLOST then -- hour got unset variables
+				self.base:_SetNewVar( )
+				hour._SETONLOST = nil
+			end
+		end
+		
+		self.bg:SetPos( 2,0 )
+		self.hour:SetPos(0,0)
+		self.hour:SetWide(30)
+		self.hour:SetTall(30)
+		self.hour.Paint = NewPaint
+		self.hour.OnMousePressed = OnMousePressed
+		self.hour.base = self
+		self.min:SetPos(32,0)
+		self.min:SetWide(30)
+		self.min:SetTall(30)
+		self.min.Paint = NewPaint
+		self.min.OnMousePressed = OnMousePressed
+		self.min.base = self
+
+		self.ampm:SetPos(66 + 2,0)
+		self.ampm:SetWide(34)
+		self.ampm:SetTall(30)
+		self.ampm:SetFont("SF2_TimeSetAM")
+		self.ampm.base = self
+		if not StormFox2.Setting.Get("12h_display") then
+			self.ampm:Hide()
+			self.lastDisplay = false
+		else
+			self.lastDisplay = true
+			self.ampm:SetText("AM")
+		end
+		self.hour:SetDrawLanguageID( false )
+		self.min:SetDrawLanguageID( false )
+		self.hour:SetNumeric(true)
+		self.min:SetNumeric(true)
+		self:SetValue( 0 )
+		self:SetTall( 30 )
+		-- Logic
+		function self.hour:OnChange( str )
+			if #self:GetValue() <= 2 then return end
+			self._SETONLOST = self:GetValue():sub(0,2)
+			min._SETONFOC = self:GetValue():sub(3)
+				self:KillFocus()
+				min:RequestFocus()
+			self:SetText(self._SETONLOST )
+		end
+		function self.hour:OnEnter()
+			self.base:_SetNewVar()
+		end
+		self.min.OnEnter =  self.hour.OnEnter
+		function self.ampm:DoClick()
+			self:SetText( self:GetText() == "AM" and "PM" or "AM")
+			self.base:_SetNewVar()
+		end
+	end
+	function PANEL:SetValue( num )
+		self.value = num
+	end
+	function PANEL:GetValue()
+		return self.value
+	end
+	function PANEL:_SetNewVar()
+		local str = self.hour:GetText() .. ":" .. self.min:GetText()
+		if StormFox2.Setting.Get("12h_display") then
+			str = str .. " " .. self.ampm:GetText()
+		end
+		self.value = StormFox2.Time.StringToTime( str )
+		self:OnNewValue( self.value )
+	end
+	PANEL.OnNewValue = function() end
+	PANEL.Paint = PANEL.BGThink
+	function PANEL:PerformLayout(pw, ph)
+		local w = (pw - 8) / 2
+		if StormFox2.Setting.Get("12h_display") then
+			w = (pw - 8) / 3
+			self.ampm:Show(  )
+		else
+			self.ampm:Hide( true )
+		end
+		self.hour:SetWide(w)
+		self.min:SetWide(w)
+		self.ampm:SetWide(w)
+		
+		self.bg:SetWide(w * 2)
+		self.bg:SetHeight( ph )
+
+		--self.hour:SetPos(0,0)
+		self.min:SetPos(w, 0)
+		self.ampm:SetPos(w * 2 + 6, 0)
+		self.hour:SetHeight( ph )
+		self.min:SetHeight( ph )
+		self.ampm:SetHeight( ph )
+	end
+	derma.DefineControl( "SF_TIME", "", PANEL, "DPanel" )
 -- Time
 do
 	local PANEL = {}
-	PANEL.Paint = empty
-	function PANEL:Init()
-		self:DockMargin(5,0,10,0)
-		self.trigger = true
-		--self.Paint = empty
-		local use_12 = StormFox2.Setting.GetCache("12h_display",default_12)
-		local l = vgui.Create( "DLabel", self )
-		local hour = vgui.Create("DNumberWang", self)
-		local dot = vgui.Create("DPanel", self)
-		function dot:Paint(w,h)
-			draw.DrawText(":", "DermaLarge", w/2, -8, color_black, TEXT_ALIGN_CENTER)
-		end
-		local minute = vgui.Create("DNumberWang", self)
-		minute:SetMax(59)
-		hour:SetMin(0)
-		minute:SetMin(0)
-		minute:SetDrawLanguageID( false )
-		hour:SetDrawLanguageID( false )
-		local ampm
-		if use_12 then
-			hour:SetMax(12)
-			ampm = vgui.Create("DComboBox", self)
-			ampm:AddChoice( "AM", 0, false )
-			ampm:AddChoice( "PM", 1, false )
-			ampm:SetSize(64, 20)
-			hour:SetMin(1)
-			ampm:SetDrawLanguageID( false )
-		else
-			hour:SetMax(23)
-		end
-		local a = function(self, str)
-			local n = tonumber(str) or 0
-			if n < 0 then
-				self:SetValue(0)
-				self:SetText("0")
-			elseif n > (self:GetMax()) then
-				self:SetValue(self:GetMax())
-				self:SetText(self:GetMax())
-			elseif n < self:GetMin() then
-				self:SetValue(self:GetMin())
-				self:SetText(self:GetMin())
-			end
-		end
-		hour.OnValueChanged = a
-		minute.OnValueChanged = a
-		local function OnValChang()
-			if not self:IsEnabled() then return end
-			if not self.trigger then return end
-			local h = tonumber(hour:GetText()) or 0
-			h = math.Clamp(h, 0, ampm and 12 or 23)
-			local m = tonumber(minute:GetText()) or 0
-			m = math.Clamp(m, 0, 59)
-			local t = h .. ":" .. m
-			if IsValid(ampm) then
-				t = t .. " " .. ((ampm:GetSelected() or ampm:GetText()) == "AM" and "AM" or "PM")
-			end
-			local num = StormFox2.Time.StringToTime(t)
-			if num and self.sName then
-				SetSFConVar(self.sName, num)
-			end
-		end
-		if ampm then
-			function ampm:OnSelect()
-				OnValChang()
-			end
-		end
-		function hour:OnLoseFocus()
-			self:UpdateConvarValue()
-			hook.Call( "OnTextEntryLoseFocus", nil, self )
-			a(self, self:GetText()) -- Clammp value
-			local n = tonumber(self:GetText()) or 0
-			OnValChang()
-		end
-		function minute:OnLoseFocus()
-			self:UpdateConvarValue()
-			hook.Call( "OnTextEntryLoseFocus", nil, self )
-			a(self, self:GetText()) -- Clammp value
-			local n = tonumber(self:GetText()) or 0
-			OnValChang()
-		end
-
-		local d = vgui.Create( "DLabel", self )
-		l:SetText("Unknown ConVar")
-		self._des = "This is an unset ConVar panel."
-		d:SetText(self._des)
-		l:SetColor(color_black)
-		l:SetFont("DermaDefaultBold")
-		l:SizeToContents()
-		l:InvalidateLayout(true)
-		l:Dock(TOP)
-		self.hour = hour
-		self.minute = minute
-		self.dot = dot
-		self.ampm = ampm
-		hour:SetWide(40)
-		minute:SetWide(40)
-		dot:SetWide(15)
-		d:SetPos(25, l:GetTall() + 2)
-		d:SetDark(true)
-		d:SizeToContents()
-		self:SetTall(l:GetTall() + 34)
-		self._l = l
-		self._d = d
-		self:InvalidateLayout(true)
-	end
-	function PANEL:SetConvar( sName, _ , sDesc )
-		local con = GetConVar( "sf_" .. sName )
-		self.sName = sName
-		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
-		--self._b:SetConVar( "sf_" .. sName )
-		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
-		self.trigger = false
-			local n = con:GetFloat()
-			if n < 0 then
-				n = 0
-				self.hour:SetDisabled(true)
-				self.minute:SetDisabled(true)
-				if self.ampm then
-					self.ampm:SetDisabled(true)
-				end
-				self:SetDisabled(true)		
-			end
-			local time_str = StormFox2.Time.GetDisplay(n)
-			local h,m = string.match(time_str, "(%d+):(%d+)")
-			local am = string.find(time_str, "AM") and true or false
-			self.hour:SetValue(tonumber(h))
-			self.minute:SetValue(tonumber(m))
-			if self.ampm then
-				self.ampm:SetValue(am and "AM" or "PM")
-			end
-		self.trigger = true
-
-		if StormFox2.Setting.IsGMSetting(sName) then
-			self.hour:SetDisabled( true )
-			self.minute:SetDisabled( true )
-			if self.ampm then
-				self.ampm:SetDisabled( true )
-			end
-		end
-
-		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
-			pln.trigger = false
-			if tonumber(vVar) < 0 then
-				n = 0
-				self.hour:SetDisabled(true)
-				self.minute:SetDisabled(true)
-				if self.ampm then
-					self.ampm:SetDisabled(true)
-				end
-				self:SetDisabled(true)
-			else
-				self.hour:SetDisabled(false)
-				self.minute:SetDisabled(false)
-				if self.ampm then
-					self.ampm:SetDisabled(false)
-				end
-				self:SetDisabled(false)
-			end
-			local time_str = StormFox2.Time.GetDisplay(vVar)
-			local h,m,am = string.match(time_str, "(%d+):(%d+)%s?([PA]M)")
-			pln.hour:SetValue(tonumber(h))
-			local n = tonumber(m)
-			pln.minute:SetValue(n)
-			if pln.ampm then
-				pln.ampm:SetValue(am=="AM" and "AM" or "PM")
-			end
-			pln.trigger = true
-		end,self)
-		self:InvalidateLayout(true)
-	end
-	function PANEL:PerformLayout(w, h)
-		local x = 5
-		local y = self._l:GetTall() + 2
-		self.hour:SetPos(x,y)
-		x = x + self.hour:GetWide()
-		self.dot:SetPos(x,y)
-		x = x + self.dot:GetWide()
-		self.minute:SetPos(x,y)
-		x = x + self.minute:GetWide() + 5
-		if self.ampm then
-			self.ampm:SetPos(x,y)
-			x = x + self.ampm:GetWide() + 5
-		end
-		surface.SetFont("DermaDefault")
-		local text, lines = wrapText(self._des, self:GetWide())
-		self._d:SetText(text)
-		self._d:SizeToContents()
-		self._desr = text
-		self._d:SetPos(x,y)
-
-		local h = math.max(10 + lines * 20, 44)
-		self:SetTall(h)
-	end
-	PANEL.PaintOver = PaintOver
-	derma.DefineControl( "SFConVar_Time", "", PANEL, "DPanel" )
-end
--- Time toggle
-do
-	local PANEL = {}
-	PANEL.Paint = empty
-	function PANEL:Init()
-		self:DockMargin(5,0,10,0)
-		self.trigger = true
-		self._enabled = true
-		--self.Paint = empty
-		local use_12 = StormFox2.Setting.GetCache("12h_display",default_12)
-		local l = vgui.Create( "DLabel", self )
-		local hour = vgui.Create("DNumberWang", self)
-		local dot = vgui.Create("DPanel", self)
-		local toggle = vgui.Create("DCheckBox", self)
-		function dot:Paint(w,h)
-			draw.DrawText(":", "DermaLarge", w/2, -8, color_black, TEXT_ALIGN_CENTER)
-		end
-		local minute = vgui.Create("DNumberWang", self)
-		minute:SetMax(59)
-		hour:SetMin(0)
-		minute:SetMin(0)
-		hour:SetDrawLanguageID( false )
-		minute:SetDrawLanguageID( false )
-		local ampm
-		if use_12 then
-			hour:SetMax(12)
-			ampm = vgui.Create("DComboBox", self)
-			ampm:AddChoice( "AM", 0, false )
-			ampm:AddChoice( "PM", 1, false )
-			ampm:SetSize(64, 20)
-			ampm:SetDrawLanguageID( false )
-		else
-			hour:SetMax(23)
-		end
-		local a = function(self, str)
-			local n = tonumber(str) or 0
-			if n < 0 then
-				self:SetValue(0)
-				self:SetText("0")
-			elseif n > (self:GetMax()) then
-				self:SetValue(self:GetMax())
-				self:SetText(self:GetMax())
-			end
-		end
-		hour.OnValueChanged = a
-		minute.OnValueChanged = a
-		local function OnValChang()
-			if not self._enabled then return end
-			if not self.trigger then return end
-			local h = tonumber(hour:GetText()) or 0
-			h = math.Clamp(h, 0, ampm and 12 or 23)
-			local m = tonumber(minute:GetText()) or 0
-			m = math.Clamp(m, 0, 59)
-			local t = h .. ":" .. m
-			if ampm then
-				t = t .. " " .. (ampm:GetSelected() or ampm:GetText() == "AM" and 0 or 1)
-			end
-			local num = StormFox2.Time.StringToTime(t)
-			if num and self.sName then
-				SetSFConVar(self.sName, num)
-			end
-		end
-		if ampm then
-			ampm.OnSelect = OnValChang
-		end
-		function hour:OnLoseFocus()
-			self:UpdateConvarValue()
-			hook.Call( "OnTextEntryLoseFocus", nil, self )
-			a(self, self:GetText()) -- Clammp value
-			local n = tonumber(self:GetText()) or 0
-			OnValChang()
-		end
-		function minute:OnLoseFocus()
-			self:UpdateConvarValue()
-			hook.Call( "OnTextEntryLoseFocus", nil, self )
-			a(self, self:GetText()) -- Clammp value
-			local n = tonumber(self:GetText()) or 0
-			OnValChang()
-		end
-
-		local d = vgui.Create( "DLabel", self )
-		l:SetText("Unknown ConVar")
-		self._des = "This is an unset ConVar panel."
-		d:SetText(self._des)
-		l:SetColor(color_black)
-		l:SetFont("DermaDefaultBold")
-		l:SizeToContents()
-		l:InvalidateLayout(true)
-		l:Dock(TOP)
-		self.hour = hour
-		self.minute = minute
-		self.dot = dot
-		self.ampm = ampm
-		hour:SetWide(40)
-		minute:SetWide(40)
-		dot:SetWide(15)
-		d:SetPos(25, l:GetTall() + 2)
-		d:SetDark(true)
-		d:SizeToContents()
-		self:SetTall(l:GetTall() + 34)
-		self._l = l
-		self._d = d
-		self._t = toggle
-		self:InvalidateLayout(true)
-	end
-	function PANEL:SetConvar( sName, _, sDesc )
-		local con = GetConVar( "sf_" .. sName )
-		self.sName = sName
-		self._l:SetText( sDesc and "#"..sDesc or "#sf_" .. sName )
-		--self._b:SetConVar( "sf_" .. sName )
-		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or con:GetHelpText() or "Unknown")
-		self.trigger = false
-			local n = con:GetFloat()
-			if n < 0 then
-				n = 0
-				self.hour:SetDisabled(true)
-				self.minute:SetDisabled(true)
-				if self.ampm then
-					self.ampm:SetDisabled(true)
-				end
-				self._enabled = false
-				self._t:SetChecked( false )
-			else
-				self._t:SetChecked( true )
-			end
-			local time_str = StormFox2.Time.GetDisplay(n)
-			local h,m = string.match(time_str, "(%d+):(%d+)")
-			local am = string.find(time_str, "AM") and true or false
-			self.hour:SetValue(tonumber(h))
-			self.minute:SetValue(tonumber(m))
-			if self.ampm then
-				self.ampm:SetValue(am and "AM" or "PM")
-			end
-		self.trigger = true
-		function self._t:DoClick()
-			if con:GetFloat() < 0 then
-				SetSFConVar(sName, 0)
-			else 
-				SetSFConVar(sName, -1)
-			end
-		end
-		if StormFox2.Setting.IsGMSetting(sName) then
-			self._t:SetDisabled( true )
-		end
-		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
-			pln.trigger = false
-			if tonumber(vVar) < 0 then
-				n = 0
-				self.hour:SetDisabled(true)
-				self.minute:SetDisabled(true)
-				if self.ampm then
-					self.ampm:SetDisabled(true)
-				end
-				self._enabled = false
-				self._t:SetChecked( false )
-			else
-				self.hour:SetDisabled(false)
-				self.minute:SetDisabled(false)
-				if self.ampm then
-					self.ampm:SetDisabled(false)
-				end
-				self._enabled = true
-				self._t:SetChecked( true )
-			end
-			local time_str = StormFox2.Time.GetDisplay(vVar)
-			local h,m,am = string.match(time_str, "(%d+):(%d+)%s?([PA]M)")
-			pln.hour:SetValue(tonumber(h))
-			local n = tonumber(m)
-			pln.minute:SetValue(n)
-			if pln.ampm then
-				pln.ampm:SetValue(am=="AM" and "AM" or "PM")
-			end
-			pln.trigger = true
-		end,self)
-		self:InvalidateLayout(true)
-	end
-	function PANEL:PerformLayout(w, h)
-		local x = 5
-		local y = self._l:GetTall() + 2
-		self._t:SetPos(5,y+2)
-		x = x + 20
-		self.hour:SetPos(x,y)
-		x = x + self.hour:GetWide()
-		self.dot:SetPos(x,y)
-		x = x + self.dot:GetWide()
-		self.minute:SetPos(x,y)
-		x = x + self.minute:GetWide() + 5
-		if self.ampm then
-			self.ampm:SetPos(x,y)
-			x = x + self.ampm:GetWide() + 5
-		end
-		surface.SetFont("DermaDefault")
-		local text, lines = wrapText(self._des, self:GetWide())
-		self._d:SetText(text)
-		self._d:SizeToContents()
-		self._desr = text
-		self._d:SetPos(x,y)
-
-		local h = math.max(10 + lines * 20, 44)
-		self:SetTall(h)
-	end
-	PANEL.PaintOver = PaintOver
-	derma.DefineControl( "SFConVar_Time_Toggle", "", PANEL, "DPanel" )
-end
--- Temp
-do
-	local PANEL = {}
-	PANEL.Paint = empty
-	function PANEL:Init()
-		self:DockMargin(5,0,10,0)
-		--self.Paint = empty
-		local l = vgui.Create( "DLabel", self )
-		local d = vgui.Create( "DLabel", self )
-		local b = vgui.Create("DNumberWang", self)
-		local s = vgui.Create("DLabel", self)
+	surface.CreateFont("SF2_TimeSet", {
+		font = "Arial", --  Use the font-name which is shown to you by your operating system Font Viewer, not the file name
+		extended = false,
+		size = 26,
+		weight = 50,
+		blursize = 0,
+		scanlines = 0,
+		antialias = true,
+		underline = false,
+		italic = false,
+		strikeout = false,
+		symbol = false,
+		rotary = false,
+		shadow = false,
+		additive = false,
+		outline = false,
+	} )
+	surface.CreateFont("SF2_TimeSetAM", {
+		font = "Arial", --  Use the font-name which is shown to you by your operating system Font Viewer, not the file name
+		extended = false,
+		size = 22,
+		weight = 50,
+		blursize = 0,
+		scanlines = 0,
+		antialias = true,
+		underline = false,
+		italic = false,
+		strikeout = false,
+		symbol = false,
+		rotary = false,
+		shadow = false,
+		additive = false,
+		outline = false,
+	} )
+	local function NewPaint(self, w, h, off)
+		surface.SetFont("SF2_TimeSet")
+		local tw,th = surface.GetTextSize("ABCDEFGHIJ")
 		
-		b:SetWide(60)
-		l:SetText("Unknown ConVar")
-		l:SetColor(color_black)
-		l:SetFont("DermaDefaultBold")
-		l:SizeToContents()
-		d:SetText("Unknown ConVar")
-		d:SetColor(color_black)
-		d:SetPos(90, l:GetTall() + 4)
-		d:SizeToContents()
-		l:InvalidateLayout(true)
-		l:Dock(TOP)
-		s:SetText(StormFox2.Temperature.GetDisplaySymbol())
-		s:SetPos(70,l:GetTall() + 2)
-		s:SetColor(color_black)
-		s:SizeToContents()
-		self:SetTall(l:GetTall() + 34)
-		self._l = l
-		self._d = d
-		self._b = b
-		self._s = s
-		b.Up.DoClick = function( button, mcode ) 
-			b:SetValue( b:GetValue() + b:GetInterval() )
-			b:OnLoseFocus( )
+		surface.SetTextColor(color_black)
+		surface.SetTextPos(2,h / 2 - th / 2)
+		local tex = (self:GetValue() or "")
+		local e = (math.Round(SysTime() % 1) == 1 and "_" or "")
+		if self:HasFocus() and #tex < 2 then
+			surface.DrawText( tex .. e )
+		else
+			surface.DrawText( tex )
 		end
-		b.Down.DoClick = function( button, mcode )
-			b:SetValue( b:GetValue() - b:GetInterval() ) 
-			b:OnLoseFocus( )
+		if self:HasFocus() and #tex == 2 then
+			local tw = surface.GetTextSize(tex:sub(0,1))
+			surface.SetTextPos(2 + tw,h / 2 - th / 2)
+			surface.DrawText( e )
 		end
 	end
-	function PANEL:SetConvar( sName )
-		local con = GetConVar( "sf_" .. sName )
-		self._l:SetText( "#sf_" .. sName )
-		local nMin, nMax = con:GetMin(), con:GetMax()
-		self._des = language.GetPhrase(con:GetHelpText() or "Unknown")
-
-		if nMax then self._b:SetMax( nMax ) else self._b.m_numMax = nil	end
-		if nMin then self._b:SetMin( nMin )	else self._b.m_numMin = nil	end
-		local val = StormFox2.Temperature.Convert(nil,StormFox2.Temperature.GetDisplayType(),con:GetInt())
-		self._b:SetValue( val )
-
-		if StormFox2.Setting.IsGMSetting(sName) then
-			self._b:SetDisabled( true )
+	local function OnMousePressed( self, mcode )
+		if ( mcode == MOUSE_LEFT ) then
+			self:OnGetFocus()
+		else
+			local menu = DermaMenu(false, self) 
+			local obj = StormFox2.Setting.GetObject("12h_display")
+			local text = (obj:GetValue() and "24-" or "12-") .. language.GetPhrase("clock")
+			menu:AddOption( text, function()
+				obj:SetValue( not obj:GetValue())
+				end):SetIcon( "icon16/clock.png" )
+			menu:AddOption( "Reset", function()
+				self._sfobj:Revert()
+				end):SetIcon( "icon16/package.png" )
+			menu:Open()
+			return true
+		end
+	end
+	function PANEL:Init()
+		local b = vgui_Create("DPanel", self) -- All options
+		b.Paint = empty
+		local bg = vgui_Create("DPanel", b) -- Background
+		self.hour = vgui.Create("DTextEntry", b)
+		self.min = vgui.Create("DTextEntry", b)
+		self.ampm = vgui.Create("DButton", b)
+		self.bg = bg
+		self.b = b
+		self.bar_ex = 0
+		
+		b:SetPos(6,14)
+		b:SetSize(66 + 34 + 2, 30)
+		bg:SetSize(66, 30)
+		function bg:IsSelected() return false end
+		function bg:GetToggle() return false end
+		local hour, min = self.hour, self.min
+		do
+			function bg:Paint( w, h ) 
+				self.Hovered  = hour.Hovered or min.Hovered
+				self.Depressed= hour:IsEditing() or min:IsEditing()
+				derma.SkinHook( "Paint", "Button", self, w, h )
+				surface.SetFont("SF2_TimeSet")
+				local tw,th = surface.GetTextSize(":")
+			
+				surface.SetTextColor(color_black)
+				surface.SetTextPos(w / 2 - tw / 2,h / 2 - th / 2 - 2)
+				surface.DrawText(":")
+			end
 		end
 
-		function self._b:OnLoseFocus( )
-			local num = tonumber(self:GetText()) or 0
-			num = StormFox2.Temperature.Convert(StormFox2.Temperature.GetDisplayType(),nil,num)
-			SetSFConVar( sName, num )
-		end
-		StormFox2.Setting.Callback(sName,function(vVar,vOldVar,_, pln)
-			local val = StormFox2.Temperature.Convert(nil,StormFox2.Temperature.GetDisplayType(),tonumber(vVar) or 0)
-			pln:SetValue(val)
-		end,self._b)
-	end
-	function PANEL:PerformLayout(w, h)
-		surface.SetFont("DermaDefault")
-		local text, lines = wrapText(self._des or "UNKNOWN", self:GetWide())
-		self._d:SetText(text)
-		self._d:SizeToContents()
-		self._desr = text
+		self.hour:SetPos(2,0)
+		self.hour:SetWide(30)
+		self.hour:SetTall(30)
 
-		self._b:SetPos(5,self._l:GetTall() + 2)
-		self._s:SetPos(68,self._l:GetTall() + 5)
-		local h = math.max(10 + lines * 20, 44)
-		self:SetTall(h)
+		self.min:SetPos(34,0)
+		self.min:SetWide(30)
+		self.min:SetTall(30)
+
+		self.ampm:SetPos(66 + 2,0)
+		self.ampm:SetWide(34)
+		self.ampm:SetTall(30)
+		self.ampm:SetFont("SF2_TimeSetAM")
+		function self.ampm:UpdateColours( skin )
+			if ( !self:IsEnabled() )					then return self:SetTextStyleColor( skin.Colours.Button.Disabled ) end
+			if ( self:IsDown() || self.m_bSelected )	then return self:SetTextStyleColor( skin.Colours.Button.Down ) end
+			if ( self.Hovered )							then return self:SetTextStyleColor( skin.Colours.Button.Hover ) end
+			return self:SetTextStyleColor( color_black )
+		end
+		
+		self.hour:SetNumeric(true)
+		self.hour:SetDrawLanguageID( false )
+		self.hour.Paint = NewPaint
+		self.hour:SetText("00")
+		local panel = self
+		function self.hour.OnGetFocus(self)
+			self:SetValue("")
+		end
+		function self.hour:OnEnter()
+			local num = tonumber( self:GetValue() or "" ) or 0
+			local lim = StormFox2.Setting.Get("12h_display") and 12 or 24
+			num = math.Clamp(num, 0, lim)
+			if num < 10 then
+				self:SetText("0" .. num)
+			else
+				self:SetText(num)
+			end
+			panel:OnNewValue()
+		end
+		function self.hour:OnChange()
+			if string.find(self:GetValue(), "-") then
+				self:SetText(string.Replace(self:GetValue(), "-", ""))
+			end
+			if #self:GetValue() >= 3 then -- Can't enter more numbers
+				self:FocusPrevious()
+				self:OnEnter()
+			elseif #self:GetValue() == 2 then
+				--self:OnEnter()
+				self:KillFocus()
+				min:RequestFocus()
+				min._setonlosefocus = true
+			end
+		end
+		function self.hour.OnLoseFocus( self )
+			if #self:GetText() < 2 then return end
+			-- We lost focus and the player has entered two numbers in. Should be set. Not everyone hits enter
+			self:OnEnter()
+		end
+		self.min:SetNumeric(true)
+		self.min:SetDrawLanguageID( false )
+		self.min.Paint = NewPaint
+		self.min:SetText("00")
+		function self.min.OnGetFocus(self)
+			self._oldVar = self:GetValue()
+			self:SetValue("")
+		end
+		function self.min:OnEnter()
+			-- Hour value has changed, and this is empty. We then use the last value instead.
+			if #self:GetText() < 1 and self._setonlosefocus and self._oldVar then
+				self:SetValue( self._oldVar )
+			end
+			self._setonlosefocus = nil
+			local num = tonumber( self:GetValue() or "" ) or 0
+			num = math.Clamp(num, 0, 59)
+			if num < 10 then
+				self:SetText("0" .. num)
+			else
+				self:SetText(num)
+			end
+			panel:OnNewValue( num )
+		end
+		function self.min:OnChange()
+			if string.find(self:GetValue(), "-") then
+				self:SetText(string.Replace(self:GetValue(), "-", ""))
+			end
+			if #self:GetValue() >= 2 then -- Can't enter more numbers
+				self:FocusPrevious()
+				self:OnEnter()
+			end
+		end
+		function self.min.OnLoseFocus( self )
+			-- We lost focus and the player has entered two numbers in. Should be set
+			if #self:GetText() < 2 and not (self._oldVar and self._setonlosefocus) then return end
+			-- We have a set-on-leave flag
+			if self._setonlosefocus and self._oldVar then
+				self:SetValue(self._oldVar)
+			end
+			self._setonlosefocus = nil
+			self:OnEnter()
+			
+		end
+		function self.ampm:DoClick()
+			if self:GetText() == "AM" then
+				self:SetText("PM")
+			else
+				self:SetText("AM")
+			end
+			panel:OnNewValue()
+		end
+		
+		hour.OnMousePressed = OnMousePressed
+		min.OnMousePressed = OnMousePressed
+		
+		self:MoveDescription(105 + self.bar_ex,4)
 	end
-	PANEL.PaintOver = PaintOver
-	derma.DefineControl( "SFConVar_Temp", "", PANEL, "DPanel" )
+
+	function PANEL:OnNewValue()
+		local str = tonumber(self.hour:GetText()) .. ":" .. tonumber(self.min:GetText())
+		if StormFox2.Setting.Get("12h_display") then
+			str = str .. self.ampm:GetText()
+		end
+		self._sfobj:SetValue( StormFox2.Time.StringToTime(str) )
+	end
+
+	function PANEL:Think()
+		var = var or 0
+		if not self._sfobj then return end
+		local _12 = StormFox2.Setting.Get("12h_display")
+		local var = self._sfobj:GetValue()
+		if var < 0 then
+			self.b:SetDisabled( true )
+			self.hour:SetText("00")
+			self.min:SetText("00")
+			self.ampm:SetText("AM")
+			if _12 then
+				self.ampm:SetText(StormFox2.Time.GetAMPM( self._sfobj:GetValue() ))
+				if not self.ampm:IsVisible() then
+					self.ampm:Show()
+					self:MoveDescription(105 + self.bar_ex,4)
+				end
+			else
+				if self.ampm:IsVisible() then
+					self.ampm:Hide()
+					self:MoveDescription(70 + self.bar_ex,4)
+				end
+			end
+		else
+			self.b:SetDisabled( false )
+			if not self.hour:IsEditing() then
+				local h = StormFox2.Time.GetHours( self._sfobj:GetValue(), _12 )
+				if h < 10 then
+					h = "0" .. h
+				end
+				self.hour:SetText(h)
+			end
+			if not self.min:IsEditing() then
+				local h = StormFox2.Time.GetMinutes( self._sfobj:GetValue(), _12 )
+				if h < 10 then
+					h = "0" .. h
+				end
+				self.min:SetText(h)
+			end
+			if _12 then
+				self.ampm:SetText(StormFox2.Time.GetAMPM( self._sfobj:GetValue() ))
+				if not self.ampm:IsVisible() then
+					self.ampm:Show()
+					self:MoveDescription(105 + self.bar_ex,4)
+				end
+			else
+				if self.ampm:IsVisible() then
+					self.ampm:Hide()
+					self:MoveDescription(70 + self.bar_ex,4)
+				end
+			end
+		end
+	end
+
+	function PANEL:SetSetting( sName, sType, Description )
+		self:_SetSetting( sName, sType, Description ) -- Set title and textbox
+		self._sfobj = StormFox2.Setting.GetObject( sName )
+		self.min._sfobj = self._sfobj
+		self.hour._sfobj = self._sfobj
+		--self.check:SetConVar( sName )
+		return self
+	end
+	derma.DefineControl( "SF_Setting_Time", "", PANEL, "SF_Setting" )
 end
--- Ring
+-- Time Toggle
+do
+	local OldPanel = vgui.GetControlTable("SF_Setting_Time")
+	local PANEL = {}
+	function PANEL:Init()
+		self.check = vgui_Create("DCheckBox", self)
+		self.check:SetPos(5,20)
+		self.b:SetPos(24,14)
+		self:MoveDescription(105 + 18,4)
+		self.bar_ex = 18
+	end
+	function PANEL:Think()
+		OldPanel.Think(self)
+		if not self._sfobj then return end
+		local b = self._sfobj:GetValue() >= 0
+		self.check:SetChecked(b)
+	end
+	function PANEL:SetSetting( sName, sType, Description )
+		OldPanel.SetSetting( self, sName, sType, Description )
+		local _sfobj = StormFox2.Setting.GetObject( sName )
+		self.check._block = _sfobj:IsRadio()
+		function self.check:DoClick()
+			if self:GetChecked() and self._block then return end
+			local b = _sfobj:GetValue() > 0
+			if b then
+				_sfobj:SetValue(-1)
+			else
+				local default = _sfobj:GetDefault()
+				if default < 0 then default = 720 end
+				_sfobj:SetValue(default)
+			end
+		end
+		return self
+	end
+	derma.DefineControl( "SF_Setting_TimeToggle", "", PANEL, "SF_Setting_Time" )
+end
+-- DoubleInt setting
+do
+	local PANEL = {}
+	function PANEL:Init()
+		self.text = vgui_Create("DTextEntry", self)
+		self.text:SetNumeric(true)
+		self.text:SetDrawLanguageID( false )
+		self.slider = vgui_Create("SF_DoubleSlider", self)
+		self.slider:SetPos(5,14)
+		self.slider:SetWide(barLength)
+		self.text:SetPos(barLength + 8,18)
+		self.text:SetSize(55,18)
+		self:MoveDescription(barLength + 60, 6)
+		self._isTemp = false
+	end
+	function PANEL:SetTemperature(bool)
+		self._isTemp = bool
+	end
+	function PANEL:Think()
+		if not self._sfobj then return end
+		if self.slider._down and self.slider._downvalue then
+			local text
+			if self._isTemp then
+				text = self.slider._downvalue and valToTemp(self.slider._downvalue) or "?"
+			else
+				text = self.slider._downvalue
+			end
+			self.text:SetText(text)
+		elseif not self.text:IsEditing() then
+			local text
+			if self._isTemp then
+				text = valToTemp(self._sfobj:GetValue())
+			else
+				text = self._sfobj:GetValue()
+			end
+			self.text:SetText(text)
+		end
+	end
+	function PANEL:SetSettingMin( sName, sType, Description )
+		local _sfobj = StormFox2.Setting.GetObject( sName )
+		self._sfobj = _sfobj
+		self:_SetSetting( sName, sType, Description ) -- Set title and textbox
+		self.slider:SetSettingMin( sName, sType, Description )
+		--self.text:SetConVar( sName )
+		function self.text:OnEnter( val )
+			val = string.match(val, "[%d%.]+") or val
+			local clamp = math.Clamp(tonumber( val ), _sfobj:GetMin(), _sfobj:GetMax())
+			_sfobj:SetValue(clamp)
+			self:SetText(tostring(clamp))
+		end
+	end
+	function PANEL:SetSettingMax( sName, sType, Description )
+		local _sfobj2 = StormFox2.Setting.GetObject( sName )
+		self._sfobj2 = _sfobj
+		self:_SetSetting( sName, sType, Description ) -- Set title and textbox
+		self.slider:SetSettingMax( sName, sType, Description )
+		--self.text:SetConVar( sName )
+	end
+	function PANEL:SetMin( var )
+		self.slider:SetMin( var )
+	end
+	function PANEL:SetMax( var )
+		self.slider:SetMax( var )
+	end
+	derma.DefineControl( "SF_Setting_Double", "", PANEL, "SF_Setting" )
+end
+
+-- Hud Ring
 do
 	local PANEL = {}
 	local m_ring = Material("stormfox2/hud/hudring.png")
@@ -1037,6 +1414,7 @@ do
 	local seg = 40
 	function PANEL:SetColor(r,g,b,a)
 		self.cCol2 = (r and g and b) and Color(r,g,b,a or 105) or r
+		return self
 	end
 	function PANEL:Init()
 		self._val = 1
@@ -1047,9 +1425,11 @@ do
 	function PANEL:SetValue(nNum)
 		self._val = math.Clamp(nNum, 0, 1)
 		self:RebuildPoly()
+		return self
 	end
 	function PANEL:SetText(sText)
 		self._text = sText
+		return self
 	end
 	function PANEL:RebuildPoly()
 		local pw, ph = self:GetWide(), self:GetTall()
@@ -1091,585 +1471,32 @@ do
 		surface.SetDrawColor(self.cCol2)
 		surface.DrawPoly(self._poly)
 	end
-	derma.DefineControl( "SF_HudRing", "", PANEL, "DPanel" )
-end
--- Double Slider
-do
-	local PANEL = {}
-	local function paintKnob(self,x, y) -- Skin doesn't have x or y pos
-		local skin = self:GetSkin()
-		if ( self:GetDisabled() ) then	return skin.tex.Input.Slider.H.Disabled( x, y, 15, 15 ) end
-		if ( self.Depressed ) then
-			return skin.tex.Input.Slider.H.Down( x, y, 15, 15 )
-		end
-		if ( self.Hovered ) then
-			return skin.tex.Input.Slider.H.Hover( x, y, 15, 15 )
-		end
-		skin.tex.Input.Slider.H.Normal( x, y, 15, 15 )
-	end
-	AccessorFunc( PANEL, "m_fSlide2X", "Slide2X" )
-	AccessorFunc( PANEL, "m_fSlideX", "SlideX" )
-	AccessorFunc( PANEL, "m_max", "Max" )
-	AccessorFunc( PANEL, "m_min", "Min" )
-	AccessorFunc( PANEL, "m_fDecimal", "Decimals" )
-	function PANEL:Init()
-		self:SetSlideX(1)
-		self:SetSlide2X(0)
-		self:SetWide(200)
-		self:SetMax(1)
-		self:SetMin(0)
-		self:SetText("")
-		self:SetDark(true)
-		self:SetDecimals(2)
-	end
-	--Derma_Hook( PANEL, "Paint2", "Paint", "NumSlider" )
-	--function PANEL:GetNotchColor()
---		return color_white
---	end
-	function PANEL:GetRange()
-		return self.m_max - self.m_min
-	end
-	function PANEL:GetNotches()
-		return math.floor(self:GetRange() / 4)
-	end
-	function PANEL:GetNotchColor()
-		return b_alpha
-	end
-	function PANEL:Paint( w, h )
-		-- GetNotchColor
-		local skin = self:GetSkin()
-		skin:PaintNumSlider(self,w,h)
-		--self:Paint2(w,h)
-		local sw = w - 15
-		paintKnob(self,sw * self.m_fSlideX,0)
-		paintKnob(self,sw * self.m_fSlide2X,0)
-		surface.SetDrawColor(color_white)
-	end
-	function PANEL:SetSlideX( i )
-		self.m_fSlideX = math.Clamp(math.max(i, self.m_fSlide2X or 0), 0, 1)
-	end
-	function PANEL:SetSlide2X( i )
-		self.m_fSlide2X = math.Clamp( math.min(i, self.m_fSlideX or 1) , 0, 1)
-	end
-	function PANEL:OnDepressed()
-		local w_f = (self:LocalCursorPos() - 7) / (self:GetWide() - 15)
-		w_f = math.Clamp(w_f, 0, 1)
-		self._knob = self.SetSlideX
-		if self.m_fSlideX == self.m_fSlide2X then -- They're equal
-			if w_f < self.m_fSlideX then
-				self._knob = self.SetSlide2X
-			end
-		else
-			local mp = (self.m_fSlideX + self.m_fSlide2X) / 2
-			if w_f < mp then
-				self._knob = self.SetSlide2X
-			end
-		end
-	end
-	function PANEL:SetMinVar( f )
-		local r = self:GetMax() - self:GetMin()
-		self:SetSlide2X( (f - self:GetMin()) / r )
-	end
-	function PANEL:SetMaxVar( f )
-		local r = self:GetMax() - self:GetMin()
-		self:SetSlideX( (f - self:GetMin()) / r )
-	end
-	function PANEL:GetMinVar()
-		local r = self.m_max - self.m_min
-		return self.m_min + r * self.m_fSlide2X
-	end
-	function PANEL:GetMaxVar()
-		local r = self.m_max - self.m_min
-		return self.m_min + r * self.m_fSlideX
-	end
-	function PANEL:OnValueChanged( min, max )
-	end
-	function PANEL:Think()
-		if self._wdown and not self:IsDown() then -- We let go
-			if not self.OnValueChanged then return end
-			self:OnValueChanged( self:GetMinVar(), self:GetMaxVar() )
-			self._wdown = false
-		elseif self:IsDown() and self._knob then
-			local w_f = (self:LocalCursorPos() - 7) / (self:GetWide() - 15)
-			w_f = math.Round(math.Clamp(w_f, 0, 1), self.m_fDecimal)
-			self._knob(self, w_f)
-			self._wdown = true
-		end		
-	end
-	local function conFunc(self, min, max)
-		if self._conMin:GetFloat() ~= min then
-			SetSFConVar(self._conMin:GetName(), min)
-		end
-		if self._conMax:GetFloat() ~= max then
-			SetSFConVar(self._conMax:GetName(), max)
-		end
-	end
-	function PANEL:SetConvar( sMinName, sMaxName )
-		local conMi = GetConVar( "sf_" .. sMinName )
-		local conMa = GetConVar( "sf_" .. sMaxName )
-		self._conMax = conMa
-		self._conMin = conMi
-		self:SetMax( conMa:GetMax() or 1 )
-		self:SetMin( conMi:GetMin() or 0 )
-		self:SetMaxVar( conMa:GetFloat() )
-		self:SetMinVar( conMi:GetFloat() )
-
-		if StormFox2.Setting.IsGMSetting(sMinName) or StormFox2.Setting.IsGMSetting(sMaxName) then
-			self:SetDisabled( true )
-		end
-		
-		self.OnValueChanged = conFunc	
-		StormFox2.Setting.Callback(sMinName,function(vVar,vOldVar,_, pln)
-			pln:SetMinVar( vVar )
-		end,self)
-		StormFox2.Setting.Callback(sMaxName,function(vVar,vOldVar,_, pln)
-			pln:SetMaxVar(vVar)
-		end,self)
-	end
-	derma.DefineControl( "SF_DDSlider", "", PANEL, "DButton" )
-end
--- Double num slider
-do
-	local PANEL = {}
-	function PANEL:Init()
-		self:DockMargin(5,0,10,0)
-		local l = vgui.Create( "DLabel", self )
-		local d = vgui.Create( "DLabel", self )
-		l:SetText("Unknown ConVar")
-		l:SetColor(color_black)
-		l:SetFont("DermaDefaultBold")
-		l:SizeToContents()
-		d:SetText("Unknown ConVar")
-		d:SetColor(color_black)
-		d:SetPos(5, l:GetTall() + 2)
-		d:SizeToContents()
-		l:InvalidateLayout(true)
-		l:Dock(TOP)
-		self:SetTall(l:GetTall() + 34)
-		self._l = l
-		self._d = d
-
-		local n_min = vgui.Create("DTextEntry", self)
-		local b = vgui.Create("SF_DDSlider", self)
-		local n_max = vgui.Create("DTextEntry", self)
-		n_min:SetNumeric(true)
-		n_max:SetNumeric(true)
-		n_min:SetWide(46)
-		n_max:SetWide(46)
-		n_min:SetPaintBackground( false )
-		n_max:SetPaintBackground( false )
-		self._b = b
-		self.n_min = n_min
-		self.n_max = n_max
-				
-		b:SetPos(5, self._l:GetTall())
-		b:SetWide(300)
-		self._dw = 300
-		b:SetDecimals( 2 )
-		self._d:SetPos(305, self._l:GetTall() + 2)
-		n_min.sl = self
-		n_max.sl = self
-		function n_min:Think()
-			if not self.sl:IsDown() then return end
-			local var = self.sl:GetMinVar()
-			self:SetText( math.Round(var, self.sl:GetDecimals()) )
-		end
-		function n_max:Think()
-			if not self.sl:IsDown() then return end
-			local var = self.sl:GetMaxVar()
-			self:SetText( math.Round(var, self.sl:GetDecimals()) )
-		end
-	end
-	function PANEL:SetMin( f )
-		self._b:SetMin( f )
-	end
-	function PANEL:GetMin()
-		self._b:GetMin()
-	end
-	function PANEL:SetMax( f )
-		self._b:SetMax( f )
-	end
-	function PANEL:IsDown()
-		return self._b:IsDown()
-	end
-	function PANEL:GetMax()
-		self._b:GetMax()
-	end
-	function PANEL:GetMinVar()
-		if self._temp then
-			return StormFox2.Temperature.Convert(nil, StormFox2.Temperature.GetDisplayType(),self._b:GetMinVar())
-		end
-		return self._b:GetMinVar()
-	end
-	function PANEL:GetMaxVar()
-		if self._temp then
-			return StormFox2.Temperature.Convert(nil, StormFox2.Temperature.GetDisplayType(),self._b:GetMaxVar())
-		end
-		return self._b:GetMaxVar()
-	end
-	function PANEL:GetDecimals()
-		return self._b:GetDecimals()
-	end
-	function PANEL:SetDecimals( i )
-		return self._b:SetDecimals( i )
-	end
-	
-	PANEL.Paint = empty
-	function PANEL:PerformLayout(w,h)
-		surface.SetFont("DermaDefault")
-		local text, lines = wrapText(self._des or "UNKNOWN", self:GetWide() - self._dw)
-		self._d:SetText(text)
-		self._d:SizeToContents()
-		self._desr = text
-		local h = math.max(10 + lines * 20, 44)
-		self:SetTall(h)
-
-		self.n_min:SetPos( 0, h - 32)
-		self._b:SetPos(self.n_min:GetWide(),h - 32)
-		local sw = 300 - self.n_min:GetWide() - self.n_max:GetWide()
-		self._b:SetWide( sw )
-		self.n_max:SetPos( sw + self.n_min:GetWide(), h - 32)
-	end
-	function PANEL:SetConvar( sMinName, sMaxName,_type, sDesc )
-		self._temp = _type == "temperature"
-		self.n_min._temp = self._temp
-		self.n_max._temp = self._temp
-		if self._temp then
-			makeTempDisplay(self.n_min)
-			makeTempDisplay(self.n_max)
-		end			
-		self._l:SetText( sDesc and sDesc or "#sf_" .. sMinName )
-		local minCon = GetConVar( "sf_" .. sMinName)
-		local maxCon = GetConVar( "sf_" .. sMaxName)
-		self._des = language.GetPhrase(sDesc and sDesc .. ".desc" or minCon:GetHelpText() or "Unknown")
-		local minVal = minCon:GetFloat()
-		local maxVal = maxCon:GetFloat()
-		if self._temp then
-			minVal = StormFox2.Temperature.Convert(nil,StormFox2.Temperature.GetDisplayType(),minVal)
-			maxVal = StormFox2.Temperature.Convert(nil,StormFox2.Temperature.GetDisplayType(),maxVal)
-		end
-		self.n_min:SetText(math.Round(minVal, self:GetDecimals()))
-		self.n_max:SetText(math.Round(maxVal, self:GetDecimals()))
-		self.n_min._con = minCon
-		self.n_max._con = maxCon
-		self._b:SetConvar( sMinName, sMaxName )
-		self._b.ConVarChanged = ConVarChanged
-		self.n_min.OnValueChange = function( self, val )
-			if self._temp then
-				val = StormFox2.Temperature.Convert(StormFox2.Temperature.GetDisplayType(),nil,val)
-			end
-			SetSFConVar(self._con:GetName(), val)
-		end
-		self.n_max.OnValueChange = function( self, val )
-			if self._temp then
-				val = StormFox2.Temperature.Convert(StormFox2.Temperature.GetDisplayType(),nil,val)
-			end
-			SetSFConVar(self._con:GetName(), val)
-		end
-		StormFox2.Setting.Callback(sMinName,function(vVar,vOldVar,_, pln)
-			if self._temp then
-				vVar = StormFox2.Temperature.Convert(nil, StormFox2.Temperature.GetDisplayType(),vVar)
-			end
-			pln:SetText(math.Round(vVar, pln.sl:GetDecimals()))
-		end,self.n_min)
-		StormFox2.Setting.Callback(sMaxName,function(vVar,vOldVar,_, pln)
-			if self._temp then
-				vVar = StormFox2.Temperature.Convert(nil, StormFox2.Temperature.GetDisplayType(),vVar)
-			end
-			pln:SetText(math.Round(vVar, pln.sl:GetDecimals()))
-		end,self.n_max)
-		if StormFox2.Setting.IsGMSetting(sMinName) or StormFox2.Setting.IsGMSetting(sMaxName) then
-			self.n_min:SetDisabled( true )
-			self.n_max:SetDisabled( true )
-		end
-	end
-
-	derma.DefineControl( "SF_DDSliderNum", "", PANEL, "DPanel" )
-end
--- World Display
-do
-	local owm = Material("stormfox2/hud/openweather.png")
-	local PANEL = {}
-	AccessorFunc( PANEL, "m_lat", "Lat" )
-	AccessorFunc( PANEL, "m_lon", "Lon" )
-	AccessorFunc( PANEL, "m_zoom","Zoom" )
-	local w_map = Material("stormfox2/hud/world.png")
-	local c = Color(0,0,0,55)
-	function PANEL:Init()
-		self._map = vgui.Create("DPanel", self)
-		self:SetLat(StormFox2.Setting.Get("openweathermap_lat", 52.6139095))
-		self:SetLon(StormFox2.Setting.Get("openweathermap_lon", -2.0059601))
-		self:SetSize(400, 300)
-		self:SetZoom(3)
-		self._range = 1
-		
-		self._map._s = self
-		function self._map:Paint(w,h)
-			if self._s:GetDisabled() then return end
-			surface.SetDrawColor(color_white)
-			surface.SetMaterial( w_map )
-			surface.DrawTexturedRect(0,0,w,h)
-			local x = 0.5 + ( self._s:GetLon()) / 360
-			local y = 0.5 - ( self._s:GetLat()) / 180
-			local ws = math.ceil(w / 360)
-			local hs = math.ceil(h / 180)
-			surface.SetDrawColor(color_black)
-			local xx,yy = x * w - ws / 2, y * h - hs / 2
-			surface.DrawOutlinedRect(xx,yy, ws, hs)
-			surface.SetDrawColor(c)
-			c.a = 150 + math.sin(SysTime() * 10) * 50
-			local xT = math.max(1, ws / 4)
-			local yT = math.max(1, hs / 4)
-			-- X
-			surface.DrawRect(0, 		yy + hs * .5 - xT / 2, xx, yT)
-			surface.DrawRect(xx + ws, 	yy + hs * .5 - xT / 2, w - xx - ws, yT)
-			--Y
-			surface.DrawRect(xx + ws * 0.5 - yT / 2, 0, xT, yy)
-			surface.DrawRect(xx + ws * 0.5 - yT / 2, yy + hs, xT, h - yy - hs)
-		end
-		self:SetMouseInputEnabled( true )
-		StormFox2.Setting.Callback("openweathermap_lat",function(vVar,_,_, self)
-			self:SetLat( tonumber(vVar) )
-			self:ReSize()
-		end,self)
-		StormFox2.Setting.Callback("openweathermap_lon",function(vVar,_,_, self)
-			self:SetLon( tonumber(vVar) )
-			self:ReSize()
-		end,self)
-	end
-	function PANEL:ReSize()
-		local z = self:GetZoom() * 0.5
-		local w,h = 1617 * z, 808 * z
-		if w < self:GetWide() or h < self:GetTall() then
-			z = math.max(self:GetWide() / 1617, self:GetTall() / 808)
-			w = 1617 * z
-			h = 808 * z
-		end
-		self._map:SetSize(w, h)
-		local x,y = 0.5 + ( self:GetLon()) / 360, 0.5 - ( self:GetLat() ) / 180
-		local px,py = -w * x + self:GetWide() / 2, -h * y + self:GetTall() / 2
-		px = math.Clamp(px, -w, 0)
-		py = math.Clamp(py, -h, 0)
-		
-		self._map:SetPos(px,py)
-	end
-	function PANEL:OnMouseWheeled( sD )
-		local z = self:GetZoom() + sD / 2
-		self:SetZoom( math.Clamp(z, 1, 28) )
-		self:ReSize()
-		return true
-	end
-	function PANEL:PerformLayout()
-		self:ReSize()
-	end
-	function PANEL:Paint(w,h)
-		if self:GetDisabled() then return end
-		surface.SetDrawColor(color_white)
-		surface.SetMaterial( w_map )
-		surface.DrawTexturedRectUV(0,0,w,h,0,0,0.01,0.01)
-	end
-	function PANEL:PaintOver(w,h)
-		surface.SetDrawColor(color_black)
-		surface.SetMaterial(owm)
-		local tw = w / 5
-		local th = tw * 0.42
-		surface.DrawTexturedRect(0, h - th, tw, th)
-	end
-	derma.DefineControl( "SF_WorldMap", "", PANEL, "DPanel" )
+	derma.DefineControl( "SF_Setting_Ring", "", PANEL, "DPanel" )
 end
 
--- Day Display
-do
-	local function displayLayout(self, width, height )
-		-- Temp changes
-		local tmin,tmax = StormFox2.Setting.Get("min_temp",-10), StormFox2.Setting.Get("max_temp",20)
-		local tsize = (tmax - tmin)
-		self.temp_size = height / 20
-		self.temp_y = FindPercent(0, tmax, tmin)
-		if self.last_temp then
-			self.TempY = FindPercent(self.last_temp, tmax, tmin) * height
-		else
-			self.TempY = 0
-		end
-		self.TempY2 = FindPercent(self.temp, tmax, tmin) * height
-		self.TempY3 = FindPercent(self.next_temp, tmax, tmin) * height
+-- Old
+	-- Ring
+	do
+		local PANEL = {}
+		derma.DefineControl( "SF_HudRing", "", PANEL, "DPanel" )
 	end
-	local b_c = Color(255,255,255,55)
-	local b_c2 = Color(255,255,255,5)
-	local r_c = Color(155,155,255,25)
-	local function displayPaint(self, w, h)
-		-- Draw bar
-		surface.SetDrawColor(b_c)
-		surface.DrawLine(0,self.temp_y * h, w, self.temp_y * h)
-		surface.SetDrawColor(b_c2)
-		for y = self.temp_y * h, 0, -20 do
-			surface.DrawLine(0,y, w, y)
-		end
-		for y = self.temp_y * h, h, 20 do
-			surface.DrawLine(0,y, w, y)
-		end
-		-- Draw "rain"
-		if self.weather and self.weather.Name == "Rain" then
-			surface.SetDrawColor(r_c)
-			local h2 = self.weather_a * h
-			surface.DrawRect(0, h - h2, w, h2)
-		end
-		if not self.TempY or not self.TempY2 or not self.TempY3 then return end
-		if self.TempY < self.TempY2 then -- Down
-			surface.SetDrawColor(color_white)
-		else							-- Up
-			surface.SetDrawColor(Color(0,255,0))
-		end
-		surface.DrawLine(-w / 2, self.TempY, w / 2, self.TempY2 )
-		if self.TempY2 < self.TempY3 then -- Blue
-			surface.SetDrawColor(color_white)
-		else							-- Up
-			surface.SetDrawColor(Color(0,255,0))
-		end
-		surface.DrawLine(w / 2, self.TempY2, w * 1.5, self.TempY3)
+	-- World Display
+	do
+		local PANEL = {}
+		derma.DefineControl( "SF_WorldMap", "", PANEL, "DPanel" )
 	end
 
-	local PANEL = {}
-	function PANEL:Init()
-		self:SetWide(60)
-		self.icon = vgui.Create("DImage", self)
-		self.icon:Dock(TOP)
-		self.icon:DockMargin(15,15,15,5)
-		self.icon:SetMaterial( Material("gui/noicon.png") )
-		self.temp = vgui.Create("DPanel", self)
-		self.temp:Dock(TOP)
-		self.temp.text = ""
-		self.time = ""
-		self.temp.desc = "Unknown"
-		self.temp:SetTall(30)
-		function self.temp:Paint(w,h)
-			draw.SimpleText(self.text, "DermaDefault",w / 2,0,color_white,TEXT_ALIGN_CENTER)
-			draw.SimpleText(self.desc, "DermaDefault",w / 2,h/2,color_white,TEXT_ALIGN_CENTER)
-		end
-		self.display = vgui.Create("DPanel", self)
-		self.display:Dock(FILL)
-		self.display.PerformLayout = displayLayout
-		self.display.Paint = displayPaint
-		self.time = vgui.Create("DPanel", self)
-		self.wind = vgui.Create("DPanel", self)
-		self.wind:Dock(BOTTOM)
-		self.time:Dock(BOTTOM)
-		self.time:SetTall(30)
-		function self.time:Paint(w,h)
-			draw.SimpleText(self.text, "DermaDefault",w / 2,h / 4,color_white,TEXT_ALIGN_CENTER)
-		end
-		function self.wind:Paint(w,h)
-			draw.SimpleText(self.text, "DermaDefault",w / 2,h / 4,color_white,TEXT_ALIGN_CENTER)
-		end
-	end
-	function PANEL:SetData(time, last_data, data, next_data, unixtime )
-		self.data = data
-		self.temp.text = math.Round(StormFox2.Temperature.GetDisplay(data.Temperature), 1) .. StormFox2.Temperature.GetDisplaySymbol()
-		
-		self.display.last_temp 	= last_data and last_data.Temperature or 0
-		self.display.next_temp 	= next_data and next_data.Temperature or data.Temperature
-		self.display.temp 		= data.Temperature
-
-		self.time.text = time and StormFox2.Time.GetDisplay(data.Time * 60) or unixtime
-		self.wind.text = (data.Wind or 0) .. " m/s"
-		self.weather = StormFox2.Weather.Get( data.Weather and data.Weather or "Clear" )
-		self.display.weather = self.weather
-		self.display.weather_a = data.Percent
-		if self.weather then
-			self.icon:SetMaterial(	self.weather.GetIcon(time or 720, data.Temperature or 20, data.Wind, data.Thunder, data.Percent))
-			self.temp.desc = 		self.weather:GetName(time or 720, data.Temperature or 20, data.Wind, data.Thunder, data.Percent )
-		end
+	-- Day Display
+	do
+		local PANEL = {}
+		derma.DefineControl( "SF_WeatherHour", "", PANEL, "DPanel" )
 	end
 
-
-	function PANEL:PerformLayout(w, h)
-		-- Icon
-		self.icon:SetTall(w - 30)
+	-- Weather Display
+	do
+		local PANEL = {}
+		derma.DefineControl( "SF_WeatherMap", "", PANEL, "DPanel" )
 	end
-
-	function PANEL:Paint(w, h)
-
-		-- self.desc
-	end
-	derma.DefineControl( "SF_WeatherHour", "", PANEL, "DPanel" )
-end
-
--- Weather Display
-do
-	local PANEL = {}
-	local col = Color(26,41,72, 255)
-	local mat = Material("vgui/loading-rotate")
-	function PANEL:Init()
-		-- StormFox2.WeatherGen.GetData()
-		self:SetSize( 400, 300 )
-		self._Generated = false
-		
-		self._board = vgui.Create("DHorizontalScroller", self)
-		self._board:Dock(FILL)
-		self._board:DockPadding(0,0,0,24)
-		self:Update()
-		hook.Add("StormFox2.WeatherGen.ForcastUpdate", self, function()
-			self.data = nil
-			self:Update()
-		end)
-	end
-	function PANEL:Update()
-		if not StormFox2.WeatherGen then return end
-		local json = StormFox2.WeatherGen.GetForcast()
-		if not json or #json < 1 then return end
-		self.data = json
-		for _, v in ipairs( self._board.Panels ) do
-			v:Remove()
-		end
-		local time = StormFox2.Time.Get()
-		for i, data in ipairs( json ) do
-			local n
-			if i <= 8 then
-				if json.unix_stamp then
-					if data.Unix < os.time() then continue end
-					self.firstUp = 1440
-				else
-					if (data.Time * 60) + 30 < time then continue end
-					self.firstUp = math.min(data.Time * 60, self.firstUp or 1440)
-				end
-			end
-			local v_hour = vgui.Create("SF_WeatherHour", self._board)
-			v_hour:DockMargin(0,0,0,24)
-			self._board:AddPanel(v_hour)
-			--		SetData(time, last_data, data, next_data )
-			local dn = math.floor(i / 8) * 24
-			v_hour:SetData( data.Time, json[ i - 1 ],data, json[ i + 1 ], data.Unix and (os.date("%H",data.Unix) + dn) )
-		end
-		self._board:InvalidateLayout()
-	end
-	function PANEL:Think()
-		if not self.data then
-			self:Update()
-		elseif self.firstUp and self.firstUp + 30 <= StormFox2.Time.Get() then
-			self.firstUp = nil
-			self:Update()
-		end
-	end
-	function PANEL:Paint(w,h)
-		surface.SetDrawColor(col)
-		surface.DrawRect(0, 0, w,h)
-	end
-	function PANEL:PaintOver(w,h)
-		if not self.data then
-			surface.SetMaterial(mat)
-			surface.SetDrawColor(color_white)
-			surface.DrawTexturedRectRotated(w / 2, h / 2, 50, 50, SysTime() * 300 % 360)
-			surface.SetFont("SF_Menu_H2")
-			local t = niceName(language.GetPhrase("loading"))
-			t = t .. string.rep(".", CurTime() % 4)
-			local tw,th = surface.GetTextSize( t )
-			surface.SetTextColor(color_white)
-			surface.SetTextPos(w / 2 - tw / 2, h / 2 - th / 2 - 40)
-			surface.DrawText(t)
-		end
-	end
-	derma.DefineControl( "SF_WeatherMap", "", PANEL, "DPanel" )
-end
 -- Menu
 do
 	local function empty() end
@@ -1701,32 +1528,28 @@ do
 	end
 	local function addSetting(sName, pPanel, _type, _desc)
 		local setting
-		if type(sName) == "table" then
-			setting = vgui.Create("SF_DDSliderNum", pPanel)
-			setting:SetConvar(sName[1],sName[2], _type, _desc)
-			return setting
-		end
 		if type(_type) == "table" then
-			setting = vgui.Create("SFConVar_Enum", pPanel)
-		elseif _type == "boolean" then
-			setting = vgui.Create("SFConVar_Bool", pPanel)
+			setting = vgui_Create("SF_Setting_Enum", pPanel)
+		elseif _type == "boolean" or _type == "bool" then
+			setting = vgui_Create("SF_Setting_Bool", pPanel)
 		elseif _type == "float" then
-			setting = vgui.Create("SFConVar_Float", pPanel)
+			setting = vgui_Create("SF_Setting_Float", pPanel)
 		elseif _type == "special_float" then
-			setting = vgui.Create("SFConVar_Float_Toggle", pPanel)
+			setting = vgui_Create("SF_Setting_FloatSpecial", pPanel)
 		elseif _type == "number" then
-			setting = vgui.Create("SFConVar_Number", pPanel)
+			setting = vgui_Create("SF_Setting_Int", pPanel)
 		elseif _type == "time" then
-			setting = vgui.Create("SFConVar_Time", pPanel)
+			setting = vgui_Create("SF_Setting_Time", pPanel)
 		elseif _type == "string" then
-			setting = vgui.Create("SFConVar_String", pPanel)
+			setting = vgui_Create("SF_Setting_String", pPanel)
 		elseif _type == "time_toggle" then
-			setting = vgui.Create("SFConVar_Time_Toggle", pPanel)
+			setting = vgui_Create("SF_Setting_TimeToggle", pPanel)
 		elseif _type == "temp" or _type == "temperature" then
-			setting = vgui.Create("SFConVar_Temp", pPanel)
+			setting = vgui_Create("SF_Setting_Float", pPanel)
+			setting:SetTemperature( true )
 		elseif _type == "double_number" then
-			setting = vgui.Create("SF_DDSliderNum", pPanel)
-			setting:SetConvar(sName[1],sName[2], _type, _desc)
+			setting = vgui_Create("SF_DDSliderNum", pPanel)
+			setting:SetSetting(sName[1],sName[2], _type, _desc)
 			return setting
 		else
 			StormFox2.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
@@ -1736,8 +1559,8 @@ do
 			StormFox2.Warning("Unknown Setting Variable: " .. sName .. " [" .. tostring(_type) .. "]")
 			return
 		end
-		--local setting = _type == "boolean" and vgui.Create("SFConVar_Bool", board) or  vgui.Create("SFConVar", board)
-		setting:SetConvar(sName, _type, _desc)
+		--local setting = _type == "boolean" and vgui_Create("SFConVar_Bool", board) or  vgui_Create("SFConVar", board)
+		setting:SetSetting(sName, _type, _desc)
 		return setting
 	end
 	local col = {Color(230,230,230), color_white}
@@ -1810,7 +1633,7 @@ do
 			surface.DrawText(t)
 		end
 		-- Left panel
-		local p_left = vgui.Create("DPanel", self)
+		local p_left = vgui_Create("DPanel", self)
 		self.p_left = p_left
 		p_left:SetWide(180)
 		p_left:Dock( LEFT )
@@ -1820,7 +1643,7 @@ do
 			surface.DrawRect(0,0,w,h)
 		end
 		-- Right panel
-		local p_right = vgui.Create("DPanel", self)
+		local p_right = vgui_Create("DPanel", self)
 		self.p_right = p_right
 		p_right:Dock( FILL )
 		p_right.Paint = empty
@@ -1833,7 +1656,7 @@ do
 		p_right.sub = {}
 	
 		for k,v in ipairs( tabs ) do
-			local p = vgui.Create("DScrollPanel", self.p_right)
+			local p = vgui_Create("DScrollPanel", self.p_right)
 			p:Dock(FILL)
 			self.p_right.sub[string.lower(v[1])] = p
 			p:Hide()
@@ -1842,7 +1665,7 @@ do
 	
 		p_left.buttons = {}
 		-- Add Start
-		local b = vgui.Create("DButton", p_left)
+		local b = vgui_Create("DButton", p_left)
 		b:Dock(TOP)
 		b:SetTall(40)
 		b:SetText("")
@@ -1855,13 +1678,13 @@ do
 		end
 	
 		-- Add search bar
-		local sp = vgui.Create("DPanel", p_left)
+		local sp = vgui_Create("DPanel", p_left)
 		p_left.sp = sp
 		local search_tab = {}
 		sp:Dock(TOP)
 		sp:SetTall(40)
 		function sp:Paint() end
-		sp.searchbar = vgui.Create("DTextEntry",sp)
+		sp.searchbar = vgui_Create("DTextEntry",sp)
 		sp.searchbar:SetText("")
 		sp.searchbar:Dock(TOP)
 		sp.searchbar:SetHeight(20)
@@ -1885,7 +1708,7 @@ do
 				self.result:Remove()
 			end
 			local OnlyTitles = val == ""
-			self.result = vgui.Create("DMenu")
+			self.result = vgui_Create("DMenu")
 			function self.result:OptionSelected( pnl, text )
 				if not search_tab[pnl.sName] then return end
 				sp.searchbar:OptionSelected( text, search_tab[pnl.sName][1], search_tab[pnl.sName][2] )
@@ -1934,7 +1757,7 @@ do
 		end
 		for i = 2, #tabs do
 			v = tabs[i]
-			local b = vgui.Create("DButton", p_left)
+			local b = vgui_Create("DButton", p_left)
 			b:Dock(TOP)
 			b:SetTall(40)
 			b:SetText("")
@@ -1955,7 +1778,7 @@ do
 		end
 
 		-- Add workshop button
-		local b = vgui.Create("DButton", p_left)
+		local b = vgui_Create("DButton", p_left)
 		b:Dock(BOTTOM)
 		b:SetTall(40)
 		b:SetText("")
@@ -1974,7 +1797,7 @@ do
 					self.r = 180
 				end
 				surface.DrawTexturedRectRotated(w - 20, h / 2, 20, 20, self.r)
---					surface.DrawRect( - w,0,w,h - 1)
+				--surface.DrawRect( - w,0,w,h - 1)
 				draw.DrawText( StormFox2.NewVersion() , "SF_Menu_H2", w - 34 , h / 2 - 8, color_black, TEXT_ALIGN_RIGHT)
 			end
 		end
@@ -1987,7 +1810,7 @@ do
 		end
 
 		do
-			local b = vgui.Create("DButton", p_left)
+			local b = vgui_Create("DButton", p_left)
 			b:Dock(BOTTOM)
 			b:SetTall(40)
 			b:SetText("")
@@ -2044,14 +1867,13 @@ do
 						used[v] = true
 					end
 				end
-				--local setting = _type == "boolean" and vgui.Create("SFConVar_Bool", board) or  vgui.Create("SFConVar", board)
-				setting:DockMargin(15,0,0,15)
+				--local setting = _type == "boolean" and vgui_Create("SFConVar_Bool", board) or  vgui_Create("SFConVar", board)
 				setting:Dock(TOP)
 				self:AddItem(setting)
 				return setting
 			end
 			function pnl:AddTitle( sName, bIgnoreSearch )
-				local dL = vgui.Create("SFTitle", self)
+				local dL = vgui_Create("SFTitle", self)
 				local text = niceName( language.GetPhrase(sName) )
 				dL:SetText( text )
 				dL:SetDark(true)
@@ -2117,3 +1939,30 @@ do
 	end
 	derma.DefineControl( "SF_Menu", "", PANEL, "DFrame" )
 end
+
+--StormFox2.Menu.OpenController()
+
+-- Test vgui objects
+if true then return end
+
+if SF_MENU_TEST then SF_MENU_TEST:Remove() end
+SF_MENU_TEST = vgui.Create("DFrame")
+SF_MENU_TEST:MakePopup()
+SF_MENU_TEST:SetSize(600,500)
+SF_MENU_TEST:SetPos(320,ScrH() / 2 - 100)
+
+local function Add(_type, _setting)
+	local setting = vgui.Create(_type, SF_MENU_TEST)
+	setting:SetSetting(_setting)
+	setting:SetSize(50,20)
+	setting:Dock(TOP)
+	return setting
+end
+Add("SF_Setting_Bool",			"footprint_enabled")
+Add("SF_Setting_String",		"footprint_enabled")
+Add("SF_Setting_Float",	"overwrite_extra_darkness")
+Add("SF_Setting_Int",			"window_distance"):SetTemperature(true)
+Add("SF_Setting_FloatSpecial",	"window_distance")
+Add("SF_Setting_Enum",			"12h_display")
+Add("SF_Setting_Time",			"sunrise")
+Add("SF_Setting_TimeToggle",	"sunrise")

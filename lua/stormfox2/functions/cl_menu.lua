@@ -31,7 +31,6 @@ local function wrapText(sText, wide)
 end
 
 local m = Material("gui/gradient")
-
 local function paintKnob(self,x, y) -- Skin doesn't have x or y pos
 	local skin = self:GetSkin()
 	if ( self:GetDisabled() ) then	return skin.tex.Input.Slider.H.Disabled( x, y, 15, 15 ) end
@@ -43,16 +42,34 @@ local function paintKnob(self,x, y) -- Skin doesn't have x or y pos
 	end
 	skin.tex.Input.Slider.H.Normal( x, y, 15, 15 )
 end
+local notchesColor = Color(0,0,0,100)
+
+-- Tips
+local function AddTip( self, text )
+	if IsValid( self.tTip ) then return end
+	self.tTip = vgui.Create("DTooltip")
+	self.tTip:SetText( text )
+	self.tTip.TargetPanel = self
+	self.tTip:PositionTooltip()
+end
+local function RemoveTip( self )
+	if IsValid( self.tTip ) then
+		self.tTip:Remove()
+	end
+	self.tTip = nil
+end
 
 local tabs = {
 	[1] = {"Start","#start",(Material("stormfox2/hud/menu/dashboard.png")),function(board)
+		board:AddTitle("#information")
 		local dash = vgui.Create("DPanel", board)
 		dash.Paint = empty
 		dash:Dock(TOP)
-		dash:SetTall(100)
+		dash:SetTall(80)
+		
 		local fps, qu, sup, mth
 		-- FPS
-			local p = vgui.Create("SF_HudRing", dash)
+			local p = vgui.Create("SF_Setting_Ring", dash)
 			p:SetText(string.upper(language.GetPhrase("#fps")) .. ": ")
 			p:SetSize(74, 74)
 			p:SetPos(24,10)
@@ -67,7 +84,7 @@ local tabs = {
 			end
 			fps = p
 		-- Quality
-			local p = vgui.Create("SF_HudRing", dash)
+			local p = vgui.Create("SF_Setting_Ring", dash)
 			p:SetText(language.GetPhrase("#effects"))
 			p:SetSize(74, 74)
 			p:SetPos(106,10)
@@ -83,7 +100,7 @@ local tabs = {
 			end
 			qu = p
 		-- Support GPU
-			local p = vgui.Create("SF_HudRing", dash)
+			local p = vgui.Create("SF_Setting_Ring", dash)
 			p:SetText(niceName(language.GetPhrase("#support")))
 			p:SetSize(74, 74)
 			p:SetPos(188,10)
@@ -114,7 +131,7 @@ local tabs = {
 			p:SetText(niceName(language.GetPhrase("#support")) .. "\n" .. v .. "/" .. #t)
 			sup = p
 		-- MThread
-			local p = vgui.Create("SF_HudRing", dash)
+			local p = vgui.Create("SF_Setting_Ring", dash)
 			p:SetText(niceName(language.GetPhrase("#MThread")))
 			p:SetSize(74, 74)
 			p:SetPos(188,10)
@@ -156,88 +173,85 @@ local tabs = {
 			sup:SetPos(x + a*3, h - sup:GetTall())
 			mth:SetPos(x + a*4, h - sup:GetTall())
 		end
-		local FPSTarget = vgui.Create("DPanel", board)
+		-- Fps Slider
+		local FPSTarget = vgui.Create("SF_Setting", board)
+		FPSTarget:SetSetting("quality_target")
 		board:MarkUsed("quality_target")
 		do
-			FPSTarget:SetTall( 50 )
-			FPSTarget:Dock(TOP)
-			function FPSTarget:Paint() end
-			local l = vgui.Create( "DLabel", FPSTarget )
-			l:SetColor(color_black)
-			l:SetFont("DermaDefaultBold")
-			l:SetText( "#sf_" .. "quality_target" )
-			l:SetPos(15,0)
-			l:SizeToContents()
-			
-			local button = vgui.Create("DButton", FPSTarget)
-			button:SetPos(28,18)
-			button:SetWide(250)
-			button:SetText("")
-			local c = Color(0,0,0,100)
-			function button:GetNotchColor()
-				return c
-			end
-			function button:GetNotches()
-				return math.floor(self:GetWide() / 21)
-			end
-			function button:Paint(w,h)
-				local cV = 300 - StormFox2.Setting.GetCache("quality_target", 144)
-				local skin = self:GetSkin()
-				skin:PaintNumSlider(self,w,h)
-				surface.SetMaterial(m)
-				surface.SetDrawColor(Color(255,0,0,205))
-				local wi = w / 300 * 260
-				surface.DrawTexturedRectUV(wi - 6, 4, w - wi, h - 6, 1,0,0,1)
-				paintKnob(self, 1 + (w - 16) / 300 * cV,-0.5)
-			end
-			local n = vgui.Create("DNumberWang", FPSTarget)
-			n:SetDecimals(0)
-			function button:Think()
-				if not self:IsDown() then
-					if IsValid(self.tTip) then
-						self.tTip:Remove()
-						self.tTip = nil
+			local obj = StormFox2.Setting.GetObject("quality_target")
+			local slider = vgui.Create("DButton", FPSTarget)
+			local text = vgui.Create("DTextEntry", FPSTarget)
+			FPSTarget:MoveDescription(340)
+			slider:SetPos(5,15)
+			slider:SetSize( 300, 25 )
+			slider:SetText("")
+			text:SetPos( 304, 19)
+			text:SetSize( 40,20 )
+			local hot = Color(255,0,0,205)
+			-- Text set
+				function text:OnEnter( str )
+					str = str:lower()
+					if str == language.GetPhrase("#all"):lower() or str == "all" then
+						str = 0
+					else
+						str = tonumber( str ) or 0
 					end
-					return
+					obj:SetValue(str)
 				end
-				local f = math.Clamp(1 - (self:LocalCursorPos() - 6) / (self:GetWide() - 12), 0, 1) * 300
-				local c = f <= 40
-				if c and not IsValid(self.tTip) then
-					self.tTip = vgui.Create("DTooltip")
-					self.tTip:SetText( "#frame_blend_pp.desc2" )
-					self.tTip.TargetPanel = self
-					self.tTip:PositionTooltip()
-				elseif not c and IsValid(self.tTip) then
-					self.tTip:Remove()
-					self.tTip = nil
+			-- Slider skin functions
+				function slider:GetNotchColor()
+					return notchesColor
 				end
-				RunConsoleCommand("sf_quality_target", f)
-			end
-			local con = GetConVar("sf_quality_target")
-			function n:Think()
-				if self:GetText() ~= con:GetString() and not self:IsEditing() then
-					self:SetText( con:GetInt() )
+				function slider:GetNotches()
+					return math.floor(self:GetWide() / 21)
 				end
-			end
-			n:SetDrawLanguageID( false )
-			n:SetNumeric( true )
-			n:SetPaintBackground( false )
-			n:SetValue( con:GetInt() )
-			n:SetConVar( "sf_quality_target" )
-			n:SetPos( 280, 18 )
-			n:SetWide(40)
-			n.Up:Hide()
-			n.Down:Hide()
-			local l = vgui.Create("DLabel", FPSTarget)
-			l:SetDark(true)
-			l:SetFont("DermaDefault")
-			l:SetPos(320,16)
-			function FPSTarget:PerformLayout(w, h)
-				local s,lines = wrapText( language.GetPhrase("#sf_" .. "quality_target.desc"), w - 320 )
-				l:SetText( s )
-				l:SizeToContents()
-			end
+			-- Slider paint
+				function slider:Paint( w, h )
+					local var = self._OvR or StormFox2.Setting.GetCache("quality_target", 144)
+					local cV = 300 - var
+					local skin = self:GetSkin()
+					skin:PaintNumSlider(self,w,h)
+					-- "warm"
+						surface.SetMaterial(m)
+						surface.SetDrawColor(hot)
+						local wi = w / 300 * 260
+						surface.DrawTexturedRectUV(wi - 7, 4, w - wi, h - 6, 1,0,0,1)
+					paintKnob(self, 1 + (w - 16) / 300 * cV,-0.5)
+				end
+				function slider:UpdateText( var )
+					if var > 0 then
+						text:SetText(var)
+					else
+						text:SetText(niceName(language.GetPhrase("#all")))
+					end
+				end
+			-- Slider think
+				function slider:Think()
+					if self:IsDown() then
+						self._down = true
+						self._OvR = math.Clamp(1 - (self:LocalCursorPos() - 6) / (self:GetWide() - 12), 0, 1) * 300
+						if self._OvR < 40 then
+							AddTip(self, "#frame_blend_pp.desc2")
+						else
+							RemoveTip( self )
+						end
+						self:UpdateText( math.Round(self._OvR, 0) )
+					else
+						if not text:IsEditing() then
+							self:UpdateText( math.Round(obj:GetValue(), 0) )
+						end
+						self._OvR = nil
+						RemoveTip( self )
+						if self._down then
+							self._down = nil
+							local var = math.Clamp(1 - (self:LocalCursorPos() - 6) / (self:GetWide() - 12), 0, 1) * 300
+							obj:SetValue( math.Round(var, 0) )
+						end
+					end
+				end
+			slider:UpdateText(math.Round(obj:GetValue(), 0))
 		end
+		FPSTarget:Dock(TOP)
 		-- EnableDisable
 		local p = board:AddSetting("clenable")
 		--local qs = board:AddSetting("quality_target")
@@ -252,9 +266,9 @@ local tabs = {
 			local dt = StormFox2.Setting.GetCache("display_temperature")
 			local hs = string.Explode(":", os.date( "%H:%M") or "17:23")
 			local n = hs[1] * 60 + hs[2]
-			local str = niceName(language.GetPhrase("#time")) .. ": " .. StormFox2.Time.GetDisplay(n) .. "   " .. md
-			str = str .. "   " .. niceName(language.GetPhrase("#temperature")) .. ": " .. math.Round(StormFox2.Temperature.Convert(nil,dt,22), 1) .. StormFox2.Temperature.GetDisplaySymbol()
-			draw.DrawText(str, "DermaDefaultBold", 0, 0, color_black, TEXT_ALIGN_LEFT)
+			local str = niceName(language.GetPhrase("#time")) .. ": " .. StormFox2.Time.GetDisplay(n) .. "        " .. md
+			str = str .. "        " .. niceName(language.GetPhrase("#temperature")) .. ": " .. math.Round(StormFox2.Temperature.Convert(nil,dt,22), 1) .. StormFox2.Temperature.GetDisplaySymbol()
+			draw.DrawText(str, "DermaDefaultBold", 5, 0, color_black, TEXT_ALIGN_LEFT)
 		end
 		board:AddSetting("12h_display")
 		board:AddSetting("use_monthday")
@@ -298,5 +312,4 @@ function StormFox2.Menu.Open()
 	p:SetCookie("sf2_lastmenucl")
 	_SFMENU:MakePopup()
 end
-
 concommand.Add('stormfox2_menu', StormFox2.Menu.Open, nil, "Opens SF clientside menu")

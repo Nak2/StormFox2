@@ -34,11 +34,10 @@ end
 
 local SetLightStyle, SetLightEnv
 if SERVER then
-	util.AddNetworkString("StormFox2.lightstyle")
 	-- Sets the lightstyle
 	local function _SetLightStyle( char )
 		engine.LightStyle(0,char)
-		net.Start("StormFox2.lightstyle")
+		net.Start(StormFox2.Net.LightStyle)
 			net.WriteUInt(string.byte(char), 7)
 		net.Broadcast()
 	end
@@ -71,7 +70,7 @@ if SERVER then
 	end
 else
 	local last_sv
-	net.Receive("StormFox2.lightstyle", function(len)
+	net.Receive(StormFox2.Net.LightStyle, function(len)
 		local c_var = net.ReadUInt(7)
 		if last_sv and last_sv == c_var then return end -- No need
 		last_sv = c_var

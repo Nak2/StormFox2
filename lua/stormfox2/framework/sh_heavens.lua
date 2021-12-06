@@ -20,12 +20,9 @@ StormFox2.Sky = StormFox2.Sky 	or {}
 	SF_SKY_ASTRONOMICAL = 6
 	SF_SKY_NIGHT = 7
 
-StormFox2.Setting.AddSV("sunrise",360,nil, "Time", 0, 1440)
-StormFox2.Setting.SetType("sunrise", "Time")
-StormFox2.Setting.AddSV("sunset",1080,nil, "Time", 0, 1440)
-StormFox2.Setting.SetType("sunset", "Time")
 StormFox2.Setting.AddSV("sunyaw",88,nil, "Effects", 0, 360)
-StormFox2.Setting.AddSV("moonlock",false,nil,"Effects")
+StormFox2.Setting.AddSV("moonlock",true,nil,"Effects")
+local phase = StormFox2.Setting.AddSV("moonphase",true,nil,"Effects")
 
 StormFox2.Setting.AddSV("enable_skybox",true,nil, "Effect")
 StormFox2.Setting.AddSV("use_2dskybox",false,nil, "Effects")
@@ -36,26 +33,17 @@ if CLIENT then -- From another file
 end
 
 -- Sun and Sun functions
-	-- The sun is up ½ of the day; 1440 / 2 = 720. 720 / 2 = 360 and 360 * 3 = 1080
-	local SunDelta = 180 / (StormFox2.Data.Get("sun_sunset",1080) - StormFox2.Data.Get("sun_sunrise",360))
-	--[[-------------------------------------------------------------------------
-	Gets called when the sunset and sunrise changes.
-	---------------------------------------------------------------------------]]
-	hook.Add("StormFox2.data.change","StormFox2.Sky.DeltaChange",function(key,var)
-		if key ~= "sun_sunrise" and key ~= "sun_sunset" then return end
-		SunDelta = 180 / StormFox2.Time.DeltaTime(StormFox2.Data.Get("sun_sunrise",360),StormFox2.Data.Get("sun_sunset",1080))
-	end)
 	--[[-------------------------------------------------------------------------
 	Returns the time when the sun rises.
 	---------------------------------------------------------------------------]]
 	function StormFox2.Sun.GetSunRise()
-		return StormFox2.Data.Get("sun_sunrise",360)
+		return StormFox2.Setting.Get("sunrise")
 	end
 	--[[-------------------------------------------------------------------------
 		Returns the time when the sun sets.
 	---------------------------------------------------------------------------]]
 	function StormFox2.Sun.GetSunSet()
-		return StormFox2.Data.Get("sun_sunset",1080)
+		return StormFox2.Setting.Get("sunset")
 	end
 	--[[
 		Returns the time when sun is at its higest
@@ -67,7 +55,7 @@ end
 		Returns the sun-yaw. (Normal 90)
 	---------------------------------------------------------------------------]]
 	function StormFox2.Sun.GetYaw()
-		return StormFox2.Data.Get("sun_yaw",90)
+		return StormFox2.Setting.Get("sunyaw")
 	end
 	--[[-------------------------------------------------------------------------
 		Returns true if the sun is on the sky.
@@ -92,9 +80,7 @@ end
 	Returns the sunangle for the current or given time.
 	---------------------------------------------------------------------------]]
 	local function GetSunPitch(nTime)
-		local t = nTime or StormFox2.Time.Get()
-		local p = (t - StormFox2.Data.Get("sun_sunrise",360)) * SunDelta
-		if p < -90 or p > 270 then p = -90 end -- Sun stays at -90 pitch, the pitch is out of range
+		local p = StormFox2.Time.GetCycleTime() * 360
 		return p
 	end
 	function StormFox2.Sun.GetAngle(nTime)
@@ -242,7 +228,8 @@ end
 		---------------------------------------------------------------------------]]
 		if lastStamp == stamp then return end -- Don't call it twice.
 		lastStamp = stamp
-		hook.Run("StormFox2.Sky.StampChange", stamp, 6 / SunDelta )
+		local delta = 180 / (StormFox2.Setting.Get("sunset") - StormFox2.Setting.Get("sunrise"))
+		hook.Run("StormFox2.Sky.StampChange", stamp, 6 / math.max(1, delta) )
 	end)
 -- Moon and its functions
 	--[[-------------------------------------------------------------------------
@@ -260,25 +247,22 @@ end
 		Returns the moon phase for the current day
 	---------------------------------------------------------------------------]]
 	function StormFox2.Moon.GetPhase()
-		local mp = StormFox2.Data.Get("moon_phase",SF_MOON_FULL)
-		local yd = StormFox2.Date.GetYearDay()
-		return yd - mp
+		if not phase:GetValue() then return SF_MOON_FULL end
+		return StormFox2.Data.Get("moon_phase",SF_MOON_FULL)
 	end
 	--[[-------------------------------------------------------------------------
 		Returns the moon phase name
 	---------------------------------------------------------------------------]]
 	function StormFox2.Moon.GetPhaseName(nTime)
 		local n = StormFox2.Moon.GetPhase(nTime)
-		local pDif = math.AngleDifference(StormFox2.Moon.GetAngle(nTime).p, StormFox2.Sun.GetAngle(nTime).p)
-		if n >= 4.9 then
-			return "Full Moon"
-		elseif n <= 0.1 then
-			return "New Moon"
-		elseif pDif > 0 then
-			return "Third Quarder"
-		else
-			return "First Quarder"
-		end
+		if n == SF_MOON_NEW then 				return "New Moon" end
+		if n == SF_MOON_WAXIN_CRESCENT then 	return "Waxin Crescent" end
+		if n == SF_MOON_FIRST_QUARTER then 		return "First Quarter" end
+		if n == SF_MOON_WAXING_GIBBOUS then 	return "Waxing Gibbous" end
+		if n == SF_MOON_FULL then 				return "Full Moon" end
+		if n == SF_MOON_WANING_GIBBOUS then 	return "Waning Gibbous" end
+		if n == SF_MOON_LAST_QUARTER then 		return "Last Quarter" end
+		if n == SF_MOON_WANING_CRESCENT then 	return "Waning Crescent" end
 	end
 
 	--[[-------------------------------------------------------------------------
@@ -287,16 +271,14 @@ end
 	local tf = 0
 	local a = 7 / 7.4
 	function StormFox2.Moon.GetAngle(nTime)
-		if StormFox2.Setting.GetCache("moonlock",false) then
-			local a = StormFox2.Sun.GetAngle(nTime)
-			return Angle(a.p + 180, a.y,0)
+		local p = 180 + StormFox2.Time.GetCycleTime() * 360
+		if StormFox2.Setting.Get("moonlock",false) then
+			return Angle(-p % 360, StormFox2.Data.Get("sun_yaw",90),0)
 		end
 		--if true then return Angle(200,StormFox2.Data.Get("sun_yaw",90),0) end
-		local day_f = (nTime or StormFox2.Time.Get()) / 1440
-		tf = math.max(tf, day_f)
-		local day_n = tf + StormFox2.Date.GetYearDay()
-		local p_c = ((day_n * a) % 8) * 360 + StormFox2.Data.Get("magic_moonnumber",0)
-		return Angle(-p_c % 360,StormFox2.Data.Get("sun_yaw",90),0)
+		local rDay = StormFox2.Date.GetYearDay()
+		p = p + ( StormFox2.Moon.GetPhase() - 4 ) * 45
+		return Angle(-p % 360,StormFox2.Data.Get("sun_yaw",90),0)
 	end
 	-- It might take a bit for the server to tell us the day changed.
 	hook.Add("StormFox2.data.change", "StormFox2.moon.datefix", function(sKey, nDay)
@@ -310,32 +292,4 @@ end
 		local t = StormFox2.Moon.GetAngle().p
 		local s = StormFox2.Mixer.Get("moonSize",20) / 6.9
 		return t > 180 - s or t < s
-	end
-	--[[-------------------------------------------------------------------------
-		Returns the current moon phase
-			5 = Full moon
-			3 = Half moon
-			0 = New moon
-		Seconary returns the angle towards the sun from the moon.
-	---------------------------------------------------------------------------]]
-	function StormFox2.Moon.GetPhase(nTime)
-		-- Calculate the distance between the two (Somewhat real scale)
-		local mAng = StormFox2.Moon.GetAngle(nTime)
-		local sAng = StormFox2.Sun.GetAngle(nTime)
-		if math.abs(math.AngleDifference(mAng.p,sAng.p)) >= 179 then
-			mAng.p = mAng.p + 1.1
-		end
-		local A = sAng:Forward() * 14975
-		local B = mAng:Forward() * 39
-		-- Get the angle towards the sun from the moon
-		local moonTowardSun = (A - B):Angle()
-		local C = mAng
-			C.r = 0
-		local dot = C:Forward():Dot(moonTowardSun:Forward())
-		-- Dot: 1 = new moon
-		-- Dot: waz < 0 then waxin
-		if StormFox2.Setting.GetCache("moonlock",false) then
-			return 4, moonTowardSun
-		end
-		return math.abs(math.AngleDifference(C.p,moonTowardSun.p) / 45),moonTowardSun
 	end

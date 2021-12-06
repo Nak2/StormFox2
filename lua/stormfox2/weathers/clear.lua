@@ -95,8 +95,13 @@ end
 
 -- Default variables. These don't change.
 	clear:Set("moonColor", Color( 205, 205, 205 ))
-	clear:Set("moonSize",30)
-	clear:Set("moonTexture", ( Material( "stormfox2/effects/moon/moon.png" ) ))
+	local moonSize = StormFox2.Setting.GetObject("moonsize")
+	clear:Set("moonSize",moonSize:GetValue())
+
+	moonSize:AddCallback(function(var)
+		clear:Set("moonSize",moonSize:GetValue())
+	end, "SF_moonSizeUpdate")
+	clear:Set("moonTexture", "stormfox2/effects/moon/moon.png" )
 	clear:Set("skyVisibility",100) -- Blocks out the sun/moon
 	clear:Set("mapDayLight",100)
 	clear:Set("mapNightLight",0)

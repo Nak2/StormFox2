@@ -764,10 +764,17 @@ if CLIENT then
 		end
 		if _STORMFOX_PEM._PEM then
 			_STORMFOX_PEM._PEM:Draw()
-		end		
+		end	
 		if LocalPlayer():WaterLevel() >= 3 then return end -- Don't render SF particles under wanter.
 		ParticleRender() -- Render sf particles
 	end)
+
+	hook.Add("RenderScreenspaceEffects", "StormFox2.Downfall.DepthRender", function()
+		if LocalPlayer():WaterLevel() >= 3 then return end -- Don't render SF particles under wanter.
+		render.UpdateScreenEffectTexture()
+		hook.Run("StormFox2.DepthFilterRender") -- Render depthfilter
+	end)
+
 	function StormFox2.DownFall.DebugList()
 		return t_sfp
 	end
