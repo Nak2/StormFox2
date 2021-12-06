@@ -452,6 +452,7 @@ local tabs = {
 		board:AddSetting("sunyaw")
 		board:AddTitle("#moon")
 		board:AddSetting("moonlock")
+		board:AddSetting("moonphase")
 	end},
 	[3] = {"Weather","#weather",(Material("stormfox2/hud/menu/weather.png")),function(board)
 		board:AddTitle("#weather")
