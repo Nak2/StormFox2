@@ -27,7 +27,7 @@ StormFox2 = {}
 StormFox2.WorkShopVersion = false--game.IsDedicated()
 StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443"
 --<Var> StormFox's Version number
-	StormFox2.Version = 2.39
+	StormFox2.Version = 2.40
 	StormFox2.Loaded = false
 
 --[[<Shared>-----------------------------------------------------------------
@@ -128,6 +128,24 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 			elseif lan == "en" then
 				StormFox2.Warning("Missing language file: resource/localization/en/stormfox.properties")
 			end
+		end
+	end
+
+-- Network Strings
+	StormFox2.Net = {}
+	StormFox2.Net.Settings 		= "SF_S"	-- Handles Settings
+	StormFox2.Net.Time 			= "SF_T"	-- Handles Settings
+	StormFox2.Net.LightStyle 	= "SF_L"	-- Handles Lights
+	StormFox2.Net.Shadows 		= "SF_H"	-- Handles shadows
+	StormFox2.Net.Thunder 		= "SF_U"	-- Handles Thunder
+	StormFox2.Net.Network 		= "SF_N"	-- Handles Data
+	StormFox2.Net.Terrain 		= "SF_A"	-- Handles Terrain
+	StormFox2.Net.Tool 			= "SF_O"	-- Handles the SF tool
+	StormFox2.Net.Weather 		= "SF_W"	-- Handles the SF tool
+	StormFox2.Net.Permission	= "SF_P"	-- Handles the SF tool
+	if SERVER then
+		for _, str in pairs( StormFox2.Net ) do
+			util.AddNetworkString( str )
 		end
 	end
 
