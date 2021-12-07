@@ -101,6 +101,8 @@ local str = [[
 	sf_darken_2dskybox.desc=Match the skybox brightness with the map.
 	sf_random_round_weather=Random weather each round.
 	sf_random_round_weather.desc=Gamemodes like TTT will have random weathers between each round.
+	sf_quickselect=Quick Select.
+	sf_quickselect.desc=Quick select time settings.
 	
 	#Details
 	sf_quality_target=FPS Target
@@ -136,16 +138,18 @@ local str = [[
 	sf_winddescription.cat5=Category 5
 	
 	#Time
+	sf_continue_time=Continuous Time
+	sf_continue_time.desc=Continue time from last time.
 	sf_real_time=Real time
 	sf_real_time.desc=Use the servers OS Time.
 	sf_start_time=Start time
 	sf_start_time.desc=Sets the start time.
 	sf_random_time=Random time
 	sf_random_time.desc=Sets the time randomly on server-launch.
-	sf_time_speed=Time speed
-	sf_time_speed.desc=Multiplies the in-game seconds with the given number.
-	sf_nighttime_multiplier=Night time-speed
-	sf_nighttime_multiplier.desc=Multiplies the timespeed doing the night. (Can be imprecise)
+	sf_day_length=Day Length
+	sf_day_length.desc=How long the day is in minutes.
+	sf_night_length=Night Length
+	sf_night_lengt.desc=How long the night is in minutes.
 	
 	#Sun
 	sf_sunrise=SunRise
@@ -155,8 +159,14 @@ local str = [[
 	sf_sunyaw=SunYaw
 	sf_sunyaw.desc=Sets the yaw for the sun.
 	#Moon
+	sf_moonsize=Moon Size
+	sf_moonsize.desc=The default moon size.
+	sf_moonphase=Moon Phases
+	sf_moonphase.desc=Enable Moon Phases.
 	sf_moonlock=Moon Lock
 	sf_moonlock.desc=Locks the moon to the sun's rotation.
+	
+	
 	
 	#'Maplight
 	sf_maplight_max=Max Maplight
