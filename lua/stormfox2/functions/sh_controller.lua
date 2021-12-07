@@ -32,54 +32,6 @@ if SERVER then
 			StormFox2.Date.SetYearDay( var )
 		end
 	end
-	local function msg(ply, msg)
-		if ply and ply:IsValid() then
-			ply:PrintMessage( HUD_PRINTCONSOLE, msg )
-		else
-			print( msg )
-		end
-	end
-	concommand.Add("stormfox2_setweather", function(ply, _, arg, _)
-		if #arg < 1 then
-			msg(ply, "Weather can't be nil")
-			return
-		end
-		local s = string.upper(string.sub(arg[1],0,1)) .. string.lower(string.sub(arg[1], 2))
-		if not StormFox2.Weather.Get(s) then
-			msg(ply, "Invalid weather [" .. s .. "]")
-			return
-		end
-		StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
-			StormFox2.Weather.Set( s, tonumber( arg[2] or "1" ) or 1)
-		end)
-	end)
-
-	concommand.Add("stormfox2_setthunder", function(ply, _, _, argS)
-		StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
-			local n = tonumber(argS) or (StormFox2.Thunder.IsThundering() and 6 or 0)
-			StormFox2.Thunder.SetEnabled( n > 0, n )
-		end)
-	end)
-
-	concommand.Add("stormfox2_settime", function(ply, _, _, argS)
-		if not argS or string.len(argS) < 1 then
-			msg(ply, "You need to type an input! Use formats like '19:00' or '7:00 PM'")
-			return
-		end
-		local tN = StormFox2.Time.StringToTime(argS)
-		if not tN then
-			msg(ply, "Invalid input! Use formats like '19:00' or '7:00 PM'")
-			return
-		end
-		StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
-			StormFox2.Time.Set( argS )
-		end)
-	end)
-	concommand.Add("stormfox2_settimespeed", function(ply, _, _, argS)
-		StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
-			StormFox2.Time.SetSpeed( tonumber(argS) or 60 )
-		end)
-	end)
 	return
 end
 
@@ -629,7 +581,6 @@ function StormFox2.Menu.CloseController()
 		_SF_CONTROLLER:Remove()
 	end
 end
-concommand.Add('stormfox2_controller', StormFox2.Menu.OpenController, nil, "Opens SF controller menu")
 -- Controller
 	list.Set( "DesktopWindows", "StormFoxController", {
 		title		= "#sf_wcontoller",

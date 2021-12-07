@@ -327,13 +327,3 @@ timer.Create("stormfox2.spawnice", 8, 0, function()
 		SpawnIce()
 	end
 end)
-
-concommand.Add("stormfox2_debug_spawnice", function(ply)
-	if ply and not ply:IsListenServerHost() then return end
-	SpawnIce()
-end, nil, nil)
-
-concommand.Add("stormfox2_debug_removeice", function(ply)
-	if ply and not ply:IsListenServerHost() then return end
-	RemoveIce()
-end, nil, nil)

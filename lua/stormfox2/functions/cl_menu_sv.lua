@@ -453,6 +453,7 @@ local tabs = {
 		board:AddTitle("#moon")
 		board:AddSetting("moonlock")
 		board:AddSetting("moonphase")
+		board:AddSetting("moonsize")
 	end},
 	[3] = {"Weather","#weather",(Material("stormfox2/hud/menu/weather.png")),function(board)
 		board:AddTitle("#weather")
@@ -859,7 +860,3 @@ function StormFox2.Menu.OpenSV()
 		net.WriteBool(true)
 	net.SendToServer()
 end
--- Request the server if we're allowed
-concommand.Add('stormfox2_svmenu', StormFox2.Menu.OpenSV, nil, "Opens SF serverside menu")
-
-StormFox2.Menu._OpenSV()

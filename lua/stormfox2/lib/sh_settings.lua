@@ -582,10 +582,6 @@ if SERVER then
 		StormFox2.Warning("All settings were reset to default values. You should restart!")
 		cache = {}
 	end
-	concommand.Add("stormfox2_settings_reset", function( ply, cmd, args, argStr )
-		if ply and IsValid(ply) and not ply:IsListenServerHost() then return end -- Nope
-		StormFox2.Setting.Reset()
-	end)
 else
 	function StormFox2.Setting.Reset()
 		blockSaveFile = true

@@ -312,4 +312,3 @@ function StormFox2.Menu.Open()
 	p:SetCookie("sf2_lastmenucl")
 	_SFMENU:MakePopup()
 end
-concommand.Add('stormfox2_menu', StormFox2.Menu.Open, nil, "Opens SF clientside menu")
