@@ -514,6 +514,29 @@ StormFox2.Time = StormFox2.Time or {}
 		end
 		return "PM"
 	end
+	--[[
+		Allows to pause and resume time
+	]]
+	if SERVER then
+		local lastT
+		function StormFox2.Time.Pause()
+			local dl = day_length:GetValue()
+			local nl = night_length:GetValue()
+			if dl <= 0 and nl <= 0 then return end -- Already paused time
+			lastT = { dl, nl }
+			day_length:SetValue( 0 )
+			night_length:SetValue( 0 )
+		end
+		function StormFox2.Time.Resume()
+			if not lastT then return end -- Can't resume nil
+			day_length:SetValue( lastT[1] )
+			night_length:SetValue( lastT[2] )
+			lastT = nil
+		end
+		function StormFox2.Time.IsPaused()
+			return lastT and true or false
+		end
+	end
 
 -- Default Time Display
 if CLIENT then
