@@ -4,7 +4,6 @@
 ---------------------------------------------------------------------------]]
 local max,min,t_insert,abs,clamp = math.max,math.min,table.insert,math.abs,math.Clamp
 
-local obj = StormFox2.Setting.AddSV("depthfilter",true,nil,"Effects")
 -- Particle emitters
 if CLIENT then
 	_STORMFOX_PEM = _STORMFOX_PEM or {}
@@ -772,6 +771,7 @@ if CLIENT then
 
 	hook.Add("RenderScreenspaceEffects", "StormFox2.Downfall.DepthRender", function()
 		if LocalPlayer():WaterLevel() >= 3 then return end -- Don't render SF particles under wanter.
+		local obj = StormFox2.Setting.AddSV("depthfilter",true,nil,"Effects")
 		if not obj:GetValue() then return end
 		render.UpdateScreenEffectTexture()
 		hook.Run("StormFox2.DepthFilterRender") -- Render depthfilter
