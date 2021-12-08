@@ -878,7 +878,7 @@ end
 		local tex = (self:GetValue() or "")
 		local tw,th = surface.GetTextSize(tex)
 		
-		surface.SetTextColor(color_black)
+		surface.SetTextColor(self.color or color_black)
 		surface.SetTextPos(w / 2 - tw / 2,h / 2 - th / 2)
 		
 		if self:HasFocus() then
@@ -927,9 +927,15 @@ end
 			surface.SetFont("SF2_TimeSet")
 			local tw,th = surface.GetTextSize(":")
 		
-			surface.SetTextColor(color_black)
+			surface.SetTextColor(self.color or color_black)
 			surface.SetTextPos(w / 2 - tw / 2,h / 2 - th / 2 - 2)
 			surface.DrawText(":")
+		end
+		function self.bg:IsHovered()
+			return hour:IsHovered() or min:IsHovered()
+		end
+		function self.bg:IsDown()
+			return hour:IsEditing() or min:IsEditing()
 		end
 		function self.hour.OnGetFocus(self)
 			local tex = self._SETONFOC or ""
@@ -1123,8 +1129,12 @@ do
 		bg:SetSize(66, 30)
 		function bg:IsSelected() return false end
 		function bg:GetToggle() return false end
+		function bg:IsDown()
+			return hour:IsEditing() or min:IsEditing()
+		end
 		local hour, min = self.hour, self.min
 		do
+			
 			function bg:Paint( w, h ) 
 				self.Hovered  = hour.Hovered or min.Hovered
 				self.Depressed= hour:IsEditing() or min:IsEditing()
