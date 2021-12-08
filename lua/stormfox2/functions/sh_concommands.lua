@@ -74,6 +74,20 @@ concommand.Add("stormfox2_setyearday", function(ply, _, _, argStr)
 	end)
 end)
 
+concommand.Add("stormfox2_setwind", function(ply, _, _, argStr)
+	if CLIENT then return end
+	StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
+		StormFox2.Wind.SetForce( tonumber(argStr) or 0 )
+	end)
+end)
+
+concommand.Add("stormfox2_setwindangle", function(ply, _, _, argStr)
+	if CLIENT then return end
+	StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
+		StormFox2.Wind.SetYaw( tonumber(argStr) or 0 )
+	end)
+end)
+
 -- Debug commands
 if true then return end
 concommand.Add("stormfox2_debug_spawnice", function(ply)
