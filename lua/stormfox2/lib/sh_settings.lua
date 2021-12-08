@@ -349,9 +349,6 @@ function StormFox2.Setting.Set(sName,vVar, bDontSave)
 		if sName == "openweathermap_real_city" then
 			StormFox2.WeatherGen.APISetCity( vVar )
 			return
-		elseif sName == "cvslist" then
-			StormFox2.Setting.SetCVS( vVar )
-			return
 		end
 	-- Check if valid
 		local obj = settings[sName]
@@ -463,6 +460,7 @@ else
 		net.Start( StormFox2.Net.Settings )
 			net.WriteUInt(NET_ALLSETTINGS, 3)
 			for sName, obj in pairs( settings ) do
+				if not obj then continue end
 				if obj:IsSecret() then continue end
 				net.WriteType( sName )
 				net.WriteType( obj:GetValue() )
@@ -605,11 +603,12 @@ if SERVER then
 		for i = 1, #t, 2 do
 			local sName, var = t[i], t[i+1] or nil
 			if string.len(sName) < 1 or not var then continue end
-			if not is_server[sName] then
+			local obj = StormFox2.Setting.GetObject(sName  )
+			if not obj then
 				StormFox2.Warning("Invalid setting: " .. sName .. ".")
 				continue
 			else
-				StormFox2.Setting.Set(sName, var)
+				obj:SetValue(var)
 			end
 		end
 		blockSaveFile = false

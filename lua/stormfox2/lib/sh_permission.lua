@@ -18,8 +18,11 @@ local SF_WEATHEREDIT= 1
 
 if SERVER then
 	util.AddNetworkString("StormFox2.menu")
-	local w_list = {
-		"sf_openweathermap_key", "sf_openweathermap_real_lat", "sf_openweathermap_real_lon", "sf_openweathermap_real_city", "sf_cvslist"
+	-- "Fake" settings
+	local commands = {
+		["cvslist"] = function( var )
+			StormFox2.Setting.SetCVS( tostring( var ) )
+		end
 	}
 	net.Receive("StormFox2.menu", function(len, ply)
 		local req = net.ReadBool()
@@ -40,16 +43,24 @@ if SERVER then
 	local function plyRequestSetting(ply, convar, var)
 		if not CAMI then return end
 		-- Check if its a stormfox setting
-			local obj = StormFox2.Setting.GetObject( convar )
+			local obj = StormFox2.Setting.GetObject( convar ) or commands[ convar ]
 			if not obj then return false, "Not SF" end
 		-- If singleplayer/host
 			if ply:IsListenServerHost() then
-				obj:SetValue( var )
+				if type(obj) == "function" then
+					obj( var )
+				else
+					obj:SetValue( var )
+				end
 			end
 		-- Check CAMI
 			CAMI.PlayerHasAccess(ply,"StormFox Settings",function(b)
 				if not b then return end
-				obj:SetValue( var )
+				if type(obj) == "function" then
+					obj( var )
+				else
+					obj:SetValue( var )
+				end
 			end)
 	end
 	local function plyRequestEdit( ply, tID, var)
