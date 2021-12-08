@@ -770,6 +770,7 @@ if CLIENT then
 	end)
 
 	hook.Add("RenderScreenspaceEffects", "StormFox2.Downfall.DepthRender", function()
+		if render.GetDXLevel() < 95 then return end
 		if LocalPlayer():WaterLevel() >= 3 then return end -- Don't render SF particles under wanter.
 		local obj = StormFox2.Setting.GetObject("depthfilter")
 		if not obj then return end
