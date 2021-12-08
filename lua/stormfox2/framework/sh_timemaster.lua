@@ -274,14 +274,14 @@ StormFox2.Time = StormFox2.Time or {}
 				else
 					CycleCache = 0.5 + lerp1440( BASE_TIME, sunSet, sunRise ) / 2
 				end
-				return CycleCache
+				return math.Clamp(CycleCache, 0, 1)
 			end
 			if IsDayCache then
 				CycleCache = GetDayPercent() / 2
-				return CycleCache
+				return math.Clamp(CycleCache, 0, 1)
 			else
 				CycleCache = GetNightPercent() / 2 + 0.5
-				return CycleCache
+				return math.Clamp(CycleCache, 0, 1)
 			end
 		end
 	end
