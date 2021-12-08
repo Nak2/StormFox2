@@ -665,6 +665,7 @@ local tabs = {
 
 		board:AddTitle("#effects_pp")
 		board:AddSetting("overwrite_extra_darkness")
+		board:AddSetting("depthfilter")
 		board:AddSetting("enable_ice")
 		board:AddSetting("enable_wateroverlay")
 		board:AddSetting("footprint_enablelogic")

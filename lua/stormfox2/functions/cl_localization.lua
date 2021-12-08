@@ -103,6 +103,9 @@ local str = [[
 	sf_random_round_weather.desc=Gamemodes like TTT will have random weathers between each round.
 	sf_quickselect=Quick Select.
 	sf_quickselect.desc=Quick select time settings.
+	sf_depthfilter=Depth Filter
+	sf_depthfilter.desc=Render 2D weather-effects on clients screen.
+	
 	
 	#Details
 	sf_quality_target=FPS Target
@@ -149,7 +152,7 @@ local str = [[
 	sf_day_length=Day Length
 	sf_day_length.desc=How long the day is in minutes.
 	sf_night_length=Night Length
-	sf_night_lengt.desc=How long the night is in minutes.
+	sf_night_length.desc=How long the night is in minutes.
 	
 	#Sun
 	sf_sunrise=SunRise
