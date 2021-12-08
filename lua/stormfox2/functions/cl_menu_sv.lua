@@ -216,7 +216,7 @@ local function Open2DSkybox()
 		but.Tex = niceName(language.GetPhrase("#sf_auto"))
 		but.Paint = ButtonRender
 		function but.DoClick(self)
-			StormFox2.Setting.Set("sf_overwrite_2dskybox", "")
+			StormFox2.Setting.Set("overwrite_2dskybox", "")
 		end
 		grid:AddItem( but )
 
@@ -229,7 +229,7 @@ local function Open2DSkybox()
 		but.Name = mat
 		but.Paint = ButtonRender
 		function but.DoClick(self)
-			StormFox2.Setting.Set("sf_overwrite_2dskybox", self.Name)
+			StormFox2.Setting.Set("overwrite_2dskybox", self.Name)
 		end
 		grid:AddItem( but )
 	end
