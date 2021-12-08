@@ -25,7 +25,11 @@ if SERVER then
 		elseif uID == SF_SETTIME and type(var) == "number" then
 			StormFox2.Time.Set( var )
 		elseif uID == SF_SETTIME_S and type(var) == "number" then
-			StormFox2.Time.SetSpeed( var )
+			if not StormFox2.Time.IsPaused() then
+				StormFox2.Time.Pause()
+			else
+				StormFox2.Time.Resume()
+			end
 		elseif uID == SF_THUNDER and type(var) == "boolean" then
 			StormFox2.Thunder.SetEnabled(var, 6)
 		elseif uID == SF_YEARDAY and type(var) == "number" then
@@ -502,9 +506,55 @@ local function Init(self)
 			SetWeather( SF_SETTIME, var )
 		end
 		p:Dock(TOP)
-		t:SetPos( 20 ,10)
-		t:SetWide( 140 )
+		local pause = vgui.Create("DButton", p)
+		pause.state = 1
+		pause:SetSize(30, 30)
+		function p:PerformLayout(w, h)
+			pause:SetPos(10,10)
+			t:SetPos( 42 ,10)
+			t:SetWide( w - 20 - 27 )
+		end
+		local a = StormFox2.Setting.GetObject("day_length")
+		local b = StormFox2.Setting.GetObject("night_length")
 		
+		local r = Material("gui/point.png")
+		local z = Material("gui/workshop_rocket.png")
+		function pause:Think()
+			if a:GetValue() <= 0 and b:GetValue() <= 0 then
+				self.state = 0 -- pause
+			else
+				self.state = 1 -- running
+			end
+		end
+		pause:SetText("")
+		--pause.Paint = DrawButton
+		--t.bg.Paint = DrawButton
+		--
+		--t.ampm.Paint = DrawButton
+		--function t.ampm:UpdateColours()
+		--	self:SetTextStyleColor( color_white )
+		--end
+		--t.hour.color = color_white
+		--t.min.color = color_white
+		
+		local c = Color(0,0,0,225)
+		function pause:PaintOver(w,h)
+			local s = 15
+			if self.state == 1 then
+				surface.SetMaterial(r)
+				surface.SetDrawColor(c)
+				surface.DrawTexturedRectRotated(w / 2 + 2,h / 2,w - s,h - s, 90)
+			else
+				surface.SetMaterial(z)
+				surface.SetDrawColor(c)
+				surface.DrawTexturedRectRotated(w / 2 - 5,h / 2,w - s * 1.1,h, 0)
+				surface.DrawTexturedRectRotated(w / 2 + 5,h / 2,w - s * 1.1,h, 0)
+			end
+		end
+		function pause:DoClick()
+			SetWeather(SF_SETTIME_S, 0)
+		end
+		pause:SetPos(20 ,10)
 end
 
 -- Caht status
