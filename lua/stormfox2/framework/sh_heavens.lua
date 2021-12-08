@@ -103,7 +103,8 @@ end
 		[348] = {SF_SKY_NAUTICAL,6,"Nautical"}, -- 12
 		[354] = {SF_SKY_BLUE_HOUR,2,"Blue Hour"}, -- 6
 		[356] = {SF_SKY_CEVIL,4,"Cevil"}, -- 4
-		[360] = {SF_SKY_SUNRISE,6,"SunRise"}, -- 6
+		[360] = {SF_SKY_SUNRISE,6,"SunRise"},
+		[370] = {SF_SKY_SUNRISE,6,"SunRise"}, -- 6
 	}
 	-- Make an array of keys
 		local stamp_arr = table.GetKeys(stamp)
@@ -176,6 +177,9 @@ end
 				id = n
 				c_pitch = pitch
 			end
+		end
+		if not id then
+			return SF_SKY_DAY, p, SF_SKY_CEVIL
 		end
 		return stamp_arr[id],p,stamp_arr[id + 1] or stamp_arr[1]
 	end
