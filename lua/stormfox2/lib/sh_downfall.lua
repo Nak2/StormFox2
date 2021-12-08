@@ -775,7 +775,6 @@ if CLIENT then
 		local obj = StormFox2.Setting.GetObject("depthfilter")
 		if not obj then return end
 		if not obj:GetValue() then return end
-		render.UpdateScreenEffectTexture()
 		hook.Run("StormFox2.DepthFilterRender") -- Render depthfilter
 	end)
 

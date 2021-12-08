@@ -540,7 +540,7 @@ local function Init(self)
 		local c = Color(0,0,0,225)
 		function pause:PaintOver(w,h)
 			local s = 15
-			if self.state == 1 then
+			if self.state == 0 then
 				surface.SetMaterial(r)
 				surface.SetDrawColor(c)
 				surface.DrawTexturedRectRotated(w / 2 + 2,h / 2,w - s,h - s, 90)

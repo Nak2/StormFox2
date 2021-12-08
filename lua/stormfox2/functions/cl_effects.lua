@@ -96,6 +96,26 @@ hook.Add("StormFox2.weather.postchange", "StormFox2.DepthFilter.Reset", function
 	l = b
 	a = 0
 end)
+
+-- Depth doesn't work on all versions
+local t = {
+	["unknown"] = false, -- Doesn't support the effect.
+	["chromium"] = true,
+	["dev"] = true,
+	["prerelease"] = false,
+	["x86-64"] = true
+}
+
+
+local p = false
+local function Patch()
+	if t[BRANCH] then return end
+	if p then return end
+	p = true
+	depthLayer:SetUndefined("$detail")
+	depthLayer:SetUndefined("$detailblendmode")
+	StormFox2.Warning("This version doesn't support depth-filter depth!")
+end
 hook.Add( "StormFox2.DepthFilterRender", "StormFox2.DepthFilter", function()
 	local dFr = StormFox2.Weather.GetCurrent().DepthFilter 
 	if not dFr then 
@@ -108,13 +128,14 @@ hook.Add( "StormFox2.DepthFilterRender", "StormFox2.DepthFilter", function()
 		a = math.Approach(a, 0, FrameTime() * 5) -- Quick fadeaway
 	end
 	if a <= 0 then return end
+	Patch()
+	render.UpdateScreenEffectTexture()
 	render.PushRenderTarget( depth_r )
 		render.Clear( 0,0,0,0, true, true)
 		cam.Start2D()
 			dFr(W,H, a)
 		cam.End2D()
 	render.PopRenderTarget()
-
 	render.CopyRenderTargetToTexture( render.GetFullScreenDepthTexture() )
 	depthLayer:SetTexture("$basetexture", depth_r)
 	depthLayer:SetFloat("$alpha", a)
