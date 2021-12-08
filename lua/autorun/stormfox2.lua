@@ -27,7 +27,7 @@ StormFox2 = {}
 StormFox2.WorkShopVersion = false--game.IsDedicated()
 StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443"
 --<Var> StormFox's Version number
-	StormFox2.Version = 2.40
+	StormFox2.Version = 2.41
 	StormFox2.Loaded = false
 
 --[[<Shared>-----------------------------------------------------------------
