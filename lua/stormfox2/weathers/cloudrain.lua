@@ -521,6 +521,8 @@ if CLIENT then
 		mat:SetMatrix("$basetexturetransform", matrix)
 	end
 	function rain.DepthFilter(w, h, a)
+		a = (a - 0.5) * 2
+		if a <= 0 then return end
 		local windDir = (-StormFox2.Wind.GetNorm()):Angle()
 		local rainscale = (StormFox2.Temperature.Get() + 2) / 2
 
