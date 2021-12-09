@@ -29,10 +29,23 @@ function ENT:Initialize()
 		self:SetKeyValue("gmod_allowphysgun", 0)
 		self:AddEFlags( EFL_NO_DAMAGE_FORCES )
 		self:SetCollisionGroup(COLLISION_GROUP_WORLD)
+
+		self:DrawShadow(false)
+		self:SetLightColor(Vector(1,1,1))
+		self:SetLightBrightness(1)
+
+		local KVars = self:GetKeyValues() or {}
+		if KVars["LightType"] then
+			self:SetLightType( tonumber( KVars["LightType"] ) )
+		end
+		if KVars["LightColor"] then
+			self:SetLightColor( Vector( KVars["LightColor"] ) or Vector(1,1,1) )
+		end
+		if KVars["LightBrightness"] then
+			self:SetLightBrightness( tonumber( KVars["LightBrightness"] ) )
+		end
+		
 	end
-	self:DrawShadow(false)
-	self:SetLightColor(Vector(1,1,1))
-	self:SetLightBrightness(1)
 end
 
 hook.Add( "PhysgunPickup", "StormFox2.StreetLight.DisallowPickup", function( ply, ent )
@@ -313,6 +326,7 @@ else -- Save
 	hook.Add( "ShutDown", "StormFox2.Streetlights.Save", function()
 		local tab = {}
 		for k, ent in ipairs(ents.FindByClass("stormfox_streetlight_invisible")) do
+			if ent:CreatedByMap() then continue end
 			table.insert(tab, {
 				ent:GetLightType(),
 				ent:GetPos(),
