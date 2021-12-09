@@ -52,10 +52,42 @@ StormFox2.Setting = {}
 		if blockSaveFile then return end
 		local data = {}
 		for sName, obj in pairs( settings ) do
-			if CLIENT and obj:IsServer() then continue end -- If you're the client, ignore server settings		
+			if CLIENT and obj:IsServer() then continue end -- If you're the client, ignore server settings
+			if sName == "mapfile" then continue end
+			if sName == "mapfile_cl" then continue end
 			data[sName] = obj:GetString()
 		end
 		StormFox2.FileWrite( settingsFile, util.TableToJSON(data, true) )
+	end
+
+	function StormFox2.Setting.IsUsingMapFile()
+		return settingsFile == mapFile
+	end
+
+	function StormFox2.Setting.UseMapFile( bool )
+		if bool then
+			if settingsFile == mapFile then return end
+			settingsFile = mapFile
+			-- Settings only save once callback is done. Therefor we force this to save
+			local ob = blockSaveFile
+			blockSaveFile = false
+				saveToFile() -- "Copy" the settings to the file
+			blockSaveFile = ob
+		else
+			if settingsFile == defaultFile then return end
+			file.Delete(mapFile)
+			settingsFile = defaultFile
+			-- Reload the default file
+			fileData = util.JSONToTable( file.Read(settingsFile, "DATA") or "" ) or {}
+			blockSaveFile = true
+			for sName, var in pairs( fileData ) do
+				local obj = StormFox2.Setting.GetObject( sName )
+				if not obj then continue end
+				local newVar = fileData[sName] and StringToValue(fileData[sName], obj.type)
+				obj:SetValue( newVar )
+			end
+			blockSaveFile = false
+		end
 	end
 
 -- Meta Table
@@ -395,7 +427,9 @@ function StormFox2.Setting.Set(sName,vVar, bDontSave)
 			CallBack(sName, vVar, oldVar)
 		blockSaveFile = oB -- We're done changing settings, save if we can
 		if not blockSaveFile and not bDontSave then
-			saveToFile()
+			if not (sName == "mapfile" or sName == "mapfile_cl") then
+				saveToFile()
+			end
 		end
 		cache[sName] = nil -- Delete cache
 	 -- Tell all clients about it
@@ -570,9 +604,13 @@ end
 
 -- Resets all stormfox settings to default.
 if SERVER then
+	local obj = StormFox2.Setting.AddSV("mapfile", false)
+	obj:AddCallback(StormFox2.Setting.UseMapFile) 
+	obj:SetValue( StormFox2.Setting.IsUsingMapFile() )
 	function StormFox2.Setting.Reset()
 		blockSaveFile = true
 		for sName, obj in pairs(setting) do
+			if sName == "mapfile" then continue end
 			obj:Revert()
 		end
 		blockSaveFile = false
@@ -581,9 +619,14 @@ if SERVER then
 		cache = {}
 	end
 else
+	StormFox2.Setting.AddSV("mapfile", false)
+	local obj = StormFox2.Setting.AddCL("mapfile_cl", false)
+	obj:AddCallback(StormFox2.Setting.UseMapFile)
+	obj:SetValue( StormFox2.Setting.IsUsingMapFile() )
 	function StormFox2.Setting.Reset()
 		blockSaveFile = true
 		for _, sName in ipairs(StormFox2.Setting.GetAllClient()) do
+			if sName == "mapfile_cl" then continue end
 			local obj = setting[sName]
 			if not obj then continue end
 			obj:Revert()

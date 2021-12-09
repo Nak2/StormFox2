@@ -294,7 +294,12 @@ local tabs = {
 			fog:SetDisabled(not vVar)
 		end,fog)
 	end},
-	[3] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png"))},
+	[3] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png")),function(board)
+		board:AddTitle("SF2 " .. language.GetPhrase("spawnmenu.utilities.settings"))
+		local panel = board:AddSetting("mapfile_cl")
+		panel:SetTitle("#makepersistent")
+		panel:SetDescription(language.GetPhrase("#persistent_mode") .. " data\\stormfox2\\cl_settings\\" .. game.GetMap() .. ".json")
+	end},
 	[4] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png")), function(board)
 		hook.Run("stormfox2.menu.dlc", board)
 	end}

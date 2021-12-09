@@ -699,6 +699,11 @@ local tabs = {
 		end,skyobj)
 	end},
 	[5] = {"Misc","#misc",(Material("stormfox2/hud/menu/other.png")),function(board)
+		board:AddTitle("SF2 " .. language.GetPhrase("spawnmenu.utilities.settings"))
+		local panel = board:AddSetting("mapfile")
+		panel:SetTitle("#makepersistent")
+		panel:SetDescription(language.GetPhrase("#persistent_mode") .. " data\\stormfox2\\sv_settings\\" .. game.GetMap() .. ".json")
+		-- 
 		board:AddTitle("CVS" .. " " ..  niceName(language.GetPhrase("#spawnmenu.utilities.settings")))
 		local cvs = vgui.Create("DPanel", board)
 		cvs:SetTall(240)
