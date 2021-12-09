@@ -17,8 +17,29 @@ ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 local RENDER_DISTANCE = 3500 ^ 2
 
+hook.Add("EntityKeyValue", "StormFox2.SLightinvis", function(ent, key, val)
+	if not IsValid( ent ) then return end
+	if ent:GetClass() ~= "stormfox_streetlight_invisible" then return end
+	key = key:lower()
+	if ent._launch then
+		if key == "lighttype" then
+			ent:SetLightType( tonumber( val ) or 0 )
+		elseif key == "lightcolour" then
+			ent:SetLightColor( Vector( val ) or Vector(1,1,1)  )
+		elseif key == "lightcolor" then
+			ent:SetLightColor( Vector( val ) or Vector(1,1,1)  )
+		elseif key == "lightbrightness" then
+			ent:SetLightBrightness( tonumber( val ) or 0 )
+		end
+	else
+		ent._launchoption = ent._launchoption or {}
+		ent._launchoption[key] = val
+	end
+end)
+
 function ENT:Initialize()
 	if SERVER then
+		self._launch = true
 		self:SetModel( "models/hunter/blocks/cube025x025x025.mdl" )
 		self:PhysicsInit( SOLID_VPHYSICS )
 		self:SetMoveType( MOVETYPE_NONE )
@@ -34,17 +55,18 @@ function ENT:Initialize()
 		self:SetLightColor(Vector(1,1,1))
 		self:SetLightBrightness(1)
 
-		local KVars = self:GetKeyValues() or {}
-		if KVars["LightType"] then
-			self:SetLightType( tonumber( KVars["LightType"] ) )
+		if self._launchoption then
+			if self._launchoption["lighttype"] then
+				self:SetLightType( tonumber( self._launchoption["lighttype"] ) )
+			end
+			local col = self._launchoption["lightcolor"] or self._launchoption["lightcolour"]
+			if col then
+				self:SetLightColor( Vector( col ) or Vector(1,1,1) )
+			end
+			if self._launchoption["lightbrightness"] then
+				self:SetLightBrightness( tonumber( self._launchoption["lightbrightness"] ) )
+			end
 		end
-		if KVars["LightColor"] then
-			self:SetLightColor( Vector( KVars["LightColor"] ) or Vector(1,1,1) )
-		end
-		if KVars["LightBrightness"] then
-			self:SetLightBrightness( tonumber( KVars["LightBrightness"] ) )
-		end
-		
 	end
 end
 
