@@ -102,40 +102,42 @@ local t = {
 	["unknown"] = false, -- Doesn't support the effect.
 	["chromium"] = true,
 	["dev"] = true,
-	["prerelease"] = false,
+	["prerelease"] = false, -- Doesn't support the effect.
 	["x86-64"] = true
 }
 
-
 local p = false
 local function Patch()
-	if t[BRANCH] then return end
-	if p then return end
+	if t[BRANCH] or p then return end
 	p = true
 	depthLayer:SetUndefined("$detail")
 	depthLayer:SetUndefined("$detailblendmode")
 	StormFox2.Warning("This version doesn't support depth-filter depth!")
 end
 hook.Add( "StormFox2.DepthFilterRender", "StormFox2.DepthFilter", function()
+	if not render.SupportsPixelShaders_2_0() then return end
 	local dFr = StormFox2.Weather.GetCurrent().DepthFilter 
-	if not dFr then 
-		a = 0
-		return
-	end
-	if StormFox2.Environment.Get().outside then
-		a = math.Approach(a, 1, FrameTime() * .8)
-	else
-		a = math.Approach(a, 0, FrameTime() * 5) -- Quick fadeaway
-	end
-	if a <= 0 then return end
+	-- Calculate Alpha
+		if not dFr then 
+			a = 0
+			return
+		end
+		if StormFox2.Environment.Get().outside then
+			a = math.Approach(a, 1, FrameTime() * .8)
+		else
+			a = math.Approach(a, 0, FrameTime() * 5) -- Quick fadeaway
+		end
+		if a <= 0 then return end
 	Patch()
 	render.UpdateScreenEffectTexture()
-	render.PushRenderTarget( depth_r )
-		render.Clear( 0,0,0,0, true, true)
-		cam.Start2D()
-			dFr(W,H, a)
-		cam.End2D()
-	render.PopRenderTarget()
+	render.UpdateFullScreenDepthTexture()
+	-- Render RT
+		render.PushRenderTarget( depth_r )
+			render.Clear( 0,0,0,0, true, true)
+			cam.Start2D()
+				dFr(W,H, a)
+			cam.End2D()
+		render.PopRenderTarget()
 	render.CopyRenderTargetToTexture( render.GetFullScreenDepthTexture() )
 	depthLayer:SetTexture("$basetexture", depth_r)
 	depthLayer:SetFloat("$alpha", a)
