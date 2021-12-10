@@ -40,22 +40,41 @@ if SERVER then
 			StormFox2.WeatherGen.UpdatePlayer( ply ) -- Tell the player about the upcoming weather
 		end)
 	end)
+	local function NoAccess(ply, msg)
+		if not ply then
+			MsgC( Color(155,155,255),"[StormFox2] ", color_white, msg )
+			MsgN()
+			return 
+		end
+		net.Start( StormFox2.Net.Permission )
+			net.WriteString(msg)
+		net.Send(ply)
+	end
 	local function plyRequestSetting(ply, convar, var)
 		if not CAMI then return end
 		-- Check if its a stormfox setting
 			local obj = StormFox2.Setting.GetObject( convar ) or commands[ convar ]
-			if not obj then return false, "Not SF" end
+			if not obj then
+				if ply then
+					NoAccess(ply, "Invalid setting: " .. tostring(convar))
+				end 
+				return false, "Not SF"
+			end
 		-- If singleplayer/host
-			if ply:IsListenServerHost() then
+			if game.SinglePlayer() or ply:IsListenServerHost() then
 				if type(obj) == "function" then
 					obj( var )
 				else
 					obj:SetValue( var )
 				end
+				return
 			end
 		-- Check CAMI
 			CAMI.PlayerHasAccess(ply,"StormFox Settings",function(b)
-				if not b then return end
+				if not b then
+					NoAccess(ply, "You don't have access to edit the settings!")
+					return
+				end
 				if type(obj) == "function" then
 					obj( var )
 				else
@@ -66,12 +85,15 @@ if SERVER then
 	local function plyRequestEdit( ply, tID, var)
 		if not CAMI then return end
 		-- If singleplayer/host
-		if ply:IsListenServerHost() then
+		if game.SinglePlayer() or ply:IsListenServerHost() then
 			return StormFox2.Menu.SetWeatherData(ply, tID, var)
 		end
 		-- Check CAMI
 		CAMI.PlayerHasAccess(ply,"StormFox WeatherEdit",function(b)
-			if not b then return end
+			if not b then
+				NoAccess(ply, "You don't have access to edit the weather!")
+				return
+			end
 			StormFox2.Menu.SetWeatherData(ply, tID, var)
 		end)
 	end
@@ -90,11 +112,18 @@ if SERVER then
 		end
 		local a = {...}
 		CAMI.PlayerHasAccess(ply,sPermission,function(b)
-			if not b then return end
+			if not b then
+				NoAccess(ply, "You don't have access to edit the weather.")
+				return
+			end
 			onSuccess(ply, unpack(a) )
 		end)
 	end
 else
+	net.Receive(StormFox2.Net.Permission, function(len)
+		local str = net.ReadString()
+		chat.AddText(Color(155,155,255),"[StormFox2] ", color_white, str)
+	end)
 	net.Receive("StormFox2.menu", function(len)
 		local n = net.ReadBool()
 		if n then
