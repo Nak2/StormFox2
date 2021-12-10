@@ -88,6 +88,17 @@ concommand.Add("stormfox2_setwindangle", function(ply, _, _, argStr)
 	end)
 end)
 
+concommand.Add("stormfox2_settemperature", function(ply, _, _, argStr)
+	if CLIENT then return end
+	local temp = tonumber( string.match(argStr, "%d+") or "0" ) or 0
+	if string.match(argStr, "[fF]") then
+		temp = StormFox2.Temperature.Convert("fahrenheit","celsius",temp) or temp
+	end
+	StormFox2.Permission.EditAccess(ply,"StormFox WeatherEdit", function()
+		StormFox2.Temperature.Set( temp )
+	end)
+end)
+
 -- Debug commands
 if true then return end
 concommand.Add("stormfox2_debug_spawnice", function(ply)
