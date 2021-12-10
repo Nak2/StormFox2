@@ -99,6 +99,73 @@ concommand.Add("stormfox2_settemperature", function(ply, _, _, argStr)
 	end)
 end)
 
+local function SetSetting( arg, arg2, ply )
+	if not arg or arg == "" then
+		SendMsg( ply, "You need to indecate a setting: stormfox2_setting [Setting] [Value]")
+		return
+	end
+	local obj = StormFox2.Setting.GetObject(arg)
+	if not obj then
+		SendMsg( ply, "Invalid setting: \"" .. tostring( arg ) .. "\"!")
+		return
+	end
+	if not arg2 then
+		SendMsg( ply, "You need a value for the setting!")
+		return
+	end
+	obj:SetValue( arg2 )
+	SendMsg( ply, tostring( arg ) .. " = " .. tostring( arg2 ))
+end
+
+local function AutoComplete(cmd, args)
+	args = string.TrimLeft(args)
+	local a = string.Explode(" ", args or "")
+	if #a < 2 then
+		local options = {}
+		for _, sName in pairs(  StormFox2.Setting.GetAllServer() ) do
+			if string.find(string.lower(sName),string.lower(a[1]), nil, true) then
+				table.insert(options, "stormfox2_setting " .. sName)
+			end
+		end
+		if #options < 1 then
+			return {"stormfox2_setting [No Setting Found!]"}
+		elseif #options < 2 and "stormfox2_setting " .. args == options[1] then
+			local obj = StormFox2.Setting.GetObject(a[1])
+			if not obj then
+				return {"stormfox2_setting [Invalid Setting!]"} 
+			end
+			return {"stormfox2_setting " .. a[1] .. " [" .. obj.type .. "]"}
+		end
+		return options
+	elseif not a[1] or string.TrimLeft(a[1]) == "" then
+		return {"stormfox2_setting [Setting] [Value]"}
+	else
+		local obj = StormFox2.Setting.GetObject(a[1])
+		if not obj then
+			return {"stormfox2_setting [Invalid Setting!]"}
+		else
+			return {"stormfox2_setting " .. a[1] .. " [" .. obj.type .. "]"}
+		end
+	end
+end
+
+concommand.Add("stormfox2_setting", function(ply, _, _, argStr)
+	if CLIENT then return end
+	StormFox2.Permission.EditAccess(ply,"StormFox Settings", function()
+		local a = string.Explode(" ", argStr, false)
+		SetSetting(a[1],a[2])
+	end)
+end, AutoComplete)
+
+-- Forces the settings to save.
+concommand.Add("stormfox2_settings_save", function(ply, _, _, _)
+	if CLIENT then return end
+	StormFox2.Permission.EditAccess(ply,"StormFox Settings", function()
+		StormFox2.Setting.ForceSave()
+	end)
+	SendMsg( ply, "Force saved settings to data/" .. StormFox2.Setting.GetSaveFile())
+end)
+
 -- Debug commands
 if true then return end
 concommand.Add("stormfox2_debug_spawnice", function(ply)
