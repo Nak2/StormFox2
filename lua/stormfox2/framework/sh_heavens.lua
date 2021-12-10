@@ -84,7 +84,7 @@ end
 		return p
 	end
 	function StormFox2.Sun.GetAngle(nTime)
-		local a = Angle(-GetSunPitch(nTime),StormFox2.Data.Get("sun_yaw",90),0)
+		local a = Angle(-GetSunPitch(nTime),StormFox2.Sun.GetYaw(),0)
 		return a
 	end
 
@@ -277,12 +277,12 @@ end
 	function StormFox2.Moon.GetAngle(nTime)
 		local p = 180 + StormFox2.Time.GetCycleTime() * 360
 		if StormFox2.Setting.Get("moonlock",false) then
-			return Angle(-p % 360, StormFox2.Data.Get("sun_yaw",90),0)
+			return Angle(-p % 360, StormFox2.Sun.GetYaw(),0)
 		end
 		--if true then return Angle(200,StormFox2.Data.Get("sun_yaw",90),0) end
 		local rDay = StormFox2.Date.GetYearDay()
 		p = p + ( StormFox2.Moon.GetPhase() - 4 ) * 45
-		return Angle(-p % 360,StormFox2.Data.Get("sun_yaw",90),0)
+		return Angle(-p % 360,StormFox2.Sun.GetYaw(),0)
 	end
 	-- It might take a bit for the server to tell us the day changed.
 	hook.Add("StormFox2.data.change", "StormFox2.moon.datefix", function(sKey, nDay)
