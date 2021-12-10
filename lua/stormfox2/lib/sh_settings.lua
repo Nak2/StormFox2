@@ -90,6 +90,15 @@ StormFox2.Setting = {}
 		end
 	end
 
+	function StormFox2.Setting.ForceSave()
+		blockSaveFile = false
+		saveToFile()
+	end
+
+	function StormFox2.Setting.GetSaveFile()
+		return settingsFile
+	end
+
 -- Meta Table
 local meta = {}
 	meta.__index = meta
@@ -396,7 +405,7 @@ function StormFox2.Setting.Set(sName,vVar, bDontSave)
 				StormFox2.Warning("Invalid variable: " .. sName .. "!")
 				return false
 			end
-			if not vVar then return false end -- Failed
+			if vVar == nil then return false end -- Failed
 		end
 	-- Check min and max
 		if obj.type == "number" and obj.min then
