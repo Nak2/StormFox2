@@ -161,9 +161,9 @@ end, AutoComplete)
 concommand.Add("stormfox2_settings_save", function(ply, _, _, _)
 	if CLIENT then return end
 	StormFox2.Permission.EditAccess(ply,"StormFox Settings", function()
+		SendMsg( ply, "Force saved settings to data/" .. StormFox2.Setting.GetSaveFile())
 		StormFox2.Setting.ForceSave()
 	end)
-	SendMsg( ply, "Force saved settings to data/" .. StormFox2.Setting.GetSaveFile())
 end)
 
 -- Debug commands
