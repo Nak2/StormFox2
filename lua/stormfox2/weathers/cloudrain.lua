@@ -201,9 +201,9 @@ do
 		local QT = StormFox2.Client.GetQualityNumber()
 		local P = StormFox2.Weather.GetPercent()
 		-- Base
+		surface.SetDrawColor(Color(255,255,255,255 * P))
 		surface.SetMaterial(rain_normal_material)
 		local c = (-SysTime() / 1000) % 1
-		surface.SetDrawColor(Color(255,255,255,255 * P))
 		surface.DrawTexturedRectUV(0,0, w, h, 0, c, s, c + s )
 		-- Create raindrop
 		if #raindrops < math.Clamp(QT * 10, 5 ,65 * P) and random(100) <= 90 then
@@ -234,6 +234,53 @@ do
 			table.remove(raindrops, r[i])
 		end
 	end)
+
+	-- Snow window
+	local mat = Material("stormfox2/effects/window/snow")
+	local mat2 = Material("stormfox2/effects/blizzard.png","noclamp")
+	local mat3 = Material("stormfox2/effects/rainstorm.png","noclamp")
+	local size = 0.5
+	local function RenderWindow(w, h)
+		if StormFox2.Temperature.Get() > -2 then
+			local wi = StormFox2.Wind.GetForce()
+			local P = StormFox2.Weather.GetPercent()
+			local lum = max(min(25 + StormFox2.Weather.GetLuminance(), 255),150)
+			if P * wi < 10 then return false end
+			-- Storm
+			local c = Color(lum,lum,lum,math.min(255, wi * 3))
+			surface.SetDrawColor(c)
+			surface.SetMaterial(mat3)
+			for i = 1, math.max(1, wi / 20) do
+				local cx = CurTime() * -1 % size
+				local cu = (CurTime() * -(4 + i)) % size
+				local fx = i / 3 + cx
+				surface.DrawTexturedRectUV(0,0,w,h, fx, cu, fx + size, size + cu)
+			end
+		else
+			local P = 1 - StormFox2.Weather.GetPercent()
+			local wi = StormFox2.Wind.GetForce()
+			local lum = max(min(25 + StormFox2.Weather.GetLuminance(), 255),150)
+			local c = Color(lum,lum,lum)
+			local oSF = StormFox2.Environment.GetOutSideFade()
+			if wi > 5 and oSF < 1 then
+				c.a = 255 - (oSF * 255)
+				surface.SetDrawColor(c)
+				surface.SetMaterial(mat2)
+				local cu = CurTime() * 3
+				for i = 1, wi / 20 do
+					local sz = (i * 3.333) % 3
+					local sx = i * 3 + (cu * 0.2) % sz
+					local sy = i * 5 + -cu % (sz * 0.5)			
+					surface.DrawTexturedRectUV(0,0,w,h,sx,sy,sx + sz,sy + sz)
+				end
+				c.a = 255
+			end
+			surface.SetMaterial(mat)
+			surface.SetDrawColor(c)
+			surface.DrawTexturedRect(0,h * 0.12 * P,w,h)
+		end
+	end
+	rain:RenderWindow( RenderWindow )
 end
 -- Snow Terrain and footsteps
 do
@@ -252,34 +299,6 @@ do
 		return StormFox2.Temperature.Get() > -2
 	end)
 
-	-- Snow window
-	local mat = Material("stormfox2/effects/window/snow")
-	local mat2 = Material("stormfox2/effects/blizzard.png","noclamp")
-	local function RenderSnow(w, h)
-		if StormFox2.Temperature.Get() > -2 then return false end
-		local P = 1 - StormFox2.Weather.GetPercent()
-		local wi = StormFox2.Wind.GetForce()
-		local lum = max(min(25 + StormFox2.Weather.GetLuminance(), 255),150)
-		local c = Color(lum,lum,lum)
-		local oSF = StormFox2.Environment.GetOutSideFade()
-		if wi > 5 and oSF < 1 then
-			c.a = 255 - (oSF * 255)
-			surface.SetDrawColor(c)
-			surface.SetMaterial(mat2)
-			local cu = CurTime() * 3
-			for i = 1, wi / 20 do
-				local sz = (i * 3.333) % 3
-				local sx = i * 3 + (cu * 0.2) % sz
-				local sy = i * 5 + -cu % (sz * 0.5)			
-				surface.DrawTexturedRectUV(0,0,w,h,sx,sy,sx + sz,sy + sz)
-			end
-			c.a = 255
-		end
-		surface.SetMaterial(mat)
-		surface.SetDrawColor(c)
-		surface.DrawTexturedRect(0,h * 0.12 * P,w,h)
-	end
-	snow:RenderWindow( RenderSnow )
 	-- Footprints
 	snow:MakeFootprints(true,{
 		"stormfox2/footstep/footstep_snow0.mp3",
@@ -450,7 +469,7 @@ if CLIENT then
 				--StormFox2.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * .2)
 				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_multi, dis, multi_dis * 2, (90 + P * (250 + W)) / 2, s, vNorm ) or {} ) do
 					local d = v:GetDistance()
-					v:SetAlpha(255)
+					v:SetAlpha(15)
 					if not d or d < 500 then 
 						v:SetSize(  225, 500 )
 					else
