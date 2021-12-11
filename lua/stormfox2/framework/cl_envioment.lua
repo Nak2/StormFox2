@@ -1168,10 +1168,16 @@ local env_corotine = coroutine.wrap(function()
 		env_corotinefunction()
 	end
 end)
+local outsideFade = 0
 timer.Create("stormfox2.enviroment.think", 0.25, 0, function()
 	if not StormFox2.Loaded or not _STORMFOX_POSTENTITY then return end
 	if not StormFox2.Setting.GetCache("window_enable", true) then return end
 	env_corotine()
+	if is_inside then
+		outsideFade = math.Approach(outsideFade, 0, FrameTime() * 20)
+	else
+		outsideFade = math.Approach(outsideFade, 1, FrameTime() * 3.2)
+	end
 end)
 
 --[[-------------------------------------------------------------------------
@@ -1191,6 +1197,10 @@ function StormFox2.Environment.Get()
 		end
 	end
 	return t
+end
+
+function StormFox2.Environment.GetOutSideFade()
+	return outsideFade
 end
 
 --[[-------------------------------------------------------------------------
