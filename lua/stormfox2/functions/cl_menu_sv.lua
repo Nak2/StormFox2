@@ -84,6 +84,88 @@ local function ResetPromt( paste )
 	end
 end
 
+local function ModifyMaterial( tex, arg ) -- -2 = Remove, -1 = Ignore, 0 = Ground, 1 = Roof
+	net.Start(StormFox2.Net.Texture)
+		net.WriteString( tex )
+		net.WriteInt(arg, 3)
+	net.SendToServer()
+end
+
+local function AddOption( panel, c_option, mat )
+	local o_1 = niceName(language.GetPhrase("none"))
+	local o0 = niceName(language.GetPhrase("dirt"))
+	local o1 = niceName(language.GetPhrase("rooftop"))
+	local r = niceName(language.GetPhrase("remove"))
+	local b = vgui.Create("DComboBox", dList)
+		b.tex = mat
+		b:SetSortItems(false)
+		b:SetText(c_option)
+		b:AddChoice( o0, 0 )
+		b:AddChoice( o1, 1 )
+		b:AddChoice( o_1, -1 )
+		b:AddChoice( r, -2 )
+	function b:OnSelect(_, _, var)
+		ModifyMaterial(mat, var)
+	end
+	return b
+end
+
+local x_mat = Material("gui/cross.png")
+local function OpenMaterialPromt()
+	if SF_MPromt then SF_MPromt:Remove() end
+	SF_MPromt = vgui.Create("DFrame")
+	SF_MPromt:SetTitle(language.GetPhrase("#sf_tool.surface_editor"))
+	SF_MPromt:SetSize(400,300)
+	SF_MPromt:Center()
+	SF_MPromt:MakePopup()
+
+	local bottom = vgui.Create("DPanel", SF_MPromt)
+	bottom:Dock(BOTTOM)
+	bottom:SetTall(24)
+
+	local dT = vgui.Create("DTextEntry", bottom)
+	dT:Dock(FILL)
+	dT:SetPlaceholderText(niceName(language.GetPhrase("sf_tool.surface_editor.entertext")))
+
+	local add = vgui.Create("DButton", bottom)
+	add:SetText(language.GetPhrase("preset.addnew"))
+	add:Dock(RIGHT)
+	add:SetSize(120,30)
+	function add.DoClick()
+		local tex = string.Trim(dT:GetText() or "")
+		if #tex < 1 then return end
+		ModifyMaterial(tex, 0)
+	end
+	local function refresh()
+		local dList = vgui.Create("DListView",SF_MPromt)
+		dList:Dock(FILL)
+		dList:AddColumn( niceName(language.GetPhrase("#texture")) )
+		dList:AddColumn( niceName("type") )
+		for text, _t in pairs(StormFox2.Data.Get("texture_modification")) do
+			local t = "NULL"
+			if _t == -1 then
+				t = language.GetPhrase("none")
+			elseif _t == 0 then -- Ground
+				t = language.GetPhrase("dirt")
+			elseif _t == 1 then -- Roof
+				t = language.GetPhrase("rooftop")
+			end
+			local b = AddOption(dList, niceName(t), text)
+			local line = dList:AddLine( text, b )
+		end
+		function dList:OnRowRightClick(id, pnl)
+			local menu = DermaMenu() 
+			menu:AddOption( niceName(language.GetPhrase("copy")), function()
+				SetClipboardText( pnl:GetColumnText(1) )
+			end)
+			menu:Open()
+		end
+	end
+	refresh()
+	hook.Add("StormFox2.data.change", SF_MPromt, refresh)
+	--dList:SizeToContents()
+end
+StormFox2.Menu.OpenMaterialPromt = OpenMaterialPromt
 local c = Color(0,255,0)
 local s = {	{"up",-vector_up},
 	{"dn",vector_up},
@@ -669,6 +751,19 @@ local tabs = {
 		board:AddSetting("enable_ice")
 		board:AddSetting("enable_wateroverlay")
 		board:AddSetting("footprint_enablelogic")
+
+		board:AddTitle("surface")
+		do -- Material box
+			local p = vgui.Create("DPanel", board)
+			p:SetTall(30)
+			p:Dock(TOP)
+			p.Paint = empty
+			local b = vgui.Create("DButton", p)
+			b:SetText(language.GetPhrase("#sf_tool.surface_editor"))
+			b:SetPos(20,4)
+			b:SetWide(150)
+			b.DoClick = OpenMaterialPromt
+		end
 
 		board:AddTitle("fog")
 		board:AddSetting("enable_svfog", nil, "sf_enable_fog")

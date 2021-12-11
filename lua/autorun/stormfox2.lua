@@ -151,6 +151,7 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 	StormFox2.Net.Tool 			= "SF_O"	-- Handles the SF tool
 	StormFox2.Net.Weather 		= "SF_W"	-- Handles the SF tool
 	StormFox2.Net.Permission	= "SF_P"	-- Handles the SF tool
+	StormFox2.Net.Texture		= "SF_Q"	-- Handles the SF tool
 	if SERVER then
 		for _, str in pairs( StormFox2.Net ) do
 			util.AddNetworkString( str )
