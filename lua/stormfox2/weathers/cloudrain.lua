@@ -254,12 +254,29 @@ do
 
 	-- Snow window
 	local mat = Material("stormfox2/effects/window/snow")
+	local mat2 = Material("stormfox2/effects/blizzard.png","noclamp")
 	local function RenderSnow(w, h)
 		if StormFox2.Temperature.Get() > -2 then return false end
 		local P = 1 - StormFox2.Weather.GetPercent()
+		local wi = StormFox2.Wind.GetForce()
+		local lum = max(min(25 + StormFox2.Weather.GetLuminance(), 255),150)
+		local c = Color(lum,lum,lum)
+		local oSF = StormFox2.Environment.GetOutSideFade()
+		if wi > 5 and oSF < 1 then
+			c.a = 255 - (oSF * 255)
+			surface.SetDrawColor(c)
+			surface.SetMaterial(mat2)
+			local cu = CurTime() * 3
+			for i = 1, wi / 20 do
+				local sz = (i * 3.333) % 3
+				local sx = i * 3 + (cu * 0.2) % sz
+				local sy = i * 5 + -cu % (sz * 0.5)			
+				surface.DrawTexturedRectUV(0,0,w,h,sx,sy,sx + sz,sy + sz)
+			end
+			c.a = 255
+		end
 		surface.SetMaterial(mat)
-		local lum = max(min(25 + StormFox2.Weather.GetLuminance(), 255),70)
-		surface.SetDrawColor(Color(lum,lum,lum))
+		surface.SetDrawColor(c)
 		surface.DrawTexturedRect(0,h * 0.12 * P,w,h)
 	end
 	snow:RenderWindow( RenderSnow )
@@ -461,7 +478,10 @@ if CLIENT then
 			StormFox2.Misc.snow_template:SetColor(snow_col)
 			StormFox2.Misc.snow_template_multi:SetColor(snow_col)
 			local max_normal = 40 * P * (50 - W)
-			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template, 200, snow_distance, max_normal, 5, vNorm ) or {} ) do
+			if StormFox2.Environment.GetOutSideFade() < 0.9 then
+				max_normal = 40 * P
+			end
+			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template, 20, snow_distance, max_normal, 5, vNorm ) or {} ) do
 				v:SetSize(  s, s )
 				v:SetSpeed( math.Rand(1, 2) * snow_speed)
 				if snow_speed > 0.15 and random(snow_speed)> 0.15 then
@@ -471,6 +491,9 @@ if CLIENT then
 			-- Spawn snow distant
 			if P > 0.15 then
 				local max_multi = 10 * (P - 0.15) * (70 - W)
+				if StormFox2.Environment.GetOutSideFade() < 0.9 then
+					max_normal = 10 * (P - 0.15)
+				end
 				local snow_distance = min(random(300,900), StormFox2.Fog.GetEnd())
 				local d = max(snow_distance / 900, 0.5)
 				local snow_size = math.Rand(0.5,1) * max(0.7,P) * 500 * d
