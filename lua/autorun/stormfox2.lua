@@ -27,7 +27,7 @@ StormFox2 = {}
 StormFox2.WorkShopVersion = false--game.IsDedicated()
 StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443"
 --<Var> StormFox's Version number
-	StormFox2.Version = 2.43
+	StormFox2.Version = 2.44
 	StormFox2.Loaded = false
 
 --[[<Shared>-----------------------------------------------------------------
@@ -102,6 +102,13 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 	end
 
 -- File function that creates folders
+	local function fileWriteWError( filename, data )
+		local filObj = file.Open(filename, "wb", "DATA")
+		if not filObj then return false end
+		filObj:Write( data )
+		filObj:Close()
+		return true
+	end
 	function StormFox2.FileWrite( filename, data )
 		local a = string.Explode("/", filename)
 		-- Create folders
@@ -115,7 +122,8 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 			end
 		end
 		-- Create file
-		file.Write(filename, data)
+		if fileWriteWError(filename, data) then return true end
+		StormFox2.Warning("Unable to write file [" .. filename .. "]. Game has no access!")
 	end
 
 -- Resources

@@ -55,6 +55,7 @@ StormFox2.Setting = {}
 			if CLIENT and obj:IsServer() then continue end -- If you're the client, ignore server settings
 			if sName == "mapfile" then continue end
 			if sName == "mapfile_cl" then continue end
+			if obj:IsDefault() then continue end
 			data[sName] = obj:GetString()
 		end
 		StormFox2.FileWrite( settingsFile, util.TableToJSON(data, true) )
@@ -123,6 +124,9 @@ local meta = {}
 	end
 	function meta:GetDefault()
 		return self.default
+	end
+	function meta:IsDefault()
+		return self:GetValue() == self:GetDefault()
 	end
 	function meta:Revert()
 		self:SetValue( self:GetDefault() )
@@ -282,20 +286,23 @@ local meta = {}
 
 -- Creates a setting and returns the setting-object
 function StormFox2.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nMax)
-	if settings[sName] then return settings[sName] end -- Already added
+	if settings[sName] then return settings[sName] end -- Already created
 	local t = {}
 		setmetatable(t, meta)
 		t.sName = sName
 		t.type = type(vDefaultVar)
 		if SERVER then
-			t.value = fileData[sName] and StringToValue(fileData[sName], t.type)
-			if not t.value then -- Check convar before setting the setting.
+			if fileData[sName] ~= nil then
+				t.value = StringToValue(fileData[sName], t.type)
+			end
+			if t.value == nil then -- Check convar before setting the setting.
 				local con = GetConVar("sf_" .. sName)
 				if con then
-					t.value = StringToValue(con:GetString(), t.type) or DefaultVar
-				else
-					t.value = vDefaultVar
+					t.value = StringToValue(con:GetString(), t.type)
 				end
+			end
+			if t.value == nil then -- If all fails, use the default
+				t.value = vDefaultVar
 			end
 		else
 			t.value = vDefaultVar
@@ -319,14 +326,17 @@ if CLIENT then
 			t.sName = sName
 			t.type = type(vDefaultVar)
 			if CLIENT then
-				t.value = fileData[sName] and StringToValue(fileData[sName], t.type)
-				if not t.value then
+				if fileData[sName] ~= nil then
+					t.value = StringToValue(fileData[sName], t.type)
+				end
+				if t.value == nil then
 					local con = GetConVar("sf_" .. sName)
 					if con then
-						t.value = StringToValue(con:GetString(), t.type) or DefaultVar
-					else
-						t.value = vDefaultVar
+						t.value = StringToValue(con:GetString(), t.type)
 					end
+				end
+				if t.value == nil then -- If all fails, use the default
+					t.value = vDefaultVar
 				end
 			end
 			t.default = vDefaultVar
