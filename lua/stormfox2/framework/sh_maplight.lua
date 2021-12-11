@@ -333,7 +333,7 @@ local function SettingMapLight( lightlvl )
 		return
 	end
 	-- Choose e_light_env or e_colormod
-	if StormFox2.Setting.Get("maplight_auto", true) then
+	if StormFox2.Setting.Get("maplight_auto") then
 		checkSetting(e_lightdynamic,false, lightlvl)
 		checkSetting(e_lightstyle, 	false, lightlvl)
 		if StormFox2.Ent.light_environments then
@@ -588,6 +588,44 @@ if SERVER then
 		local sec = 15 * StormFox2.Time.GetSpeed_RAW()
 		StormFox2.Map.SetLightLerp(newLight, math.min(sec, nDelta or sec), isSmooth )
 	end)
+
+	-- Min and maxlight hotupdate
+	local function hotUpdate()
+		local night, day
+		if StormFox2.Setting.GetCache("allow_weather_lightchange") then
+			night,day = StormFox2.Data.GetFinal("mapNightLight", 0), StormFox2.Data.GetFinal("mapDayLight",100)					-- Maplight
+		else
+			local c = StormFox2.Weather.Get("Clear")
+			night,day = c:Get("mapNightLight",0), c:Get("mapDayLight",80)					-- Maplight
+		end
+		local minlight,maxlight = StormFox2.Setting.GetCache("maplight_min",0),StormFox2.Setting.GetCache("maplight_max",80) 	-- Settings
+		local smooth = StormFox2.Setting.GetCache("maplight_smooth",game.SinglePlayer())
+		-- Calc maplight
+		local isSmooth = false
+		local stamp, mapLight = StormFox2.Sky.GetLastStamp()
+		if stamp >= SF_SKY_CEVIL then
+			mapLight = night
+		elseif stamp <= SF_SKY_DAY then
+			mapLight = day
+		else
+			local delta = math.abs( SF_SKY_DAY - SF_SKY_CEVIL )
+			local f = StormFox2.Sky.GetLastStamp() / delta
+			if smooth then
+				mapLight = Lerp((f + 0.5) / 2, day, night)
+				isSmooth = true
+			elseif f <= 0.5 then
+				mapLight = day
+			else
+				mapLight = night
+			end
+		end
+		f_mapLightRaw = mapLight
+		-- Apply settings
+		local newLight = minlight + mapLight * (maxlight - minlight) / 100
+		StormFox2.Map.SetLight( newLight )
+	end
+	StormFox2.Setting.Callback("maplight_min", hotUpdate)
+	StormFox2.Setting.Callback("maplight_max", hotUpdate)
 
 else -- Fake darkness. Since some maps are bright
 
