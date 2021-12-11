@@ -529,9 +529,11 @@ do
 		end
 	end
 	function PANEL:MoveDescription( x, y )
-		self.description:SetX(math.max(25, 10 + x))
 		if y then
-			self.description:SetY(self.label_name:GetTall() + math.max(2, y))
+			self.description:SetPos( math.max(25, 10 + x), self.label_name:GetTall() + math.max(2, y) )
+		else
+			local x2, y2 = self.description:GetPos()
+			self.description:SetPos( math.max(25, 10 + x), y2 )
 		end
 	end
 	derma.DefineControl( "SF_Setting", "", PANEL, "DPanel" )
