@@ -43,10 +43,9 @@ local t_models = {}
 	t_models['models/props_hydro/construction_light.mdl']		= {Vector(0,-3,-19), 	Angle(0,0,45),	SPOTLIGHT}
 	t_models['models/props/cs_assault/streetlight.mdl']			= {Vector(50,0,45), 	Angle(0,0,0),	SPOTLIGHT}
 
-
 local function IsLightNear(pos)
 	local t = {}
-	for k,v in ipairs(ents.FindInSphere(pos, 30)) do
+	for k,v in ipairs(ents.FindInSphere(pos, 20)) do
 		if v:GetClass() == "stormfox_streetlight_invisible" then
 			return v
 		end
@@ -141,6 +140,7 @@ if SERVER then
 	local popsnd = Sound("garrysmod/balloon_pop_cute.wav")
 	function TOOL:SendFunc( a, b, c, d )
 		if a == SPAWN and type(b) == "number" and c and d then -- Spawn, n_type, pos, ang
+			if IsLightNear(c) then return end 
 			local ent = ents.Create("stormfox_streetlight_invisible")
 			ent:SetPos(c)
 			ent:SetAngles(d)
