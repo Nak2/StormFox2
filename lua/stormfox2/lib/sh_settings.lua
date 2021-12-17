@@ -452,12 +452,14 @@ function StormFox2.Setting.Set(sName,vVar, bDontSave)
 		end
 		cache[sName] = nil -- Delete cache
 	 -- Tell all clients about it
-		if SERVER and not obj:IsSecret() then
-			net.Start( StormFox2.Net.Settings )
-				net.WriteUInt(NET_UPDATE, 3)
-				net.WriteString(sName)
-				net.WriteType(vVar)
-			net.Broadcast()
+		if SERVER then
+			if not obj:IsSecret() then
+				net.Start( StormFox2.Net.Settings )
+					net.WriteUInt(NET_UPDATE, 3)
+					net.WriteString(sName)
+					net.WriteType(vVar)
+				net.Broadcast()
+			end
 		end
 	--[[<Shared>------------------------------------------------------------------
 	Gets called when a StormFox setting changes.
