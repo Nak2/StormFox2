@@ -297,3 +297,11 @@ else
 		end)
 	end)
 end
+
+-- A bit ballsy, but lets try.
+hook.Add("ShutDown","StormFox2.Terrain.Clear",function()
+	StormFox2.Msg("Reloading all changed materials ..")
+	for k, _ in pairs( _STORMFOX_TEXORIGINAL ) do
+		RunConsoleCommand("mat_reloadmaterial", k)
+	end
+end)
