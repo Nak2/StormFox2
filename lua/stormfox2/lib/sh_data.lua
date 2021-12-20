@@ -174,7 +174,7 @@ function StormFox2.Data.GetLerpEnd( sKey )
 end
 
 -- If time changes, we need to update the lerp values
-hook.Add("StormFox2.Time.Set", "StormFox2.datatimefix", function()
+hook.Add("StormFox2.Time.Changed", "StormFox2.datatimefix", function()
 	local nT = StormFox2.Time.GetSpeed_RAW()
 	local c = CurTime()
 	if nT <= 0.001 then return end

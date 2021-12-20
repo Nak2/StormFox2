@@ -104,7 +104,7 @@ end)
 --[[
 	Hook: CWI.NewDay, dayNumber 0 - 365
 ]]
-hook.Add("StormFox2.Time.NextDay", "CWI.CallNewDay", function( nDay )
+hook.Add("StormFox2.Time.NextDay", "CWI.CallNewDay", function( )
 	hook.Run("CWI.NewDay")
 end)
 

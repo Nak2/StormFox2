@@ -81,7 +81,8 @@ StormFox2.Time = StormFox2.Time or {}
 	]]
 	-- Math Box to set and get time
 	local Get, Set, UpdateMath, isInDay, isDay, dayLength, nightLength, netWriteData
-	local GetCache, IsDayCache, CycleCache
+	local GetCache, IsDayCache, CycleCache, FinsihToCycle, GetCycleRaw
+	local CR
 	do
 		local SF_PAUSE 		= 0
 		local SF_NORMAL 	= 1
@@ -135,7 +136,7 @@ StormFox2.Time = StormFox2.Time or {}
 			return lerp1440( finishTime, sunSet, sunRise )
 		end
 		-- Takes the ingame 0-1440 and converts it to the cycle-area
-		local function FinsihToCycle( finishTime )
+		function FinsihToCycle( finishTime )
 			if isInDay( finishTime ) then -- If day
 				return finishDayToPercent( finishTime ) * dayLength
 			else
@@ -217,6 +218,9 @@ StormFox2.Time = StormFox2.Time or {}
 				BASE_TIME = CurTime() - p * nightLength
 			end
 			GetCache = nil -- Delete time cache
+			-- Gets called when the user changes the time, or time variables. Tells scripts to recalculate things.
+			if not StormFox2.Loaded then return end
+			hook.Run("StormFox2.Time.Changed")
 		end
 		function UpdateMath(nsTime, blockSetTime)
 			--print("MATH UPDATE", nsTime, blockSetTime)
@@ -265,6 +269,11 @@ StormFox2.Time = StormFox2.Time or {}
 			local chunk = ((CurTime() - BASE_TIME) % cycleLength)
 			return (chunk - dayLength) / nightLength
 		end
+		function GetCycleRaw()
+			if CR then return CR end
+			CR = ((CurTime() - BASE_TIME) % cycleLength)
+			return CR
+		end
 		-- Returns how far the day has progressed 0 = sunRise, 0.5 = sunSet, 1 = sunRise
 		function StormFox2.Time.GetCycleTime()
 			if CycleCache then return CycleCache end
@@ -289,6 +298,7 @@ StormFox2.Time = StormFox2.Time or {}
 	do
 		local i = 0
 		hook.Add("Think", "StormFox2.Time.ClearCache", function()
+			CR = nil
 			i = i + 1
 			if i >= 2 then
 				i = 0
@@ -537,6 +547,15 @@ StormFox2.Time = StormFox2.Time or {}
 			return lastT and true or false
 		end
 	end
+	--[[
+		Returns the seconds until we reached the given time.
+		Note to lisen for the hook: "StormFox2.Time.Changed". In case an admin changes the time / time-settings.
+	]]
+	function StormFox2.Time.SecondsUntil( nTime )
+		local c_cycleTime = GetCycleRaw() -- Seconds past sunrise
+		local t_cycleTime = FinsihToCycle( nTime ) -- Seconds past sunrise to said time
+		return ( t_cycleTime - c_cycleTime ) % ( dayLength + nightLength )
+	end
 
 -- Default Time Display
 if CLIENT then
@@ -559,4 +578,37 @@ if CLIENT then
 		local use_12 = StormFox2.Setting.GetCache("12h_display",default_12)
 		return StormFox2.Time.TimeToString(nTime,use_12)
 	end
+
+	-- In case the date changes, call the next-day hook
+	hook.Add("StormFox2.data.change","StormFox2.Date.NextDay", function(sKey, zVar, nDelta)
+		if sKey == "day" then
+			hook.Run("StormFox2.Time.NextDay")
+		end
+	end)
+else
+	local nextDay = -1
+	local _b = false
+	hook.Add("Think", "StormFox2.Time.NextDayCheck", function()
+		if nextDay <= CurTime() then -- Calculate next day
+			local sec = StormFox2.Time.SecondsUntil( 1440 )
+			nextDay = CurTime() + sec
+			if _b then
+				hook.Run("StormFox2.Time.NextDay")
+			end
+			_b = true
+		end
+	end)
+
+	-- The time and or timespeed changed. Recalculate when the day changes
+	hook.Add("StormFox2.Time.Changed", "StormFox2.Time.NextDayCalc", function()
+		nextDay = -1
+		_b = false
+	end)
+
+	-- We use the date-functions to increase the day
+	hook.Add("StormFox2.Time.NextDay", "StormFox2.Data.NextDay", function()
+		local nDay = StormFox2.Date.GetYearDay() + 1
+		StormFox2.Date.SetYearDay( nDay )
+	end)
+	
 end

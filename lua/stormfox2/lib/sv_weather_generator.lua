@@ -400,13 +400,11 @@ hook.Add("Think", "StormFox2.weather.weeklogic", function()
 end)
 
 -- Clears wcache and generates next day, on the next day
-hook.Add("StormFox2.Time.NextDay", "StormFox2.Weathergen.NextDay", function(nDaysPast)
+hook.Add("StormFox2.Time.NextDay", "StormFox2.Weathergen.NextDay", function()
 	if not StormFox2.Setting.GetCache("enable", true) or not StormFox2.Setting.GetCache("auto_weather", false) then return end
-	for i = 1, math.min(nDaysPast, 7) do
-		nextDay() -- New day
-	end
+	nextDay() -- New day
 	updateWTab()
-	clearWeekCache( nDaysPast ) -- Removes last day from the cache
+	clearWeekCache( 1 ) -- Removes last day from the cache
 	generateJSON()
 end)
 

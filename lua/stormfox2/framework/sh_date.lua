@@ -144,9 +144,4 @@ if SERVER then
 		if not switch then return end
 		StormFox2.Network.Set("day", os.date("%j"))
 	end,"sf_convar_data")
-	-- Next day
-	hook.Add("StormFox2.Time.NextDay", "StormFox2.Data.NextDay", function(nDaysPast)
-		local nDay = StormFox2.Date.GetYearDay() + nDaysPast
-		StormFox2.Date.SetYearDay( nDay )
-	end) 
 end
