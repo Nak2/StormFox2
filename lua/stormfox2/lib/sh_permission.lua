@@ -26,18 +26,17 @@ if SERVER then
 	}
 	net.Receive("StormFox2.menu", function(len, ply)
 		local req = net.ReadBool()
-		if ply:IsListenServerHost() then
+		if ply:IsListenServerHost() or game.SinglePlayer() then
 			net.Start("StormFox2.menu")
 				net.WriteBool(req)
 			net.Send( ply )
-			StormFox2.WeatherGen.UpdatePlayer( ply ) -- Tell the player about the upcoming weather
+			return
 		end
 		CAMI.PlayerHasAccess(ply,req and "StormFox Settings" or "StormFox WeatherEdit",function(b)
 			if not b then return end
 			net.Start("StormFox2.menu")
 				net.WriteBool(req)
 			net.Send( ply )
-			StormFox2.WeatherGen.UpdatePlayer( ply ) -- Tell the player about the upcoming weather
 		end)
 	end)
 	local function NoAccess(ply, msg)
