@@ -644,3 +644,4 @@ end
 			StormFox2.Menu.OpenController()
 		end
 	} )
+	concommand.Add('stormfox2_controller', StormFox2.Menu.OpenController, nil, "Opens SF controller menu")
