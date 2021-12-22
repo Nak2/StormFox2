@@ -322,6 +322,138 @@ local m_none  = Material("icon16/cancel.png")
 local m_bu 	= Material("gui/workshop_rocket.png")
 local c_bu = Color(155,155,155)
 
+local col_on 	= Color(55,205,55,205)
+local col_off 	= Color(55,55,55,205)
+local col_dark 	= Color(0,0,0,205)
+local function wButton(self, w, h)
+	local b = self.SettingTab.pr_week > 0
+	derma.SkinHook( "Paint", "Button", self, w, h )
+	surface.SetMaterial( self.WeatherObj.GetSymbol( 0, 20 ) )
+	surface.SetDrawColor( b and col_on or col_off )
+	local s = math.min(w / 2, h / 2)
+	surface.DrawTexturedRectRotated(s, (h - 20) / 2, s, s, 0)
+	surface.SetDrawColor( col_dark )
+	surface.DrawRect(0, h - 20, w, 20)
+	--PrintTable(self.WeatherObj)
+	local text = self.WeatherObj:GetName(720, 20, 0, false, 1)
+	text = language.GetPhrase(text) or text
+	surface.SetFont("DermaDefault")
+	if surface.GetTextSize(text) > w * 0.8 then
+		text = text:sub(0,10) .. ".."
+	end
+	draw.DrawText(text, "DermaDefault", w / 2, h - 18, color_white, TEXT_ALIGN_CENTER)
+end
+
+-- local lastWClick
+local function DoClickWButton( self )
+	if lastWClick then
+		lastWClick:Remove()
+		lastWClick = nil
+	end
+	lastWClick = vgui.Create("DFrame")
+	lastWClick:SetSize( 230, 340 )
+	lastWClick:Center()
+	lastWClick:MakePopup()
+	lastWClick:SetTitle( self.WeatherObj:GetName(720, 20, 0, false, 1) )
+
+	local v = vgui.Create("DLabel", lastWClick)
+	v:SetText("#sf_max_weathers_prweek")
+	v:Dock(TOP)
+	-- Maxs pr week
+	local nNum = vgui.Create("DNumberWang", lastWClick)
+	nNum:Dock(TOP)
+	nNum:SetValue( self.SettingTab.pr_week )
+	-- Amount
+	local v = vgui.Create("DLabel", lastWClick)
+	v:SetText("#sf_weatherpercent")
+	v:Dock(TOP)
+	local aMin = vgui.Create("DNumSlider", lastWClick)
+		aMin:Dock(TOP)
+		aMin:SetMinMax(0, 1)
+		aMin:SetText(niceName("#minimum"))
+		aMin:DockMargin(5, 0, 5, 0)
+		aMin:SetValue( self.SettingTab.amoun_min )
+	local aMax = vgui.Create("DNumSlider", lastWClick)
+		aMax:Dock(TOP)
+		aMax:SetMinMax(0, 1)
+		aMax:SetText(niceName("#maximum"))
+		aMax:DockMargin(5, -5, 5, 0)
+		aMax:SetValue( self.SettingTab.amount_max )
+
+	-- Day Length
+	local v = vgui.Create("DLabel", lastWClick)
+	v:SetText("#sf_day_length")
+	v:Dock(TOP)
+	local lMin = vgui.Create("DNumSlider", lastWClick)
+		lMin:Dock(TOP)
+		lMin:SetMinMax(180, 1440)
+		lMin:SetText(niceName("#minimum"))
+		lMin:DockMargin(5, 0, 5, 0)
+		lMin:SetValue( self.SettingTab.length_min )
+		lMin.TextArea:SetEditable( false )
+		function lMin.TextArea:Think()
+			self:SetText( StormFox2.Time.TimeToString( tonumber( lMin:GetValue() ) ) )
+		end
+
+	local lMax = vgui.Create("DNumSlider", lastWClick)
+		lMax:Dock(TOP)
+		lMax:SetMinMax(180, 1440)
+		lMax:SetText(niceName("#maximum"))
+		lMax:DockMargin(5, -5, 5, 0)
+		lMax:SetValue( self.SettingTab.length_max )
+		lMax.TextArea:SetEditable( false )
+		function lMax.TextArea:Think()
+			self:SetText( StormFox2.Time.TimeToString( tonumber( lMax:GetValue() ) ) )
+		end
+	-- Start Time
+	local v = vgui.Create("DLabel", lastWClick)
+	v:SetText("#sf_start_time")
+	v:Dock(TOP)
+	local sMin = vgui.Create("DNumSlider", lastWClick)
+		sMin:Dock(TOP)
+		sMin:SetMinMax(180, 1440)
+		sMin:SetText(niceName("#minimum"))
+		sMin:DockMargin(5, 0, 5, 0)
+		sMin:SetValue( self.SettingTab.start_min )
+		sMin.TextArea:SetEditable( false )
+		function sMin.TextArea:Think()
+			self:SetText( StormFox2.Time.TimeToString( tonumber( sMin:GetValue() ) ) )
+		end
+
+	local sMax = vgui.Create("DNumSlider", lastWClick)
+		sMax:Dock(TOP)
+		sMax:SetMinMax(180, 1440)
+		sMax:SetText(niceName("#maximum"))
+		sMax:DockMargin(5, -5, 5, 0)
+		sMax:SetValue( self.SettingTab.start_max )
+		sMax.TextArea:SetEditable( false )
+		function sMax.TextArea:Think()
+			self:SetText( StormFox2.Time.TimeToString( tonumber( sMax:GetValue() ) ) )
+		end
+	-- Set 
+	local set = vgui.Create("DButton", lastWClick)
+	set:Dock(TOP)
+	set:SetText(niceName( "#save_options" ))
+	local setting = self.obj
+	function set:DoClick()
+		local tab = {}
+			tab.amoun_min 	= tonumber ( aMin:GetValue() )
+			tab.amoun_max 	= tonumber ( aMax:GetValue() )
+			tab.start_min	= tonumber ( sMin:GetValue() )
+			tab.start_max	= tonumber ( sMax:GetValue() )
+			tab.length_min	= tonumber ( lMin:GetValue() )
+			tab.length_max	= tonumber ( lMax:GetValue() )
+			tab.pr_week		= tonumber ( nNum:GetValue() )
+		local data = StormFox2.WeatherGen.ConvertTabToSetting( tab )
+		setting:SetValue( data )
+		if lastWClick then
+			lastWClick:Remove()
+			lastWClick = nil
+		end
+	end
+end
+
+
 --					Day			Night
 local quick_time = {
 	{"sf_default" 		, StormFox2.Setting.GetObject("day_length"):GetDefault(), StormFox2.Setting.GetObject("night_length"):GetDefault(), "icon16/package.png"},
@@ -542,11 +674,56 @@ local tabs = {
 		board:AddSetting("hide_forecast")
 		board:AddSetting("addnight_temp")
 		board:AddSetting("max_weathers_prweek")
-		board:AddTitle("#temperature")
 		board:AddSetting("max_temp"):SetMin(-10)
 		board:AddSetting("min_temp"):SetMin(-10):SetMax(30)
+		local p = vgui.Create("DScrollPanel", board)
+		p:Dock(TOP)
+		p:SetTall( 164 )
+		p.buttons = {}
+		p:DockMargin(24, 5, 24, 5)
+		
+		local t = StormFox2.Weather.GetAll()
+		local h = {
+			["Clear"] = "!",
+			["Rain"] = '"',
+			["Cloud"] = "#",
+			["Fog"] = "$"
+		}
+		table.sort(t, function(a, b)
+			if h[a] then a = h[a] end
+			if h[b] then b = h[b] end
+			return a < b end
+		)
+		p:SetTall( 82 * math.floor( #t / 6) )
+		table.RemoveByValue(t, "Groove")
+		for i, sName in ipairs( t ) do
+			local obj = StormFox2.Setting.GetObject("wgen_" .. sName)
+			if not obj then StormFox2.Warning("Unable to locate settings for [" .. sName .. "]") continue end
+			local b = vgui.Create("DButton", p)
+			b.obj = obj
+			table.insert(p.buttons,b)
+			b:SetSize( 72, 64 + 16 )
+			b:SetText("")
+			b.Paint = wButton
+			b.WeatherObj = StormFox2.Weather.Get( sName )
+			b.SettingTab = StormFox2.WeatherGen.ConvertSettingToTab( obj:GetValue() )
+			b.DoClick = DoClickWButton
+			obj:AddCallback(function(str)
+				b.SettingTab = StormFox2.WeatherGen.ConvertSettingToTab( str )
+			end, b)
+		end
 
-		board:AddSetting("temp_acc")
+		function p:PerformLayout(w,h)
+			local x, y = 0, 0
+			for k, v in ipairs( self.buttons ) do
+				v:SetPos(x,y)
+				x = x + ( 72 + 2 )
+				if x > w - 72 then
+					y = y + ( 64 + 16 + 2 )
+					x = 0
+				end
+			end
+		end
 	
 		board:AddTitle("OpenWeatherMap API")
 			local apiboard = vgui.Create("DPanel", board)

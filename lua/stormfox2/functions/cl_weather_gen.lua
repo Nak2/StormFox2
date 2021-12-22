@@ -1,26 +1,98 @@
--- Generator
-StormFox2.Setting.AddSV("temp_acc",5,nil,"Weather",0,20)
-StormFox2.Setting.AddSV("min_temp",-10,nil,"Weather")
-StormFox2.Setting.AddSV("max_temp",20,nil, "Weather")
-StormFox2.Setting.AddSV("addnight_temp",-4.5,nil, "Weather", -100, 0)
-StormFox2.Setting.AddSV("max_weathers_prweek",3,nil, "Weather", 1, 8)
-StormFox2.Setting.SetType( "min_temp", "temp" )
-StormFox2.Setting.SetType( "max_temp", "temp" )
-StormFox2.Setting.AddSV("max_weathers_prweek",3,nil, "Weather", 1, 8)
 
+StormFox2.WeatherGen = StormFox2.WeatherGen or {}
 -- Settings
-StormFox2.Setting.AddSV("auto_weather",true,nil, "Weather", 0, 1)
+StormFox2.Setting.AddSV("auto_weather",true,nil, "Weather")
 StormFox2.Setting.AddSV("hide_forecast",false,nil, "Weather")
 
+-- OpenWeatherMap
+	--[[
+		Some of these settings are fake, allow the client to set the settings, but never retrive the secured ones.
+		So you can't see the correct location or api_key and variables won't be networked to the clients.
+	]]
+
+	StormFox2.Setting.AddSV("openweathermap_key", "", nil,"Weather")		-- Fake'ish setting
+	StormFox2.Setting.AddSV("openweathermap_location", "", nil,"Weather") 	-- Fake'ish setting
+	StormFox2.Setting.AddSV("openweathermap_city","",nil,"Weather")			-- Fake'ish setting
+
+	StormFox2.Setting.AddSV("openweathermap_enabled",false,nil,"Weather")
+	StormFox2.Setting.AddSV("openweathermap_lat",52,nil,"Weather",-180,180) -- Unpercise setting
+	StormFox2.Setting.AddSV("openweathermap_lon",-2,nil,"Weather",-90,90)	-- Unpercise setting
+
+-- Generator
+	StormFox2.Setting.AddSV("min_temp",-10,nil,"Weather")
+	StormFox2.Setting.AddSV("max_temp",20,nil, "Weather")
+
+	local function toStr( num )
+		local c = tostring( num )
+		return string.rep("0", 4 - #c) .. c
+	end
+	local function SplitSetting( str )
+		if #str< 11 then return {} end
+		local tab = {}
+			tab.amoun_min 	= math.min(100, string.byte(str, 1,1) - 33 ) / 100
+			tab.amount_max 	= math.min(100, string.byte(str, 2,2) - 33 ) / 100
+			
+			tab.start_min 	= math.min(1440,tonumber( string.sub(str, 3, 6) ))
+			tab.start_max 	= math.min(1440,tonumber( string.sub(str, 7, 10) ))
+
+			tab.length_min 	= tonumber( string.sub(str, 11, 14) )
+			tab.length_max 	= tonumber( string.sub(str, 15, 18) )
+			tab.pr_week 	= tonumber( string.sub(str, 19) )
+		return tab
+	end
+	local function CombineSetting( tab )
+		local c =string.char( 33 + (tab.amoun_min or 0) * 100 )
+		c = c .. string.char( 33 + (tab.amoun_max or 0) * 100 )
+		
+		c = c .. toStr(math.Clamp( math.Round( tab.start_min or 0), 0, 1440 ) )
+		c = c .. toStr(math.Clamp( math.Round( tab.start_max or 0), 0, 1440 ) )
+		
+		c = c .. toStr(math.Clamp( math.Round( tab.length_min or 360 ), 180, 9999) )
+		c = c .. toStr(math.Clamp( math.Round( tab.length_max or 360 ), 180, 9999) )
+
+		c = c .. tostring( tab.pr_week or 2 )
+		return c
+	end
+	local default_setting = {}
+	default_setting["Rain"] = CombineSetting({
+		["amoun_min"] = 0.2,
+		["amoun_max"] = 0.9,
+		["start_min"] = 300,
+		["start_max"] = 1200,
+		["length_min"] = 360,
+		["length_max"] = 720,
+		["pr_week"] = 3
+	})
+	default_setting["Clear"] = CombineSetting({
+		["amoun_min"] = 1,
+		["amoun_max"] = 1,
+		["start_min"] = 0,
+		["start_max"] = 1440,
+		["length_min"] = 360,
+		["length_max"] = 1440,
+		["pr_week"] = 7
+	})
+	local default = CombineSetting({
+		["amoun_min"] = 0.4,
+		["amoun_max"] = 0.9,
+		["start_min"] = 300,
+		["start_max"] = 1200,
+		["length_min"] = 300,
+		["length_max"] = 1200,
+		["pr_week"] = 0
+	})
+	StormFox2.WeatherGen.ConvertSettingToTab = SplitSetting
+	StormFox2.WeatherGen.ConvertTabToSetting = CombineSetting
+	
+	hook.Add("stormfox2.postloadweather", "StormFox2.WeatherGen.Load", function()
+		for _, sName in ipairs( StormFox2.Weather.GetAll() ) do
+			local str = default_setting[sName] or default
+			StormFox2.Setting.AddSV("wgen_" .. sName,str,nil,"Weather")
+		end
+	end)
+
+
 -- API
-StormFox2.Setting.AddSV("openweathermap_enabled",false,nil,"Weather")
-StormFox2.Setting.AddSV("openweathermap_lat","52",nil,"Weather",-180,180)
-StormFox2.Setting.AddSV("openweathermap_lon","-2",nil,"Weather",-90,90)
-StormFox2.Setting.SetType( "openweathermap_lat", "number" )
-StormFox2.Setting.SetType( "openweathermap_lon", "number" )
-
-StormFox2.WeatherGen = {}
-
 local forecastJson = {}
 local nul_icon = Material("gui/noicon.png")
 -- Is it rain or inherits from rain?
