@@ -129,6 +129,10 @@ function StormFox2.Data.Set( sKey, zVar, nDelta )
 	if StormFox_DATA[sKey] ~= nil and not StormFox_AIMDATA[sKey] then
 		if StormFox_DATA[sKey] == zVar then return end
 	end
+	-- If time is paused, there shouldn't be any lerping
+	if StormFox2.Time and StormFox2.Time.IsPaused and StormFox2.Time.IsPaused() then
+		nDelta = 0
+	end
 	-- Delete old cache
 	lerpCache[sKey] = nil
 	-- Set to nil
