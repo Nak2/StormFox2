@@ -520,7 +520,7 @@ local function Init(self)
 		local r = Material("gui/point.png")
 		local z = Material("gui/workshop_rocket.png")
 		function pause:Think()
-			if a:GetValue() <= 0 and b:GetValue() <= 0 then
+			if StormFox2.Time.IsPaused() then
 				self.state = 0 -- pause
 			else
 				self.state = 1 -- running
