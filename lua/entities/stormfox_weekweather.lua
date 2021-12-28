@@ -92,8 +92,8 @@ else
 				elseif not aF and not wF then
 					DrawDisabled(w,h,"sf_auto_weather 0")
 				else
-					local t = StormFox2.WeatherGen.GetForcast()
-					if #t < 1 then
+					local t = StormFox2.WeatherGen.GetForecast()
+					if not t or not t.weather then
 						DrawLoading(w,h)
 					else
 						StormFox2.WeatherGen.DrawForecast(w,h, true)
