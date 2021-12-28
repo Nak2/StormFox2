@@ -235,6 +235,7 @@ StormFox2.Time = StormFox2.Time or {}
 				--print(nightLength)
 				if dayLength <= 0 and nightLength <= 0 or sunSet == sunRise then -- Pause type
 					curType = SF_PAUSE
+					cycleLength = 0
 				elseif nightLength <= 0 then -- Day only
 					cycleLength = dayLength
 					curType = SF_DAYONLY
@@ -270,6 +271,7 @@ StormFox2.Time = StormFox2.Time or {}
 			return (chunk - dayLength) / nightLength
 		end
 		function GetCycleRaw()
+			if not cycleLength then return 0 end -- Not loaded, or pause on launch
 			if CR then return CR end
 			CR = ((CurTime() - BASE_TIME) % cycleLength)
 			return CR
@@ -383,7 +385,7 @@ StormFox2.Time = StormFox2.Time or {}
 
 	-- How many seconds
 	function StormFox2.Time.GetSpeed_RAW()
-		if not nightLength then return 0 end
+		if not nightLength or StormFox2.Time.IsPaused() then return 0 end
 		if IsDayCache then
 			return 1 / dayLength
 		end
@@ -527,8 +529,14 @@ StormFox2.Time = StormFox2.Time or {}
 	--[[
 		Allows to pause and resume time
 	]]
+	local lastT
+	-- Returns true if the time is paused, second argument is nil or a table of the old settings from StormFox2.Time.Pause()
+	function StormFox2.Time.IsPaused()
+		local dl = day_length:GetValue()
+		local nl = night_length:GetValue()
+		return dl <= 0 and nl <= 0, lastT
+	end
 	if SERVER then
-		local lastT
 		function StormFox2.Time.Pause()
 			local dl = day_length:GetValue()
 			local nl = night_length:GetValue()
@@ -538,13 +546,15 @@ StormFox2.Time = StormFox2.Time or {}
 			night_length:SetValue( 0 )
 		end
 		function StormFox2.Time.Resume()
-			if not lastT then return end -- Can't resume nil
-			day_length:SetValue( lastT[1] )
-			night_length:SetValue( lastT[2] )
-			lastT = nil
-		end
-		function StormFox2.Time.IsPaused()
-			return lastT and true or false
+			if not StormFox2.Time.IsPaused() then return end
+			if lastT then
+				day_length:SetValue( lastT[1] )
+				night_length:SetValue( lastT[2] )
+				lastT = nil
+			else
+				day_length:SetValue( 12 )
+				night_length:SetValue( 12 )
+			end
 		end
 	end
 	--[[
@@ -552,6 +562,7 @@ StormFox2.Time = StormFox2.Time or {}
 		Note to lisen for the hook: "StormFox2.Time.Changed". In case an admin changes the time / time-settings.
 	]]
 	function StormFox2.Time.SecondsUntil( nTime )
+		if StormFox2.Time.IsPaused() then return -1 end
 		local c_cycleTime = GetCycleRaw() -- Seconds past sunrise
 		local t_cycleTime = FinsihToCycle( nTime ) -- Seconds past sunrise to said time
 		return ( t_cycleTime - c_cycleTime ) % ( dayLength + nightLength )
@@ -591,11 +602,15 @@ else
 	hook.Add("Think", "StormFox2.Time.NextDayCheck", function()
 		if nextDay <= CurTime() then -- Calculate next day
 			local sec = StormFox2.Time.SecondsUntil( 1440 )
-			nextDay = CurTime() + sec
-			if _b then
-				hook.Run("StormFox2.Time.NextDay")
+			if sec == -1 then -- Time is paused, will never be next day
+				nextDay = CurTime() + 500
+			else
+				nextDay = CurTime() + sec
+				if _b then
+					hook.Run("StormFox2.Time.NextDay")
+				end
+				_b = true
 			end
-			_b = true
 		end
 	end)
 
