@@ -79,7 +79,7 @@ else
 	local l_update = 0
 	local function UpdateRTTexture()
 		if l_update > CurTime() then return end
-		l_update = CurTime() + 0.1
+		l_update = CurTime() + 0.5
 		local hF = StormFox2.Setting.GetCache("hide_forecast", false)
 		local aF = StormFox2.Setting.GetCache("auto_weather", true)
 		local wF = StormFox2.Setting.GetCache("openweathermap_enabled", false)
