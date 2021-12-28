@@ -392,7 +392,7 @@ local function DoClickWButton( self )
 		lMin:SetValue( self.SettingTab.length_min )
 		lMin.TextArea:SetEditable( false )
 		function lMin.TextArea:Think()
-			self:SetText( StormFox2.Time.TimeToString( tonumber( lMin:GetValue() ) ) )
+			self:SetText( StormFox2.Time.TimeToString( tonumber( lMin:GetValue() ) ) .. "h" )
 		end
 
 	local lMax = vgui.Create("DNumSlider", lastWClick)
@@ -403,12 +403,14 @@ local function DoClickWButton( self )
 		lMax:SetValue( self.SettingTab.length_max )
 		lMax.TextArea:SetEditable( false )
 		function lMax.TextArea:Think()
-			self:SetText( StormFox2.Time.TimeToString( tonumber( lMax:GetValue() ) ) )
+			self:SetText( StormFox2.Time.TimeToString( tonumber( lMax:GetValue() ) ) .. "h" )
 		end
 	-- Start Time
 	local v = vgui.Create("DLabel", lastWClick)
 	v:SetText("#sf_start_time")
 	v:Dock(TOP)
+
+	local _12 = StormFox2.Setting.GetCache("12h_display")
 	local sMin = vgui.Create("DNumSlider", lastWClick)
 		sMin:Dock(TOP)
 		sMin:SetMinMax(180, 1440)
@@ -417,7 +419,7 @@ local function DoClickWButton( self )
 		sMin:SetValue( self.SettingTab.start_min )
 		sMin.TextArea:SetEditable( false )
 		function sMin.TextArea:Think()
-			self:SetText( StormFox2.Time.TimeToString( tonumber( sMin:GetValue() ) ) )
+			self:SetText( StormFox2.Time.TimeToString( tonumber( sMin:GetValue() ) , _12) )
 		end
 
 	local sMax = vgui.Create("DNumSlider", lastWClick)
@@ -428,7 +430,7 @@ local function DoClickWButton( self )
 		sMax:SetValue( self.SettingTab.start_max )
 		sMax.TextArea:SetEditable( false )
 		function sMax.TextArea:Think()
-			self:SetText( StormFox2.Time.TimeToString( tonumber( sMax:GetValue() ) ) )
+			self:SetText( StormFox2.Time.TimeToString( tonumber( sMax:GetValue() ), _12 ) )
 		end
 	-- Set 
 	local set = vgui.Create("DButton", lastWClick)
