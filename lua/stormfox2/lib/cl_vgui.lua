@@ -714,7 +714,13 @@ do
 		--self.text:SetConVar( sName )
 		function self.text:OnEnter( val )
 			val = string.match(val, "[%d%.-]+") or val
-			local clamp = math.Clamp(tonumber( val ), _sfobj:GetMin(), _sfobj:GetMax())
+			local clamp = tonumber( val ) or 0
+			if _sfobj:GetMax() then
+				clamp = math.min(clamp, _sfobj:GetMax())
+			end
+			if _sfobj:GetMin() then
+				clamp = math.max(clamp, _sfobj:GetMin())
+			end
 			_sfobj:SetValue(clamp)
 			self:SetText(tostring(clamp))
 		end
@@ -841,10 +847,15 @@ do
 		--self.text:SetConVar( sName )
 		self.check._block = _sfobj:IsRadio()
 		function self.text:OnEnter( val )
-			val = string.match(val, "[%d%.-]+") or val
-			local clamp = math.Clamp(tonumber( val ), _sfobj:GetMin(), _sfobj:GetMax())
-			_sfobj:SetValue(clamp)
-			self:SetText(tostring(clamp))
+			val = tonumber( string.match(val, "[%d%.-]+") or val ) or 0
+			if _sfobj:GetMin() then
+				val = math.max(_sfobj:GetMin(), val)
+			end
+			if _sfobj:GetMax() then
+				val = math.min(_sfobj:GetMax(), val)
+			end
+			_sfobj:SetValue(val)
+			self:SetText(tostring(val))
 		end
 		function self.check:DoClick()
 			local min = _sfobj:GetMin() or -1
