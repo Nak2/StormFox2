@@ -93,7 +93,12 @@ StormFox2.Setting.AddSV("hide_forecast",false,nil, "Weather")
 
 
 -- API
-local forecastJson = {}
+
+local days = 2
+local days_length = days * 1440
+local hours_8 = 60 * 8
+
+forecast = forecast or {}
 local nul_icon = Material("gui/noicon.png")
 -- Is it rain or inherits from rain?
 local function isWTRain(wT)
@@ -102,205 +107,199 @@ local function isWTRain(wT)
 	return false
 end
 
-function StormFox2.WeatherGen.NetReadForecast()
-	local t = {}
-	t.unix_stamp = net.ReadBool()
-	local n = net.ReadUInt(8)
-	for i = 1, n do
-		t[i] = {}
-		t[i].Percent = math.Round(net.ReadFloat(), 2)
-		t[i].Weather = net.ReadString()
-		t[i].Temperature = math.Round(net.ReadFloat(), 3)
-		t[i].Thunder = net.ReadBool()
-		t[i].WindAng = net.ReadUInt(9)
-		t[i].Wind = math.Round(net.ReadFloat(), 2)
-		if not t.unix_stamp then
-			t[i].Time = net.ReadUInt(5)
-			t[i].DisplayTime = StormFox2.Time.GetDisplay(t[i].Time * 60)
-		else
-			t[i].Unix = net.ReadUInt(32)
-			t[i].DisplayTime = "[" .. StormFox2.Time.GetDisplay(os.date("%H", t[i].Unix) * 60) .. "]"
-		end
-		local wT = StormFox2.Weather.Get( t[i].Weather )
-		if wT then
-			local time = t[i].Time and t[i].Time * 60 or 720
-			t[i].Icon = wT.GetIcon(time or 720, t[i].Temperature, t[i].Wind, t[i].Thunder, t[i].Percent)
-			t[i].Desc = wT:GetName(time or 720, t[i].Temperature, t[i].Wind, t[i].Thunder, t[i].Percent )
-		else
-			t[i].Icon = nul_icon
-			t[i].Desc = "<Error>"
-		end
-		if isWTRain(wT) then
-			t[i].Downfall = t[i].Percent
-		else
-			t[i].Downfall = 0
-		end
+local function fkey( x, a, b )
+	return (x - a) / (b - a)
+end
+
+-- The tables are already in order.
+local function findNext( tab, time ) -- First one is time
+	for i, tab in ipairs( tab ) do
+		if time > tab[1] then continue end
+		return i
 	end
-	return t
+	return 0
+end
+
+local function calcPoint( tab, time )
+	local i = findNext( tab, time )
+	local _next = tab[i]
+	local _first = tab[i - 1]
+	local _procent = 1
+	if not _first then
+		_first = _next
+	else
+		_procent = fkey(time, _first[1], _next[1])
+	end
+	return _procent, _first, _next
 end
 
 net.Receive("StormFox2.weekweather", function(len)
-	forecastJson = StormFox2.WeatherGen.NetReadForecast()
+	forecast = {}
+		forecast.unix_time 		= net.ReadBool()
+		forecast.temperature 	= net.ReadTable()
+		forecast.weather 		= net.ReadTable()
+		forecast.wind 			= net.ReadTable()
+		forecast.windyaw 		= net.ReadTable()
+	for _, v in pairs( forecast.temperature ) do
+		if not forecast._minTemp or forecast._minTemp > v[2] then
+			forecast._minTemp = v[2]
+		end
+		if not forecast._maxTemp or forecast._maxTemp < v[2] then
+			forecast._maxTemp = v[2]
+		end
+	end
+	-- Calculate / make a table for each 4 hours
+	forecast._ticks = {}
+	local lastW
+	for i = 0, days_length + 1440, hours_8 do
+		local _first = findNext( forecast.weather, i - hours_8 / 2 )
+		local _last = findNext( forecast.weather, i + hours_8 / 2 ) or _first
+		if not _first then continue end --????
+		local m = 0
+		local w_type = {
+			["fAmount"] = 0,
+			["sName"] = "Clear"
+		}
+		for i = _first, _last do
+			local w_data = forecast.weather[i]
+			if not w_data then continue end
+			if w_data[2].fAmount == 0 or w_data[2].fAmount < m then continue end
+			m = w_data[2].fAmount
+			w_type = w_data[2]
+		end
+
+		local _tempP, _tempFirst, _tempNext = calcPoint( forecast.temperature, i )
+				
+		--local _tempP = fkey( i,  )
+		forecast._ticks[i] = {
+			["fAmount"] = w_type.fAmount,
+			["sName"] = w_type.sName,
+			["nTemp"] = Lerp(_tempP, _tempFirst[2], _tempNext[2])
+		}
+	end
+	--PrintTable(forecast)	
 	hook.Run("StormFox2.WeatherGen.ForcastUpdate")
 end)
 
-function StormFox2.WeatherGen.GetForcast()
-	return forecastJson
+function StormFox2.WeatherGen.GetForecast()
+	return forecast
+end
+
+function StormFox2.WeatherGen.IsUnixTime()
+	return forecast.unix_time or false
 end
 
 
 -- Render forcast
 
-local function fkey( x, a, b )
-	return (x - a) / (b - a)
-end
-
-
 local bg = Color(26,41,72, 255)
 local rc = Color(55,55,255,55)
-local ca = Color(255,255,255,8)
+local ca = Color(255,255,255,58)
+local tempBG = Color(255,255,255,15)
+local sorter = function(a,b) return a[1] < b[1] end
+
+local m_box = Material("vgui/arrow")
+local m_c = Material("gui/gradient_up")
+local function DrawTemperature( x, y, w, h, t_list, min_temp, max_temp, bExpensive )
+	surface.SetDrawColor(ca)
+	surface.DrawLine(x, y + h, x + w, y + h)
+	render.SetScissorRect( x, y - 25, x + w, y + h, true )
+	--surface.DrawOutlinedRect(x, y, w, h)
+	local hzero = y + h * fkey(0, max_temp, min_temp)
+	local tempdiff = max_temp - min_temp
+
+	-- Draw Zero
+	if hzero > y and hzero < y + h then
+		surface.SetDrawColor(color_white)
+		surface.SetMaterial(m_box)
+		surface.DrawTexturedRectUV(x, hzero, w, 1, 0, 0.5, w / 1 * 0.3, 0.6)
+	end
+	
+	local curTim = StormFox2.Time.Get()
+	local oldX, oldY, oldP
+	surface.SetTextColor(color_white)
+	surface.SetFont("SF_Display_H3")
+	for i, data in ipairs( t_list ) do
+		if not data then break end
+		local time_p = (data[1] - curTim) / days_length
+		local temp_p = data[2]
+		local pointx = time_p * w + x
+		local pointy = y + h - (temp_p * h)
+		if oldX then
+			if oldX > x + w then break end
+			surface.SetDrawColor(color_white)
+			surface.DrawLine(pointx, pointy, oldX, oldY)
+			if bExpensive then
+				local triangle = {
+					{ x = oldX	, y = oldY	, u = 0,v = oldP},
+					{ x = pointx, y = pointy, u = 1,v = temp_p},
+					{ x = pointx, y = y + h , u = 1,v = 0},
+					{ x = oldX 	, y = y + h , u = 0,v = 0},
+				}
+				surface.SetMaterial(m_c)
+				surface.SetDrawColor(tempBG)
+				surface.DrawPoly( triangle )
+			end
+			surface.SetTextPos(pointx - 5, pointy - 14)
+			local temp = min_temp + temp_p * tempdiff
+			temp = StormFox2.Temperature.GetDisplay(temp) .. StormFox2.Temperature.GetDisplaySymbol()
+			surface.DrawText(temp)
+		end
+		oldX = pointx
+		oldY = pointy
+		oldP = temp_p
+	end
+	render.SetScissorRect(0,0,0,0,false)
+	--PrintTable(t_list)
+end
+
 function StormFox2.WeatherGen.DrawForecast(w,h,bExpensive)
 	local y = 0
 	surface.SetDrawColor(bg)
 	surface.DrawRect(0,0,w,h)
-	local unix = forecastJson.unix_stamp
-
-	-- Top (Current)
-	if h > 300 then
-		local cW = StormFox2.Weather.GetCurrent()
-		draw.DrawText(StormFox2.Weather.GetDescription(), "SF_Display_H", w / 2, 10, color_white, TEXT_ALIGN_CENTER)
-		
-		local s = math.Round(StormFox2.Temperature.GetDisplay(), 1) .. StormFox2.Temperature.GetDisplaySymbol()
-		local c = w / 2
-		local n,b = StormFox2.Wind.GetBeaufort()
-		local wd = language.GetPhrase(b)
-		draw.DrawText(wd, "SF_Display_H2", c, 38, color_white, TEXT_ALIGN_CENTER)
-		local tw = math.max(surface.GetTextSize(wd) * 0.6, 50)
-		draw.DrawText(s, "SF_Display_H2", c - tw, 38, color_white, TEXT_ALIGN_RIGHT)
-		draw.DrawText(math.Round(StormFox2.Wind.GetForce(), 1) .. "m/s", "SF_Display_H2", c + tw, 38, color_white, TEXT_ALIGN_LEFT)
-		h = h - 60
-		y = y + 60
-	end
-	-- Forcast
-		local idCast = -1
-		local time = StormFox2.Time.Get()
-		if not unix then
-			for i = 1, 8 do
-				if forecastJson[i].Time * 60 <= time then
-					idCast = idCast + 1
+	local unix = StormFox2.WeatherGen.IsUnixTime()
+	local curTim = StormFox2.Time.Get()
+	-- Draw Temperature
+		-- Convert it into a list of temperature w procent
+		local c_temp = StormFox2.Temperature.Get()
+		local min_temp = math.min(c_temp,  forecast._minTemp)
+		local max_temp = math.max(c_temp,  forecast._maxTemp)
+		local t = {}
+			t[1] = { curTim, fkey( c_temp, min_temp, max_temp ) }
+		for i, data in ipairs( forecast.temperature ) do
+			local time = data[1]
+			if time <= curTim then continue end -- Ignore anything before
+			table.insert(t, {time, fkey( data[2], min_temp, max_temp ) } )
+		end
+		DrawTemperature( w * 0.05, h * 0.5 ,w * 0.9, h * 0.4,t, min_temp, max_temp, bExpensive)
+	-- Draw DayIcons
+		local c = math.ceil(curTim / hours_8) * hours_8
+		surface.SetDrawColor(color_white)
+		for i = c, days_length + c - 420, hours_8 do
+			-- Render Time
+			local t_stamp = StormFox2.Time.GetDisplay( i % 1440 )
+			local delt = i - curTim
+			local x = math.ceil(w * 0.9 / days_length * delt)
+			draw.DrawText(t_stamp, "SF_Display_H3", x , h * 0.9, color_white)
+			
+			local day = forecast._ticks[i]
+			local s = w / 12
+			if day then
+				local w_type = StormFox2.Weather.Get(day.sName)
+				if not w_type then
+					surface.SetMaterial(nul_icon)
+				else
+					surface.SetMaterial(w_type.GetIcon( i % 1440, day.nTemp, day.nWind or 0, day.bThunder or false, day.fAmount or 0) )
+					surface.DrawTexturedRect(x, h * 0.1, s, s)
+					local name = w_type:GetName(i % 1440, day.nTemp, day.nWind or 0, day.bThunder or false, day.fAmount or 0)
+					draw.DrawText(name, "SF_Display_H2", x + s / 2, h * 0.1 + s, color_white, TEXT_ALIGN_CENTER)
 				end
 			end
-		else
-			for i = 1, 8 do
-				if forecastJson[i].Unix <= os.time() then
-					idCast = idCast + 1
-				end
-			end
 		end
-		local ws = math.ceil((w - 20) / 7)
-		ws = math.max(ws, 40)
+	-- Draw Icon
 		surface.SetDrawColor(color_white)
-		local max_temp = StormFox2.Temperature.Get()
-		local min_temp = max_temp
-		-- ID 1 is current
-		local x = 0
-		surface.SetMaterial( StormFox2.Weather.GetIcon() )
-		surface.DrawTexturedRect(x + ws * 0.3, y + 10, ws * 0.7, ws * 0.7, 0)
-		draw.DrawText(StormFox2.Weather.GetDescription(),"SF_Display_H2",x + ws / 2,y + 70,color_white,TEXT_ALIGN_CENTER)
-		local mt
-		if unix then
-			local n = string.Explode("|", os.date("%H|%M"))
-			mt = "[" .. StormFox2.Time.GetDisplay(n[1] * 60 + n[2]) .. "]"
-		else
-			mt = StormFox2.Time.GetDisplay()
+		for i, day in ipairs( forecast._ticks ) do
+			
+			
 		end
-		draw.DrawText(mt,"SF_Display_H2",x + ws / 2,y + h - 30,color_white,TEXT_ALIGN_CENTER)
-
-		for i = 2, 7 do
-			local data = forecastJson[i + idCast]
-			if not data then break end
-			local x = i * ws - ws
-			surface.SetMaterial( data.Icon )
-			surface.DrawTexturedRect(x + ws * 0.3, y + 10, ws * 0.7, ws * 0.7, 0)
-			draw.DrawText(data.Desc,"SF_Display_H2",x + ws / 2,y + 70,color_white,TEXT_ALIGN_CENTER)
-			draw.DrawText(data.DisplayTime,"SF_Display_H2",x + ws / 2,y + h - 30,color_white,TEXT_ALIGN_CENTER)
-			-- Temp
-			max_temp = math.max(max_temp,data.Temperature)
-			min_temp = math.min(min_temp,data.Temperature)
-		end
-		y = y + 110
-		h = h - 150
-	-- Render templine
-		local del = (max_temp - min_temp)
-		if math.abs(del) < 8 then
-			min_temp = max_temp - 8
-			del = (max_temp - min_temp)
-		end
-		local t_hs = h / del
-		local hzero = y + h * fkey(0, max_temp, min_temp)
-		-- Draw Zero
-		if hzero > y and hzero < y + h then
-			surface.SetDrawColor(color_white)
-			surface.DrawLine(18, hzero, w - 36, hzero)
-		end
-
-	-- Render rain
-		local cW = StormFox2.Weather.GetCurrent()
-		local ws2 = ws / 2
-		surface.SetDrawColor(rc)
-		if isWTRain(cW) and forecastJson[2 + idCast] then
-			local data = math.max(StormFox2.Weather.GetPercent(), forecastJson[2 + idCast].Downfall)
-			if data > 0 then
-				local x = 0
-				local s = h * data
-				surface.DrawRect(x + ws2, y + h - s, ws2, s)
-			end
-		end
-		for i = 2, 7 do
-			local data = forecastJson[i + idCast]
-			if not data then break end
-			if data.Downfall <= 0 then continue end
-			local x = i * ws - ws
-			local s = h * data.Downfall
-			surface.DrawRect(x, y + h - s, i == 7 and ws2 or ws, s)
-		end
-	-- Render temp
-		surface.SetDrawColor(color_white)
-		
-		for i = 2, 7 do
-			local data = forecastJson[i + idCast]
-			if not data then break end
-			data = data.Temperature
-			local prev
-			if i == 2 then
-				prev = StormFox2.Temperature.Get()
-			else
-				prev = forecastJson[i + idCast - 1] and forecastJson[i + idCast - 1].Temperature or StormFox2.Temperature.Get()
-			end
-			local x = i * ws - ws
-			local cH = fkey(data, max_temp, min_temp)
-			local lH = fkey(prev, max_temp, min_temp)
-			local xx,yy,xx2,yy2 = x - ws2, y + h * lH, x + ws2, y + h * cH
-			surface.DrawLine(xx,yy,xx2,yy2)
-			if bExpensive then
-				local triangle = {
-					{ x = xx,  y = yy},
-					{ x = xx2, y = yy2 },
-					{ x = xx2, y = y + h },
-					{ x = xx , y = y + h },
-				}
-				draw.NoTexture()
-				surface.SetDrawColor(ca)
-				surface.DrawPoly( triangle )
-				surface.SetDrawColor(color_white)
-			end
-			if i == 2 then
-				local s = math.Round(StormFox2.Temperature.GetDisplay(prev), 2) .. StormFox2.Temperature.GetDisplaySymbol()
-				draw.DrawText(s, "SF_Display_H3", x - ws2, y + h * lH, color_white, TEXT_ALIGN_CENTER)
-			end
-			local s = StormFox2.Temperature.GetDisplay(data) .. StormFox2.Temperature.GetDisplaySymbol()
-			draw.DrawText(s, "SF_Display_H3", x + ws2, y + h * cH, color_white, TEXT_ALIGN_CENTER)
-		end
-
-	draw.DrawText(w .. "," .. h)
 end
