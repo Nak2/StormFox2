@@ -7,7 +7,6 @@ util.AddNetworkString( "StormFox2.weekweather" )
 
 local forecast = {} -- The forecast table
 local function SetForecast( tab, unix_time )
-	print("SEND UPDATE")
 	forecast = tab
 	forecast.unix_time = unix_time
 	if not hide_forecast then return end
@@ -187,7 +186,7 @@ end
 
 -- Weather Gen Settings
 	local max_days_generate = 7
-	local min_temp = StormFox2.Setting.AddSV("min_temp",-10,nil,"Weather")
+	local min_temp = StormFox2.Setting.AddSV("min_temp",-10,nil,"Weather",-273.15)
 	local max_temp = StormFox2.Setting.AddSV("max_temp",20,nil, "Weather")
 	local max_wind = StormFox2.Setting.AddSV("max_wind",50,nil, "Weather")
 	local function toStr( num )
@@ -484,7 +483,7 @@ end
 		wGenList._weather = {}
 		local lastWType = "Clear"
 		local lastWTime = -100
-		for i = 1, 6 do
+		for i = 1, 4 do
 			local f = {}
 			local day = generator[i]
 			for nTime, var in pairs( day._temperature ) do
@@ -554,7 +553,6 @@ end
 			GenerateWeek()
 		-- Make WGen
 			PushDayToList()
-			PrintTable(weather_setting)
 		end)
 	end
 	min_temp:AddCallback( ClearAndRedo, "weekWeather" )
@@ -580,8 +578,8 @@ end
 	local wind_index 	= 0
 	local temp_index 	= 0
 
-	local function EnableWGenerator()
-		if enable then return end
+	local function EnableWGenerator(forceCall)
+		if enable and not forceCall then return end
 		enable = true
 		GenerateWeek() -- Generate a week
 		PushDayToList() -- Push said list to w-table.
