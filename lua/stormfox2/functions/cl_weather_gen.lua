@@ -26,23 +26,24 @@ StormFox2.Setting.AddSV("hide_forecast",false,nil, "Weather")
 		local c = tostring( num )
 		return string.rep("0", 4 - #c) .. c
 	end
+	local default
 	local function SplitSetting( str )
-		if #str< 11 then return {} end
+		if #str< 11 then return default end -- Invalid, use default
 		local tab = {}
-			tab.amoun_min 	= math.min(100, string.byte(str, 1,1) - 33 ) / 100
+			tab.amount_min 	= math.min(100, string.byte(str, 1,1) - 33 ) / 100
 			tab.amount_max 	= math.min(100, string.byte(str, 2,2) - 33 ) / 100
 			
-			tab.start_min 	= math.min(1440,tonumber( string.sub(str, 3, 6) ))
-			tab.start_max 	= math.min(1440,tonumber( string.sub(str, 7, 10) ))
+			tab.start_min 	= math.min(1440,tonumber( string.sub(str, 3, 6) ) or 0)
+			tab.start_max 	= math.min(1440,tonumber( string.sub(str, 7, 10) ) or 0)
 
-			tab.length_min 	= tonumber( string.sub(str, 11, 14) )
-			tab.length_max 	= tonumber( string.sub(str, 15, 18) )
-			tab.pr_week 	= tonumber( string.sub(str, 19) )
+			tab.length_min 	= tonumber( string.sub(str, 11, 14) ) or 0
+			tab.length_max 	= tonumber( string.sub(str, 15, 18) ) or 0
+			tab.pr_week 	= tonumber( string.sub(str, 19) ) or 0
 		return tab
 	end
 	local function CombineSetting( tab )
-		local c =string.char( 33 + (tab.amoun_min or 0) * 100 )
-		c = c .. string.char( 33 + (tab.amoun_max or 0) * 100 )
+		local c =string.char( 33 + (tab.amount_min or 0) * 100 )
+		c = c .. string.char( 33 + (tab.amount_max or 0) * 100 )
 		
 		c = c .. toStr(math.Clamp( math.Round( tab.start_min or 0), 0, 1440 ) )
 		c = c .. toStr(math.Clamp( math.Round( tab.start_max or 0), 0, 1440 ) )
@@ -55,26 +56,45 @@ StormFox2.Setting.AddSV("hide_forecast",false,nil, "Weather")
 	end
 	local default_setting = {}
 	default_setting["Rain"] = CombineSetting({
-		["amoun_min"] = 0.2,
-		["amoun_max"] = 0.9,
+		["amount_min"] = 0.4,
+		["amount_max"] = 0.9,
 		["start_min"] = 300,
 		["start_max"] = 1200,
 		["length_min"] = 360,
-		["length_max"] = 720,
+		["length_max"] = 1200,
+		["pr_week"] = 3
+	})
+	default_setting["Cloud"] = CombineSetting({
+		["amount_min"] = 0.2,
+		["amount_max"] = 0.7,
+		["start_min"] = 300,
+		["start_max"] = 1200,
+		["length_min"] = 360,
+		["length_max"] = 1200,
 		["pr_week"] = 3
 	})
 	default_setting["Clear"] = CombineSetting({
-		["amoun_min"] = 1,
-		["amoun_max"] = 1,
+		["amount_min"] = 1,
+		["amount_max"] = 1,
 		["start_min"] = 0,
 		["start_max"] = 1440,
 		["length_min"] = 360,
 		["length_max"] = 1440,
 		["pr_week"] = 7
 	})
-	local default = CombineSetting({
-		["amoun_min"] = 0.4,
-		["amoun_max"] = 0.9,
+	-- Morning fog
+	default_setting["Fog"] = CombineSetting({
+		["amount_min"] = 0.4,
+		["amount_max"] = 0.8,
+		["start_min"] = 360,
+		["start_max"] = 560,
+		["length_min"] = 160,
+		["length_max"] = 360,
+		["pr_week"] = 1
+	})
+	default = CombineSetting({
+		["amount_min"] = 0.4,
+		["amount_max"] = 0.9,
 		["start_min"] = 300,
 		["start_max"] = 1200,
 		["length_min"] = 300,

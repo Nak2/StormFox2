@@ -223,7 +223,7 @@ end
 	end
 	local default_setting = {}
 	default_setting["Rain"] = CombineSetting({
-		["amount_min"] = 0.2,
+		["amount_min"] = 0.4,
 		["amount_max"] = 0.9,
 		["start_min"] = 300,
 		["start_max"] = 1200,
@@ -248,6 +248,16 @@ end
 		["length_min"] = 360,
 		["length_max"] = 1440,
 		["pr_week"] = 7
+	})
+	-- Morning fog
+	default_setting["Fog"] = CombineSetting({
+		["amount_min"] = 0.4,
+		["amount_max"] = 0.8,
+		["start_min"] = 360,
+		["start_max"] = 560,
+		["length_min"] = 160,
+		["length_max"] = 360,
+		["pr_week"] = 1
 	})
 	default = CombineSetting({
 		["amount_min"] = 0.4,
