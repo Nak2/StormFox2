@@ -372,8 +372,9 @@ function StormFox2.WeatherGen.DrawForecast(w,h,bExpensive, offX, offY)
 		surface.SetFont("SF_Display_H")
 		local tex = StormFox2.Weather.GetDescription()
 		local tw, th = surface.GetTextSize(tex)
-		surface.DrawTexturedRect(w / 2 - (tw + 24) / 2,h * 0.05, 48,48)
-		draw.DrawText(tex, "SF_Display_H", w / 2 + (tw + 24) / 2 , h * 0.07, color_white, TEXT_ALIGN_CENTER)
+		local wide = tw + 48
+		surface.DrawTexturedRect(w / 2 - 48,h * 0.05, 40,40)
+		draw.DrawText(tex, "SF_Display_H", w / 2 , h * 0.07, color_white, TEXT_ALIGN_LEFT)
 	-- Draw DayIcons
 		local c = math.ceil(curTim / hours_8) * hours_8
 		surface.SetDrawColor(color_white)

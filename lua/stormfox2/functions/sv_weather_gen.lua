@@ -194,7 +194,7 @@ end
 		return string.rep("0", 4 - #c) .. c
 	end
 	local default
-	function SplitSetting( str )
+	local function SplitSetting( str )
 		if #str< 11 then return default end -- Invalid, use default
 		local tab = {}
 			local min = math.min(100, string.byte(str, 1,1) - 33 ) / 100
@@ -215,7 +215,7 @@ end
 			tab.pr_week 	= tonumber( string.sub(str, 19) ) or 0
 		return tab
 	end
-	function CombineSetting( tab )
+	local function CombineSetting( tab )
 		local c =string.char( 33 + (tab.amount_min or 0) * 100 )
 		c = c .. string.char( 33 + (tab.amount_max or 0) * 100 )
 		
