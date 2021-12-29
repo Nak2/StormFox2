@@ -80,25 +80,11 @@ else
 	local function UpdateRTTexture()
 		if l_update > CurTime() then return end
 		l_update = CurTime() + 0.5
-		local hF = StormFox2.Setting.GetCache("hide_forecast", false)
-		local aF = StormFox2.Setting.GetCache("auto_weather", true)
-		local wF = StormFox2.Setting.GetCache("openweathermap_enabled", false)
 		sc_mat:SetTexture("$basetexture", sc_RT)
 		render.PushRenderTarget( sc_RT )
 			render.Clear(0, 0, 0, 255, true, true)
 			cam.Start2D()
-				if hF then
-					DrawDisabled(w,h, "sf_hide_forecast 1")
-				elseif not aF and not wF then
-					DrawDisabled(w,h,"sf_auto_weather 0")
-				else
-					local t = StormFox2.WeatherGen.GetForecast()
-					if not t or not t.weather then
-						DrawLoading(w,h)
-					else
-						StormFox2.WeatherGen.DrawForecast(w,h, true)
-					end
-				end
+				StormFox2.WeatherGen.DrawForecast(w,h, true)
 			cam.End2D()
 		render.PopRenderTarget()
 	end

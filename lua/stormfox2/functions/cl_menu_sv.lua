@@ -439,8 +439,8 @@ local function DoClickWButton( self )
 	local setting = self.obj
 	function set:DoClick()
 		local tab = {}
-			tab.amoun_min 	= tonumber ( aMin:GetValue() )
-			tab.amoun_max 	= tonumber ( aMax:GetValue() )
+			tab.amount_min 	= tonumber ( aMin:GetValue() )
+			tab.amount_max 	= tonumber ( aMax:GetValue() )
 			tab.start_min	= tonumber ( sMin:GetValue() )
 			tab.start_max	= tonumber ( sMax:GetValue() )
 			tab.length_min	= tonumber ( lMin:GetValue() )
@@ -534,6 +534,10 @@ local tabs = {
 
 		local weather_board = vgui.Create("SF_WeatherMap", w_panel)
 		weather_board:Dock(FILL)
+		function weather_board:Paint(w,h)
+			local x, y = self:LocalToScreen()
+			StormFox2.WeatherGen.DrawForecast(w,h,true,x, y)
+		end
 
 		hook.Add("StormFox2.Time.NextDay", weather_board, function()
 			if not StormFox2.Setting.GetCache("sf_hide_forecast", false) then return end -- Everyone gets informed

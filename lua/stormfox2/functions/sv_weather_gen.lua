@@ -194,21 +194,28 @@ end
 		return string.rep("0", 4 - #c) .. c
 	end
 	local default
-	local function SplitSetting( str )
+	function SplitSetting( str )
 		if #str< 11 then return default end -- Invalid, use default
 		local tab = {}
-			tab.amount_min 	= math.min(100, string.byte(str, 1,1) - 33 ) / 100
-			tab.amount_max 	= math.min(100, string.byte(str, 2,2) - 33 ) / 100
+			local min = math.min(100, string.byte(str, 1,1) - 33 ) / 100
+			local max = math.min(100, string.byte(str, 2,2) - 33 ) / 100
+			tab.amount_min 	= math.min(min, max)
+			tab.amount_max 	= math.max(min, max)
 			
-			tab.start_min 	= math.min(1440,tonumber( string.sub(str, 3, 6) ) or 0)
-			tab.start_max 	= math.min(1440,tonumber( string.sub(str, 7, 10) ) or 0)
+			local min = math.min(1440,tonumber( string.sub(str, 3, 6) ) or 0)
+			local max = math.min(1440,tonumber( string.sub(str, 7, 10) ) or 0)
+			tab.start_min 	= math.min(min, max)
+			tab.start_max 	= math.max(min, max)
 
-			tab.length_min 	= tonumber( string.sub(str, 11, 14) ) or 0
-			tab.length_max 	= tonumber( string.sub(str, 15, 18) ) or 0
+			local min = tonumber( string.sub(str, 11, 14) ) or 0
+			local max = tonumber( string.sub(str, 15, 18) ) or 0
+
+			tab.length_min 	= math.min(min, max)
+			tab.length_max 	= math.max(min, max)
 			tab.pr_week 	= tonumber( string.sub(str, 19) ) or 0
 		return tab
 	end
-	local function CombineSetting( tab )
+	function CombineSetting( tab )
 		local c =string.char( 33 + (tab.amount_min or 0) * 100 )
 		c = c .. string.char( 33 + (tab.amount_max or 0) * 100 )
 		
@@ -356,7 +363,7 @@ end
 			["nDuration"] = nDuration, 
 			["fAmount"] = nAmount, 
 			["bThunder"] = bThunder }
-		self._last = math.max(self._last or 0, nStart)
+		self._last = math.max(self._last or 0, nStart + nDuration)
 	end
 	function day:GetWeather( nTime )
 		return self._weather[nTime]
@@ -374,11 +381,13 @@ end
 	local function CanGenerateWeather( sName )
 		local count = weatherWeekCount[ sName ] or 0
 		local setting = weather_setting[ sName ]
+		if not setting then return false end -- Invalid weahter? Ignore this.
 		local pr_week = setting.pr_week or 0
-		if pr_week > 0 and pr_week < 1 then -- Floats between 0 and 1 is random.
+		if pr_week <= 0 then return false end -- Disabled
+		if pr_week < 1 then -- Floats between 0 and 1 is random.
 			pr_week = math.random(0, 1 / pr_week) <= 1 and 1 or 0
 		end
-		if pr_week <= 0 or count >= pr_week then return false end -- This weahter is off by default or we reached max
+		if count >= pr_week then return false end -- This weahter is reached max for this week
 		return true
 	end
 	local function SortList()
@@ -398,6 +407,7 @@ end
 		end
 	end
 	local atemp = math.random(-4, 4)
+	local nextWeatherOverflow = 0
 	local function GenerateDay()
 		local newDay = CreateDay()
 		UpdateWeekCount()
@@ -442,8 +452,9 @@ end
 		end
 		-- Handle weather
 		local i = 3 -- Only generates 2 types of weathers pr day at max
-		local _last = 0
+		local _last = nextWeatherOverflow -- The next empty-time of the day
 		for _, sName in ipairs( SortList() ) do
+			if _last >= 1440 then continue end -- This day is full of weathers. Ignore.
 			if sName == "Clear" and math.random(0, newWind) < newWind * 0.8 then -- Roll a dice between 0 and windForce. If dice is below 80%, try and find another weahter instead.
 				if atemp > 0 then -- Warm weather tent to clear up the weather
 					break
@@ -451,19 +462,21 @@ end
 					continue
 				end
 			end
+			-- Check if weather is enabled, and we haven't reached max.
 			if not CanGenerateWeather( sName ) then continue end
 			local setting = weather_setting[sName]
 			local minS, maxS = setting.start_min, setting.start_max
 			local minL, maxL = setting.length_min, setting.length_max
-			if _last >= maxS - minL then continue end			
+			if _last >= maxS then continue end -- This weather can't be generated this late.
 			i = i - 1
 			if i <= 0 then break end
 			local start_time = math.random(math.max(minS, _last), maxS)
 			local length_time = math.random(minL, maxL)
-			length_time = math.min(length_time, start_time - _last)
+			
 			newDay:SetWeather( sName, start_time, length_time, math.Rand(setting.amount_min, setting.amount_max), bThunder )
 			_last = start_time + length_time
 		end
+		nextWeatherOverflow = math.max(0, _last - 1440)
 	end
 	local function GenerateWeek()
 		for i = 1, max_days_generate do
