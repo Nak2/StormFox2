@@ -148,6 +148,12 @@ net.Receive("StormFox2.weekweather", function(len)
 			forecast._maxTemp = v[2]
 		end
 	end
+	-- Make sure there is at least 10C between
+	local f = 10 - math.abs(forecast._minTemp - forecast._maxTemp)
+	if f > 0 then
+		forecast._minTemp = forecast._minTemp - f / 2
+		forecast._maxTemp = forecast._maxTemp - f / 2
+	end
 	-- Calculate / make a table for each 4 hours
 	forecast._ticks = {}
 	local lastW
@@ -169,13 +175,14 @@ net.Receive("StormFox2.weekweather", function(len)
 		end
 
 		local _tempP, _tempFirst, _tempNext = calcPoint( forecast.temperature, i )
-				
-		--local _tempP = fkey( i,  )
-		forecast._ticks[i] = {
-			["fAmount"] = w_type.fAmount,
-			["sName"] = w_type.sName,
-			["nTemp"] = Lerp(_tempP, _tempFirst[2], _tempNext[2])
-		}
+		if _tempNext then
+			--local _tempP = fkey( i,  )
+			forecast._ticks[i] = {
+				["fAmount"] = w_type.fAmount,
+				["sName"] = w_type.sName,
+				["nTemp"] = Lerp(_tempP, _tempFirst[2], _tempNext[2])
+			}
+		end
 	end
 	--PrintTable(forecast)	
 	hook.Run("StormFox2.WeatherGen.ForcastUpdate")
@@ -193,26 +200,51 @@ end
 -- Render forcast
 
 local bg = Color(26,41,72, 255)
-local rc = Color(55,55,255,55)
-local ca = Color(255,255,255,58)
+local rc = Color(155,155,155,4)
+local ca = Color(255,255,255,12)
 local tempBG = Color(255,255,255,15)
 local sorter = function(a,b) return a[1] < b[1] end
 
 local m_box = Material("vgui/arrow")
 local m_c = Material("gui/gradient_up")
 local function DrawTemperature( x, y, w, h, t_list, min_temp, max_temp, bExpensive )
+	surface.SetDrawColor(rc)
+	surface.DrawRect(x, y, w, h)
 	surface.SetDrawColor(ca)
 	surface.DrawLine(x, y + h, x + w, y + h)
 	render.SetScissorRect( x, y - 25, x + w, y + h, true )
-	--surface.DrawOutlinedRect(x, y, w, h)
-	local hzero = y + h * fkey(0, max_temp, min_temp)
+	
+	local temp_p = fkey(0, max_temp, min_temp)
 	local tempdiff = max_temp - min_temp
 
-	-- Draw Zero
-	if hzero > y and hzero < y + h then
-		surface.SetDrawColor(color_white)
-		surface.SetMaterial(m_box)
-		surface.DrawTexturedRectUV(x, hzero, w, 1, 0, 0.5, w / 1 * 0.3, 0.6)
+	local yT = h / tempdiff
+	local div = 10 
+	if tempdiff < 25 then
+		div = 10
+	elseif tempdiff < 75 then
+		div = 20
+	elseif tempdiff < 150 then
+		div = 100
+	elseif tempdiff < 300 then
+		div = 200
+	elseif tempdiff < 500 then
+		div = 300
+	else
+		div = 1000
+	end
+	local s = math.ceil(min_temp / div) * div
+	local counts = (max_temp - s) / div
+	for temp = s, max_temp, div do
+		local tOff = temp - min_temp
+		local ly = y + h - (tOff * yT)
+		if temp == 0 then
+			surface.SetDrawColor(color_white)
+			surface.SetMaterial(m_box)
+			surface.DrawTexturedRectUV(x, ly, w, 1, 0, 0.5, w / 1 * 0.3, 0.6)
+		else
+			surface.SetDrawColor(ca)
+			surface.DrawLine(x, ly, x + w, ly)
+		end
 	end
 	
 	local curTim = StormFox2.Time.Get()
@@ -242,7 +274,7 @@ local function DrawTemperature( x, y, w, h, t_list, min_temp, max_temp, bExpensi
 			end
 			surface.SetTextPos(pointx - 5, pointy - 14)
 			local temp = min_temp + temp_p * tempdiff
-			temp = StormFox2.Temperature.GetDisplay(temp) .. StormFox2.Temperature.GetDisplaySymbol()
+			temp = math.Round(StormFox2.Temperature.GetDisplay(temp), 1) .. StormFox2.Temperature.GetDisplaySymbol()
 			surface.DrawText(temp)
 		end
 		oldX = pointx
