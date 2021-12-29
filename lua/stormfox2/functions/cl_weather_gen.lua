@@ -213,7 +213,7 @@ local function DrawTemperature( x, y, w, h, t_list, min_temp, max_temp, bExpensi
 	surface.SetDrawColor(ca)
 	surface.DrawLine(x, y + h, x + w, y + h)
 	render.SetScissorRect( x, y - 25, x + w, y + h, true )
-	
+
 	local temp_p = fkey(0, max_temp, min_temp)
 	local tempdiff = max_temp - min_temp
 
@@ -296,6 +296,10 @@ function StormFox2.WeatherGen.DrawForecast(w,h,bExpensive)
 		local c_temp = StormFox2.Temperature.Get()
 		local min_temp = math.min(c_temp,  forecast._minTemp)
 		local max_temp = math.max(c_temp,  forecast._maxTemp)
+		local abs = (max_temp - min_temp) * 0.1
+		min_temp = min_temp - abs
+		max_temp = max_temp + abs
+
 		local t = {}
 			t[1] = { curTim, fkey( c_temp, min_temp, max_temp ) }
 		for i, data in ipairs( forecast.temperature ) do
