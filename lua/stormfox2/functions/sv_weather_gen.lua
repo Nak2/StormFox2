@@ -415,23 +415,37 @@ end
 		do
 			local mi, ma = min_temp:GetValue(), max_temp:GetValue()
 			local ltemp = lastTemp or math.random(mi, ma)
-			local aftemp = -math.max(math.abs(mi - ltemp), 8) -- The closer the temperature is to minimum, the lower min
-			local ahtemp =  math.max(math.abs(ma - ltemp), 8) -- The closer the temperature is to maximum, the lower max
-			atemp = math.Clamp(atemp + math.random(-4, 4), aftemp, ahtemp) -- How much the temperature goes up or down
-			-- Make sure that temperature doesn't stay around 0
-				local tempBoost = math.max(0, 4 - math.abs( ltemp ))
-				if atemp > 0 then
-					atemp = atemp + tempBoost
-				elseif atemp < 0 then
-					atemp = atemp - tempBoost
+			local aftemp = -math.min(ltemp - mi, 12) -- The closer the temperature is to minimum, the lower min
+			local ahtemp =  math.min(ma - ltemp, 12) -- The closer the temperature is to maximum, the lower max
+			atemp = atemp + math.Rand(-4, 4) -- How much the temperature goes up or down
+			atemp = math.Clamp(atemp, aftemp, ahtemp)
+			-- UnZero
+			local tempBoost = 7 - math.abs( ltemp + atemp )
+			if tempBoost > 0 then
+				if atemp >= 0 then
+					atemp = math.max(atemp + tempBoost, tempBoost)
+				else
+					atemp = math.min(atemp - tempBoost, -tempBoost)
 				end
+			end
+			-- Spikes
+			if math.random(10) > 8 then
+				-- Create a spike 
+				if ltemp + atemp >= 0 then
+					atemp = mi / 2
+				else
+					atemp = ma / 2
+				end
+			end
+			-- New temp
+			local newMidTemp = math.Round(math.Clamp(ltemp + atemp, mi + 4, ma), 1)
 			-- Make the new temperature
-				local newMidTemp = math.Clamp(ltemp + atemp, mi, ma)
+				
 				local h = StormFox2.Sun.GetSunRise()
 				local sunHigest = math.random(h - 180, h + 180)
 				local sunDown = StormFox2.Sun.GetSunSet() - 180
 				newDay:SetTemperature( sunHigest, 	newMidTemp )
-				newDay:SetTemperature( sunDown, 	newMidTemp - math.random(7) )				
+				newDay:SetTemperature( sunDown, 	math.max(newMidTemp - math.random(7), mi) )				
 		end
 		-- Handle wind
 		local newWind
