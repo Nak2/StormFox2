@@ -701,9 +701,9 @@ local tabs = {
 			return a < b end
 		)
 		p:SetTall( 82 * math.floor( #t / 6) )
-		table.RemoveByValue(t, "Groove")
 		for i, sName in ipairs( t ) do
 			local obj = StormFox2.Setting.GetObject("wgen_" .. sName)
+			board:MarkUsed("wgen_" .. sName)
 			if not obj then StormFox2.Warning("Unable to locate settings for [" .. sName .. "]") continue end
 			local b = vgui.Create("DButton", p)
 			b.obj = obj
