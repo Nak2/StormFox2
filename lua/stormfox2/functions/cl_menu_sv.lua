@@ -700,7 +700,7 @@ local tabs = {
 			if h[b] then b = h[b] end
 			return a < b end
 		)
-		p:SetTall( 82 * math.floor( #t / 6) )
+		p:SetTall( 82 * math.ceil( #t / 6) )
 		for i, sName in ipairs( t ) do
 			local obj = StormFox2.Setting.GetObject("wgen_" .. sName)
 			board:MarkUsed("wgen_" .. sName)
