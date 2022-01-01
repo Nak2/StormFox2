@@ -174,7 +174,7 @@ if CLIENT then
 	hook.Add("PostDrawTranslucentRenderables", "StormFox2.Streetlights", function(a, b, c)
 		if a or b or c or not (m_render or _STORMFOX2_PTLIGHT.ents[1]) then return end
 		-- Check the light-range
-		local b_on = StormFox2.Map.GetLight() < 20
+		local b_on = StormFox2.Map.GetLightRaw() < 20
 		if row < 6 and b_on then -- On
 			row = math.min(row + FrameTime() * 0.75, 6)
 		elseif row > 0 and not b_on then
