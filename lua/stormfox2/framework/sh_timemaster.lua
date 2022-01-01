@@ -233,7 +233,10 @@ StormFox2.Time = StormFox2.Time or {}
 				--print(sunRise)
 				--print(dayLength)
 				--print(nightLength)
-				if dayLength <= 0 and nightLength <= 0 or sunSet == sunRise then -- Pause type
+				if s_real:GetValue() then -- Real time
+					cycleLength = 60 * 24 * 60
+					curType = SF_NORMAL
+				elseif dayLength <= 0 and nightLength <= 0 or sunSet == sunRise then -- Pause type
 					curType = SF_PAUSE
 					cycleLength = 0
 				elseif nightLength <= 0 then -- Day only
@@ -279,6 +282,16 @@ StormFox2.Time = StormFox2.Time or {}
 		-- Returns how far the day has progressed 0 = sunRise, 0.5 = sunSet, 1 = sunRise
 		function StormFox2.Time.GetCycleTime()
 			if CycleCache then return CycleCache end
+			if s_real:GetValue() then
+				local t = Get()
+				if isInDay( t ) then
+					CycleCache = lerp1440( t, sunRise, sunSet ) / 2
+					return CycleCache
+				else
+					CycleCache = 0.5 + lerp1440( BASE_TIME, sunSet, sunRise ) / 2
+					return CycleCache
+				end
+			end
 			if curType == SF_PAUSE then -- When paused, use the time to calculate
 				if isInDay( BASE_TIME ) then
 					CycleCache = lerp1440( BASE_TIME, sunRise, sunSet ) / 2
