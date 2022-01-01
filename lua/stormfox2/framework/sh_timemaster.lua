@@ -191,15 +191,22 @@ StormFox2.Time = StormFox2.Time or {}
 			local num
 			if not curType or curType == SF_NORMAL then
 				num = TimeFromSettings( )
+				GetCache = num
+				IsDayCache = isDay()
 			elseif curType == SF_PAUSE then
 				num = TimeFromPause( )
+				GetCache = num
+				IsDayCache = isInDay( num )
 			elseif curType == SF_DAYONLY then
 				num = TimeFromSettings_DAY( )
+				GetCache = num
+				IsDayCache = true
 			else
 				num = TimeFromSettings_NIGHT( )
+				GetCache = num
+				IsDayCache = false
 			end
-			GetCache = num
-			IsDayCache = isDay()
+			
 			return num
 		end
 		function Set( snTime )
