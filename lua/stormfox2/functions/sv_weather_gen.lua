@@ -240,7 +240,7 @@ end
 		["start_max"] = 1200,
 		["length_min"] = 360,
 		["length_max"] = 1200,
-		["thunder"]	= 1,
+		["thunder"]	= true,
 		["pr_week"] = 3
 	})
 	default_setting["Cloud"] = CombineSetting({
@@ -361,13 +361,13 @@ end
 	function day:GetWind( nTime )
 		return self._wind[nTime], self._windyaw[nTime]
 	end
-	function day:SetWeather( sName, nStart, nDuration, nAmount, bThunder )
+	function day:SetWeather( sName, nStart, nDuration, nAmount, nThunder )
 		self._weather[nStart] = { 
 			["sName"] = sName,
 			["nStart"] = nStart,
 			["nDuration"] = nDuration, 
 			["fAmount"] = nAmount, 
-			["bThunder"] = bThunder }
+			["nThunder"] = nThunder }
 		self._last = math.max(self._last or 0, nStart + nDuration)
 	end
 	function day:GetWeather( nTime )
@@ -491,8 +491,12 @@ end
 			if i <= 0 then break end
 			local start_time = math.random(math.max(minS, _last), maxS)
 			local length_time = math.random(minL, maxL)
-			
-			newDay:SetWeather( sName, start_time, length_time, math.Rand(setting.amount_min, setting.amount_max), bThunder )
+			local amount = math.Rand(setting.amount_min, setting.amount_max)
+			local nThunder
+			if setting.thunder and amount > 0.5 and math.random(0, 10) > 7 then
+				nThunder = math.random(4,8)
+			end
+			newDay:SetWeather( sName, start_time, length_time, amount, nThunder )
 			_last = start_time + length_time
 		end
 		nextWeatherOverflow = math.max(0, _last - 1440)
@@ -549,7 +553,8 @@ end
 				local wObj = StormFox2.Weather.Get(var.sName)
 				local t = {
 					["sName"] 	= var.sName,
-					["fAmount"] = math.Round(var.fAmount, 2)
+					["fAmount"] = math.Round(var.fAmount, 2),
+					["bThunder"] = var.nThunder
 				}
 				local useCloud = wObj.Inherit == "Cloud" and math.random(1, 10) >= 5
 				local startWType = useCloud and "Cloud" or var.sName
@@ -673,6 +678,11 @@ end
 				local w_type = ( isClear and _start[2] or _end[2] ).sName
 				local w_procent = ( isClear and _start[2] or _end[2] ).fAmount
 				StormFox2.Weather.Set( w_type, w_procent * procentStart )
+				if _end[2].bThunder then
+					StormFox2.Thunder.SetEnabled(true, _end[2].bThunder)
+				else
+					StormFox2.Thunder.SetEnabled(false, 0)
+				end
 			end
 		-- Create a timer to modify the weather, checks every 1.5 seconds
 		timer.Create("SF_WGEN_DEF", 0.5, 0, function()
@@ -686,6 +696,11 @@ end
 				if w_data then
 					local delta = StormFox2.Time.SecondsUntil(w_data[1])
 					StormFox2.Weather.Set(w_data[2].sName, w_data[2].fAmount, delta )
+					if w_data[2].bThunder then
+						StormFox2.Thunder.SetEnabled(true, w_data[2].bThunder)
+					else
+						StormFox2.Thunder.SetEnabled(false, 0)
+					end
 				end
 			end
 			if wind_index~= i_index then

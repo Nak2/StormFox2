@@ -214,14 +214,14 @@ net.Receive("StormFox2.weekweather", function(len)
 			m = w_data[2].fAmount
 			w_type = w_data[2]
 		end
-
 		local _tempP, _tempFirst, _tempNext = calcPoint( forecast.temperature, i )
 		if _tempNext then
 			--local _tempP = fkey( i,  )
 			forecast._ticks[i] = {
 				["fAmount"] = w_type.fAmount,
 				["sName"] = w_type.sName,
-				["nTemp"] = Lerp(_tempP, _tempFirst[2], _tempNext[2])
+				["nTemp"] = Lerp(_tempP, _tempFirst[2], _tempNext[2]),
+				["bThunder"] = w_type.bThunder or nil
 			}
 		end
 	end
