@@ -22,7 +22,11 @@ local t_models = {}
 	t_models['models/sickness/parkinglotlight.mdl'] 			= {Vector(0,30,284),	Angle(0,0,0),	FAKESPOT,	Vector(0,-30,284)}
 	t_models['models/props/de_inferno/light_streetlight.mdl'] 	= {Vector(0,0,150),		Angle(0,0,0),	POINTLIGHT}
 	t_models['models/props/cs_office/light_inset.mdl'] 			= {Vector(0,0,-3),		Angle(0,0,0),	POINTLIGHT}
-
+	t_models['models/unioncity2/props_street/streetlight.mdl']	= {Vector(0,-108,388),	Angle(0,0,0),	SPOTLIGHT}
+	t_models['models/unioncity2/props_lighting/lightpost_double.mdl']={Vector(5,0,358),Angle(0,0,0),	SPOTLIGHT,	Vector(-75,0,358)}
+	t_models['models/unioncity2/props_street/telepole01b.mdl']	= {Vector(0,-109,335),	Angle(0,0,0),	SPOTLIGHT}
+	t_models['models/unioncity2/props_lighting/lightpost_single.mdl']={Vector(76,0,357),Angle(0,0,0),	SPOTLIGHT}
+	
 	t_models['models/props_badlands/siloroom_light2.mdl'] 		= {Vector(0,0,-18),		Angle(0,0,0),	POINTLIGHT}		
 	t_models['models/props_badlands/siloroom_light2_small.mdl'] = {Vector(0,0,-14),		Angle(0,0,0),	POINTLIGHT}	
 	t_models['models/props_c17/light_cagelight01_off.mdl']		= {Vector(4,0,-8),		Angle(0,0,0),	POINTLIGHT}	
