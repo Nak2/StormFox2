@@ -207,5 +207,6 @@ hook.Add("stormfox2.postlib", "stormfox2.loadweathers", function()
 		end
 		pcall(include,"stormfox2/weathers/" .. fil)
 	end
+	StormFox2.Weather.Loaded = true
 	hook.Run("stormfox2.postloadweather")
 end)
