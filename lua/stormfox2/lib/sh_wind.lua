@@ -409,6 +409,7 @@ if CLIENT then return end
 	end
 
 	local function ApplyWindEffect( ent, wind, windnorm )
+		if ent:GetPersistent() then return end
 		if(wind < 5) then return end
 		-- Make a toggle
 		local vol
@@ -486,6 +487,7 @@ if CLIENT then return end
 		for i = scanID, math.min(#t, scanID + 30) do
 			local ent = t[i]
 			if(not IsValid( ent )) then break end
+			if ent:GetPersistent() then continue end
 			if not CanMoveClass( ent ) then continue end
 			if move_tab[ ent ] then continue end -- Already added
 			if not StormFox2.Wind.IsEntityInWind( ent ) then continue end -- Not in wind
@@ -526,6 +528,8 @@ if CLIENT then return end
 				move_tab[ent] = nil
 				continue
 			end
+			-- Check if presistence
+			if ent:GetPersistent() then continue end
 			-- If the entity has been in the wind for over 10 seconds, try and move on and see if we can pick up something else
 			if(move_tab[ ent ] < c - 10) then
 				ent._sfwindcan = c + math.random(20, 30)
