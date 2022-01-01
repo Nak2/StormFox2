@@ -111,13 +111,19 @@ local OWEnabled = StormFox2.Setting.AddSV("openweathermap_enabled",false,nil,"We
 	StormFox2.WeatherGen.ConvertSettingToTab = SplitSetting
 	StormFox2.WeatherGen.ConvertTabToSetting = CombineSetting
 	
-	hook.Add("stormfox2.postloadweather", "StormFox2.WeatherGen.Load", function()
+	if StormFox2.Weather and StormFox2.Weather.Loaded then
 		for _, sName in ipairs( StormFox2.Weather.GetAll() ) do
 			local str = default_setting[sName] or default
 			StormFox2.Setting.AddSV("wgen_" .. sName,str,nil,"Weather")
 		end
-	end)
-
+	else
+		hook.Add("stormfox2.postloadweather", "StormFox2.WeatherGen.Load", function()
+			for _, sName in ipairs( StormFox2.Weather.GetAll() ) do
+				local str = default_setting[sName] or default
+				StormFox2.Setting.AddSV("wgen_" .. sName,str,nil,"Weather")
+			end
+		end)
+	end
 
 -- API
 
@@ -345,6 +351,11 @@ function StormFox2.WeatherGen.DrawForecast(w,h,bExpensive, offX, offY)
 			local d = language.GetPhrase("#addons.preset_enabled") or "Enabled"
 			s = s.. ": " .. string.match(d, "%w+")
 			DrawDisabled( s, w, h )
+			return
+		end
+		if not forecast or not forecast._minTemp then
+			local c = string.rep(".", CurTime() % 3 + 1)
+			DrawDisabled( "No data yet" .. c, w, h )
 			return
 		end
 	local unix = StormFox2.WeatherGen.IsUnixTime()
