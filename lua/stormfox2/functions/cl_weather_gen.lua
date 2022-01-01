@@ -189,6 +189,7 @@ net.Receive("StormFox2.weekweather", function(len)
 			forecast._maxTemp = math.max(forecast._maxTemp, v[2])
 		end
 	end
+	if not forecast._minTemp then return end -- Invalid forecast
 	-- Make sure there is at least 10C between
 	local f = 10 - math.abs(forecast._minTemp - forecast._maxTemp)
 	if f > 0 then
