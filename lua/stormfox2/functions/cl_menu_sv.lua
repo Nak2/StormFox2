@@ -845,6 +845,9 @@ local tabs = {
 		board:MarkUsed("openweathermap_enabled")
 		board:MarkUsed("openweathermap_lat")
 		board:MarkUsed("openweathermap_lon")
+		board:MarkUsed("openweathermap_city")
+		board:MarkUsed("openweathermap_key")
+		board:MarkUsed("openweathermap_location")
 
 		board:AddTitle("#sf_wind")
 		board:AddSetting("windmove_players")
@@ -944,9 +947,21 @@ local tabs = {
 			p.Paint = empty
 			local b = vgui.Create("DButton", p)
 			b:SetText(language.GetPhrase("#sf_tool.surface_editor"))
-			b:SetPos(20,4)
 			b:SetWide(150)
 			b.DoClick = OpenMaterialPromt
+
+			local b2 = vgui.Create("DButton", p)
+			b2:SetWide(150)
+			
+			function p:PerformLayout(w,h)
+				local c = 40 / w
+				b:SetPos(c * w,0)
+				b2:SetPos(c * w + 150 + 50,0)
+				b2:SetText(niceName(language.GetPhrase("#materials")))
+				b2.DoClick = function()
+					RunConsoleCommand("+mat_texture_list")
+				end
+			end
 		end
 
 		board:AddTitle("fog")
