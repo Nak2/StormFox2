@@ -351,7 +351,7 @@ local function DoClickWButton( self )
 		lastWClick = nil
 	end
 	lastWClick = vgui.Create("DFrame")
-	lastWClick:SetSize( 230, 340 )
+	lastWClick:SetSize( 230, 360 )
 	lastWClick:Center()
 	lastWClick:MakePopup()
 	lastWClick:SetTitle( self.WeatherObj:GetName(720, 20, 0, false, 1) )
@@ -432,9 +432,14 @@ local function DoClickWButton( self )
 		function sMax.TextArea:Think()
 			self:SetText( StormFox2.Time.TimeToString( tonumber( sMax:GetValue() ), _12 ) )
 		end
+	-- Thunder
+		local bThunder = vgui.Create("DCheckBoxLabel", lastWClick)
+		bThunder:SetText("#sf_weather.rain.thunder")
+		bThunder:Dock(TOP)
+		bThunder:SetChecked(self.SettingTab.thunder)
 	-- Set 
 	local set = vgui.Create("DButton", lastWClick)
-	set:Dock(TOP)
+	set:Dock(BOTTOM)
 	set:SetText(niceName( "#save_options" ))
 	local setting = self.obj
 	function set:DoClick()
@@ -445,6 +450,7 @@ local function DoClickWButton( self )
 			tab.start_max	= tonumber ( sMax:GetValue() )
 			tab.length_min	= tonumber ( lMin:GetValue() )
 			tab.length_max	= tonumber ( lMax:GetValue() )
+			tab.thunder		= bThunder:GetChecked()
 			tab.pr_week		= tonumber ( nNum:GetValue() )
 		local data = StormFox2.WeatherGen.ConvertTabToSetting( tab )
 		setting:SetValue( data )
