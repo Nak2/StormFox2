@@ -284,6 +284,7 @@ local meta = {}
 		end
 	end
 
+local postSettingChace = {}
 -- Creates a setting and returns the setting-object
 function StormFox2.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nMax)
 	if settings[sName] then return settings[sName] end -- Already created
@@ -305,7 +306,7 @@ function StormFox2.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nM
 				t.value = vDefaultVar
 			end
 		else
-			t.value = vDefaultVar
+			t.value = postSettingChace[sName] or vDefaultVar
 		end
 		t.default = vDefaultVar
 		t.server = true
@@ -493,11 +494,12 @@ if CLIENT then
 			local tab = net.ReadTable() -- I'm lazy
 			for sName, vVar in pairs( tab ) do
 				local obj = settings[sName]
-				if not obj then
-					StormFox2.Warning("Server tried to set an unknown setting: " .. sName)
+				if not obj then -- So this setting "might" be used later. Cache the setting-value and ignore
+					postSettingChace[sName] = vVar
+					-- StormFox2.Warning("Server tried to set an unknown setting: " .. sName)
 					continue
 				end
-				if not obj:IsServer() then -- This is a clientside setting
+				if not obj:IsServer() then -- This is a clientside setting. Nope.AVI
 					StormFox2.Warning("Server tried to set a clientside setting: " .. sName)
 				else
 					local oldVar = obj.value
