@@ -28,7 +28,7 @@ local OWEnabled = StormFox2.Setting.AddSV("openweathermap_enabled",false,nil,"We
 	end
 	local default
 	local function SplitSetting( str )
-		if #str< 11 then return default end -- Invalid, use default
+		if #str< 20 then return default end -- Invalid, use default
 		local tab = {}
 			local min = math.min(100, string.byte(str, 1,1) - 33 ) / 100
 			local max = math.min(100, string.byte(str, 2,2) - 33 ) / 100
@@ -45,7 +45,9 @@ local OWEnabled = StormFox2.Setting.AddSV("openweathermap_enabled",false,nil,"We
 
 			tab.length_min 	= math.min(min, max)
 			tab.length_max 	= math.max(min, max)
-			tab.pr_week 	= tonumber( string.sub(str, 19) ) or 0
+
+			tab.thunder 	= string.sub(str, 19, 19) == "1"
+			tab.pr_week 	= tonumber( string.sub(str, 20) ) or 0
 		return tab
 	end
 	local function CombineSetting( tab )
@@ -57,6 +59,8 @@ local OWEnabled = StormFox2.Setting.AddSV("openweathermap_enabled",false,nil,"We
 		
 		c = c .. toStr(math.Clamp( math.Round( tab.length_min or 360 ), 180, 9999) )
 		c = c .. toStr(math.Clamp( math.Round( tab.length_max or 360 ), 180, 9999) )
+
+		c = c .. (tab.thunder and "1" or "0")
 
 		c = c .. tostring( tab.pr_week or 2 )
 		return c
