@@ -341,6 +341,8 @@ end
 	end
 	local lastTemp
 	function day:SetTemperature( nTime, nCelcius )
+		-- I got no clue why it tries to set values outside, but clamp it here just in case.
+		nCelcius = math.Clamp(nCelcius, min_temp:GetValue(), max_temp:GetValue())
 		self._temperature[nTime] = nCelcius
 		lastTemp = nCelcius
 		return self
