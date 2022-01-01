@@ -234,7 +234,7 @@ StormFox2.Time = StormFox2.Time or {}
 				--print(dayLength)
 				--print(nightLength)
 				if s_real:GetValue() then -- Real time
-					cycleLength = 60 * 24 * 60
+					cycleLength = 60 * 60 * 24 
 					curType = SF_NORMAL
 				elseif dayLength <= 0 and nightLength <= 0 or sunSet == sunRise then -- Pause type
 					curType = SF_PAUSE
@@ -286,11 +286,10 @@ StormFox2.Time = StormFox2.Time or {}
 				local t = Get()
 				if isInDay( t ) then
 					CycleCache = lerp1440( t, sunRise, sunSet ) / 2
-					return CycleCache
 				else
-					CycleCache = 0.5 + lerp1440( BASE_TIME, sunSet, sunRise ) / 2
-					return CycleCache
+					CycleCache = 0.5 + lerp1440( t, sunSet, sunRise ) / 2
 				end
+				return CycleCache
 			end
 			if curType == SF_PAUSE then -- When paused, use the time to calculate
 				if isInDay( BASE_TIME ) then
