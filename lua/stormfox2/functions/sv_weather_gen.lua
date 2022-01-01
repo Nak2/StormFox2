@@ -743,3 +743,14 @@ end
 	
 
 	NewWGenSetting()
+	hook.Add("StormFox2.data.initspawn", "StormFox2.Weather.SendForcast",function( ply )
+		if not hide_forecast then return end
+		if not forecast then return end -- ?
+		net.Start("StormFox2.weekweather")
+			net.WriteBool( forecast.unix_time )
+			net.WriteTable( forecast.temperature or {} )
+			net.WriteTable( forecast.weather or {} )
+			net.WriteTable( forecast.wind or {} )
+			net.WriteTable( forecast.windyaw or {} )
+		net.Broadcast()
+	end)
