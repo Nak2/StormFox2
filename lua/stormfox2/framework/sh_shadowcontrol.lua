@@ -84,7 +84,7 @@ local function shadowTick()
 	elseif c < 100 then
 		SetDarkness(0.1*c-9.5)
 	else
-		SetDarkness(0.5)
+		SetDarkness(0)
 	end
 end
 
