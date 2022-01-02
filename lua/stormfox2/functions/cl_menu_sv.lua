@@ -473,7 +473,8 @@ local quick_time = {
 	{"Far Cry 6" 		, 30		, 30		, "icon16/cd.png" },		-- 30 for each
 	{"The Forest"		, 24		, 12		, "icon16/cd.png" },		-- 30 for each
 	{"Factorio" 		, 6.95+2.5	, 2 + 2.5	, "icon16/cd.png" },	-- ½ of Dusk and dawn is split 1.5 + 3.5 = 5 = 2.5 for each
-	{"Terraria" 		, 15		, 9			, "icon16/cd.png" }	-- 15 mins doing the day, 9 doing the night.
+	{"Terraria" 		, 15		, 9			, "icon16/cd.png" },	-- 15 mins doing the day, 9 doing the night.
+	{"Rust" 			, 45		, 15		, "icon16/cd.png" }	-- 45 mins doing the day, 15 doing the night.
 }
 local tabs = {
 	[1] = {"Start","#start",(Material("stormfox2/hud/menu/dashboard.png")),function(board)
