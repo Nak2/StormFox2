@@ -30,14 +30,14 @@ end
 		lastFoot[ply] = foot
 	end)
 -- Local functions
-	local noSpam = {}
+	--local noSpam = {}
 	local cache = {}
 	-- Returns the foot from sounddata
 	local function GetFootstep(tab)
 		local ent = tab.Entity
 		if not ent or not IsValid(ent) then return end
 		if not ent:IsPlayer() and not ent:IsNPC() and not ent:IsNextBot() then return end
-		if (noSpam[ent] or 0) > CurTime() then return end
+		--if (noSpam[ent] or 0) > CurTime() then return end
 		-- Check to see if it is a footstep
 		local OriginalSnd = tab.OriginalSoundName:lower()
 		local foot = -1
@@ -57,7 +57,7 @@ end
 			return
 		end
 		-- No footstep spam
-		noSpam[ent] = CurTime() + 0.1
+		--noSpam[ent] = CurTime() + 0.01
 		return foot
 	end
 	-- TraceHull for the given entity 
