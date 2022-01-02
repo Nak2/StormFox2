@@ -28,7 +28,8 @@ __e2setcost( 3 )
 -- Weather
 	__e2setcost( 7 )
 	local function isRaining()
-		return StormFox2.Weather.GetCurrent().Name == "Rain"
+		local wD = StormFox2.Weather.GetCurrent()
+		return wD.Name == "Rain" or wD.Inherit == "Rain"
 	end
 	local function isCold()
 		return StormFox2.Temperature.Get() <= -2
