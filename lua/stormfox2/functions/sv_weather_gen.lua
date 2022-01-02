@@ -273,6 +273,7 @@ end
 			if not status then return end
 			UpdateLiveWeather()
 		end)
+		timer.Simple(1, UpdateLiveFeed)
 	end
 	local function DisableAPI()
 		if not status then return end
