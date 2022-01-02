@@ -46,7 +46,7 @@ local function CheckSetAPI(self, str )
 			self:SetPlaceholderText("INVALID CODE")
 		else
 			self:SetPlaceholderText("********************************")
-			StormFox2.Permission.RequestSetting( "sf_openweathermap_key", str )
+			StormFox2.Setting.Set( "openweathermap_key", str )
 		end
 		self:SetText("")
 	end)
@@ -840,13 +840,13 @@ local tabs = {
 			apienable:SetPos(248, 5)
 			-- Lat. Lon
 			function lat:OnEnter( str )
-				StormFox2.Permission.RequestSetting("sf_openweathermap_real_lat", str)
+				StormFox2.Setting.Set("openweathermap_location", "a" .. str)
 			end
 			function lon:OnEnter( str )
-				StormFox2.Permission.RequestSetting("sf_openweathermap_real_lon", str)
+				StormFox2.Setting.Set("openweathermap_location", "o" .. str)
 			end
 			function city:OnEnter( str )
-				StormFox2.Permission.RequestSetting("sf_openweathermap_real_city", str)
+				StormFox2.Setting.Set("openweathermap_city", str)
 			end
 		board:MarkUsed("openweathermap_enabled")
 		board:MarkUsed("openweathermap_lat")

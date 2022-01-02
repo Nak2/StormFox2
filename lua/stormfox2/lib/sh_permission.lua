@@ -131,9 +131,6 @@ else
 			StormFox2.Menu._OpenController()
 		end
 	end)
-	local w_list = {
-		"sf_menu","sf_openweathermap_key", "sf_openweathermap_real_lat", "sf_openweathermap_real_lon", "sf_openweathermap_real_city"
-	}
 	function StormFox2.Permission.RequestSetting( convar, var )
 		net.Start(StormFox2.Net.Permission)
 			net.WriteUInt(SF_SERVEREDIT, 1)

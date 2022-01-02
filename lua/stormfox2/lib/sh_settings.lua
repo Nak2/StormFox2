@@ -397,11 +397,6 @@ local function CallBack( sName, newVar, oldVar)
 end
 
 function StormFox2.Setting.Set(sName,vVar, bDontSave)
-	-- Special "settings"
-		if sName == "openweathermap_real_city" then
-			StormFox2.WeatherGen.APISetCity( vVar )
-			return
-		end
 	-- Check if valid
 		local obj = settings[sName]
 		if not obj then
