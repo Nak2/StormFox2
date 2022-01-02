@@ -34,9 +34,9 @@ function ENT:Initialize()
 	self._lit = false
 	if SERVER then
 		self:SetModel( "models/props/de_dust/hr_dust/dust_lights/dust_ornate_lantern_01.mdl" )
-		self:PhysicsInit( SOLID_VPHYSICS )      -- Make us work with physics,
-		self:SetMoveType( MOVETYPE_VPHYSICS )   -- after all, gmod is a physics
-		self:SetSolid( SOLID_VPHYSICS )         -- Toolbox
+		self:PhysicsInit( SOLID_VPHYSICS )
+		self:SetMoveType( MOVETYPE_VPHYSICS )
+		self:SetSolid( SOLID_VPHYSICS )
 		self:SetUseType( SIMPLE_USE )
 		self.ltype = 1
 	else
@@ -92,11 +92,6 @@ if SERVER then
 	end
 else
 	local ran,rand,max = math.random,math.Rand,math.max
-	local t = {
-		(Material( "sprites/flamelet1" )),
-		(Material( "sprites/flamelet2" )),
-		(Material( "sprites/flamelet3" ))
-	}
 	local lit_mat = Material("stormfox2/models/dust_ornate_lantern_lit")
 	local c = Color(255,255,255)
 	local function GetDis(ent)
