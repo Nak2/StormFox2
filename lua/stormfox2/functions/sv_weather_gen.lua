@@ -36,7 +36,7 @@ end
 
 	local API_ENABLE = StormFox2.Setting.AddSV("openweathermap_enabled",false,nil,"Weather")
 	StormFox2.Setting.AddSV("openweathermap_lat",52,nil,"Weather",-180,180) -- Fake setting
-	StormFox2.Setting.AddSV("openweathermap_lon",-2,nil,"Weather",-90,90)	-- Fake setting
+	StormFox2.Setting.AddSV("openweathermap_lon",-2,nil,"Weather",-180,180)	-- Fake setting
 
 	if SERVER then
 		CreateConVar("sf_openweathermap_key", "", 				{FCVAR_ARCHIVE, FCVAR_PROTECTED}, "Sets the API key")
@@ -44,7 +44,7 @@ end
 		CreateConVar("sf_openweathermap_real_lon","-2.005960" , {FCVAR_ARCHIVE, FCVAR_PROTECTED}, "The real LON for the API")
 	end
 	local key 		= StormFox2.Setting.AddSV("openweathermap_key", "", nil,"Weather")
-	local location 	= StormFox2.Setting.AddSV("openweathermap_location", "", nil,"Weather")
+	local location 	= StormFox2.Setting.AddSV("openweathermap_location", "", nil,"Weather") -- Fake setting
 	local city 		= StormFox2.Setting.AddSV("openweathermap_city","",nil,"Weather")	-- Fake setting
 	
 	-- Keep them secret and never network them.
@@ -58,7 +58,7 @@ end
 		local t = util.JSONToTable(body) or {}
 		if code == 401 then
 			KEY_STATUS = KEY_INVALID
-			StormFox2.Warning(t.message or "API returned 401")
+			StormFox2.Warning(t.message or "API returned 401! Check your OpenWeatherMap account.")
 			StormFox2.Setting.Set("openweathermap_enabled", false)
 			return
 		end
@@ -117,6 +117,92 @@ end
 		http.Fetch("http://api.openweathermap.org/data/2.5/weather?lat=" .. lat .. "&lon=" .. lon .. "&appid=" .. api_key, onSuccessF)
 	end
 
+	local function onSuccessForecast( body, len, head, code )
+		if KEY_STATUS == KEY_INVALID then return end
+		local t = util.JSONToTable(body) or {}
+		if code == 401 then
+			KEY_STATUS = KEY_INVALID
+			StormFox2.Warning(t.message or "API returned 401! Check your OpenWeatherMap account.")
+			StormFox2.Setting.Set("openweathermap_enabled", false)
+			return
+		end
+		if t.cod == "404" then return end -- Not found
+		if not t.list then return end -- ??
+		local forecast = {}
+			forecast.temperature= {}
+			forecast.weather	= {}
+			forecast.wind		= {}
+			forecast.windyaw	= {}
+
+		local last_time = -1
+		local ex_time = 0
+		for k, v in ipairs( t.list ) do
+			if not v.main then continue end -- ERR
+			local timestr = string.match(v.dt_txt, "(%d+:%d+:%d)")
+			local c = string.Explode(":", timestr)
+			local h, m, s = c[1] or "0", c[2] or "0", c[3] or "0"
+			local time = ( tonumber( h ) or 0 ) * 60 + (tonumber( m ) or 0) + (tonumber( s ) or 0) / 60
+			if time < last_time then -- New day
+				ex_time = ex_time + 1440
+				last_time = time
+			else
+				last_time = time
+			end
+			-- New time: time + ex_time
+			local timeStamp = time + ex_time
+			if timeStamp > 1440 then
+				if k%2 == 1 then
+					continue
+				end
+			elseif timeStamp > 2440 then
+				continue
+			end
+			
+			local temp = StormFox2.Temperature.Convert("kelvin",nil,tonumber( v.main.temp or v.main.temp_min or v.main.temp_max ))
+
+			local cloudyness = ( t.clouds and t.clouds.all or 0 ) / 110
+			local rain = 0
+			local w_type = "Clear"
+			local w_procent = 0
+			if v.rain then
+				rain = math.max( v.rain["1h"] or 0, v.rain["3h"] or 0, 2) / 8
+			elseif v.snow then
+				rain = math.max( v.snow["1h"] or 0, v.snow["3h"] or 0, 2) / 8
+			end
+			if rain > 0 then
+				w_procent = math.Round(rain * .7 + 0.2,2)
+				w_type = "Rain"
+			elseif cloudyness > 0.1 then
+				w_procent = math.Round(cloudyness, 2)
+				w_type = "Cloud"
+			end
+			local b_thunder = false
+			if v.weather and v.weather[1] and v.weather[1].id and (rain > 0 or cloudyness >= 0.3) then
+				local id = v.weather[1].id
+				b_thunder = ( id >= 200 and id <= 202 ) or ( id >= 210 and id <= 212 ) or ( id >= 230 and id <= 232 ) or id == 212
+			end
+			local wind 		= v.wind and v.wind.speed or 0 
+			local windyaw 	= v.wind and v.wind.deg or 0
+			
+			table.insert(forecast.temperature, 	{timeStamp, temp})
+			table.insert(forecast.weather, 		{timeStamp, {
+				["sName"] 	= w_type,
+				["fAmount"] = w_procent
+			}})
+			table.insert(forecast.wind, 		{timeStamp, wind})
+			table.insert(forecast.windyaw, 		{timeStamp, windyaw})			
+		end
+		SetForecast( forecast, true )
+	end
+
+	local function UpdateLiveFeed( api_key )
+		if KEY_STATUS == KEY_INVALID then return end
+		local lat = GetConVar("sf_openweathermap_real_lat"):GetString()
+		local lon = GetConVar("sf_openweathermap_real_lon"):GetString()
+		local api_key = api_key or GetConVar("sf_openweathermap_key"):GetString()
+		http.Fetch("http://api.openweathermap.org/data/2.5/forecast?lat=" .. lat .. "&lon=" .. lon .. "&appid=" .. api_key, onSuccessForecast)
+	end
+
 	local function SetCity( sCityName, callBack )
 		if KEY_STATUS == KEY_INVALID then return end
 		if n_NextAllowedCall >= CurTime() then
@@ -137,9 +223,18 @@ end
 				return
 			end
 			b_BlockNextW = true -- Stop the setting from updating the weather again
-				StormFox2.Setting.Set("openweathermap_location", t.coord.lat .. "," .. t.coord.lon)
+				local lat = tonumber( t.coord.lat )
+				RunConsoleCommand( "sf_openweathermap_real_lat", lat )
+				StormFox2.Setting.Set("openweathermap_lat",math.Round(lat)) -- Fake settings
+
+				local lon = tonumber( t.coord.lon )
+				RunConsoleCommand( "sf_openweathermap_real_lon", lon )
+				StormFox2.Setting.Set("openweathermap_lon",math.Round(lon)) -- Fake settings
 			b_BlockNextW = false
 			onSuccessF( body, len, head, code )
+
+			-- We found a city. Make the forecast
+			timer.Simple(1, UpdateLiveFeed)
 			if callBack then callBack( true ) end
 		end)
 	end
@@ -151,14 +246,17 @@ end
 		UpdateLiveWeather( sString ) -- Try and set the weather
 	end)
 	location:AddCallback( function( sString )
-		local a = string.Explode(",", sString)
-		local lat, lon = tonumber(a[1]), tonumber(a[1])
-		RunConsoleCommand( "sf_openweathermap_real_lat", lat )
-		RunConsoleCommand( "sf_openweathermap_real_lon", lon )
-		StormFox2.Setting.Set("openweathermap_lat",math.Round(lat)) -- Fake settings
-		StormFox2.Setting.Set("openweathermap_lon",math.Round(lon)) -- Fake settings
+		local num = tonumber( string.match(sString, "[-%d]+") or "0" ) or 0
+		if sString:sub(0, 1) == "a" then
+			RunConsoleCommand( "sf_openweathermap_real_lat", num )
+			StormFox2.Setting.Set("openweathermap_lat",math.Round(num)) -- Fake settings
+		else
+			RunConsoleCommand( "sf_openweathermap_real_lon", num )
+			StormFox2.Setting.Set("openweathermap_lon",math.Round(num)) -- Fake settings
+		end
 		location.value = "" -- Silent set it again
 		UpdateLiveWeather() -- Set the weather to the given location
+		timer.Simple(1, UpdateLiveFeed)
 	end)
 	city:AddCallback( function( cityName ) 
 		if cityName == "" then return end
@@ -754,9 +852,11 @@ end
 		if API_ENABLE:GetValue() == true then
 			EnableAPI()
 			DisableWGenerator()
+			StormFox2.Msg("Using OpenWeatherMap API")
 		else
 			DisableAPI()
 			EnableWGenerator()
+			StormFox2.Msg("Using WeatherGen")
 		end
 	end
 	API_ENABLE:AddCallback( NewWGenSetting, 	"API_Enable")

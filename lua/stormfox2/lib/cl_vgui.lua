@@ -1528,6 +1528,105 @@ end
 	-- World Display
 	do
 		local PANEL = {}
+		local owm = Material("stormfox2/hud/openweather.png")
+		local PANEL = {}
+		AccessorFunc( PANEL, "m_lat", "Lat" )
+		AccessorFunc( PANEL, "m_lon", "Lon" )
+		AccessorFunc( PANEL, "m_zoom","Zoom" )
+		local w_map = Material("stormfox2/hud/world.png")
+		local c = Color(0,0,0,55)
+		function PANEL:GetUV( lat, lon )
+			lat 	= math.Clamp(lat / 90, -1, 1) * 0.5
+			lon 	= math.Clamp(lon / 180, -1, 1) * 0.5
+			return 0.5 + lon, 0.5 - lat
+		end
+		function PANEL:Init()
+			self._map = vgui.Create("DPanel", self)
+			self:SetLat(StormFox2.Setting.Get("openweathermap_lat", 52.6139095))
+			self:SetLon(StormFox2.Setting.Get("openweathermap_lon", -2.0059601))
+			self:SetSize(400, 300)
+			self:SetZoom(0)
+			self._range = 1
+			self._map._s = self
+			function self._map:GetUV( lat, lon )
+				return self._s:GetUV( lat, lon )
+			end
+			function self._map:Paint(w,h)
+				if self._s:GetDisabled() then return end
+				surface.SetDrawColor(color_white)
+				surface.SetMaterial( w_map )
+				surface.DrawTexturedRect(0,0,w,h)
+				local u, v = self:GetUV( self._s:GetLat(), self._s:GetLon())
+				local ws = math.ceil(w / 360)
+				local hs = math.ceil(h / 180)
+				surface.SetDrawColor(color_black)
+				local xx,yy = u * w - ws / 2, v * h - hs / 2
+				surface.DrawOutlinedRect(xx,yy, ws, hs)
+				surface.SetDrawColor(c)
+				c.a = 150 + math.sin(SysTime() * 10) * 50
+				local xT = math.max(1, ws / 4)
+				local yT = math.max(1, hs / 4)
+				-- X
+				surface.DrawRect(0, 		yy + hs * .5 - xT / 2, xx, yT)
+				surface.DrawRect(xx + ws, 	yy + hs * .5 - xT / 2, w - xx - ws, yT)
+				--Y
+				surface.DrawRect(xx + ws * 0.5 - yT / 2, 0, xT, yy)
+				surface.DrawRect(xx + ws * 0.5 - yT / 2, yy + hs, xT, h - yy - hs)
+			end
+			self:SetMouseInputEnabled( true )
+			StormFox2.Setting.Callback("openweathermap_lat",function(vVar,_,_, self)
+				self:SetLat( tonumber(vVar) )
+				self:ReSize()
+			end,self)
+			StormFox2.Setting.Callback("openweathermap_lon",function(vVar,_,_, self)
+				self:SetLon( tonumber(vVar) )
+				self:ReSize()
+			end,self)
+		end
+		function PANEL:ReSize()
+			local z = self:GetZoom() * 0.5
+			local w,h = 1617 * z, 808 * z
+			if w < self:GetWide() or h < self:GetTall() then
+				z = math.max(self:GetWide() / 1617, self:GetTall() / 808)
+				w = 1617 * z
+				h = 808 * z
+			end
+			self._map:SetSize(w, h)
+			local u, v = self:GetUV( self:GetLat(), self:GetLon())
+			local px,py = -w * u + self:GetWide() / 2, -h * v + self:GetTall() / 2
+			px = math.Clamp(px, -w, 0)
+			py = math.Clamp(py, -h, 0)
+			
+			self._map:SetPos(px,py)
+		end
+		function PANEL:OnMouseWheeled( sD )
+			local z = self:GetZoom() + sD / 2
+			self:SetZoom( math.Clamp(z, 1, 28) )
+			self:ReSize()
+			return true
+		end
+		function PANEL:PerformLayout()
+			self:ReSize()
+		end
+		function PANEL:Paint(w,h)
+			if self:GetDisabled() then return end
+			local x, y = self._map:GetPos()
+			local ws, hs = self._map:GetSize()
+			surface.SetDrawColor(color_white)
+			surface.SetMaterial( w_map )
+			if x < 0 then
+				surface.DrawTexturedRect(x + ws,y,ws,hs)
+			else
+				surface.DrawTexturedRect(x - ws,y,ws,hs)
+			end			
+		end
+		function PANEL:PaintOver(w,h)
+			surface.SetDrawColor(color_black)
+			surface.SetMaterial(owm)
+			local tw = w / 5
+			local th = tw * 0.42
+			surface.DrawTexturedRect(0, h - th, tw, th)
+		end
 		derma.DefineControl( "SF_WorldMap", "", PANEL, "DPanel" )
 	end
 

@@ -16,7 +16,7 @@ local hideForecast 	= StormFox2.Setting.AddSV("hide_forecast",false,nil, "Weathe
 
 local OWEnabled = StormFox2.Setting.AddSV("openweathermap_enabled",false,nil,"Weather")
 	StormFox2.Setting.AddSV("openweathermap_lat",52,nil,"Weather",-180,180) -- Unpercise setting
-	StormFox2.Setting.AddSV("openweathermap_lon",-2,nil,"Weather",-90,90)	-- Unpercise setting
+	StormFox2.Setting.AddSV("openweathermap_lon",-2,nil,"Weather",-180,180)	-- Unpercise setting
 
 -- Generator
 	StormFox2.Setting.AddSV("min_temp",-10,nil,"Weather")
