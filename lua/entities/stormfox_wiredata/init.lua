@@ -1,3 +1,7 @@
+-- Check if wiremod is installed
+if not file.Exists("lua/autorun/wire_load.lua", "GAME") then return end
+
+
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
