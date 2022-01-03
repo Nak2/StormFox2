@@ -469,12 +469,14 @@ local quick_time = {
 	--{"sf_real_time" 	, 12 * 60	, 12 * 60	, "icon16/clock_link.png"}, Most likely kiiinda useless. Since we got sunset and sunrise.
 	{"sf_alwaysday" 	, 12		, -1		, "icon16/weather_sun.png"},
 	{"sf_alwaysnight" 	, -1		, 12		, "icon16/drink.png"},
-	{"GTA" 				, 24		, 24		, "icon16/cd.png" },		-- 48 mins for a full day
-	{"Far Cry 6" 		, 30		, 30		, "icon16/cd.png" },		-- 30 for each
-	{"The Forest"		, 24		, 12		, "icon16/cd.png" },		-- 30 for each
+	{"Dying Light"		, 64		, 7			, "icon16/cd.png" },	-- Day last 3840 seconds, 420 doing night.
 	{"Factorio" 		, 6.95+2.5	, 2 + 2.5	, "icon16/cd.png" },	-- ½ of Dusk and dawn is split 1.5 + 3.5 = 5 = 2.5 for each
+	{"Far Cry 6" 		, 30		, 30		, "icon16/cd.png" },	-- 30 for each
+	{"GTA" 				, 24		, 24		, "icon16/cd.png" },	-- 48 mins for a full day
+	{"Minecraft"		, 10 + 3	, 7			, "icon16/cd.png" },	-- 10 mins doing day, 1.5 sunset/rise and 7 doing night.
+	{"Rust" 			, 45		, 15		, "icon16/cd.png" },	-- 45 mins doing the day, 15 doing the night.
 	{"Terraria" 		, 15		, 9			, "icon16/cd.png" },	-- 15 mins doing the day, 9 doing the night.
-	{"Rust" 			, 45		, 15		, "icon16/cd.png" }	-- 45 mins doing the day, 15 doing the night.
+	{"The Forest"		, 24		, 12		, "icon16/cd.png" },	-- 30 for each
 }
 local tabs = {
 	[1] = {"Start","#start",(Material("stormfox2/hud/menu/dashboard.png")),function(board)
