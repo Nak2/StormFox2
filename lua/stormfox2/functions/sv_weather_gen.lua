@@ -138,18 +138,19 @@ end
 		local ex_time = 0
 		for k, v in ipairs( t.list ) do
 			if not v.main then continue end -- ERR
-			local timestr = string.match(v.dt_txt, "(%d+:%d+:%d)")
-			local c = string.Explode(":", timestr)
-			local h, m, s = c[1] or "0", c[2] or "0", c[3] or "0"
-			local time = ( tonumber( h ) or 0 ) * 60 + (tonumber( m ) or 0) + (tonumber( s ) or 0) / 60
-			if time < last_time then -- New day
-				ex_time = ex_time + 1440
-				last_time = time
-			else
-				last_time = time
-			end
+			--local timestr = string.match(v.dt_txt, "(%d+:%d+:%d)")
+			--local c = string.Explode(":", timestr)
+			--local h, m, s = c[1] or "0", c[2] or "0", c[3] or "0"
+			--local time = ( tonumber( h ) or 0 ) * 60 + (tonumber( m ) or 0) + (tonumber( s ) or 0) / 60
+			--if time < last_time then -- New day
+			--	ex_time = ex_time + 1440
+			--	last_time = time
+			--else
+			--	last_time = time
+			--end
 			-- New time: time + ex_time
-			local timeStamp = time + ex_time
+			--local timeStamp = time + ex_time
+			local timeStamp = v.dt
 			if timeStamp > 1440 then
 				if k%2 == 1 then
 					continue
@@ -548,10 +549,9 @@ end
 			-- Make the new temperature
 				
 				local h = StormFox2.Sun.GetSunRise()
-				local sunHigest = math.random(h - 180, h + 180)
-				local sunDown = StormFox2.Sun.GetSunSet() - 180
-				newDay:SetTemperature( sunHigest, 	newMidTemp )
-				newDay:SetTemperature( sunDown, 	math.max(newMidTemp - math.random(7), mi) )				
+				local sunDown = StormFox2.Sun.GetSunSet() + math.random(-180, 180) - 180
+				newDay:SetTemperature( sunDown,	newMidTemp )
+				newDay:SetTemperature( h - 180,	math.max(newMidTemp - math.random(7), mi) )				
 		end
 		-- Handle wind
 		local newWind
