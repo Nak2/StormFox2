@@ -1608,8 +1608,11 @@ end
 		function PANEL:PerformLayout()
 			self:ReSize()
 		end
+		local c = Color( 254, 254, 234 )
 		function PANEL:Paint(w,h)
 			if self:GetDisabled() then return end
+			surface.SetDrawColor(c)
+			surface.DrawRect(0,0,w,h)
 			local x, y = self._map:GetPos()
 			local ws, hs = self._map:GetSize()
 			surface.SetDrawColor(color_white)
