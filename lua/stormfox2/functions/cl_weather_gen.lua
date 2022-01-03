@@ -255,6 +255,7 @@ local function DrawTemperature( x, y, w, h, t_list, min_temp, max_temp, bExpensi
 	surface.SetDrawColor(ca)
 	surface.DrawLine(x, y + h, x + w, y + h)
 	render.SetScissorRect( x + offX , y - 25 + offY, x + w + offX, y + h + offY, true )
+	local unix = StormFox2.WeatherGen.IsUnixTime()
 
 	local temp_p = fkey(0, max_temp, min_temp)
 	local tempdiff = max_temp - min_temp
@@ -289,13 +290,18 @@ local function DrawTemperature( x, y, w, h, t_list, min_temp, max_temp, bExpensi
 		end
 	end
 	
-	local curTim = StormFox2.Time.Get()
+	local curTim = unix and os.time() or StormFox2.Time.Get()
 	local oldX, oldY, oldP
 	surface.SetTextColor(color_white)
 	surface.SetFont("SF_Display_H3")
 	for i, data in ipairs( t_list ) do
 		if not data then break end
-		local time_p = (data[1] - curTim) / days_length
+		local time_p
+		if unix then
+			time_p = (data[1] - curTim) / (1440 * 60 * 1.5)
+		else
+			time_p = (data[1] - curTim) / days_length
+		end
 		local temp_p = data[2]
 		local pointx = time_p * w + x
 		local pointy = y + h - (temp_p * h)
@@ -364,7 +370,7 @@ function StormFox2.WeatherGen.DrawForecast(w,h,bExpensive, offX, offY)
 			return
 		end
 	local unix = StormFox2.WeatherGen.IsUnixTime()
-	local curTim = StormFox2.Time.Get()
+	local curTim = unix and os.time() or StormFox2.Time.Get()
 	-- Draw Temperature
 		-- Convert it into a list of temperature w procent
 		local c_temp = StormFox2.Temperature.Get()
@@ -392,27 +398,77 @@ function StormFox2.WeatherGen.DrawForecast(w,h,bExpensive, offX, offY)
 		surface.DrawTexturedRect(w / 2 - 48,h * 0.05, 40,40)
 		draw.DrawText(tex, "SF_Display_H", w / 2 , h * 0.07, color_white, TEXT_ALIGN_LEFT)
 	-- Draw DayIcons
-		local c = math.ceil(curTim / hours_8) * hours_8
 		surface.SetDrawColor(color_white)
-		for i = c, days_length + c - 420, hours_8 do
-			-- Render Time
-			local t_stamp = StormFox2.Time.GetDisplay( i % 1440 )
-			local delt = i - curTim
-			local x = math.ceil(w * 0.9 / days_length * delt)
-			draw.DrawText(t_stamp, "SF_Display_H3", x , h * 0.9, color_white)
-			-- Render icon
-			local day = forecast._ticks[i]
-			local s = w / 12
-			if day then
-				local w_type = StormFox2.Weather.Get(day.sName)
-				if not w_type then
-					surface.SetMaterial(nul_icon)
-				else
-					surface.SetMaterial(w_type.GetIcon( i % 1440, day.nTemp, day.nWind or 0, day.bThunder or false, day.fAmount or 0) )
-					surface.DrawTexturedRect(x, h * 0.25, s, s)
-					local name = w_type:GetName(i % 1440, day.nTemp, day.nWind or 0, day.bThunder or false, day.fAmount or 0)
-					draw.DrawText(name, "SF_Display_H2", x + s / 2, h * 0.25 + s, color_white, TEXT_ALIGN_CENTER)
+		local s = w / 12
+		if not unix then
+			local c = math.ceil(curTim / hours_8) * hours_8	
+			for i = c, days_length + c - 420, hours_8 do
+				-- Render Time
+				local t_stamp = StormFox2.Time.GetDisplay( i % 1440 )
+				local delt = i - curTim
+				local x = math.ceil(w * 0.9 / days_length * delt)
+				draw.DrawText(t_stamp, "SF_Display_H3", x , h * 0.9, color_white)
+				-- Render icon
+				local day = forecast._ticks[i]
+				if day then
+					local w_type = StormFox2.Weather.Get(day.sName)
+					if not w_type then
+						surface.SetMaterial(nul_icon)
+					else
+						surface.SetMaterial(w_type.GetIcon( i % 1440, day.nTemp, day.nWind or 0, day.bThunder or false, day.fAmount or 0) )
+						surface.DrawTexturedRect(x, h * 0.25, s, s)
+						local name = w_type:GetName(i % 1440, day.nTemp, day.nWind or 0, day.bThunder or false, day.fAmount or 0)
+						draw.DrawText(name, "SF_Display_H2", x + s / 2, h * 0.25 + s, color_white, TEXT_ALIGN_CENTER)
+					end
 				end
+			end
+		else
+			--(1440 * 60 * 1.5)
+			local wP = ( w * 0.9 ) / (1440 * 60 * 1.5)
+			local _12 = StormFox2.Setting.Get("12h_display", false)
+			local z = 0
+			for i, data in pairs( forecast.weather ) do
+				local unixT = data[1] or 0
+				if unixT < curTim then continue end
+				z = z + 1
+				if z > 6 then continue end
+				local delta = unixT - curTim
+				local t_stamp
+				local fakeTime = os.date( "%H:%M", unixT )
+				if _12 then
+					t_stamp = os.date( "%I:%M %p", unixT )
+				else
+					t_stamp = fakeTime
+				end
+				local x = math.ceil(wP * delta)
+				draw.DrawText("[" .. t_stamp .. "]", "SF_Display_H3", x , h * 0.9, color_white)
+				local day = data[2]
+				if day then
+					local n = string.Explode(":", fakeTime)
+					local f = n[1] * 60 + n[2]
+					local w_type = StormFox2.Weather.Get(day.sName)
+					local l_temp = 0
+					for id, tD in ipairs( forecast.temperature ) do
+						if tD[1] > unixT then break end
+						l_temp = tD[2]
+					end
+
+					local l_wind = 0
+					for id, tD in ipairs( forecast.wind ) do
+						if tD[1] > unixT then break end
+						l_wind = tD[2]
+					end
+					
+					if not w_type then
+						surface.SetMaterial(nul_icon)
+						surface.DrawTexturedRect(x, h * 0.25, s, s)
+					else
+						surface.SetMaterial(w_type.GetIcon( f, l_temp, l_wind, day.bThunder or false, day.fAmount or 0) )
+						surface.DrawTexturedRect(x, h * 0.25, s, s)
+						local name = w_type:GetName(i % 1440, l_temp, l_wind, day.bThunder or false, day.fAmount or 0)
+						draw.DrawText(name, "SF_Display_H2", x + s / 2, h * 0.25 + s, color_white, TEXT_ALIGN_CENTER)
+					end
+				end			
 			end
 		end
 end
