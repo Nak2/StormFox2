@@ -1,6 +1,6 @@
 
 -- Only add this entity, if the server has CSGO
-if SERVER and not IsMounted("csgo") then return end
+if SERVER and not file.Exists("models/props/de_dust/hr_dust/dust_lights/dust_ornate_lantern_01.mdl","GAME") then return end
 AddCSLuaFile()
 
 ENT.Type = "anim"

@@ -1,6 +1,6 @@
 
 -- Only add this entity, if the server has CSGO
-if SERVER and not IsMounted("csgo") then return end
+if SERVER and not file.Exists("models/props/de_aztec/hr_aztec/aztec_lighting/aztec_lighting_candle_cluster_01_unlit.mdl","GAME") then return end
 AddCSLuaFile()
 
 ENT.Type = "anim"
