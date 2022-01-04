@@ -469,7 +469,8 @@ do
 			if self.strikeout then
 				surface.SetDrawColor(color_black)
 				local wide = #self.t_text > 1 and w or surface.GetTextSize(str)
-				surface.DrawLine(0, z + lh / 2, wide, z + lh / 2)
+				local c = z + lh / 2 + 1
+				surface.DrawLine(0, c, wide, c)
 			end
 		end
 	end
