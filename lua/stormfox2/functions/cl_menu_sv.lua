@@ -882,6 +882,9 @@ local tabs = {
 		l:SetDark(true)
 		l:SetFont("DermaDefaultBold")
 		do
+			local lenv_ic = vgui.Create("DImage", board)
+			lenv_ic:SetSize(16,16)
+			lenv_ic:SetZPos(20)
 			local auto 		= board:AddSetting("maplight_auto"):HideTitle()
 			local lenv		= board:AddSetting("maplight_lightenv"):HideTitle()
 			local colormod 	= board:AddSetting("maplight_colormod"):HideTitle()
@@ -894,6 +897,34 @@ local tabs = {
 			local c_dyna = StormFox2.Setting.GetObject('maplight_dynamic')
 			local c_ligh = StormFox2.Setting.GetObject('maplight_lightstyle')
 			local warning = vgui.Create("DImage", lightstyle)
+			
+			local OVL
+			function board:PerformLayout(w,h)
+				if not IsValid( lenv ) then return end
+				local x,y = lenv:GetPos()
+				lenv_ic:SetPos(230 + x, y)
+			end
+			local S_IDK, S_YES, S_NO = 0, 1, 2
+			local has_MapLightEnv
+			if #StormFox2.Map.Entities() < 1 then
+				has_MapLightEnv = S_IDK
+			else
+				has_MapLightEnv = StormFox2.Ent.light_environments and S_YES or S_NO
+			end
+			if has_MapLightEnv == S_IDK then
+				lenv_ic:SetImage('icon16/help.png')
+				lenv_ic:SetToolTip("#sf_lightenv.unknown")
+				lenv:SetToolTip("#sf_lightenv.unknown")
+			elseif has_MapLightEnv == S_NO then
+				lenv_ic:SetImage('icon16/exclamation.png')
+				lenv_ic:SetToolTip("#sf_lightenv.unknown")
+				lenv:SetToolTip("#sf_lightenv.unknown")
+				lenv:SetStrikeOut( true )
+				lenv_ic:SetZPos(2)
+			else
+				lenv_ic:Hide()
+			end
+			
 			function l:Think()
 				if c_auto:GetValue() then
 					lenv:SetDisabled(true)
@@ -902,7 +933,11 @@ local tabs = {
 					lightstyle:SetDisabled(true)
 				else
 					colormod:SetDisabled(false) -- Always an option
-					lenv:SetDisabled(false)
+					if has_MapLightEnv ~= S_NO then
+						lenv:SetDisabled(false)
+					else -- Disable this option, if it isn't enabled and map doesn't have it
+						lenv:SetDisabled(not c_lenv:GetValue())
+					end
 					dynamic:SetDisabled(false)
 					lightstyle:SetDisabled(false)
 					if c_dyna:GetValue() then
