@@ -422,7 +422,6 @@ do
 	local lineHeight
 	local function getLineHeight()
 		if lineHeight then return lineHeight end
-		surface.SetFont("DermaDefault")
 		local ws,hs = surface.GetTextSize("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 		lineHeight = hs
 		return hs
@@ -431,16 +430,24 @@ do
 	function PANEL:Init()
 		self.t_text = {}
 		self.text = "No description"
+		self.font = "DermaDefault"
+		self.strikeout = false
+	end
+	function PANEL:SetFont( str )
+		self.font = str
+	end
+	function PANEL:SetStrikeOut( b )
+		self.strikeout = b
 	end
 	function PANEL:SetText( str )
 		self.text = str
-		surface.SetFont("DermaDefault")
+		surface.SetFont(self.font)
 		local t_text, lines = wrapText(str, self:GetWide())
 		self:SetTall(lines * getLineHeight())
 		self.t_text = t_text
 	end
 	function PANEL:PerformLayout(w, h)
-		surface.SetFont("DermaDefault")
+		surface.SetFont(self.font)
 		local t_text, lines = wrapText(self.text, w)
 		self:SetTall(lines * getLineHeight())
 		self.t_text = t_text
@@ -452,11 +459,18 @@ do
 	function PANEL:Paint(w, h)
 		surface.SetDrawColor(color_white)
 		surface.DrawRect(0,0,w,h)
-		surface.SetFont("DermaDefault")
+		surface.SetFont(self.font)
 		surface.SetTextColor(color_black)
+		local lh = getLineHeight()
 		for y, str in ipairs( self.t_text ) do
-			surface.SetTextPos(0, (y - 1) * getLineHeight() )
+			local z = (y - 1) * lh
+			surface.SetTextPos(0, z )
 			surface.DrawText( str )
+			if self.strikeout then
+				surface.SetDrawColor(color_black)
+				local wide = #self.t_text > 1 and w or surface.GetTextSize(str)
+				surface.DrawLine(0, z + lh / 2, wide, z + lh / 2)
+			end
 		end
 	end
 	derma.DefineControl( "SF2_TextBox", "", PANEL, "DPanel" )
@@ -481,6 +495,10 @@ do
 			self.description = description
 		self._SetSetting = self.SetSetting
 		self:DockMargin(15,0,15,5)
+		self._cross = false
+	end
+	function PANEL:SetStrikeOut( b )
+		self.description:SetStrikeOut( b )
 	end
 	function PANEL:SetTitle( str )
 		self.label_name:SetText( language.GetPhrase(str) or str )
