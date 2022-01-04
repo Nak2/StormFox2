@@ -46,6 +46,7 @@ local t_models = {}
 	t_models['models/props_mvm/construction_light02.mdl']		= {Vector(-30,-25,144),	Angle(0,275,68),FAKESPOT,Vector(-30,25,144), Angle(0,265,68)}
 	t_models['models/props_hydro/construction_light.mdl']		= {Vector(0,-3,-19), 	Angle(0,0,45),	SPOTLIGHT}
 	t_models['models/props/cs_assault/streetlight.mdl']			= {Vector(50,0,45), 	Angle(0,0,0),	SPOTLIGHT}
+	t_models['models/props/cs_italy/it_streetlampleg.mdl']={Vector(0,0,156),Angle(0,0,0),	POINTLIGHT}
 
 local function IsLightNear(pos)
 	local t = {}
