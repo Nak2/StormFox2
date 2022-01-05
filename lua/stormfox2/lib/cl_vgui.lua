@@ -859,6 +859,10 @@ do
 		self.check:SetChecked(self._sfobj:GetValue() > min)
 	end
 
+	function PANEL:SetDefaultEnable( var )
+		self.defaultEnable = var
+	end
+
 	function PANEL:SetSetting( sName, sType, Description )
 		self:_SetSetting( sName, sType, Description ) -- Set title and textbox
 		local _sfobj = StormFox2.Setting.GetObject( sName )
@@ -876,13 +880,14 @@ do
 			_sfobj:SetValue(val)
 			self:SetText(tostring(val))
 		end
+		local mainPanel = self
 		function self.check:DoClick()
 			local min = _sfobj:GetMin() or -1
 			local b = _sfobj:GetValue() > 0
 			if b then
 				_sfobj:SetValue(min)
 			else
-				local n = math.max(_sfobj:GetDefault(), 1)
+				local n = math.max(mainPanel.defaultEnable or _sfobj:GetDefault(), 1)
 				_sfobj:SetValue(n)
 			end
 		end
