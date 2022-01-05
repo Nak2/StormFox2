@@ -76,6 +76,13 @@ if SERVER then
 		end
 	end
 else
+	local function HasToolgun()
+		local wep = LocalPlayer():GetActiveWeapon()
+		if not wep or not IsValid(wep) then return false end
+		if wep:GetClass() ~= "sf2_tool" then return false end
+		return true
+	end
+	local hasTool = false
 	local v1 = Vector(1,1,1)
 	local col1, col2 = Color(255,0,0,55),Color(0,255,0,255)
 	function ENT:Draw()
@@ -94,10 +101,6 @@ else
 			self:DrawModel()
 			render.MaterialOverrideByIndex()
 			self:SetRenderOrigin( )
-			if not in_v then
-				render.SetColorMaterial()
-				render.DrawSphere( p, r, 30, 30, col1)
-			end
 			--						 (nTime,				nTemp,												nWind,						bThunder,nFraction)
 			local symbol = we.GetIcon( StormFox2.Time.Get(), self:GetTemperature() or StormFox2.Temperature.Get(), StormFox2.Wind.GetForce(), StormFox2.Thunder.IsThundering(), self:GetPercent() )
 			render.SetMaterial( symbol )
@@ -111,6 +114,7 @@ else
 	hook.Add("Think", "StormFox2.Weather.EController", function()
 		if not StormFox2 or StormFox2.Version < 2 then return end
 		if not StormFox2.Weather or not StormFox2.Weather.RemoveLocal then return end
+		hasTool = HasToolgun()
 		local t = {}
 		for _, ent in ipairs( ents.FindByClass("env_atmosphere") ) do
 			local p = ent:GetPos()
@@ -130,5 +134,11 @@ else
 		else
 			StormFox2.Weather.SetLocal( ent:GetWeatherName(), ent:GetPercent(), 4, ent:GetTemperature())
 		end
+	end)
+
+	hook.Add("PreDrawHalos", "StormFox2.Atmosphere.Halo", function()
+		if not hasTool then return end
+		local d_tab = ents.FindByClass("env_atmosphere")
+		halo.Add( d_tab, color_white, 2, 2, 1, true,true )
 	end)
 end
