@@ -95,6 +95,7 @@ end
 		if cW.Name == "Clear" then return ov end
 		local perc = bFinal and StormFox2.Weather.GetFinishPercent() or StormFox2.Weather.GetPercent()
 		local a = math.min(cW:Get('fogDistance'), ov)
+		if a == ov then return ov end -- This weathertype doesn't change the fog .. or is higer than default
 		if not a or perc <= 0 then return ov end -- If weather percent is 0 or under. Return the "clear" distance.
 		if perc >= 1 then return a end -- If weather is higer or equal to 1, return the base value.
 		return fogCalc(ov, a, perc)
