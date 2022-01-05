@@ -91,14 +91,13 @@ end
 -- Returns the fog-distance.
 	local function getAimDistance(bFinal)
 		local cW = StormFox2.Weather.GetCurrent()
-		if cW.Name == "Clear" then
-			return getDefaultDistance()
-		end
+		local ov = getDefaultDistance()
+		if cW.Name == "Clear" then return ov end
 		local perc = bFinal and StormFox2.Weather.GetFinishPercent() or StormFox2.Weather.GetPercent()
-		local a = cW:Get('fogDistance')
-		if not a or perc <= 0 then return getDefaultDistance() end
-		if perc >= 1 then return a end
-		return fogCalc(getDefaultDistance(), a, perc)
+		local a = math.min(cW:Get('fogDistance'), ov)
+		if not a or perc <= 0 then return ov end -- If weather percent is 0 or under. Return the "clear" distance.
+		if perc >= 1 then return a end -- If weather is higer or equal to 1, return the base value.
+		return fogCalc(ov, a, perc)
 	end
 
 if SERVER then
