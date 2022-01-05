@@ -1011,7 +1011,12 @@ local tabs = {
 		board:AddSetting("enable_svfog", nil, "sf_enable_fog")
 		board:AddSetting("allow_fog_change")
 		board:AddSetting("enable_fogz")
-		board:AddSetting("overwrite_fogdistance")
+		local fogDis = board:AddSetting("overwrite_fogdistance")
+		fogDis:SetDefaultEnable( 4000 )
+		if fogDis.slider then
+			fogDis.slider:SetMin(400)
+			fogDis.slider:SetMax(40000)
+		end
 
 		local function en_skybox( var, var2 )
 			if var2 == nil then
