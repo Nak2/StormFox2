@@ -21,7 +21,7 @@ if hasMapLogic then
 end
 
 local mapPointList = {
-	{"light_environment", 		StormFox2.Ent.light_environments,		["check"] ="#sf_map.light_environment.check",["problem"] = "#sf_map.light_environment.problem"},
+	{"light_environment", 		StormFox2.Ent.light_environments,		["check"] ="#sf_map.light_environment.check",["none"] = "#sf_map.light_environment.none"},
 	{"env_wind", 				StormFox2.Ent.env_winds,				["none"]  ="#sf_map.env_wind.none"},
 	{"shadow_control", 			StormFox2.Ent.shadow_controls},
 	{"env_tonemap_controllers", StormFox2.Ent.env_tonemap_controllers},
@@ -460,7 +460,6 @@ local function DoClickWButton( self )
 		end
 	end
 end
-
 
 --					Day			Night
 local quick_time = {
