@@ -708,6 +708,7 @@ end
 	min_temp:AddCallback( ClearAndRedo, "weekWeather" )
 	max_temp:AddCallback( ClearAndRedo, "weekWeather" )
 	max_wind:AddCallback( ClearAndRedo, "weekWeather" )
+	night_temp:AddCallback( ClearAndRedo, "weekWeather" )
 	OnWeatherSettingChange = ClearAndRedo
 
 	local lastWeather, lastWind, lastTemp = -1, -1 , -1
