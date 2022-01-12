@@ -364,8 +364,8 @@ end
 	})
 	-- Morning fog
 	default_setting["Fog"] = CombineSetting({
-		["amount_min"] = 0.4,
-		["amount_max"] = 0.8,
+		["amount_min"] = 0.15,
+		["amount_max"] = 0.30,
 		["start_min"] = 360,
 		["start_max"] = 560,
 		["length_min"] = 160,
