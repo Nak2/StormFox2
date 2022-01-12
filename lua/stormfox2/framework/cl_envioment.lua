@@ -671,6 +671,7 @@ Generate meshes and env-points out from the map-data.
 			StormFox2.Msg("Generating glass-mesh data ..")
 			local glass_planes = {{},{}}
 			for group_i,t_group in ipairs(temp_group) do -- For each group.
+				if #t_group < 1 then continue end
 				local mesh = {}
 				-- Add all triangles together
 					local a = t_group[1]:GetAngles()
@@ -714,6 +715,7 @@ Generate meshes and env-points out from the map-data.
 							end
 						end]]
 					end
+					if not max_width then continue end
 					local width_range = max_width - min_width
 					local height_range = max_height - min_height
 
