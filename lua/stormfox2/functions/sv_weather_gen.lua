@@ -286,9 +286,10 @@ end
 
 -- Weather Gen Settings
 	local max_days_generate = 7
-	local min_temp = StormFox2.Setting.AddSV("min_temp",-10,nil,"Weather",-273.15)
-	local max_temp = StormFox2.Setting.AddSV("max_temp",20,nil, "Weather")
-	local max_wind = StormFox2.Setting.AddSV("max_wind",50,nil, "Weather")
+	local min_temp 	= StormFox2.Setting.AddSV("min_temp",-10,nil,"Weather",-273.15)
+	local max_temp 	= StormFox2.Setting.AddSV("max_temp",20,nil, "Weather")
+	local max_wind 	= StormFox2.Setting.AddSV("max_wind",50,nil, "Weather")
+	local night_temp= StormFox2.Setting.AddSV("addnight_temp",-7,nil, "Weather")
 	local function toStr( num )
 		local c = tostring( num )
 		return string.rep("0", 4 - #c) .. c
@@ -549,9 +550,10 @@ end
 			-- Make the new temperature
 				
 				local h = StormFox2.Sun.GetSunRise()
+				local n_temp = night_temp:GetValue() or -7
 				local sunDown = StormFox2.Sun.GetSunSet() + math.random(-180, 180) - 180
 				newDay:SetTemperature( sunDown,	newMidTemp )
-				newDay:SetTemperature( h - 180,	math.max(newMidTemp - math.random(7), mi) )				
+				newDay:SetTemperature( h - 180,	math.max(newMidTemp + math.random(n_temp / 2, n_temp), mi) )				
 		end
 		-- Handle wind
 		local newWind

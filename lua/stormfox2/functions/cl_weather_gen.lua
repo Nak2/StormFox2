@@ -21,6 +21,8 @@ local OWEnabled = StormFox2.Setting.AddSV("openweathermap_enabled",false,nil,"We
 -- Generator
 	StormFox2.Setting.AddSV("min_temp",-10,nil,"Weather")
 	StormFox2.Setting.AddSV("max_temp",20,nil, "Weather")
+	StormFox2.Setting.AddSV("max_wind",50,nil, "Weather")
+	StormFox2.Setting.AddSV("addnight_temp",-7,nil, "Weather")
 
 	local function toStr( num )
 		local c = tostring( num )
