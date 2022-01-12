@@ -3,7 +3,7 @@ This scripts job is to sort out the computers and potatoes.
 ---------------------------------------------------------------------------]]
 StormFox2.Client = StormFox2.Client or {}
 StormFox2.Setting.AddCL("quality_ultra",false)
-StormFox2.Setting.AddCL("quality_target",80,nil,nil, 0, 300)
+StormFox2.Setting.AddCL("quality_target",60,nil,nil, 0, 300)
 
 local conDetect = 1
 local t_num = {1, 1, 1, 1, 1, 1}
