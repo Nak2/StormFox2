@@ -197,6 +197,8 @@ end
 
 -- Load the weathers once lib is done.
 hook.Add("stormfox2.postlib", "stormfox2.loadweathers", function()
+	StormFox2.Setting.AddSV("weather_damage",true,nil, "Weather")
+
 
 	StormFox2.Setting.AddSV("moonsize",30,nil,"Effects", 5, 500)
 

@@ -152,6 +152,7 @@ else
 	-- Take dmg in rain, slowly
 	local nt = 0
 	function rad.Think()
+		if not StormFox2.Setting.Get("weather_damage", true) then return end
 		if nt < CurTime() then
 			nt = CurTime() + 2
 			local dmg = DamageInfo()

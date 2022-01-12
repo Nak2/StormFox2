@@ -73,6 +73,7 @@ if SERVER then
 		if not ent or not IsValid(ent) then return end
 		if not bReplace then return end
 		if ent.Health and ent:Health() <= 1 then return end
+		if not StormFox2.Setting.Get("weather_damage", true) then return end
 		if math.random(1, 10) <= 9 then
 			local burn = DamageInfo()
 				burn:SetDamage( math.random(5, 10) )
