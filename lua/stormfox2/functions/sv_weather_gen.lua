@@ -553,7 +553,8 @@ end
 				local n_temp = night_temp:GetValue() or -7
 				local sunDown = StormFox2.Sun.GetSunSet() + math.random(-180, 180) - 180
 				newDay:SetTemperature( sunDown,	newMidTemp )
-				newDay:SetTemperature( h - 180,	math.max(newMidTemp + math.random(n_temp / 2, n_temp), mi) )				
+				newDay:SetTemperature( h - 180,	math.max(newMidTemp + math.random(n_temp / 2, n_temp), mi) )
+				lastTemp = newMidTemp -- To make sure night-temp, don't effect the overall temp
 		end
 		-- Handle wind
 		local newWind
