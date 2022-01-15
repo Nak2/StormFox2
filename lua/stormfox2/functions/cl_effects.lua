@@ -106,41 +106,87 @@ local t = {
 	["x86-64"] = true
 }
 
-local p = false
-local function Patch()
-	if t[BRANCH] or p then return end
-	p = true
-	depthLayer:SetUndefined("$detail")
-	depthLayer:SetUndefined("$detailblendmode")
-	StormFox2.Warning("This version doesn't support depth-filter depth!")
+
+local depthLayer = Material( "stormfox2/shader/depth_layer" )
+local function updateDepthTexture(fFunc, a)
+	render.PushRenderTarget(depth_r)
+		cam.Start2D()
+			render.Clear(0,0,0,0,true, false)
+			fFunc(W,H, a)
+		cam.End2D()
+	render.PopRenderTarget()
+	depthLayer:SetTexture("$basetexture", depth_r)
+	return depthLayer
 end
-hook.Add( "StormFox2.DepthFilterRender", "StormFox2.DepthFilter", function()
+local invis_col = Color(255,0,0,0)
+local function RenderDepthFilter()
+	-- Reset everything to known good fpr stencils
+		render.SetStencilWriteMask( 0xFF )
+		render.SetStencilTestMask( 0xFF )
+		render.SetStencilReferenceValue( 0 )
+		render.SetStencilCompareFunction( STENCIL_ALWAYS )
+		render.SetStencilPassOperation( STENCIL_REPLACE )
+		render.SetStencilFailOperation( STENCIL_ZERO )
+		render.SetStencilZFailOperation( STENCIL_ZERO )
+		render.ClearStencil()
+
+	-- Enable stencil
+		render.SetStencilEnable( true )
+		render.SetStencilReferenceValue( 1 )
+		render.SetStencilCompareFunction( STENCIL_ALWAYS )
+	-- Render Mask
+		local eA = EyeAngles()
+		cam.Start3D( EyePos(), eA )
+			render.SetColorMaterial()
+			local f_D = StormFox2.Fog.GetEnd()
+			if f_D > 2000 then
+				render.DrawSphere(EyePos(), -2000, 30, 30, invis_col)
+			else
+				--[[
+					Stencils look bad for heavy effects, since there is a clear pixel-line.
+					I've tried smoothing it, but it would require rendering the world twice within an RT.
+
+					So instead we make it a plain with the fog-distance. 
+					Its bad in some cases, yes, but only solution I know for now.
+				]]
+				render.DrawQuadEasy(EyePos() + eA:Forward() * f_D, -eA:Forward(), ScrW() * 5, ScrH() * 5, invis_col, 0)
+			end
+		cam.End3D()
+		-- Now, only draw things that have their pixels set to 1. This is the hidden parts of the stencil tests.
+			render.SetStencilCompareFunction( STENCIL_EQUAL )
+		-- Render Depth-filter
+			cam.Start2D()
+				render.SetMaterial(depthLayer)
+				render.DrawScreenQuad()
+			cam.End2D()
+		-- Let everything render normally again
+			render.SetStencilEnable( false )
+	--render.PopRenderTarget()
+end
+
+hook.Add("RenderScreenspaceEffects", "StormFox2.Downfall.DepthRender", function()
+	if render.GetDXLevel() < 95 then return end
 	if not render.SupportsPixelShaders_2_0() then return end
-	local dFr = StormFox2.Weather.GetCurrent().DepthFilter 
-	-- Calculate Alpha
-		if not dFr then 
-			a = 0
-			return
-		end
-		if StormFox2.Environment.Get().outside then
-			a = math.Approach(a, 1, FrameTime() * .8)
-		else
-			a = math.Approach(a, 0, FrameTime() * 5) -- Quick fadeaway
-		end
-		if a <= 0 then return end
-	Patch()
+	if LocalPlayer():WaterLevel() >= 3 then return end -- Don't render SF effects under wanter.
+	local obj = StormFox2.Setting.GetObject("depthfilter")
+	if not obj then return end
+	if not obj:GetValue() then return end
+
+	-- Check if weather has depth. If not reset alpha
+	local dFr = StormFox2.Weather.GetCurrent().DepthFilter
+	if not dFr then a = 0 return end
+	-- Calc alpha
+	if StormFox2.Environment.Get().outside then
+		a = math.Approach(a, 1, FrameTime() * .8)
+	else
+		a = math.Approach(a, 0, FrameTime() * 5) -- Quick fadeaway
+	end
+	if a <= 0 then return end -- If alpha is 0 or below, don't render.
+	-- Update RT
+	updateDepthTexture(dFr, a)
+	-- Update screenspace effect
 	render.UpdateScreenEffectTexture()
 	render.UpdateFullScreenDepthTexture()
-	-- Render RT
-		render.PushRenderTarget( depth_r )
-			render.Clear( 0,0,0,0, true, true)
-			cam.Start2D()
-				dFr(W,H, a)
-			cam.End2D()
-		render.PopRenderTarget()
-	render.CopyRenderTargetToTexture( render.GetFullScreenDepthTexture() )
-	depthLayer:SetTexture("$basetexture", depth_r)
-	depthLayer:SetFloat("$alpha", a)
-	render.SetMaterial( depthLayer )
-	render.DrawScreenQuad()
-end )
+	-- Render the depthfilter
+	RenderDepthFilter()
+end)

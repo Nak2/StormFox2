@@ -272,7 +272,7 @@ do
 		t.mask = mask
 		local sky,_ = FindSky(vFrom, -vNorm, 7)
 		if not sky then return vFrom, -2 end -- Unable to find a skybox above this position
-		return TraceDown(sky + vNorm * (nRadius * 4), vNorm * 262144, nRadius, filter)
+		return TraceDown(sky + vNorm * math.max(nRadius * 2, 4), vNorm * 262144, nRadius, filter)
 	end
 
 	-- Does the same as StormFox2.DownFall.CheckDrop, but will cache
@@ -315,6 +315,7 @@ do
 			local yaw = rad(view.ang.y + deg)
 			local offset = v_pos + Vector(cos(yaw),sin(yaw)) * nDis
 			local pos, n, hitNorm = StormFox2.DownFall.CheckDrop( offset, vNorm, nSize)
+			
 			if pos and n > -2 and pos:DistToSqr(v_pos) < 11000000 then -- TODO: Why does this happen? Position shouldn't be that waaaay away.
 				local bRandomAge = not ignoreVel and nDis > nMaxDistance - v_vel:Length2D()
 				return pos,n,offset, hitNorm, bRandomAge
@@ -767,15 +768,6 @@ if CLIENT then
 		end	
 		if LocalPlayer():WaterLevel() >= 3 then return end -- Don't render SF particles under wanter.
 		ParticleRender() -- Render sf particles
-	end)
-
-	hook.Add("RenderScreenspaceEffects", "StormFox2.Downfall.DepthRender", function()
-		if render.GetDXLevel() < 95 then return end
-		if LocalPlayer():WaterLevel() >= 3 then return end -- Don't render SF particles under wanter.
-		local obj = StormFox2.Setting.GetObject("depthfilter")
-		if not obj then return end
-		if not obj:GetValue() then return end
-		hook.Run("StormFox2.DepthFilterRender") -- Render depthfilter
 	end)
 
 	function StormFox2.DownFall.DebugList()

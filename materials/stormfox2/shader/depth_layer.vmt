@@ -1,13 +1,7 @@
 "UnlitGeneric"
 {
 	"$basetexture" "color_white"
-	"$alpha" 1
-	"$detail" "_rt_FullFrameDepth"
-	"$detailtexturetransform" "center .5 .5 scale 1 1 rotate 0 translate 0 0"
-	"$detailblendmode" 4
-	"$detailscale" 1
-	"$translucent" 1
-	"$vertexalpha" 1
-	"$vertexcolor" 1
-	"$additive" 1
+	"$vertexcolor" 		1
+	"$vertexalpha" 		1
+	"$nolod" 		1
 }
