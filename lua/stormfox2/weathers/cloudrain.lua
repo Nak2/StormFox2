@@ -438,18 +438,19 @@ if CLIENT then
 			StormFox2.Misc.rain_template:SetSize( s , 5.22 + 7.56 * P)
 			StormFox2.Misc.rain_template:SetColor(tc)
 			StormFox2.Misc.rain_template:SetAlpha(min(100 + 15 * P + L,255))
-			StormFox2.Misc.rain_template_medium:SetAlpha(min(150 + 15 * P + L,255)  /3)
-			StormFox2.Misc.rain_template_multi:SetAlpha( L )
+			StormFox2.Misc.rain_template_medium:SetAlpha(min(150 + 15 * P + L,255) /3)
+			StormFox2.Misc.rain_template_fog:SetAlpha( L )
+			local rain_distance = min(random(300,900), StormFox2.Fog.GetEnd())
 			-- Spawn rain particles
 			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template, 10, 700, 10 + P * 900, 5, vNorm ) or {} ) do
 				v:SetSize(  1.22 + 1.56 * P * math.Rand(1,2), 5.22 + 7.56 * P )
 			end
 			-- Spawn distant rain
 			if P > 0.15 then
-				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, 250, 700, 10 + P * 300, 250, vNorm ) or {} ) do
-					local a = random(0,2)
-					if a > 0 then
-						if a > 1 then
+				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, 250, 1500, 10 + P * 300, 250, vNorm ) or {} ) do
+					local d = v:GetDistance()
+					if d < 700 then
+						if random()>0.5 then
 							v:SetMaterial( m_rain2 )
 						else
 							v:SetMaterial(m_rain3 )
@@ -462,20 +463,16 @@ if CLIENT then
 					v:SetAlpha(min(15 + 4 * P + L,255) * 0.2)
 				end
 			end
-			if P > (0.5 - W * 0.4) and L > 5 then
-				local dis = random(900 - W * 100 - P * 500,multi_dis)
-				local d = max(dis / multi_dis, 0.5)
-				local s = math.Rand(0.5,1) * max(0.7,P) * 300 * d
-				--StormFox2.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * .2)
-				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_multi, dis, multi_dis * 2, (90 + P * (250 + W)) / 2, s, vNorm ) or {} ) do
+			if P > (0.5 - W * 0.4) and L > 5 then -- If it is too dark, make it invis
+				local max_fog =  (90 + P * (20 + (W / 80) * 102))
+				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_fog, rain_distance, rain_distance * 2 , max_fog, 200, vNorm ) or {} ) do
 					local d = v:GetDistance()
-					v:SetAlpha(15)
 					if not d or d < 500 then 
 						v:SetSize(  225, 500 )
 					else
 						v:SetSize( d * .45, d)
 					end
-					if random(0,1) == 1 then
+					if random(0,1) >= 0.5 then
 						v:SetMaterial(m2)
 					end
 				end
@@ -528,7 +525,7 @@ if CLIENT then
 				end
 			end
 			local max_fog =  (90 + P * (20 + (W / 80) * 102))
-			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_medium, snow_distance, snow_distance * 2 , max_fog, s, vNorm ) or {} ) do
+			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_fog, snow_distance, snow_distance * 2 , max_fog, 200, vNorm ) or {} ) do
 				local d = v:GetDistance()
 				if not d or d < 500 then 
 					v:SetSize(  225, 500 )
@@ -563,7 +560,7 @@ if CLIENT then
 		mat:SetMatrix("$basetexturetransform", matrix)
 	end
 	function rain.DepthFilter(w, h, a)
-		a = (a - 0.75) * 4
+		a = (a - 0.50) * 2
 		if a <= 0 then return end
 		local windDir = (-StormFox2.Wind.GetNorm()):Angle()
 		local rainscale = (StormFox2.Temperature.Get() + 2) / 2
@@ -594,8 +591,8 @@ if CLIENT then
 			ry = (ry + FrameTime() * wind_y) % 1
 			setMaterialRoll(storm, 180 - roll + 3, rx, ry)
 			surface.SetMaterial( storm )
-			surface.SetDrawColor( Color(255,255,255,84 * a * math.max(0.1, W) * WP * math.max(C,0)) )
-			local s,s2 = 1.5, 1.8
+			surface.SetDrawColor( Color(255,255,255,154 * a * math.max(0.1, W) * WP * math.max(C,0)) )
+			local s,s2 = 1.7, 1.8
 			surface.DrawTexturedRectUV( 0, 0, ScrW(), ScrH(), 0, 0,0 + s, 0 + s)
 		--	surface.DrawTexturedRectUV( 0, 0, ScrW(), ScrH(), rx,ry, rx + s2,ry + s2)
 		elseif rainscale < 1  then

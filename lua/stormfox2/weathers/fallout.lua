@@ -124,7 +124,7 @@ if CLIENT then
 			local d = math.max(dis / multi_dis, 0.5)
 			local s = math.Rand(0.5,1) * math.max(0.7,P) * 300 * d
 			--StormFox2.Misc.rain_template_multi:SetAlpha(math.min(15 + 4 * P + L,255) * .2)
-			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_multi, dis, multi_dis * 2, (90 + P * (250 + W)) / 2, s, vNorm ) or {} ) do
+			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_fog, dis, multi_dis * 2, (90 + P * (250 + W)) / 2, s, vNorm ) or {} ) do
 				local d = v:GetDistance()
 				if not d or d < 500 then 
 					v:SetSize(  225, 500 )
