@@ -91,20 +91,22 @@ local depth_r = GetRenderTarget("SF_DepthFilter", W,H, true)
 local depthLayer = Material( "stormfox2/shader/depth_layer" )
 local a = 0
 local l
+
+-- Patch: Some people out there don't update the resources when updating the mod.
+if depthLayer:GetKeyValues()["$detail"] then
+	StormFox2.Warning("stormfox2/shader/depth_layer.vmt is outdated! Hotpatching, but be sure to update the resources!")
+	depthLayer:SetUndefined("$detail")
+	depthLayer:SetUndefined("$detailtexturetransform")
+	depthLayer:SetUndefined("$detailblendmode")
+	depthLayer:SetUndefined("$detailscale")
+	depthLayer:SetUndefined("$additive")
+end
+
 hook.Add("StormFox2.weather.postchange", "StormFox2.DepthFilter.Reset", function(b)
 	if l and l == b then return end
 	l = b
 	a = 0
 end)
-
--- Depth doesn't work on all versions
-local t = {
-	["unknown"] = false, -- Doesn't support the effect.
-	["chromium"] = true,
-	["dev"] = true,
-	["prerelease"] = false, -- Doesn't support the effect.
-	["x86-64"] = true
-}
 
 
 local depthLayer = Material( "stormfox2/shader/depth_layer" )
