@@ -84,7 +84,10 @@ end
 	end
 	-- Returns true if the entity is on replaced texture.
 	local function IsOnReplacedTex(ent,snd,pos)
+		if ent._sf2ns and ent._sf2ns > CurTime() then return false, ent._sf2nt or "nil" end
+		ent._sf2ns = CurTime() + 0.1
 		local sTexture = EntTraceTexture(ent,pos)
+		ent._sf2nt = sTexture
 		if not sTexture then return false,"nil" end
 		local mat = Material(sTexture)
 		if not mat then return false, sTexture end
