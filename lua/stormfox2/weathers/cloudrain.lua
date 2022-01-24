@@ -148,7 +148,7 @@ do
 		cloudy:SetSunStamp("duskScale",0.26,	SF_SKY_SUNRISE)
 
 	cloudy:Set("starFade",0)
-	cloudy:Set("mapDayLight",0.25)
+	cloudy:Set("mapDayLight",10)
 	cloudy:Set("skyVisibility",0)
 	cloudy:Set("clouds",1)
 	cloudy:Set("enableThunder",  true)
