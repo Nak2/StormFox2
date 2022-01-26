@@ -317,9 +317,21 @@ local function Init(self)
 			end
 		end
 		local t = StormFox2.Weather.GetAll()
-		addW(w_select, "Clear", p)
+		addW(w_select, "Clear", p) -- Always add clear
+		if table.HasValue(t, "Cloud") then
+			addW(w_select, "Cloud", p)
+			w_select.num = w_select.num + 1
+		end
+		if table.HasValue(t, "Rain") then
+			addW(w_select, "Rain", p)
+			w_select.num = w_select.num + 1
+		end
+		if table.HasValue(t, "Fog") then
+			addW(w_select, "Fog", p)
+			w_select.num = w_select.num + 1
+		end
 		for k,v in ipairs(t) do
-			if v == "Clear" then continue end
+			if v == "Clear" or v == "Cloud" or v == "Rain"  or v == "Fog" then continue end -- Ignore
 			addW(w_select, v, p)
 			w_select.num = w_select.num + 1
 		end
