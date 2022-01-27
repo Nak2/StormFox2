@@ -13,6 +13,60 @@ logic_relays support and map lights.
 
 ---------------------------------------------------------------------------]]
 
+-- Special Relays
+	local special_relays = {}
+		special_relays.day_relays		= {}
+		special_relays.daytime_relays	= {}
+		special_relays.night_relays		= {}
+		special_relays.nighttime_relays	= {}
+		special_relays.weather_on 		= {}
+		special_relays.weather_off 		= {}
+		
+	local scanned = false
+	local startingQ = {}
+	hook.Add("StormFox2.InitPostEntity", "StormFox2.MapInteractions.SRelays", function()
+		for _, ent in ipairs( ents.GetAll() ) do
+			if not ent:IsValid() then continue end
+			local class = ent:GetClass()
+			if class == "logic_day_relay" then
+				if ent:GetTriggerType() == 0 then -- Light change
+					table.insert(special_relays.day_relays, ent)
+				else
+					table.insert(special_relays.daytime_relays, ent)
+				end
+			elseif class == "logic_night_relay" then
+				if ent:GetTriggerType() == 0 then -- Light change
+					table.insert(special_relays.night_relays, ent)
+				else
+					table.insert(special_relays.nighttime_relays, ent)
+				end
+			elseif class == "logic_weather_relay" then
+				table.insert(special_relays.weather_on, ent)
+			elseif class == "logic_weather_off_relay" then
+				table.insert(special_relays.weather_off, ent)
+			end
+		end
+		scanned = true
+		for k, ent in ipairs( startingQ ) do
+			if not ent:IsValid() then continue end
+			ent:Trigger()
+		end
+		startingQ = {}
+	end)
+	local function triggerAll(tab)
+		if not scanned then -- Wait until all entities are loaded
+			for _, ent in ipairs(tab) do
+				if not ent:IsValid() then continue end
+				table.insert(startingQ, ent)
+			end
+			return
+		end
+		for _, ent in ipairs(tab) do
+			if not ent:IsValid() then continue end
+			ent:Trigger()
+		end
+	end
+
 local night_lights = {{}, {}, {}, {}, {}, {}}
 local relays = {}
 local switch
@@ -39,9 +93,11 @@ local function SetRelay(fMapLight)
 	if switch ~= nil and lights_on == switch then return end -- Nothing changed
 	if lights_on then
 		StormFox2.Map.CallLogicRelay("night_events")
+		triggerAll(special_relays.night_relays)
 		setLights( true )
 	else
 		StormFox2.Map.CallLogicRelay("day_events")
+		triggerAll(special_relays.day_relays)
 		setLights( false )
 	end
 	switch = lights_on
@@ -110,13 +166,48 @@ end)
 -- Call day and night relays
 hook.Add("StormFox2.lightsystem.new", "StormFox2.mapinteractions.light", SetRelay)
 
--- StormFox2.Map.w_CallLogicRelay( name )
+-- Call day andn ight time-related relays
+hook.Add("StormFox2.Time.OnDay", "StormFox2.mapinteractions.day", function()
+	triggerAll( special_relays.daytime_relays )
+end)
+hook.Add("StormFox2.Time.OnNight", "StormFox2.mapinteractions.night", function()
+	triggerAll( special_relays.nighttime_relays )
+end)
 
-hook.Add("StormFox2.weather.postchange", "StormFox2.mapinteractions" , function( sName ,nPercentage )
+local function getRelayName(  )
 	local c_weather = StormFox2.Weather.GetCurrent()
 	local relay = c_weather.Name
 	if c_weather.LogicRelay then
 		relay = c_weather.LogicRelay() or relay
 	end
-	StormFox2.Map.w_CallLogicRelay( string.lower(relay) )
+	return relay
+end
+
+-- StormFox2.Map.w_CallLogicRelay( name )
+local lastWeather
+local function checkWRelay()
+	local relay = getRelayName()
+	relay = string.lower(relay)
+	if lastWeather and lastWeather == relay then return end -- Nothing changed
+	StormFox2.Map.w_CallLogicRelay( relay )
+	local wP = StormFox2.Data.GetFinal("w_Percentage") or 0
+	for k,ent in ipairs(special_relays.weather_on) do
+		if ent:GetRequiredWeather() ~= relay then continue end
+		if not ent:HasRequredAmount() then continue end
+		ent:Trigger()
+	end
+	for k,ent in ipairs(special_relays.weather_off) do
+		if ent:GetRequiredWeather() ~= lastWeather then continue end
+		ent:Trigger()
+	end
+	lastWeather = relay
+end
+
+hook.Add("StormFox2.weather.postchange", "StormFox2.mapinteractions" , function( sName ,nPercentage )
+	timer.Simple(1, checkWRelay)
+end)
+
+hook.Add("StormFox2.data.change", "StormFox2.mapinteractions.w_logic", function(sKey, nDay)
+	if sKey ~= "Temp" then return end
+	timer.Simple(1, checkWRelay)
 end)
