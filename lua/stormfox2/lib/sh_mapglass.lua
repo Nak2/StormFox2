@@ -33,6 +33,9 @@ local PAVEMENT_TYPE = 3
 
 -- Generator
 local GetBSPData
+local env_stormfox2_settings = {}
+local env_stormfox2_materials = {}
+local env_has_mat = false
 do
 	local meta = {}
 	meta.__index = meta
@@ -214,7 +217,25 @@ do
 			end
 		end
 
+		local function LoadMaterialEnt(t)
+			local _t = t.material_type or 0
+			if _t == 0 then
+				_t = DIRTGRASS_TYPE
+			elseif _t == 1 then
+				_t = ROOF_TYPE
+			else
+				return -- Invalid
+			end
+			for k, v in pairs(t) do
+				if not string.match(k, "material_%d+") then continue end
+				env_stormfox2_materials[v] = _t
+			end
+		end
+
 		local function LoadENTLump( data, tab )
+			env_stormfox2_settings = {}
+			env_stormfox2_materials = {}
+			env_has_mat = false
 			for s in string.gmatch( data, "%{.-%\n}" ) do
 				local t = util.KeyValuesToTable("t" .. s)
 				-- Convert a few things to make it easier
@@ -223,6 +244,10 @@ do
 					local c = util.StringToType(t.rendercolor or "255 255 255","Vector")
 					t.rendercolor = Color(c.x,c.y,c.z)
 					t.raw = s
+				if t.classname == "env_stormfox2_materials" then
+					LoadMaterialEnt(t)
+					env_has_mat = true
+				end
 				table.insert(tab,t)
 			end
 		end
@@ -435,6 +460,14 @@ Generates the texture-table used by StormFox2.
 ---------------------------------------------------------------------------]]
 local function GenerateTextureTree()
 	local tree = {}
+	if env_has_mat then
+		for tex, _t in pairs( env_stormfox2_materials ) do
+			tree[tex] = {
+				[1] = _t
+			}
+		end
+		return tree
+	end
 	-- Load all textures
 		for _,tex_string in pairs(StormFox2.Map.AllTextures()) do
 			if tree[tex_string] then continue end
