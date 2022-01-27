@@ -43,7 +43,7 @@ local function MakeSnowflake( vPos, vNormal, L, Part )
 end
 
 local pT = function(self)
-	local n = math.min(15, StormFox2.Weather.GetLuminance() / 2)
+	local n = math.min(15, StormFox2.Weather.GetLuminance() * 0.75)
 	if self:GetLifeTime() < self:GetDieTime() * .25 then
 		self:SetStartAlpha(0)
 		self:SetEndAlpha( n * 8 )
@@ -67,6 +67,7 @@ local function MakeMist( vPos, L, Part)
 	local ss = math.Rand(75,180)
 	local es = math.Rand(75,180)
 	local p = StormFox2.DownFall.AddParticle( m_rain_fog, vPos + Vector(0,0,math.max(es,ss) / 2), false )
+	if not p then return end
 		p:SetAirResistance(0)
 		p:SetNextThink( CurTime() )
 		p:SetDieTime( math.random(10, 15))
@@ -76,6 +77,8 @@ local function MakeMist( vPos, L, Part)
 		p:SetEndAlpha(0)
 		p:SetStartAlpha(0)
 		p:SetThinkFunction(pT)
+		local c = Part:GetColor() or color_white
+		p:SetColor( c.r, c.g, c.b )
 		p:SetVelocity(v)
 		p:SetCollide( true )
 		p:SetCollideCallback( function( part ) --This is an in-line function
