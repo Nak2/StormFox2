@@ -646,3 +646,34 @@ else
 	end)
 	
 end
+
+-- A few hooks
+do
+	local last = -1
+	local loaded = false
+	local function checkDNTrigger()
+		if not loaded then return end
+		local stamp, mapLight = StormFox2.Sky.GetLastStamp()
+		local dN
+		if stamp >= SF_SKY_CEVIL then
+			dN = 1
+		else
+			dN = 0
+		end
+		if last == dN then return end
+		last = dN
+		if dN == 0 then -- Day
+			hook.Run("StormFox2.Time.OnDay")
+		else	-- Night
+			hook.Run("StormFox2.Time.OnNight")
+		end
+	end
+	hook.Add("StormFox2.InitPostEntity", "StormFox2.time.strigger",function()
+		timer.Simple(5, function()
+			loaded = true
+			checkDNTrigger()
+		end)
+	end)
+	-- StormFox2.weather.postchange will be called after something changed. We check the stamp in there.
+	hook.Add("StormFox2.weather.postchange", "StormFox2.time.trigger2", checkDNTrigger)
+end
