@@ -34,6 +34,9 @@ local PAVEMENT_TYPE = 3
 -- Generator
 local GetBSPData
 local env_stormfox2_settings = {}
+function StormFox2.Map.GetSetting( sName )
+	return env_stormfox2_settings[sName]
+end
 local env_stormfox2_materials = {}
 local env_has_mat = false
 do
@@ -218,7 +221,7 @@ do
 		end
 
 		local function LoadMaterialEnt(t)
-			local _t = t.material_type or 0
+			local _t = tonumber(t.material_type or "0") or 0
 			if _t == 0 then
 				_t = DIRTGRASS_TYPE
 			elseif _t == 1 then
@@ -229,6 +232,22 @@ do
 			for k, v in pairs(t) do
 				if not string.match(k, "material_%d+") then continue end
 				env_stormfox2_materials[v] = _t
+			end
+		end
+
+		local _list = {
+			["sun_yaw"] = "sunyaw",
+			["moon_size"] = "moonsize",
+			["min_lightlevel"] = "maplight_min",
+			["max_lightlevel"] = "maplight_max",
+			["max_detailsprite_darkness"] = "detailsprite_darkness",
+			["fog_distance"] = "overwrite_fogdistance",
+			["fog_color"] = "fog_color",
+		}
+		local function LoadSettingsEnt(t)
+			for sName, var in pairs(t) do
+				if not _list[sName] then continue end
+				env_stormfox2_settings[_list[sName]] = var
 			end
 		end
 
@@ -247,6 +266,8 @@ do
 				if t.classname == "env_stormfox2_materials" then
 					LoadMaterialEnt(t)
 					env_has_mat = true
+				elseif t.classname == "env_stormfox2_settings" then
+					LoadSettingsEnt(t)
 				end
 				table.insert(tab,t)
 			end
@@ -463,7 +484,8 @@ local function GenerateTextureTree()
 	if env_has_mat then
 		for tex, _t in pairs( env_stormfox2_materials ) do
 			tree[tex] = {
-				[1] = _t
+				[1] = _t,
+				[2] = _t,
 			}
 		end
 		return tree

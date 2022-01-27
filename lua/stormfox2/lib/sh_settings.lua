@@ -288,6 +288,9 @@ local postSettingChace = {}
 -- Creates a setting and returns the setting-object
 function StormFox2.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nMax)
 	if settings[sName] then return settings[sName] end -- Already created
+	if StormFox2.Map then
+		vDefaultVar = StormFox2.Map.GetSetting( sName ) or vDefaultVar
+	end
 	local t = {}
 		setmetatable(t, meta)
 		t.sName = sName

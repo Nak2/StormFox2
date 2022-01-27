@@ -44,9 +44,11 @@ function clear.GetIcon( nTime, nTemp, nWind, bThunder, nFraction) -- What symbol
 	end
 end
 
+local bCM = string.Explode(" ", StormFox2.Map.GetSetting("fog_color") or "204, 255, 255")
+local bC = Color(tonumber(bCM[1]), tonumber(bCM[2]), tonumber(bCM[3]))
 -- Day
 	clear:SetSunStamp("topColor",Color(91, 127.5, 255),		SF_SKY_DAY)
-	clear:SetSunStamp("bottomColor",Color(204, 255, 255),	SF_SKY_DAY)
+	clear:SetSunStamp("bottomColor",bC,					SF_SKY_DAY)
 	clear:SetSunStamp("fadeBias",0.2,						SF_SKY_DAY)
 	clear:SetSunStamp("duskColor",Color(255, 255, 255),		SF_SKY_DAY)
 	clear:SetSunStamp("duskIntensity",1.94,					SF_SKY_DAY)
