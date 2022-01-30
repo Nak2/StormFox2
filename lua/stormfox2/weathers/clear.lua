@@ -66,6 +66,7 @@ local bC = Color(tonumber(bCM[1]) or 204, tonumber(bCM[2]) or 255, tonumber(bCM[
 	clear:SetSunStamp("duskScale",0,						SF_SKY_NIGHT)
 	clear:SetSunStamp("sunSize",0,							SF_SKY_NIGHT)
 	clear:SetSunStamp("starFade",100,						SF_SKY_NIGHT)
+	clear:SetSunStamp("sunColor",Color(235, 237, 234),		SF_SKY_NIGHT)
 	--clear:SetSunStamp("fogDensity",1,						SF_SKY_NIGHT)
 -- Sunset
 	-- Old Color(170, 85, 43)
