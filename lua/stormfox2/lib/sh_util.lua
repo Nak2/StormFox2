@@ -61,6 +61,13 @@ if CLIENT then
 	end
 
 	--[[<Client>-----------------------------------------------------------------
+	Returns the last camera position.
+	---------------------------------------------------------------------------]]
+	function StormFox2.util.RenderAngles()
+		return view.ang or RenderAngles()
+	end
+
+	--[[<Client>-----------------------------------------------------------------
 	Returns the current viewentity
 	---------------------------------------------------------------------------]]
 	local viewEntity
