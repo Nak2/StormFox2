@@ -204,10 +204,10 @@ hook.Add("stormfox2.postlib", "stormfox2.loadweathers", function()
 
 	hook.Run("stormfox2.preloadweather", w_meta)
 	for _,fil in ipairs(file.Find("stormfox2/weathers/*.lua","LUA")) do
-		if SERVER then
+		local succ = pcall(include,"stormfox2/weathers/" .. fil)
+		if SERVER and succ then
 			AddCSLuaFile("stormfox2/weathers/" .. fil)
 		end
-		pcall(include,"stormfox2/weathers/" .. fil)
 	end
 	StormFox2.Weather.Loaded = true
 	hook.Run("stormfox2.postloadweather")

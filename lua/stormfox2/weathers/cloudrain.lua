@@ -144,8 +144,8 @@ do
 		cloudy:SetSunStamp("duskScale",0,						SF_SKY_NIGHT)
 		cloudy:SetSunStamp("HDRScale",0.1,						SF_SKY_NIGHT)
 	-- Sunset/rise
-		cloudy:SetSunStamp("duskScale",0.26,	SF_SKY_SUNSET)
-		cloudy:SetSunStamp("duskScale",0.26,	SF_SKY_SUNRISE)
+		cloudy:SetSunStamp("duskScale",0.26,					SF_SKY_SUNSET)
+		cloudy:SetSunStamp("duskScale",0.26,					SF_SKY_SUNRISE)
 
 	cloudy:Set("starFade",0)
 	cloudy:Set("mapDayLight",10)

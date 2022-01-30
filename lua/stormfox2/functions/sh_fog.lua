@@ -206,7 +206,7 @@ end
 		if _fD <= 0 then return end
 		if not scale then scale = 1 end
 		if not fogEnabledCheck() then return end
-		f_Col = StormFox2.Mixer.Get("fogColor", StormFox2.Mixer.Get("bottomColor") )
+		f_Col = StormFox2.Mixer.Get("fogColor", StormFox2.Mixer.Get("bottomColor") ) or color_white
 		-- Apply fog
 		local tD = StormFox2.Thunder.GetLight() / 2055
 		render.FogMode( 1 )
