@@ -54,8 +54,12 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 			nDelta = nDelta / sp
 		end
 	end
+	local bSameWeather = sName == (CurrentWeather and CurrentWeather.Name or "Clear")
 	if CurrentWeather and CurrentWeather.OnChange then
 		CurrentWeather:OnChange( sName, nPercentage, nDelta )
+	end
+	if CurrentWeather and CurrentWeather.OnRemove and not bSameWeather then
+		CurrentWeather:OnRemove( sName, nPercentage, nDelta )
 	end
 	local clear = StormFox2.Weather.Get( "Clear" )
 	CurrentWeather = StormFox2.Weather.Get( sName )
@@ -102,7 +106,7 @@ local function ApplyWeather(sName, nPercentage, nDelta)
 			end
 		end
 	end
-	if CurrentWeather.Init then
+	if CurrentWeather.Init and not bSameWeather then
 		CurrentWeather.Init()
 	end
 	if CurrentWeather.Tick10 then
