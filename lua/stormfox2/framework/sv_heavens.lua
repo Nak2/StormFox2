@@ -41,7 +41,7 @@ StormFox2.Sky = StormFox2.Sky 	or {}
 	Sets the suncolor.
 	---------------------------------------------------------------------------]]
 	function StormFox2.Sun.SetColor(cCol)
-		StormFox2.Network.Set("sun_color",cCol)
+		StormFox2.Network.Set("sunColor",cCol)
 	end
 
 -- Moon

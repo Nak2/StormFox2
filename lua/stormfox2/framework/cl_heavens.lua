@@ -11,7 +11,7 @@ local sunVisible
 		Returns true if the sun is visible for the client.
 	---------------------------------------------------------------------------]]
 	function StormFox2.Sun.GetVisibility()
-		return sunVisible
+		return sunVisible or 1
 	end
 	-- Pixel are a bit crazy if called twice
 	hook.Add("Think","StormFox2.Sun.PixUpdater",function()
@@ -29,14 +29,14 @@ local sunVisible
 	function util.GetSunInfo()
 		if not StormFox2.Loaded or not sunVisible then -- In case we mess up
 			if SF_OLD_SUNINFO then
-				return SF_OLD_SUNINFO()
+				return SF_OLD_SUNINFO
 			else
 				return {}
 			end
 		end
 		local tab = {
 			["direction"] = StormFox2.Sun.GetAngle():Forward(),
-			["obstruction"] = sunVisible * (StormFox2.Sun.GetColor().a / 255)}
+			["obstruction"] = sunVisible * (StormFox2.Mixer.Get("skyVisibility") / 100)}
 		return tab
 	end
 
@@ -65,7 +65,7 @@ local sunVisible
 		cam.Start3D( Vector( 0, 0, 0 ), EyeAngles() ,nil,nil,nil,nil,nil,1,32000)  -- 2d maps fix
 			render.OverrideDepthEnable( false,false )
 			render.SuppressEngineLighting(true)
-			render.SetLightingMode( 2 )
+			render.SetLightingMode( 0 )
 			if not use_2d or not sky then
 				hook.Run("StormFox2.2DSkybox.StarRender",	c_pos)
 				-- hook.Run("StormFox2.2DSkybox.BlockStarRender",c_pos)
@@ -86,15 +86,82 @@ local sunVisible
 	end)
 
 -- Render Sun
-	local sunMat = Material("stormfox2/effects/moon/moon_glow")
+	local sunMat = Material("stormfox2/effects/sun/sun_mat")
+	local sunMat2 = Material("stormfox2/effects/sun/sun_mat2")
+	local sunMat3 = Material("stormfox2/effects/sun/sunflare")
+	
+	local sunDot = 1
 	hook.Add("StormFox2.2DSkybox.SunRender","StormFox2.RenderSun",function(c_pos)
-		local SunN = -StormFox2.Sun.GetAngle():Forward()
-		local s_size = StormFox2.Sun.GetSize()
+		local SunA = StormFox2.Sun.GetAngle()
+		local SunN = -SunA:Forward()
+
+		local sun = util.GetSunInfo()
+		-- Calculate dot
+		local rawDot = ( SunA:Forward():Dot( EyeVector() ) - 0.8 ) * 5
+		if sun and sun.obstruction > 0 then
+			sunDot = rawDot
+		else
+			sunDot = 0
+		end
+		-- Calculate close to edge
+		local z = 1
+		local p = math.abs(math.sin(math.rad(SunA.p))) -- How far we are away from sunset
+		if p < 0.1 then
+			z = p * 10
+		end
+		
+		local s_size = StormFox2.Sun.GetSize() / 2
+		local s_size2 = s_size * 1.5
+		local s_size3 = s_size * 10 -- * math.max(0, rawDot)
+		
 		local c_c = StormFox2.Sun.GetColor() or color_white
 		local c = Color(c_c.r,c_c.g,c_c.b,c_c.a)
 		render.SetMaterial(sunMat)
-		render.DrawQuadEasy( SunN * -200, SunN, s_size, s_size, c, 0 )
+	--	render.DrawQuadEasy( SunN * -200, SunN, s_size, s_size, c, 0 )
+
+		render.SetMaterial(sunMat2)
+		render.DrawQuadEasy( SunN * -200, SunN, s_size2, s_size2, c, 0 )
+
+		if sunDot > 0 then
+			local a = StormFox2.Mixer.Get("skyVisibility") / 100 - 0.5
+			if a > 0 then
+				c.a = a * 255
+				render.SetMaterial(sunMat3)
+				render.DrawQuadEasy( SunN * -200, SunN, s_size3 * sunDot * z, s_size3 * sunDot, c, 0 )
+			end
+		end
 	end)
+
+	local beams = StormFox2.Setting.AddCL("enable_sunbeams", true)
+	local matSunbeams = Material( "pp/sunbeams" )
+		matSunbeams:SetTexture( "$fbtexture", render.GetScreenEffectTexture() )
+	hook.Add( "RenderScreenspaceEffects", "StormFox2.Sun.beams", function()
+		if ( not render.SupportsPixelShaders_2_0() ) then return end
+		if sunDot <= 0 then return end
+		if not beams:GetValue() then return end
+		-- Check if we see the sun at all
+		local vis = StormFox2.Sun.GetVisibility()
+		if ( vis == 0 ) then return end
+
+		-- Get direction
+		local direciton = StormFox2.Sun.GetAngle():Forward()
+		local beampos = EyePos() + direciton * 4096
+		-- And screenpos
+		local scrpos = beampos:ToScreen()
+		local mul = vis * sunDot
+		--print(mul)
+		if mul >= 0 then
+			local s_size = StormFox2.Sun.GetSize()
+			render.UpdateScreenEffectTexture()
+				matSunbeams:SetFloat( "$darken", .96 )
+				matSunbeams:SetFloat( "$multiply",0.7 * mul)
+				matSunbeams:SetFloat( "$sunx", scrpos.x / ScrW() )
+				matSunbeams:SetFloat( "$suny", scrpos.y / ScrH() )
+				matSunbeams:SetFloat( "$sunsize", s_size / 200 )
+				render.SetMaterial( matSunbeams )
+			render.DrawScreenQuad()
+		end
+	end )
 
 -- Render moon
 	-- Setup params and vars

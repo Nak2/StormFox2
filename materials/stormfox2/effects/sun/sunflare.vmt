@@ -1,0 +1,7 @@
+"unlitgeneric"
+{
+	"$basetexture" "stormfox2/effects/sun/sunflare"
+	"$vertexcolor" "1"
+	"$ignorez"     "1"
+	"$vertexalpha" 	1
+}

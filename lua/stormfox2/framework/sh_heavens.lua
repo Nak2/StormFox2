@@ -73,7 +73,7 @@ end
 		Returns the  sun-color.
 	---------------------------------------------------------------------------]]
 	function StormFox2.Sun.GetColor()
-		return StormFox2.Mixer.Get("sun_color",Color(255,255,255))
+		return StormFox2.Mixer.Get("sunColor",Color(255,255,255))
 	end
 	local sunVisible = 0
 		--[[-------------------------------------------------------------------------
