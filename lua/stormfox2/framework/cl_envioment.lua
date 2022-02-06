@@ -291,7 +291,7 @@ Generate meshes and env-points out from the map-data.
 				if num >= n then
 					if n == 8192 then 			-- MATERIAL_VAR_NOCULL
 						nocull = true
-					elseif n == 2097152 then 	-- MATERIAL_VAR_TRANSLUCENT
+					elseif n == 2097152 or n == 4194304 then 	-- MATERIAL_VAR_TRANSLUCENT
 						transparent = true
 					elseif n == 4 then 			-- MATERIAL_VAR_NO_DRAW 
 						return false
@@ -590,32 +590,48 @@ Generate meshes and env-points out from the map-data.
 					table.insert(glass_dynamic, window)
 				end
 			elseif c:sub(0,14) == "func_breakable" or c == "func_brush" then -- Brushes
-				local surfs = ent:GetBrushSurfaces()
-				if #surfs < 1 then
-					continue
-				elseif #surfs < 2 then -- Properly a nocull
-					if IsWindowMaterial(surfs[1]:GetMaterial()) and SurfaceInfo_FacingOutside(ent, surfs[1], true) then
-						local window = CreateWindowRef(ent,surfs[1]:GetCenter())
-						window.mesh = surfs[1]:GetMesh()
-						table.insert(glass_dynamic, window)
-					end
-				else
-					local window
-					local t = {}
-					for _,surf in ipairs(surfs) do
-						if surf:GetMinSide() > 10 and IsWindowMaterial(surf:GetMaterial()) and SurfaceInfo_FacingOutside(ent, surf) then
-							if not window then
-								window = CreateWindowRef(ent,surf:GetCenter())
-							end
-							-- Add mesh
-							for i,v in ipairs(surf:GetMesh()) do
-								table.insert(t, v)
+				if ent._sf2_validwin == false then continue end -- Already scanned this
+				if ent._sf2_validwin == true then
+					table.insert(glass_dynamic, ent._sf2_mwindow)
+				else -- Figure out
+					local surfs = ent:GetBrushSurfaces()
+					if #surfs < 1 then -- Invalid brush
+						ent._sf2_validwin = false
+						continue
+					elseif #surfs < 2 then -- Properly a nocull
+						if IsWindowMaterial(surfs[1]:GetMaterial()) and SurfaceInfo_FacingOutside(ent, surfs[1], true) then
+							local window = CreateWindowRef(ent,surfs[1]:GetCenter())
+							window.mesh = surfs[1]:GetMesh()
+							ent._sf2_mwindow = window
+							ent._sf2_validwin = true
+							table.insert(glass_dynamic, window)
+						else
+							ent._sf2_validwin = false
+						end
+						continue
+					else
+						local window
+						local t = {}
+						for _,surf in ipairs(surfs) do
+							if surf:GetMinSide() > 10 and IsWindowMaterial(surf:GetMaterial()) and SurfaceInfo_FacingOutside(ent, surf) then
+								if not window then
+									window = CreateWindowRef(ent,surf:GetCenter())
+								end
+								-- Add mesh
+								for i,v in ipairs(surf:GetMesh()) do
+									table.insert(t, v)
+								end
 							end
 						end
+						if not window then
+							ent._sf2_validwin = false
+							continue
+						end
+						ent._sf2_validwin = true
+						window.mesh = t
+						ent._sf2_mwindow = window
+						table.insert(glass_dynamic, window)
 					end
-					if not window then continue end
-					window.mesh = t
-					table.insert(glass_dynamic, window)
 				end
 			end
 		end
