@@ -541,7 +541,7 @@ function StormFox2.Map.SetLightLerp(f, nLerpTime, isSmooth )
 	--print("From:",f_mapLight, "TO:", f, "step:",st_lerp, "nums:",num)
 	--StormFox2.Map.SetLight( math.Approach(f_mapLight, f, n), true )
 end
-timer.Create("StormFox2.lightupdate", 1, 0, function()
+timer.Create("StormFox2.lightupdate", 2, 0, function()
 	if #t <= 0 then return end
 	local n = t[1]
 	local time = StormFox2.Time.Get()
