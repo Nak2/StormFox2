@@ -273,6 +273,17 @@ do
 			end
 		end
 
+		local function GetModelMaterials(mdl)
+			local data = util.GetModelMeshes( mdl, 0, 0 )
+			if not data then return nil end
+			local t = {}
+			for i = 1, #data do
+				if not data[i]["material"] then continue end
+				table.insert(t, data[i]["material"])
+			end
+			return t
+		end
+
 	-- Load functions
 		function GetBSPData()
 			--print("Loading file")
@@ -307,12 +318,12 @@ do
 				end
 			-- Static prosp
 				BSP.StaticProps = {}
+				local m = {}
 				do
 					local t = BSP:FindGameLump( f, 1936749168 ) -- 1936749168 == "sprp"
 					if not t then t = {} end -- No static props? Must be empty or something
 					-- Read the models
 						f:Seek( t.fileofs )
-						local m = {}
 						local n = f:ReadLong() -- Number of models
 						if n > 16384 then
 							ErrorNoHalt(game.GetMap() .. ".BSP has more than 16384 models!")
@@ -353,6 +364,26 @@ do
 				-- We calculate the amount of static props within this space. It is more stable.
 			-- Textures
 				BSP.TextureArray = BSP:GetTextures(f)
+			-- CubeTextures
+				if CLIENT then
+					BSP.TextureCube = {}
+					-- Scan the brushes on the map
+					for _, matp in ipairs(BSP.TextureArray) do
+						local m = Material(matp)
+						if m:IsError() then continue end
+						if not m:GetString("$envmap") then continue end
+						BSP.TextureCube[m] = m:GetVector("$envmaptint")
+					end
+					--TODO: We do also need to scan the models used. Sadly this isn't as easy.
+					for _, model in ipairs(m) do
+						for _, mat in ipairs(GetModelMaterials(model)) do
+							local m = Material(mat)
+							if m:IsError() then continue end
+							if not m:GetString("$envmap") then continue end
+							BSP.TextureCube[m] = m:GetVector("$envmaptint")
+						end
+					end
+				end
 			f:Close()
 			return BSP
 		end
@@ -559,6 +590,16 @@ end
 	function StormFox2.Map.Textures()
 		return SF_BSPDATA.Textures or {}
 	end
+
+	local last = 1
+	function StormFox2.Map.SetCubeMapDarkness(b)
+		if b == last then return end
+		last = b
+		for mat, def in pairs(SF_BSPDATA.TextureCube) do
+			mat:SetVector("$envmaptint", def * b)
+		end
+	end
+
 	--[[-------------------------------------------------------------------------
 	Returns the filtered textures from the mapfile.
 	---------------------------------------------------------------------------]]

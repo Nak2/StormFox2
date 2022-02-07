@@ -12,6 +12,7 @@ StormFox2.Setting.AddCL("window_enable",render.SupportsPixelShaders_2_0())
 StormFox2.Setting.AddCL("window_distance",800, nil, nil, 0, 4000)
 StormFox2.Setting.AddSV("enable_ice",not game.IsDedicated())
 StormFox2.Setting.AddSV("enable_wateroverlay",true, nil, "Effects")
+StormFox2.Setting.AddCL("edit_cubemaps",true)
 
 --[[-------------------------------------------------------------------------
 Adds a window model for SF to use.
@@ -1266,3 +1267,18 @@ function StormFox2.Environment.DrawWaterOverlay(bSkyBox)
 	end
 	return true
 end
+--[[Handle cubemaps]]
+local lastF = 1
+hook.Add("StormFox2.lightsystem.new", "StormFox2.lightsystem.cubemap", function(f)
+	lastF = f / 100
+	if not StormFox2.Setting.Get("edit_cubemaps", true) then return end
+	StormFox2.Map.SetCubeMapDarkness(f / 100)
+end)
+
+StormFox2.Setting.Callback("edit_cubemaps",function(switch)
+	if switch then -- Turn on
+		StormFox2.Map.SetCubeMapDarkness(lastF)
+	else -- Turn off
+		StormFox2.Map.SetCubeMapDarkness(1)
+	end
+end,"sf_cubemap")
