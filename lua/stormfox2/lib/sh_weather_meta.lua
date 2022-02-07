@@ -200,7 +200,7 @@ hook.Add("stormfox2.postlib", "stormfox2.loadweathers", function()
 	StormFox2.Setting.AddSV("weather_damage",true,nil, "Weather")
 
 
-	StormFox2.Setting.AddSV("moonsize",30,nil,"Effects", 5, 500)
+	StormFox2.Setting.AddSV("moonsize",20,nil,"Effects", 5, 500)
 
 	hook.Run("stormfox2.preloadweather", w_meta)
 	for _,fil in ipairs(file.Find("stormfox2/weathers/*.lua","LUA")) do
