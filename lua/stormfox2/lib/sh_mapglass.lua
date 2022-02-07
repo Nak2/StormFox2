@@ -374,13 +374,30 @@ do
 						if not m:GetString("$envmap") then continue end
 						BSP.TextureCube[m] = m:GetVector("$envmaptint")
 					end
-					--TODO: We do also need to scan the models used. Sadly this isn't as easy.
+					-- Scan static models
 					for _, model in ipairs(m) do
 						for _, mat in ipairs(GetModelMaterials(model)) do
 							local m = Material(mat)
 							if m:IsError() then continue end
 							if not m:GetString("$envmap") then continue end
 							BSP.TextureCube[m] = m:GetVector("$envmaptint")
+						end
+					end
+					-- Scan props
+					if render.GetDXLevel() >= 95 then -- This is a little heavy for some GPUs, make sure it can 
+						local aS = {}
+						for _, tab in ipairs(BSP.Entities or {}) do
+							if not tab.classname then continue end
+							if tab.classname ~= "prop_dynamic" and tab.classname ~= "prop_dynamic_override" then continue end
+							if not tab.model then continue end
+							if aS[tab.model] then continue end
+							for _, mat in ipairs(GetModelMaterials(tab.model) or {}) do
+								local m = Material(mat)
+								if m:IsError() then continue end
+								if not m:GetString("$envmap") then continue end
+								BSP.TextureCube[m] = m:GetVector("$envmaptint")
+							end
+							aS[tab.model] = true
 						end
 					end
 				end
