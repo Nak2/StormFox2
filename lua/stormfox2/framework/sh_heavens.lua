@@ -79,12 +79,22 @@ end
 		--[[-------------------------------------------------------------------------
 	Returns the sunangle for the current or given time.
 	---------------------------------------------------------------------------]]
-	local function GetSunPitch(nTime)
+	local function GetSunPitch()
 		local p = StormFox2.Time.GetCycleTime() * 360
 		return p
 	end
-	function StormFox2.Sun.GetAngle(nTime)
-		local a = Angle(-GetSunPitch(nTime),StormFox2.Sun.GetYaw(),0)
+	function StormFox2.Sun.GetAngle()
+		local a = Angle(-GetSunPitch(),StormFox2.Sun.GetYaw(),0)
+		return a
+	end
+	-- Returns the sun altitude. 0 degree at sunrise/set and 90 degrees at noon.
+	function StormFox2.Sun.GetAltitude()
+		local a = GetSunPitch(nTime)
+		if a > 90 and a < 270 then
+			return 180 - a
+		elseif a > 270 then
+			return -(360 - a)
+		end
 		return a
 	end
 
@@ -296,4 +306,10 @@ end
 		local t = StormFox2.Moon.GetAngle().p
 		local s = StormFox2.Mixer.Get("moonSize",20) / 6.9
 		return t > 180 - s or t < s
+	end
+	--[[-------------------------------------------------------------------------
+		Returns the moon size
+	---------------------------------------------------------------------------]]
+	function StormFox2.Moon.GetSize()
+		return StormFox2.Mixer.Get("moonSize",20)
 	end
