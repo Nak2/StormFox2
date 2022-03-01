@@ -85,3 +85,146 @@ if CLIENT then
 		return IsValid(viewEntity) and viewEntity or LocalPlayer()
 	end
 end
+
+
+--[[
+	Color interpolation suck.
+	Mixing an orange and blue color can result in a greenish one.
+	This is not how sky colors work, so we make our own CCT object here that can be mixed instead.
+]]
+
+local log,Clamp,pow = math.log, math.Clamp, math.pow
+local meta = {}
+function meta.__index( a, b )
+	return meta[b] or a._col[b]
+end
+meta.__MetaName = "CCT_Color"
+local function CCTToRGB( nKelvin )
+	kelvin = math.Clamp(nKelvin, 1000, 40000)
+	local tmp = kelvin / 100
+	local r, g, b = 0,0,0
+	if tmp <= 66 then
+		r = 255
+		g = 99.4708025861 * log(tmp) - 161.1195681661
+	else
+		r = 329.698727446 * pow(tmp - 60, -0.1332047592)
+		g = 288.1221695283 * pow(tmp - 60, -0.0755148492)
+	end
+	if tmp >= 66 then
+		b = 255
+	elseif tmp <= 19 then
+		b = 0
+	else
+		b = 138.5177312231 * log(tmp - 10) - 305.0447927307
+	end
+	if nKelvin < 1000 then
+		local f = (nKelvin / 1000)
+		r = r * f
+		g = g * f
+		b = b * f
+	end
+	return Color(Clamp(r, 0, 255), Clamp(g, 0, 255), Clamp(b, 0, 255))
+end
+
+function StormFox2.util.CCTColor( kelvin )
+	local t = {}
+	setmetatable(t, meta)
+	t._kelvin = kelvin
+	t._col = CCTToRGB( kelvin )
+	return t
+end
+
+function meta:ToRGB()
+	return self._col
+end
+
+function meta:SetKelvin( kelvin )
+	self._kelvin = kelvin
+	self._col = CCTToRGB( kelvin )
+	return self
+end
+
+function meta:GetKelvin()
+	return self._kelvin
+end
+
+function meta.__add( a, b )
+	local t = 0
+	if type( a ) == "number" then
+		t = b:GetKelvin() + a
+	elseif type( b ) == "number" then
+		t = a:GetKelvin() + b
+	else
+		if a.GetKelvin then
+			t = a:GetKelvin()
+		end
+		if b.GetKelvin then
+			t = t + b:GetKelvin()
+		end
+	end
+	return StormFox2.util.CCTColor( t )
+end
+
+function meta.__sub( a, b )
+	local t = 0
+	if type( a ) == "number" then
+		t = a - b:GetKelvin()
+	elseif type( b ) == "number" then
+		t = a:GetKelvin() - b
+	else
+		if a.GetKelvin then
+			t = a:GetKelvin()
+		end
+		if b.GetKelvin then
+			t = t - b:GetKelvin()
+		end
+	end
+	return StormFox2.util.CCTColor( t )
+end
+
+function meta.__mul( a, b )
+	local t = 0
+	if type( a ) == "number" then
+		t = a * b:GetKelvin()
+	elseif type( b ) == "number" then
+		t = a:GetKelvin() * b
+	else
+		if a.GetKelvin then
+			t = a:GetKelvin()
+		end
+		if b.GetKelvin then
+			t = t * b:GetKelvin()
+		end
+	end
+	return StormFox2.util.CCTColor( t )
+end
+
+function meta:__div( a, b )
+	local t = 0
+	if type( a ) == "number" then
+		t = a / b:GetKelvin()
+	elseif type( b ) == "number" then
+		t = a:GetKelvin() / b
+	else
+		if a.GetKelvin then
+			t = a:GetKelvin()
+		end
+		if b.GetKelvin then
+			t = t / b:GetKelvin()
+		end
+	end
+	return StormFox2.util.CCTColor( t )
+end
+
+function StormFox2.util.CCTColorDebug( from, to, len )
+	len = len or 60
+	from = from or 2200
+	to = to or 12000
+	local a = (to - from) / len
+	Msg(from .. " [")
+	for i = 1, len do
+		MsgC(StormFox2.util.CCTColor(from + a * i) , "▉" )
+	end
+	Msg("] " .. to)
+	MsgN()
+end

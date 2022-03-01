@@ -26,12 +26,21 @@ local function Blender(nFraction, vFrom, vTo) -- Will it blend?
 		return vTo
 	elseif type(vTo) == "number" then -- Number
 		return Lerp(nFraction, vFrom, vTo)
-	elseif type(vTo) == "table" and isColor(vTo) then -- Color
-		local r = Lerp( nFraction, vFrom.r or 255, vTo.r )
-		local g = Lerp( nFraction, vFrom.g or 255, vTo.g )
-		local b = Lerp( nFraction, vFrom.b or 255, vTo.b )
-		local a = Lerp( nFraction, vFrom.a or 255, vTo.a )
-		return Color( r, g, b, a )
+	elseif type(vTo) == "table" then -- Objects
+		local t = vTo.__MetaName and vTo.__MetaName == "CCT_Color" or false
+		local f = vFrom.__MetaName and vFrom.__MetaName == "CCT_Color" or false
+		if t and f then
+			local v = StormFox2.util.CCTColor( Lerp( nFraction, vFrom:GetKelvin(), vTo:GetKelvin() ) )
+			return v:ToRGB()
+		else
+			local s = f and vFrom:ToRGB() or vFrom
+			local e = t and vTo:ToRGB() or vTo
+			local r = Lerp( nFraction, s.r or 255, e.r )
+			local g = Lerp( nFraction, s.g or 255, e.g )
+			local b = Lerp( nFraction, s.b or 255, e.b )
+			local a = Lerp( nFraction, s.a or 255, e.a )
+			return Color( r, g, b, a )
+		end
 	end
 	--StormFox2.Warning("ERROR: Unsupported mix value type[" .. type(vTo) .. "]. Returning original value")
 	--debug.Trace()
