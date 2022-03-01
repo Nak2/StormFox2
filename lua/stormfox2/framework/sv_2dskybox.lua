@@ -13,6 +13,11 @@ cvars.RemoveChangeCallback("sv_skyname", "sf_skynamehook")
 cvars.AddChangeCallback( "sv_skyname", OnChange, "sf_skynamehook" )
 
 local t = {"bk", "dn", "ft", "lf", "rt", "up"}
+
+---Sets the 2D skybox darkness. Mostly used for internal stuff.
+---@param f number
+---@param bRemember boolean
+---@param bDark boolean
 function StormFox2.Map.Set2DSkyBoxDarkness( f, bRemember, bDark )
 	if bRemember then
 		last_f = f

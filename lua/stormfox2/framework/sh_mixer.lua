@@ -7,7 +7,15 @@ StormFox2.Mixer = {}
 local function isColor(t)
 	return t.r and t.g and t.b and true or false
 end
-local function Blender(nFraction, vFrom, vTo) -- Will it blend?
+
+---Tries to blend two variables together. Will return first variable if unable to.
+---@param nFraction number
+---@param vFrom any
+---@param vTo any
+---@return any
+---@shared
+local function Blender(nFraction, vFrom, vTo)
+	-- Will it blend?
 	-- Nils should be false, if one of them is a boolean
 	if type(vFrom) == "nil" and type(vTo) == "boolean" then
 		vFrom = false
@@ -61,23 +69,35 @@ end
 
 StormFox2.Mixer.Blender = Blender
 
-function StormFox2.Mixer.Get( sKey, zDefault, cP )
-	if cache[sKey] ~= nil then return cache[sKey] end
+---Blends the current weather key-variables together. Will return zDefault if fail. The result will be cached, unless you set the currentP variable.
+---Mixer allows for live-precise variables.
+---@param sKey string
+---@param zDefault any
+---@param currentP? number
+---@return any
+---@shared
+function StormFox2.Mixer.Get( sKey, zDefault, currentP )
+	if not currentP and cache[sKey] ~= nil then return cache[sKey] end
 	if not StormFox2.Weather then return zDefault end
 	local cW = StormFox2.Weather.GetCurrent()
 	if not cW or cW.Name == "Clear" then return GetVar(cW, sKey) or zDefault end
-	cP = cP or StormFox2.Weather.GetPercent()
-	if cP >= 1 then
-		cache[sKey] = GetVar(cW, sKey)
+	currentP = currentP or StormFox2.Weather.GetPercent()
+	if currentP >= 1 then
+		if not currentP then
+			cache[sKey] = GetVar(cW, sKey)
+		end
 		return cache[sKey] or zDefault
 	end
 	local clearW = StormFox2.Weather.Get( "Clear" )
 	local var1 = GetVar(clearW, sKey)
 	local var2 = GetVar(cW, sKey)
-	cache[sKey] = Blender(cP, var1, var2)
-	return cache[sKey] or zDefault
+	if not currentP then
+		cache[sKey] = Blender(currentP, var1, var2)
+		return cache[sKey] or zDefault
+	else
+		return Blender(currentP, var1, var2)
+	end
 end
-
 StormFox2.Mixer.Blender = Blender
 
 --[[t.Function = {}

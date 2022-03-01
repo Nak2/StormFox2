@@ -33,6 +33,10 @@ end)
 
 do
 	local last = 1
+
+	---Sets the tonemaps bloomscale. Use at own rist ask it looks like Soure engine doesn't like it.
+	---@param num number
+	---@server
 	function StormFox2.ToneMap.SetBloomScale( num )
 		if not ent or not DefaultSettings or not DefaultSettings.SetBloomScale then return end
 		if last == num then return end
@@ -44,6 +48,10 @@ end
 
 do
 	local last = 1
+
+	---Sets the tonemaps exposure scale. Use at own rist ask it looks like Soure engine doesn't like it.
+	---@param num number
+	---@server
 	function StormFox2.ToneMap.SetExposureScale( num )
 		if not ent or not DefaultSettings then return end
 		if last == num then return end
@@ -56,6 +64,10 @@ end
 
 do
 	local last = 1
+
+	---Sets the tonemaps rate-scale. Use at own rist ask it looks like Soure engine doesn't like it.
+	---@param num number
+	---@server
 	function StormFox2.ToneMap.SetTonemapRateScale( num )
 		if not ent or not DefaultSettings then return end
 		if last == num then return end
@@ -65,6 +77,8 @@ do
 	end
 end
 
+---Resets the tonemap settings applied.
+---@server
 function StormFox2.ToneMap.Reset()
 	if not changed or not ent then return end
 	changed = false

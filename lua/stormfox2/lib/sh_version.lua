@@ -28,6 +28,7 @@ if SERVER then
 end
 
 -- Will return a version-number, if a new version is detected
+---@return number
 function StormFox2.NewVersion()
 	return StormFox2.Data.Get("stormfox_newv")
 end

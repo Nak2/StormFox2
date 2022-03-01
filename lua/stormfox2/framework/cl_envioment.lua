@@ -1,6 +1,7 @@
 --[[-------------------------------------------------------------------------
 Handles enviroments by scanning the mapfile.
 ---------------------------------------------------------------------------]]
+
 StormFox2.Environment = StormFox2.Environment or {}
 local INVALID_VERTS = 0
 local WATER_VERTS = 1
@@ -18,10 +19,13 @@ StormFox2.Setting.AddCL("edit_cubemaps",true)
 Adds a window model for SF to use.
 ---------------------------------------------------------------------------]]
 local mdl = {}
---[[-------------------------------------------------------------------------
-Adds a window model to the list of valid window-models.
-These windows must have glass in them.
----------------------------------------------------------------------------]]
+
+---Adds a window model to the list of valid window-models.
+---These windows must have glass in them.
+---@param sModel string
+---@param vMin? Vector
+---@param vMax? Vector
+---@client
 function StormFox2.Environment.AddWindowModel(sModel,vMin, vMax)
 	if not vMin or not vMax then
 		vMin, vMax = StormFox2.util.GetModelSize(sModel)
@@ -1199,9 +1203,10 @@ timer.Create("stormfox2.enviroment.think", 0.25, 0, function()
 	end
 end)
 
---[[-------------------------------------------------------------------------
-Returns the clients enviroment and locations.
----------------------------------------------------------------------------]]
+
+---Returns a table with the current environment data.
+---@return table
+---@client
 function StormFox2.Environment.Get()
 	local t = {}
 	t.outside = not is_inside
@@ -1218,13 +1223,17 @@ function StormFox2.Environment.Get()
 	return t
 end
 
+---A float that lerps slowly between 0 and 1 when going inside / outside.
+---@return number
+---@client
 function StormFox2.Environment.GetOutSideFade()
 	return outsideFade
 end
 
---[[-------------------------------------------------------------------------
-Returns the clients height over ground.
----------------------------------------------------------------------------]]
+---Returns the clients height over ground.
+---@param bForceUpdate boolean?
+---@return number height
+---@client
 function StormFox2.Environment.GetZHeight( bForceUpdate )
 	local tr = PlyTrace( StormFox2.util.ViewEntity())
 	if not tr.Hit then
@@ -1250,12 +1259,26 @@ end)]]
 Ice sheet on the map
 ---------------------------------------------------------------------------]]
 local b = #ents.FindByClass("stormfox_mapice") > 0
+
+---Returns true if the map has ice on it.
+---@return boolean hasIce
+---@client
 function StormFox2.Environment.HasMapIce()
 	return b
 end
+
+---Internal function !
+---@param s boolean
+---@deprecated
+---@client
 function StormFox2.Environment._SETMapIce(s)
 	b = s
 end
+
+---Renders the water.
+---@param bSkyBox boolean
+---@return boolean success
+---@client
 function StormFox2.Environment.DrawWaterOverlay(bSkyBox)
 	if not StormFox2.Setting.GetCache("enable_wateroverlay", true) or not StormFox2.Setting.SFEnabled() then return end
 	if not STORMFOX_WATERMESH_SKYBOX then return false end -- Invalid mesh.

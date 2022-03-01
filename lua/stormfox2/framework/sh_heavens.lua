@@ -11,14 +11,15 @@ local clamp = math.Clamp
 StormFox2.Sun = StormFox2.Sun 	or {}
 StormFox2.Moon = StormFox2.Moon or {}
 StormFox2.Sky = StormFox2.Sky 	or {}
-	SF_SKY_DAY = 0
-	SF_SKY_SUNRISE = 1
-	SF_SKY_SUNSET = 2
-	SF_SKY_CEVIL = 3
-	SF_SKY_BLUE_HOUR = 4
-	SF_SKY_NAUTICAL = 5
-	SF_SKY_ASTRONOMICAL = 6
-	SF_SKY_NIGHT = 7
+
+--	SF_SKY_DAY = 0
+--	SF_SKY_SUNRISE = 1
+--	SF_SKY_SUNSET = 2
+--	SF_SKY_CEVIL = 3
+--	SF_SKY_BLUE_HOUR = 4
+--	SF_SKY_NAUTICAL = 5
+--	SF_SKY_ASTRONOMICAL = 6
+--	SF_SKY_NIGHT = 7
 
 StormFox2.Setting.AddSV("sunyaw",88,nil, "Effects", 0, 360)
 StormFox2.Setting.AddSV("moonlock",true,nil,"Effects")
@@ -33,33 +34,36 @@ if CLIENT then -- From another file
 end
 
 -- Sun and Sun functions
-	--[[-------------------------------------------------------------------------
-	Returns the time when the sun rises.
-	---------------------------------------------------------------------------]]
+	---Returns the time when the sun rises.
+	---@return TimeNumber
+	---@shared
 	function StormFox2.Sun.GetSunRise()
 		return StormFox2.Setting.Get("sunrise")
 	end
-	--[[-------------------------------------------------------------------------
-		Returns the time when the sun sets.
-	---------------------------------------------------------------------------]]
+
+	---Returns the time when the sun sets.
+	---@return TimeNumber
+	---@shared
 	function StormFox2.Sun.GetSunSet()
 		return StormFox2.Setting.Get("sunset")
 	end
-	--[[
-		Returns the time when sun is at its higest
-	]]
+	
+	---Returns the time when sun is at its higest.
+	---@return TimeNumber
+	---@shared
 	function StormFox2.Sun.GetSunAtHigest()
 		return (StormFox2.Sun.GetSunRise() + StormFox2.Sun.GetSunSet()) / 2
 	end
-	--[[-------------------------------------------------------------------------
-		Returns the sun-yaw. (Normal 90)
-	---------------------------------------------------------------------------]]
+	
+	---Returns the sun and moon-yaw. (Normal 90)
+	---@return number yaw
 	function StormFox2.Sun.GetYaw()
 		return StormFox2.Setting.Get("sunyaw")
 	end
-	--[[-------------------------------------------------------------------------
-		Returns true if the sun is on the sky.
-	---------------------------------------------------------------------------]]
+	
+	---Returns true if the sun is up
+	---@param nTime? TimeNumber
+	---@return boolean
 	function StormFox2.Sun.IsUp(nTime)
 		return StormFox2.Time.IsBetween(StormFox2.Sun.GetSunRise(), StormFox2.Sun.GetSunSet(),nTime)
 	end

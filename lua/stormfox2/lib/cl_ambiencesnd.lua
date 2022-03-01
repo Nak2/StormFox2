@@ -85,7 +85,16 @@ end
 
 local snd_meta = {}
 snd_meta.__index = snd_meta
--- Creates an ambience soudn
+
+---Creates an ambience sound and returns a sound-object.
+---@param snd string
+---@param SF_AMB_TYPE number
+---@param vol_scale? number
+---@param min? number
+---@param max? number
+---@param playrate? number
+---@return table
+---@client
 function StormFox2.Ambience.CreateAmbienceSnd( snd, SF_AMB_TYPE, vol_scale, min, max, playrate )
 	local t = {}
 	t.snd = "sound/" .. snd
@@ -97,7 +106,10 @@ function StormFox2.Ambience.CreateAmbienceSnd( snd, SF_AMB_TYPE, vol_scale, min,
 	setmetatable( t , snd_meta )
 	return t
 end
--- Returns the channels
+
+---Returns the current sound channels / data.
+---@return table
+---@client
 function StormFox2.Ambience.DebugList()
 	return SF_AMB_CHANNEL
 end
@@ -134,6 +146,12 @@ end
 local p_br = {}
 -- Forces a sound to play
 local fP
+
+---Insers ambience sound and forces it to play.
+---@param snd string
+---@param nVolume number
+---@param playbackSpeed number
+---@client
 function StormFox2.Ambience.ForcePlay( snd, nVolume, playbackSpeed )
 	if string.sub(snd, 0, 6) ~= "sound/" then
 		snd = "sound/" .. snd 

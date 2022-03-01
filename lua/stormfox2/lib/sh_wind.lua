@@ -36,29 +36,33 @@ if SERVER then
 		end
 		hook.Remove("stormfox2.postlib", "stormfox2.svWindInit")
 	end)
-	--[[-------------------------------------------------------------------------
-	Sets the wind force. Second argument is the lerp-time.
-	---------------------------------------------------------------------------]]
+	---Sets the wind force. Second argument is the lerp-time.
+	---@param nForce number
+	---@param nLerpTime? number
+	---@server
 	function StormFox2.Wind.SetForce( nForce, nLerpTime )
 		StormFox2.Network.Set( "Wind", nForce, nLerpTime )
 	end
-	--[[-------------------------------------------------------------------------
-	Sets the wind yaw. Second argument is the lerp-time.
-	---------------------------------------------------------------------------]]
+
+	---Sets the wind yaw. Second argument is the lerp-time.
+	---@param nYaw number
+	---@param nLerpTime? number
+	---@server
 	function StormFox2.Wind.SetYaw( nYaw, nLerpTime )
 		StormFox2.Network.Set( "WindAngle", nYaw, nLerpTime )
 	end
 end
 
---[[-------------------------------------------------------------------------
-Returns the wind yaw-direction
----------------------------------------------------------------------------]]
+---Returns the wind yaw-direction
+---@return number
+---@shared
 function StormFox2.Wind.GetYaw()
 	return StormFox2.Data.Get( "WindAngle", 0 )
 end
---[[-------------------------------------------------------------------------
-Returns the wind force.
----------------------------------------------------------------------------]]
+
+---Returns the wind force.
+---@return number
+---@shared
 function StormFox2.Wind.GetForce()
 	return StormFox2.Data.Get( "Wind", 0 )
 end
@@ -84,9 +88,12 @@ local bfs = {}
 	bfs[70] = "sf_winddescription.cat5"
 	local bfkey = table.GetKeys(bfs)
 	table.sort(bfkey,function(a,b) return a < b end)
---[[-------------------------------------------------------------------------
-Returns the given or current wind in beaufort-scale and sf_winddescription.<type>.
----------------------------------------------------------------------------]]
+
+---Returns the current (or given wind in m/s), in a beaufort-scale and description.
+---@param ms? number
+---@return number
+---@return string
+---@shared
 function StormFox2.Wind.GetBeaufort(ms)
 	local n = ms or StormFox2.Wind.GetForce()
 	local Beaufort, Description = 0, "sf_winddescription.calm"
@@ -186,15 +193,16 @@ end
 hook.Add("StormFox2.data.change","StormFox2.Wind.Calc",dataCheck)
 hook.Add("StormFox2.data.lerpend", "StormFox2.Wind.Calcfinish", dataCheck)
 
---[[-------------------------------------------------------------------------
-Returns the wind norm.
----------------------------------------------------------------------------]]
+---Returns the wind norm.
+---@return Vector
+---@shared
 function StormFox2.Wind.GetNorm()
 	return windNorm
 end
---[[-------------------------------------------------------------------------
-Returns the wind vector.
----------------------------------------------------------------------------]]
+
+---Returns the wind vector.
+---@return Vector
+---@shared
 function StormFox2.Wind.GetVector()
 	return windVec
 end
@@ -216,6 +224,13 @@ local function ET_II(pos, vec, mask, filter) -- Ignore invisble brushes 'n stuff
 	return lastT
 end
 local max_dis = 32400
+
+---Checks to see if the entity is in the wind.
+---@param eEnt userdata
+---@param bDont_cache? boolean
+---@return boolean IsInWind
+---@return Vector WindNorm
+---@shared
 function StormFox2.Wind.IsEntityInWind(eEnt,bDont_cache)
 	if not IsValid(eEnt) then return end
 	if not bDont_cache then

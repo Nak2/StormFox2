@@ -13,35 +13,41 @@ StormFox2.Moon = StormFox2.Moon or {}
 StormFox2.Sky = StormFox2.Sky 	or {}
 
 -- SunRise and SunSet
-	--[[-------------------------------------------------------------------------
-	Sets the time for sunrise.
-	---------------------------------------------------------------------------]]
+
+	---Sets the time for sunrise.
+	---@param nTime TimeNumber
+	---@server
 	function StormFox2.Sun.SetSunRise(nTime)
 		StormFox2.Setting.Set("sunrise", nTime)
 	end
-	--[[-------------------------------------------------------------------------
-	Sets the tiem for sunsets.
-	---------------------------------------------------------------------------]]
+	
+	---Sets the tiem for sunsets.
+	---@param nTime TimeNumber
+	---@server
 	function StormFox2.Sun.SetSunSet(nTime)
 		StormFox2.Setting.Set("sunset", nTime)
 	end
-	--[[-------------------------------------------------------------------------
-	Sets the sunyaw. This will also affect the moon.
-	---------------------------------------------------------------------------]]
+	
+	---Sets the sunyaw. This will also affect the moon.
+	---@param nYaw number
+	---@server
 	function StormFox2.Sun.SetYaw(nYaw)
 		StormFox2.Setting.Set("sunyaw",nYaw)
 	end
-	--[[-------------------------------------------------------------------------
-	Sets the sunsize. (Normal is 30)
-	---------------------------------------------------------------------------]]
+	
+	---Sets the sunsize. (Default: 30)
+	---@param n number
+	---@server
 	function StormFox2.Sun.SetSize(n)
 		StormFox2.Network.Set("sun_size",n)
 	end
-	--[[-------------------------------------------------------------------------
-	Sets the suncolor.
-	---------------------------------------------------------------------------]]
-	function StormFox2.Sun.SetColor(cCol)
-		StormFox2.Network.Set("sunColor",cCol)
+	
+	---Sets the suncolor.
+	---@param cColor table
+	---@deprecated
+	---@server
+	function StormFox2.Sun.SetColor(cColor)
+		StormFox2.Network.Set("sunColor",cColor)
 	end
 
 -- Moon
@@ -52,6 +58,9 @@ StormFox2.Sky = StormFox2.Sky 	or {}
 		StormFox2.Moon.SetPhase( StormFox2.Moon.GetPhase() + 1 )
 	end)
 
+	---Sets the moon phase. A number between 0 and 7.
+	---@param moon_phase number
+	---@server
 	function StormFox2.Moon.SetPhase( moon_phase )
 		StormFox2.Network.Set("moon_phase",moon_phase % 8)
 	end

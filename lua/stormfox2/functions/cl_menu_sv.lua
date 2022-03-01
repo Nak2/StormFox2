@@ -1183,6 +1183,10 @@ end
 local t_mat = "icon16/font.png"
 local s_mat = "icon16/cog.png"
 local n_vc = Color(55,255,55)
+
+---Builds the servermenu. Used internaly.
+---@deprecated
+---@client
 function StormFox2.Menu._OpenSV()
 	if not StormFox2.Loaded then return end
 	if _SFMENU and IsValid(_SFMENU) then
@@ -1196,6 +1200,9 @@ function StormFox2.Menu._OpenSV()
 	p:SetCookie("sf2_lastmenusv")
 	_SFMENU:MakePopup()
 end
+
+---Opens the server-settings.
+---@client
 function StormFox2.Menu.OpenSV()
 	net.Start("StormFox2.menu")
 		net.WriteBool(true)

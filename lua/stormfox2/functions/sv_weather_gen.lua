@@ -18,9 +18,17 @@ local function SetForecast( tab, unix_time )
 		net.WriteTable( tab.windyaw or {} )
 	net.Broadcast()
 end
+
+---Returns the forecast data
+---@return table
+---@server
 function StormFox2.WeatherGen.GetForecast()
 	return forecast
 end
+
+---Returns true if we're using unix time for the forecast.
+---@return boolean
+---@server
 function StormFox2.WeatherGen.IsUnixTime()
 	return forecast.unix_time or false
 end

@@ -17,6 +17,10 @@
 
 	BASE_TIME is CurTime + StartTime
 ---------------------------------------------------------------------------]]
+
+---A number between 0 and 1440. Where 720 is midday and 0 / 1440 is midnight.
+---@class TimeNumber : number
+
 local floor,ceil,random = math.floor, math.ceil, math.random
 StormFox2.Time = StormFox2.Time or {}
 -- Settings
@@ -370,7 +374,12 @@ StormFox2.Time = StormFox2.Time or {}
 			end
 		end
 		UpdateMath( start_time, false )
-		-- Only server can set the time
+		
+		---Sets the time. TimeNumber is a number between 0 and 1440.
+		---@param nsTime TimeNumber
+		---@return boolean success
+		---@see TimeNumber
+		---@server
 		function StormFox2.Time.Set( nsTime )
 			if nsTime and type( nsTime ) == "string" then
 				nsTime = StormFox2.Time.StringToTime(nsTime)
@@ -395,6 +404,10 @@ StormFox2.Time = StormFox2.Time or {}
 		end)
 	end
 
+	---Returns the current time. TimeNumber is a number between 0 and 1440.
+	---@param bNearestSecond boolean
+	---@return TimeNumber
+	---@shared
 	function StormFox2.Time.Get( bNearestSecond )
 		if bNearestSecond then
 			return math.floor(GetCache and GetCache or Get())
@@ -402,7 +415,10 @@ StormFox2.Time = StormFox2.Time or {}
 		return GetCache and GetCache or Get()
 	end
 
-	-- How many seconds
+	---Returns the current timespeed / 60. Used for internal calculations.
+	---@deprecated
+	---@return number
+	---@shared
 	function StormFox2.Time.GetSpeed_RAW()
 		if not nightLength or StormFox2.Time.IsPaused() then return 0 end
 		if IsDayCache then
@@ -411,6 +427,9 @@ StormFox2.Time = StormFox2.Time or {}
 		return 1 / nightLength
 	end
 
+	---Returns the current timespeed. "How many seconds pr real second".
+	---@return number
+	---@shared
 	function StormFox2.Time.GetSpeed()
 		return StormFox2.Time.GetSpeed_RAW() * 60
 	end
@@ -426,9 +445,11 @@ StormFox2.Time = StormFox2.Time or {}
 		if #ampm < 1 then ampm = "" end
 		return h .. ":" .. m .. " " .. ampm
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the given time as a number. Supports both "13:00" and "1:00 PM"
-	---------------------------------------------------------------------------]]
+	
+	---Returns the given time as a number. Supports both "13:00" and "1:00 PM"
+	---@param sTime string
+	---@return TimeNumber|string
+	---@shared
 	function StormFox2.Time.StringToTime(sTime)
 		sTime = sTime or StormFox2.Time.Get()
 		str = thinkingBox(sTime)
@@ -451,17 +472,22 @@ StormFox2.Time = StormFox2.Time or {}
 		return ( h * 60 + m ) % 1440
 	end
 
-	--[[-------------------------------------------------------------------------
-	A syncronised number used by the client to calculate the time. Use instead StormFox2.Time.Get
-	---------------------------------------------------------------------------]]
+	---A syncronised number used by the client to calculate the time. Use instead StormFox2.Time.Get to get the current time.
+	---@return number
+	---@shared
 	function StormFox2.Time.GetBASE_TIME()
 		return BASE_TIME
 	end
 	
-	--[[-------------------------------------------------------------------------
-	Returns the given or current time in a string format.
-	---------------------------------------------------------------------------]]
+	---Returns the given or current time in a string format. Will use client setting if bUse12Hour is nil.
+	---@param nTime? TimeNumber
+	---@param bUse12Hour? boolean
+	---@return string
+	---@shared
 	function StormFox2.Time.TimeToString(nTime,bUse12Hour)
+		if CLIENT and bUse12Hour == nil then
+			bUse12Hour = StormFox2.Setting.GetCache("12h_display")
+		end
 		if not nTime then nTime = StormFox2.Time.Get(true) end
 		local h = floor(nTime / 60)
 		local m = floor(nTime % 60 )
@@ -478,25 +504,33 @@ StormFox2.Time = StormFox2.Time or {}
 		return h .. ":" .. (m < 10 and "0" or "") .. m .. " " .. e
 	end
 -- Easy functions
-	--[[-------------------------------------------------------------------------
-	Returns true if the current or given time is doing the day.
-	---------------------------------------------------------------------------]]
+
+	---Returns true if the current or given time is doing the day.
+	---@param nsTime? TimeNumber
+	---@return boolean
+	---@shared
 	function StormFox2.Time.IsDay( nsTime )
 		if not nsTime then  -- Cheaper and faster than to convert things around.
 			return IsDayCache
 		end
 		return isInDay( nsTime )
 	end
-	--[[-------------------------------------------------------------------------
-	Returns true if the current or given time is doing the night.
-	---------------------------------------------------------------------------]]
+	
+	---Returns true if the current or given time is doing the night.
+	---@param nTime? TimeNumber
+	---@return boolean
+	---@shared
 	function StormFox2.Time.IsNight(nTime)
 		return not StormFox2.Time.IsDay(nTime)
 	end
-	--[[-------------------------------------------------------------------------
-	Returns true if the current or given time is between FromTime to ToTime.
-	E.g Dinner = StormFox2.Time.IsBetween(700,740)
-	---------------------------------------------------------------------------]]
+
+	---Returns true if the current or given time is between FromTime to ToTime.
+	-- E.g Dinner = StormFox2.Time.IsBetween(700,740)
+	---@param nFromTime TimeNumber
+	---@param nToTime TimeNumber
+	---@param nCurrentTime? TimeNumber
+	---@return boolean
+	---@shared
 	function StormFox2.Time.IsBetween(nFromTime,nToTime,nCurrentTime)
 		if not nCurrentTime then nCurrentTime = StormFox2.Time.Get() end
 		if nFromTime > nToTime then
@@ -504,17 +538,23 @@ StormFox2.Time = StormFox2.Time or {}
 		end
 		return nFromTime <= nCurrentTime and nToTime >= nCurrentTime
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the time between Time and Time2 in numbers.
-	---------------------------------------------------------------------------]]
+
+	---Returns the time between Time and Time2 in minutes.
+	---@param nTime TimeNumber
+	---@param nTime2 TimeNumber
+	---@return number
+	---@shared
 	function StormFox2.Time.DeltaTime(nTime,nTime2)
 		if nTime2 >= nTime then return nTime2 - nTime end
 		return (1440 - nTime) + nTime2
 	end
 -- Time stamp
-	--[[
-		Simple hour, minute, second and AM / PM
-	]]
+
+	---Returns the current (or given time) hour-number. E.g at 11:43 will return 11. 
+	---@param nTime? TimeNumber
+	---@param b12Hour? boolean
+	---@return number
+	---@shared
 	function StormFox2.Time.GetHours( nTime, b12Hour )
 		if not nTime then nTime = StormFox2.Time.Get() end
 		if not b12Hour then return floor( nTime / 60 ) end
@@ -527,16 +567,28 @@ StormFox2.Time = StormFox2.Time or {}
 		return h
 	end
 
+	---Returns the current (or given time) minute-number. E.g at 11:43 will return 43. 
+	---@param nTime? TimeNumber
+	---@return number
+	---@shared
 	function StormFox2.Time.GetMinutes( nTime )
 		if not nTime then nTime = StormFox2.Time.Get() end
 		return floor( nTime % 60 )
 	end
 
+	---Returns the current (or given time) seconds-number. E.g at 11:43:22 will return 22. 
+	---@param nTime? TimeNumber
+	---@return number
+	---@shared
 	function StormFox2.Time.GetSeconds( nTime )
 		if not nTime then nTime = StormFox2.Time.Get() end
 		return floor( nTime % 1 ) * 60
 	end
 
+	---Returns the current (or given time) "AM" or "PM" string.  E.g 20:00 / 8:00 PM will return "PM". 
+	---@param nTime? TimeNumber
+	---@return string
+	---@shared
 	function StormFox2.Time.GetAMPM( nTime )
 		if not nTime then nTime = StormFox2.Time.Get() end
 		local h = floor( nTime / 60 )
@@ -549,13 +601,19 @@ StormFox2.Time = StormFox2.Time or {}
 		Allows to pause and resume time
 	]]
 	local lastT
-	-- Returns true if the time is paused, second argument is nil or a table of the old settings from StormFox2.Time.Pause()
+	-- (Internal) Second argument is nil or a table of the old settings from StormFox2.Time.Pause()
+
+	---Returns true if the time is paused.
+	---@return boolean
+	---@shared
 	function StormFox2.Time.IsPaused()
 		local dl = day_length:GetValue()
 		local nl = night_length:GetValue()
 		return dl <= 0 and nl <= 0, lastT
 	end
 	if SERVER then
+		---Pauses the time.
+		---@server
 		function StormFox2.Time.Pause()
 			local dl = day_length:GetValue()
 			local nl = night_length:GetValue()
@@ -564,6 +622,9 @@ StormFox2.Time = StormFox2.Time or {}
 			day_length:SetValue( 0 )
 			night_length:SetValue( 0 )
 		end
+
+		---Resumes the time.
+		---@server
 		function StormFox2.Time.Resume()
 			if not StormFox2.Time.IsPaused() then return end
 			if lastT then
@@ -576,10 +637,11 @@ StormFox2.Time = StormFox2.Time or {}
 			end
 		end
 	end
-	--[[
-		Returns the seconds until we reached the given time.
-		Note to lisen for the hook: "StormFox2.Time.Changed". In case an admin changes the time / time-settings.
-	]]
+	---Returns the seconds until we reached the given time.
+	---Remember to lisen for the hook: "StormFox2.Time.Changed". In case an admin changes the time / time-settings.
+	---@param nTime TimeNumber
+	---@return number
+	---@shared
 	function StormFox2.Time.SecondsUntil( nTime )
 		if StormFox2.Time.IsPaused() then return -1 end
 		local c_cycleTime = GetCycleRaw() -- Seconds past sunrise
@@ -601,9 +663,10 @@ if CLIENT then
 		[false] = "24h clock",
 		[true] = "12h clock"
 	} )
-	--[[-------------------------------------------------------------------------
-	Returns the time in a string, matching the players setting.
-	---------------------------------------------------------------------------]]
+	---Returns the current time as a string. Useful for displays.
+	---@param nTime? TimeNumber
+	---@return string
+	---@client
 	function StormFox2.Time.GetDisplay(nTime)
 		local use_12 = StormFox2.Setting.GetCache("12h_display",default_12)
 		return StormFox2.Time.TimeToString(nTime,use_12)

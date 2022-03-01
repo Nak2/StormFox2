@@ -105,6 +105,13 @@ if SERVER then
 		end
 	end)
 
+	---Asks CAMI if the user has access to said permission. Will call and return onSuccess if they do.
+	---@param ply Player
+	---@param sPermission string
+	---@param onSuccess function
+	---@param ... any
+	---@return any|nil
+	---@server
 	function StormFox2.Permission.EditAccess(ply, sPermission, onSuccess, ...)
 		if not ply or ply:IsListenServerHost() then -- Console or host
 			return onSuccess(ply, ... )
@@ -131,6 +138,11 @@ else
 			StormFox2.Menu._OpenController()
 		end
 	end)
+
+	---Asks the server to change a setting.
+	---@param convar string
+	---@param var any
+	---@client
 	function StormFox2.Permission.RequestSetting( convar, var )
 		net.Start(StormFox2.Net.Permission)
 			net.WriteUInt(SF_SERVEREDIT, 1)

@@ -422,12 +422,23 @@ end
 local f_mapLight = StormFox2.Setting.GetCache("maplight_max",80)
 local f_mapLightRaw = 100
 local c_last_char = 'm'
+---Returns the current light-amount.
+---@return number
+---@shared
 function StormFox2.Map.GetLight()
 	return f_mapLight
 end
-function StormFox2.Map.GetLightRaw() -- Ignores lightamount-settings
+
+---Returns the current raw light-amount. Ignores settings.
+---@return number
+---@shared
+function StormFox2.Map.GetLightRaw()
 	return f_mapLightRaw
 end
+
+---Returns the current light-char. Source use letters to indecate light.
+---@return string
+---@shared
 function StormFox2.Map.GetLightChar()
 	return c_last_char
 end
@@ -492,27 +503,38 @@ local function SetLightInternal(f, isSmoothLight)
 end
 
 local t = {}
-function StormFox2.Map.SetLight( f, ignore_lightstyle )
+
+---Sets the maplight using a number between 0 - 100. last_update should be true, if we aren't lerping.
+---Clients need to run this too for internal stuff, but won't change the maplight.
+---@param int number
+---@param last_update boolean
+---@shared
+function StormFox2.Map.SetLight( int, last_update )
 	t = {} -- Remove light lerping
-	SetLightInternal(f, ignore_lightstyle)
+	SetLightInternal(int, last_update)
 end
 
 --[[ Lerp light
 	People complain if we use lightStyle too much (Even with settings), so I've removed lerp from maps without light_environment.
 ]]
--- Lerps the light towards the goal. Make "not_final" true if you're calling it rapidly.
-function StormFox2.Map.SetLightLerp(f, nLerpTime, isSmooth )
+
+---Lerps the light towards the goal. Make "isSmooth" false if you're calling it rapidly.
+---@param int number
+---@param nLerpTime number
+---@param isSmooth boolean
+---@shared
+function StormFox2.Map.SetLightLerp(int, nLerpTime, isSmooth )
 	local smooth = StormFox2.Setting.GetCache("maplight_smooth",true)
 	local num = StormFox2.Setting.GetCache("maplight_updaterate", 3)
 	-- No lights to smooth and/or setting is off
 	local _5sec = 0.08 * StormFox2.Time.GetSpeed_RAW()
 	t = {}
 	if not smooth or nLerpTime <= _5sec or not f_mapLight or num <= 1 then
-		SetLightInternal( f )
+		SetLightInternal( int )
 		return
 	end
 	-- Are we trying to lerp towards current value?
-	if f_mapLight and f_mapLight == f then
+	if f_mapLight and f_mapLight == int then
 		return
 	end
 	-- Start lerping ..
@@ -524,17 +546,17 @@ function StormFox2.Map.SetLightLerp(f, nLerpTime, isSmooth )
 		st_lerpt = 5
 		num = math.floor(nLerpTime / 5)
 		if num <= 1 then -- Only change once.
-			SetLightInternal( f )
+			SetLightInternal( int )
 			return
 		end
 	end
-	local st_lerp = math.abs(f_mapLight - f) / num 		-- Each "step"'s value
+	local st_lerp = math.abs(f_mapLight - int) / num 		-- Each "step"'s value
 	-- from: f_mapLight
 	-- to: f
 	for i = 0, num - 1 do
 		table.insert(t, {
 			(st + (i * st_lerpt)) % 1440, 						-- Time when applied
-			math.floor(math.Approach(f_mapLight, f, st_lerp * (i + 1))),-- The light value
+			math.floor(math.Approach(f_mapLight, int, st_lerp * (i + 1))),-- The light value
 			i ~= num - 1 or isSmooth									-- Isn't last
 		})
 	end

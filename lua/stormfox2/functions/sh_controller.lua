@@ -12,6 +12,13 @@ local SF_YEARDAY	= 7
 
 if SERVER then
 	-- Gets called from sh_permission.lua
+
+	---Internally used by permissions to relay settings.
+	---@param ply Player
+	---@param uID number
+	---@param var any
+	---@deprecated
+	---@server
 	function StormFox2.Menu.SetWeatherData(ply, uID, var)
 		if uID == SF_SETWEATHER and type(var) == "table" then
 			if type(var[1]) ~= "string" or type(var[2])~= "number" then return end
@@ -580,6 +587,11 @@ end)
 
 local mat = Material("gui/workshop_rocket.png")
 local c = Color(55,55,55)
+
+---Builds the controller
+---@deprecated
+---@return userdata panel
+---@client
 function StormFox2.Menu._OpenController()
 	if _SF_CONTROLLER then
 		_SF_CONTROLLER:Remove()
@@ -632,12 +644,16 @@ function StormFox2.Menu._OpenController()
 	return _SF_CONTROLLER
 end
 
+---Opens the controller
+---@client
 function StormFox2.Menu.OpenController()
 	net.Start("StormFox2.menu")
 		net.WriteBool(false)
 	net.SendToServer()
 end
 
+---Closes the controller
+---@client
 function StormFox2.Menu.CloseController()
 	if _SF_CONTROLLER then
 		_SF_CONTROLLER:Remove()

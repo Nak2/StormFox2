@@ -571,62 +571,76 @@ ROOF_TYPE = 1
 ROAD_TYPE = 2
 PAVEMENT_TYPE = 3
 ---------------------------------------------------------------------------]]
+
+---Returns a list of map-textures that should be replaced.
+---@return table
+---@shared
 function StormFox2.Map.GetTextureTree()
 	return SF_TEXTDATA or {}
 end
 
 -- Small StormFox Functions
-	--[[-------------------------------------------------------------------------
-	Returns the mapversion.
-	---------------------------------------------------------------------------]]
+
+	---Returns the mapversion.
+	---@return number
+	---@shared
 	function StormFox2.Map.Version()
 		return SF_BSPDATA.version or -1
 	end
 
-	--[[-------------------------------------------------------------------------
-	Returns the entities from the mapfile.
-	---------------------------------------------------------------------------]]
+	---Returns the entities from the mapfile.
+	---@return table
+	---@shared
 	function StormFox2.Map.Entities()
 		return SF_BSPDATA.Entities or {}
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the staticprops from the mapfile.
-	---------------------------------------------------------------------------]]
+	
+	---Returns the staticprops from the mapfile.
+	---@return table
+	---@shared
 	function StormFox2.Map.StaticProps()
 		return SF_BSPDATA.StaticProps or {}
 	end
-	--[[-------------------------------------------------------------------------
-	Returns all textures from the mapfile.
-	---------------------------------------------------------------------------]]
+	
+	---Returns all textures from the mapfile.
+	---@return table
+	---@shared
 	function StormFox2.Map.AllTextures()
 		return SF_BSPDATA.TextureArray or {}
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the filtered textures from the mapfile.
-	---------------------------------------------------------------------------]]
+	
+	---Returns the filtered textures from the mapfile.
+	---@return table
+	---@shared
 	function StormFox2.Map.Textures()
 		return SF_BSPDATA.Textures or {}
 	end
 
 	local last = 1
-	function StormFox2.Map.SetCubeMapDarkness(b)
-		if b == last then return end
-		last = b
+
+	---Sets the brightness of the cubemaps.
+	---@param float number
+	---@shared
+	function StormFox2.Map.SetCubeMapDarkness(float)
+		if float == last then return end
+		last = float
 		for mat, def in pairs(SF_BSPDATA.TextureCube) do
-			mat:SetVector("$envmaptint", def * b)
+			mat:SetVector("$envmaptint", def * float)
 		end
 	end
 
-	--[[-------------------------------------------------------------------------
-	Returns the filtered textures from the mapfile.
-	---------------------------------------------------------------------------]]
+	---Returns true if the map has PAK files
+	---@return boolean
+	---@deprecated
+	---@shared
 	function StormFox2.Map.HasPAK()
 		return SF_BSPDATA._hasPak or false
 	end
 
-	--[[-------------------------------------------------------------------------
-	Gets all entities with the given class from the mapfile. 
-	---------------------------------------------------------------------------]]
+	---Gets all entities with the given class from the mapfile. 
+	---@param sClass string
+	---@return table
+	---@shared
 	function StormFox2.Map.FindClass(sClass)
 		local t = {}
 		for k,v in pairs(SF_BSPDATA.Entities) do
@@ -636,9 +650,11 @@ end
 		end
 		return t
 	end
-	--[[-------------------------------------------------------------------------
-	Gets all entities with the given name from the mapfile. 
-	---------------------------------------------------------------------------]]
+	
+	---Gets all entities with the given name from the mapfile. 
+	---@param sTargetName string
+	---@return table
+	---@shared
 	function StormFox2.Map.FindTargetName(sTargetName)
 		local t = {}
 		for k,v in pairs(SF_BSPDATA.Entities) do
@@ -648,9 +664,11 @@ end
 		end
 		return t
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
-	---------------------------------------------------------------------------]]
+	
+	---Returns the mapdata for the given entity. Will be nil if isn't a map-created entity. Seems to only work server-side.
+	---@param eEnt Entity
+	---@return table
+	---@shared
 	function StormFox2.Map.FindEntity(eEnt)
 		local c = eEnt:GetClass()
 		local h_id = eEnt:GetKeyValues().hammerid
@@ -662,9 +680,12 @@ end
 		end
 		return
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
-	---------------------------------------------------------------------------]]
+
+	---Returns the entities inside the map-file, that are within the sphere.
+	---@param vPos Vector
+	---@param nRadius number
+	---@return table
+	---@shared
 	function StormFox2.Map.FindEntsInSphere(vPos,nRadius)
 		local t = {}
 		nRadius = nRadius^2
@@ -675,9 +696,12 @@ end
 		end
 		return t
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the mapdata for the given entity. Will be nil if isn't a map-created entity.
-	---------------------------------------------------------------------------]]
+	
+	---Returns the staticprops inside the map-file, that are within the sphere.
+	---@param vPos Vector
+	---@param nRadius number
+	---@return table
+	---@shared
 	function StormFox2.Map.FindStaticsInSphere(vPos,nRadius)
 		local t = {}
 		nRadius = nRadius^2
@@ -688,9 +712,11 @@ end
 		end
 		return t
 	end
-	--[[-------------------------------------------------------------------------
-	Locates an entity with the given hammer_id from the mapfile. 
-	---------------------------------------------------------------------------]]
+	
+	---Tries to locates the entity data from the mapfile, using the hammer_id. 
+	---@param nHammerID number
+	---@return table
+	---@shared
 	function StormFox2.Map.FindHammerid(nHammerID)
 		for k,v in pairs(ents.GetAll()) do
 			local h_id = v:GetKeyValues().hammerid
@@ -703,43 +729,52 @@ end
 	end
 	-- Map functions 
 	local min,max,sky,sky_scale,has_Sky,map_radius = Vector(0,0,0),Vector(0,0,0),Vector(0,0,0),1,false
-	--[[-------------------------------------------------------------------------
-	Returns the maxsize of the map.
-	---------------------------------------------------------------------------]]
+	
+	---Returns the maxsize of the map.
+	---@return Vector
+	---@shared
 	function StormFox2.Map.MaxSize()
 		return max
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the minsize of the map.
-	---------------------------------------------------------------------------]]
+	
+	---Returns the minsize of the map.
+	---@return Vector
+	---@shared
 	function StormFox2.Map.MinSize()
 		return min
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the radius of the map.
-	---------------------------------------------------------------------------]]
+	
+	---Returns the radius of the map.
+	---@return number
+	---@shared
 	function StormFox2.Map.RadiusSize()
-		return map_radius
+		return map_radius or 0
 	end
-	--[[-------------------------------------------------------------------------
-	Clamps the vector to the size of the map.
-	---------------------------------------------------------------------------]]
+	
 	local clamp = math.Clamp
+	---Clamps the vector to the size of the map.
+	---@param vec Vector
+	---@deprecated
+	---@return Vector
+	---@shared
 	function StormFox2.Map.ClampPos(vec)
 		vec.x = clamp(vec.x, min.x + 1, max.x - 1)
 		vec.y = clamp(vec.y, min.y + 1, max.y - 1)
 		vec.z = clamp(vec.z, min.z + 1, max.z - 1)
 		return vec
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the true center of the map. Often Vector( 0, 0, 0 )
-	---------------------------------------------------------------------------]]
+	
+	---Returns the true center of the map. Often Vector( 0, 0, 0 )
+	---@return Vector
+	---@shared
 	function StormFox2.Map.GetCenter()
 		return (StormFox2.Map.MaxSize() + StormFox2.Map.MinSize()) / 2
 	end
-	--[[-------------------------------------------------------------------------
-	Returns true if the position is within the map
-	---------------------------------------------------------------------------]]
+	
+	---Returns true if the position is within the map
+	---@param vec Vector
+	---@return boolean
+	---@shared
 	function StormFox2.Map.IsInside(vec)
 		if vec.x > max.x then return false end
 		if vec.y > max.y then return false end
@@ -749,56 +784,67 @@ end
 		if vec.z < min.z then return false end
 		return true
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the skybox-position.
-	---------------------------------------------------------------------------]]
+	
+	---Returns the skybox-position.
+	---@return Vector
+	---@shared
 	function StormFox2.Map.GetSkyboxPos()
 		return sky
 	end
-	--[[-------------------------------------------------------------------------
-	Returns the skybox-scale.
-	---------------------------------------------------------------------------]]
+
+	---Returns the skybox-scale.
+	---@return number
+	---@shared
 	function StormFox2.Map.GetSkyboxScale()
 		return sky_scale
 	end
-	--[[-------------------------------------------------------------------------
-	Returns true if the map has a 3D skybox.
-	---------------------------------------------------------------------------]]
+	
+	---Returns true if the map has a 3D skybox.
+	---@return boolean
+	---@shared
 	function StormFox2.Map.Has3DSkybox()
 		return has_Sky
 	end
-	--[[-------------------------------------------------------------------------
-	Converts the given position to skybox.
-	---------------------------------------------------------------------------]]
+	
+	---Converts the given position to skybox.
+	---@param vPosition Vector
+	---@return Vector
+	---@shared
 	function StormFox2.Map.SkyboxToWorld(vPosition)
 		return (vPosition - sky) * sky_scale
 	end
-	--[[-------------------------------------------------------------------------
-	Converts the given skybox position to world.
-	---------------------------------------------------------------------------]]
+	
+	---Converts the given skybox position to world.
+	---@param vPosition Vector
+	---@return Vector
+	---@shared
 	function StormFox2.Map.WorldtoSkybox(vPosition)
 		return (vPosition / sky_scale) + sky
 	end
-	--[[-------------------------------------------------------------------------
-	Checks if the mapfile has the entity-class.
-	---------------------------------------------------------------------------]]
+	
 	local list = {}
+	---Checks if the mapfile has/had said entity-class.
+	---@param sClass string
+	---@return boolean
+	---@shared
 	function StormFox2.Map.HadClass(sClass)
 		if list[sClass] ~= nil then return list[sClass] end
 		list[sClass] = #StormFox2.Map.FindClass(sClass) > 0
 		return list[sClass]
 	end
-	--[[<Shared>-----------------------------------------------------------------
-	Returns true if it is a cold map
-	---------------------------------------------------------------------------]]
+	
 	local bCold = false
+	---Returns true if it is a cold map
+	---@return boolean
+	---@shared
 	function StormFox2.Map.IsCold()
 		return bCold
 	end
-	--[[<Shared>------------------------------------------------------------------
-	Returns true if the map has a snow-texture
-	---------------------------------------------------------------------------]]
+	
 	local bSnow = false
+	---Returns true if the map has a snow-texture
+	---@return boolean
+	---@shared
 	function StormFox2.Map.HasSnow()
 		return bSnow
 	end
@@ -834,6 +880,9 @@ if SERVER then
 		end
 	end
 	local l_w
+	---Internally used to call weather logic_relays. 
+	---@param name string
+	---@server
 	function StormFox2.Map.w_CallLogicRelay( name )
 		name = string.lower( name )
 		if l_w then
@@ -847,10 +896,16 @@ if SERVER then
 		l_w = name
 		StormFox2.Map.CallLogicRelay("weather_" .. name, true)
 	end
-	function StormFox2.Map.HasLogicRelay(sName,b)
+
+	---Returns true if the map has said logic_relay. 
+	---@param sName string
+	---@param isToggle boolean
+	---@return boolean
+	---@server
+	function StormFox2.Map.HasLogicRelay(sName,isToggle)
 		if sName == "dusk" then sName = "night_events" end
 		if sName == "dawn" then sName = "day_events" end
-		if b ~= nil and b == false then
+		if isToggle ~= nil and isToggle == false then
 			sName = sName .. "_off"
 		end
 		return relay[sName] and true or false
@@ -864,7 +919,11 @@ else -- Clients don't know the relays
 		if sName == "dawn" then sName = "day_events" end
 		t[sName] = true
 	end
-	function StormFox2.Map.HasLogicRelay(sName,b)
+	---Returns true if the map has said logic_relay. 
+	---@param sName string
+	---@return boolean
+	---@client
+	function StormFox2.Map.HasLogicRelay(sName)
 		if sName == "dusk" then sName = "night_events" end
 		if sName == "dawn" then sName = "day_events" end
 		return t[sName] and true or false

@@ -119,18 +119,28 @@ hook.Add("StormFox2.Sky.StampChange","StormFox2.Weather.Stamp",function(_,nLerpT
 	ApplyWeather(CurrentWeather and CurrentWeather.Name or "Clear", CurrentPercent, nLerpTime)
 end)
 
+---Returns the current weather-type.
+---@return Weather
 function StormFox2.Weather.GetCurrent()
 	return CurrentWeather or StormFox2.Weather.Get( "Clear" )
 end
 
+---Returns the current weather percent.
+---@return number Percent
 function StormFox2.Weather.GetPercent()
 	return StormFox2.Data.Get("w_Percentage",CurrentPercent) 
 end
 
+---Returns the weather percent we're lerping to.
+---@return number
 function StormFox2.Weather.GetFinishPercent()
 	return CurrentPercent
 end
 
+---Returns the current weather description. Like 'Snow', 'Storm' .. ect.
+---Second argument isn't translated.
+---@return string Description
+---@return string Description_Untranslated
 function StormFox2.Weather.GetDescription()
 	local c = StormFox2.Weather.GetCurrent()
 	if not c.GetName then
@@ -141,6 +151,9 @@ function StormFox2.Weather.GetDescription()
 end
 
 local errM = Material("error")
+
+---Returns the current weather-icon.
+---@return userdata Material
 function StormFox2.Weather.GetIcon()
 	local c = StormFox2.Weather.GetCurrent()
 	if not c.GetIcon then
@@ -154,6 +167,13 @@ local SF_INIT_WEATHER 	= 1
 
 if SERVER then
 	local l_data
+
+	---Sets the weather.
+	---@server 
+	---@param sName string
+	---@param nPercentage number
+	---@param nDelta? number
+	---@return boolean success
 	function StormFox2.Weather.Set( sName, nPercentage, nDelta )
 		if not StormFox2.Setting.GetCache("enable", true) then return end -- Just in case
 		if nDelta and l_data and nDelta == l_data then
@@ -250,6 +270,13 @@ else
 		end
 		StormFox2.Data.Set("w_Percentage",nPercentage,nDelta)
 	end
+
+	---Sets the weather on the client. Server-side stuff won't be set.
+	---@client
+	---@param sName? string
+	---@param nPercentage? number
+	---@param nDelta? number
+	---@param nTemperature? number
 	function StormFox2.Weather.SetLocal( sName, nPercentage, nDelta, nTemperature)
 		-- If nil then remove the local weather
 		if not sName then
@@ -265,9 +292,12 @@ else
 		end
 		StormFox2.Temperature.SetLocal(nTemperature)
 		-- Block same weather
-		SetW(sName, nPercentage, nDelta)
+		SetW(sName, nPercentage or 1, nDelta)
 		hasLocalWeather = true
 	end
+
+	---Removes the local weather.
+	---@client
 	function StormFox2.Weather.RemoveLocal()
 		if not hasLocalWeather then return end
 		SetW(svWeather[1], svWeather[2], 4)
@@ -343,6 +373,10 @@ if CLIENT then
 end
 
 -- Some functions to make it easier.
+
+---Returns true if it is raining, or if current weather is child of rain.
+---@return boolean
+---@shared
 function StormFox2.Weather.IsRaining()
 	local wT = StormFox2.Weather.GetCurrent()
 	if wT.Inherit == "Rain" then return true end
@@ -350,17 +384,26 @@ function StormFox2.Weather.IsRaining()
 	return StormFox2.Temperature.Get() > -2 or false
 end
 
+---Returns true if it is snowing.
+---@return boolean
+---@shared
 function StormFox2.Weather.IsSnowing()
 	local wT = StormFox2.Weather.GetCurrent()
 	if wT.Name ~= "Rain" then return false end
 	return StormFox2.Temperature.Get() <= -2 or false
 end
 
+---Returns the rain / snow amount. Between 0 - 1.
+---@return number
+---@shared
 function StormFox2.Weather.GetRainAmount()
 	if not StormFox2.Weather.IsRaining() then return 0 end
 	return StormFox2.Weather.GetPercent()
 end
 
+---Returns true if the current weather is raining, snowing or inherit from rain.
+---@return boolean
+---@shared
 function StormFox2.Weather.HasDownfall()
 	local wT = StormFox2.Weather.GetCurrent()
 	if wT.Inherit == "Rain" then return true end
@@ -368,11 +411,21 @@ function StormFox2.Weather.HasDownfall()
 end
 
 -- Downfall
+
+---Returns true if the entity is hit by rain or any downfall.
+---@param eEnt Entity
+---@param bDont_cache boolean
+---@return boolean
+---@shared
 function StormFox2.DownFall.IsEntityHit(eEnt, bDont_cache)
 	if not StormFox2.Weather.HasDownfall() then return false end
 	return (StormFox2.Wind.IsEntityInWind(eEnt,bDont_cache))
 end
 
+---Checks to see if the given point is hit by rain.
+---@param vPos Vector
+---@return boolean
+---@shared
 function StormFox2.DownFall.IsPointHit(vPos)
 	if not StormFox2.Weather.HasDownfall() then return false end
 	local t = util.TraceLine( {

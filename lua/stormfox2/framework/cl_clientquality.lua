@@ -1,6 +1,7 @@
 --[[-------------------------------------------------------------------------
 This scripts job is to sort out the computers and potatoes.
 ---------------------------------------------------------------------------]]
+
 StormFox2.Client = StormFox2.Client or {}
 StormFox2.Setting.AddCL("quality_ultra",false)
 StormFox2.Setting.AddCL("quality_target",60,nil,nil, 0, 300)
@@ -41,6 +42,11 @@ local q_num = 1
 Returns a number based on the clients FPS. 
 7 is the max without the user enabling 'sf_quality_ultra', where it then goes up to 20.
 ---------------------------------------------------------------------------]]
+
+---Returns a number based on the clients FPS. Where 7 is max (or 20 if sf_quality_ultra is enabled)
+---@return number qualityNumber
+---@return number avagefps
+---@client
 function StormFox2.Client.GetQualityNumber()
 	if not system.HasFocus() then
 		return 1, 1 / RealFrameTime()

@@ -4,9 +4,12 @@ Useful functions
 
 StormFox2.util = {}
 local cache = {}
---[[<Shared>-----------------------------------------------------------------
-Returns the OBBMins and OBBMaxs of a model.
----------------------------------------------------------------------------]]
+
+---Returns the OBBMins and OBBMaxs of a model.
+---@param sModel string
+---@return Vector MinSize
+---@return Vector MaxSize
+---@shared
 function StormFox2.util.GetModelSize(sModel)
 	if cache[sModel] then return cache[sModel][1],cache[sModel][2] end
 	if not file.Exists(sModel,"GAME") then
@@ -47,22 +50,24 @@ if CLIENT then
 		view.drawviewer = LocalPlayer():ShouldDrawLocalPlayer()
 		a = true
 	end)
-	--[[<Client>-----------------------------------------------------------------
-	Returns the last calcview result.
-	---------------------------------------------------------------------------]]
+	
+	---Returns the last calcview result.
+	---@return table
+	---@client
 	function StormFox2.util.GetCalcView()
 		return view
 	end
-	--[[<Client>-----------------------------------------------------------------
-	Returns the last camera position.
-	---------------------------------------------------------------------------]]
+	
+	---Returns the last camera position.
+	---@return Vector
+	---@client
 	function StormFox2.util.RenderPos()
 		return view.pos or EyePos()
 	end
 
-	--[[<Client>-----------------------------------------------------------------
-	Returns the last camera position.
-	---------------------------------------------------------------------------]]
+	---Returns the last camera angle.
+	---@return Angle
+	---@client
 	function StormFox2.util.RenderAngles()
 		return view.ang or RenderAngles()
 	end
@@ -81,6 +86,9 @@ if CLIENT then
 			viewEntity = p
 		end
 	end)
+	---Returns the current viewentity.
+	---@return Entity
+	---@client
 	function StormFox2.util.ViewEntity()
 		return IsValid(viewEntity) and viewEntity or LocalPlayer()
 	end
@@ -94,6 +102,7 @@ end
 ]]
 
 local log,Clamp,pow = math.log, math.Clamp, math.pow
+---@class SF2CCT_Color
 local meta = {}
 function meta.__index( a, b )
 	return meta[b] or a._col[b]
@@ -126,6 +135,9 @@ local function CCTToRGB( nKelvin )
 	return Color(Clamp(r, 0, 255), Clamp(g, 0, 255), Clamp(b, 0, 255))
 end
 
+---Returns a CCT Color object.
+---@param kelvin number
+---@return SF2CCT_Color
 function StormFox2.util.CCTColor( kelvin )
 	local t = {}
 	setmetatable(t, meta)
@@ -216,6 +228,10 @@ function meta:__div( a, b )
 	return StormFox2.util.CCTColor( t )
 end
 
+---Renders a range of colors in the console.
+---@param from number
+---@param to number
+---@param len number
 function StormFox2.util.CCTColorDebug( from, to, len )
 	len = len or 60
 	from = from or 2200

@@ -1,11 +1,17 @@
 
 StormFox2.Thunder = {}
 
+---Returns true if it is thundering.
+---@return boolean
+---@shared
 function StormFox2.Thunder.IsThundering()
 	return StormFox2.Data.Get("nThunder", 0) > 0
 end
 
-function StormFox2.Thunder.GetActivity() -- The amount of strikes pr minute
+---Returns the amount of posible strikes pr minute.
+---@return number
+---@shared
+function StormFox2.Thunder.GetActivity()
 	return StormFox2.Data.Get("nThunder", 0)
 end
 
@@ -160,7 +166,11 @@ if SERVER then
 		net.Broadcast()
 	end
 
-	-- Creates a lightningstrike at a given position.
+	---Creates a lightningstrike at a given position. Will return a hit entity as a second argument.
+	---@param pos Vector
+	---@return boolean success
+	---@return Entity 
+	---@server
 	function StormFox2.Thunder.CreateAt( pos )
 		local t_Var, tList, tr
 		local b_InSkybox = false
@@ -191,7 +201,12 @@ if SERVER then
 		LightFluff(tList, b_InSkybox )
 		return true, tr and IsValid( tr.Entity ) and tr.Entity
 	end
-	-- Creates a lightning strike to hit the given position / entity
+	
+	---Creates a lightning strike to hit the given position / entity.
+	---@param zPosOrEnt Vector|Entity
+	---@param bRangeDamage number
+	---@return boolean success
+	---@server
 	function StormFox2.Thunder.Strike( zPosOrEnt, bRangeDamage )
 		-- Strike the entity
 		if not bRangeDamage and zPosOrEnt.Health then
@@ -220,6 +235,10 @@ if SERVER then
 		return true
 	end
 
+	---Creates a rumble.
+	---@param pos Vector
+	---@param bLight boolean
+	---@server
 	function StormFox2.Thunder.Rumble( pos, bLight )
 		if not pos then
 			local vMapMin = StormFox2.Map.MinSize()
@@ -245,6 +264,11 @@ if SERVER then
 
 	do
 		local n = 0
+		---Enables / Disables thunder.
+		---@param bEnable boolean
+		---@param nActivityPrMinute? number
+		---@param nTimeAmount? number
+		---@server
 		function StormFox2.Thunder.SetEnabled( bEnable, nActivityPrMinute, nTimeAmount )
 			n = 0
 			if bEnable then
@@ -272,6 +296,10 @@ if SERVER then
 else
 	lightningStrikes = lightningStrikes or {}
 	local _Light, _Stop, _Length = 0,0,0
+
+	---Returns light created by thunder.
+	---@return number
+	---@client
 	function StormFox2.Thunder.GetLight()
 		if _Light <= 0 then return 0 end
 		if _Stop < CurTime() then

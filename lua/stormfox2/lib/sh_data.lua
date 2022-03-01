@@ -23,7 +23,11 @@ StormFox_AIMDATA = {} 	-- Var, start, end
 --[[TODO: There are still problems with nil varables.
 ]]
 
--- Returns the final data. This will never lerp.
+---Returns the final data, ignoring lerp. Will return zDefault as fallback.
+---@param sKey string
+---@param zDefault any
+---@return any
+---@shared
 function StormFox2.Data.GetFinal( sKey, zDefault )
 	if StormFox_AIMDATA[sKey] then
 		if StormFox_AIMDATA[sKey][1] ~= nil then
@@ -81,7 +85,11 @@ do
 		end
 	end
 
-	-- Returns data
+	---Returns data. Will return zDefault as fallback.
+	---@param sKey string
+	---@param zDefault any
+	---@return any
+	---@shared
 	function StormFox2.Data.Get( sKey, zDefault )
 		-- Check if lerping
 		local var1 = StormFox_DATA[sKey]
@@ -123,7 +131,11 @@ do
 	end)
 end
 
--- Sets data. Will lerp if given delta.
+---Sets data. Will lerp if given delta time. Use StormFox2.Network.Set if you want want to network it.
+---@param sKey string
+---@param zVar any
+---@param nDelta any
+---@shared
 function StormFox2.Data.Set( sKey, zVar, nDelta )
 	-- Check if vars are the same
 	if StormFox_DATA[sKey] ~= nil and not StormFox_AIMDATA[sKey] then
@@ -157,6 +169,10 @@ function StormFox2.Data.Set( sKey, zVar, nDelta )
 	hook.Run("StormFox2.data.change", sKey, zVar, nDelta)
 end
 
+---Returns true if the value is currently lerping.
+---@param sKey string
+---@return boolean
+---@shared
 function StormFox2.Data.IsLerping( sKey )
 	if not StormFox_AIMDATA[sKey] then return false end
 	-- Check and see if we're done lerping
@@ -172,6 +188,10 @@ function StormFox2.Data.IsLerping( sKey )
 	return true
 end
 
+---Returns a CurTime for when the data is done lerping.
+---@param sKey string
+---@return number
+---@shared
 function StormFox2.Data.GetLerpEnd( sKey )
 	if not StormFox_AIMDATA[sKey] then return 0 end
 	return StormFox_AIMDATA[sKey][3]

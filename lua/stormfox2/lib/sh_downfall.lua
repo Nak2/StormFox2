@@ -52,6 +52,10 @@ SF_DOWNFALL_HIT_METAL = 5
 
 local con = GetConVar("sv_gravity")
 -- Returns the gravity
+
+---Returns the current gravity.
+---@return number
+---@shared
 local function GLGravity()
 	if con then
 		return con:GetInt() / 600
@@ -195,7 +199,16 @@ do
 	local function IsMaterialEmpty( t )
 		return t.HitTexture == "TOOLS/TOOLSINVISIBLE" or t.HitTexture == "**empty**" or t.HitTexture == "TOOLS/TOOLSNODRAW"
 	end
-	-- Returns a raindrop pos from a sky position. #2 is hittype: -1 = no hit, 0 = ground, 1 = water, 2 = glass.
+	
+	---Returns a raindrop pos from a sky position. #2 is hittype: -1 = no hit, 0 = ground, 1 = water, 2 = glass.
+	---@param pos Vector
+	---@param norm Vector
+	---@param nRadius number
+	---@param filter Entity
+	---@return Vector? Pos
+	---@return number? HitType
+	---@return Vector? HitNormal
+	---@shared
 	local function TraceDown(pos, norm, nRadius, filter)
 		nRadius = nRadius or 1
 		if not pos or not norm then return end
@@ -226,7 +239,13 @@ do
 	end
 	StormFox2.DownFall.TraceDown = TraceDown
 
-	-- Returns the skypos. If it didn't find the sky it will return last position as #2
+	---Returns the skypos. If it didn't find the sky it will return last position as #2
+	---@param vFrom Vector
+	---@param vNormal Vector
+	---@param nTries? number
+	---@return Vector? SkyPos
+	---@return Vector? LastEmptyHit
+	---@shared
 	local function FindSky(vFrom, vNormal, nTries)
 		local last,lastFakeSky
 		for i = 1,nTries do
@@ -267,7 +286,14 @@ do
 	end
 	StormFox2.DownFall.FindSky = FindSky
 	
-	-- Locates the skybox above vFrom and returns a raindrop pos. #2 is hittype: -2 No sky, -1 = no hit/invald, 0 = ground, 1 = water, 2 = glass, #3 is hitnormal
+	---Locates the skybox above vFrom and returns a raindrop pos. #2 is hittype: -2 No sky, -1 = no hit/invald, 0 = ground, 1 = water, 2 = glass, #3 is hitnormal
+	---@param vFrom Vector
+	---@param vNorm Vector
+	---@param nRadius number
+	---@param filter Entity
+	---@return Vector? RainHitPos
+	---@return number HitType
+	---@shared
 	function StormFox2.DownFall.CheckDrop(vFrom, vNorm, nRadius, filter)
 		t.mask = mask
 		local sky,_ = FindSky(vFrom, -vNorm, 7)
@@ -279,8 +305,17 @@ do
 	local t_cache = {}
 	local t_cache_hit = {}
 	local c_i = 0
-	function StormFox2.DownFall.CheckDropCache( ... )
-		local pos,n = StormFox2.DownFall.CheckDrop( ... )
+
+	-- Does the same as StormFox2.DownFall.CheckDrop, but will fallback on cached positions when failed.
+	---@param vFrom Vector
+	---@param vNorm Vector
+	---@param nRadius number
+	---@param filter Entity
+	---@return Vector? RainHitPos
+	---@return number HitType
+	---@shared
+	function StormFox2.DownFall.CheckDropCache( vFrom, vNorm, nRadius, filter )
+		local pos,n = StormFox2.DownFall.CheckDrop( vFrom, vNorm, nRadius, filter )
 		if pos and n > -1 then
 			c_i = (c_i % 10) + 1
 			t_cache[c_i] = pos
@@ -293,9 +328,24 @@ do
 	end
 
 	local cos,sin,rad = math.cos, math.sin, math.rad
-	-- Calculates and locates a downfall-drop infront/nearby of the client.
+	
 	-- #1 = Hit Position, #2 hitType, #3 The offset from view, #4 hitNormal
 	local vZ = Vector(0,0,0)
+
+	-- Calculates and locates a downfall-drop infront/nearby of the client.
+	---@param nDis number
+	---@param nSize number
+	---@param nTries number
+	---@param vNorm? Vector
+	---@param ignoreVel boolean
+	---@param nMaxDistance number
+	---@param tTemplate table
+	---@return Vector DropPos
+	---@return number HitType
+	---@return Vector offset
+	---@return Vector hitNorm
+	---@return boolean ShouldRandomRage
+	---@shared
 	function StormFox2.DownFall.CalculateDrop( nDis, nSize, nTries, vNorm, ignoreVel, nMaxDistance, tTemplate )
 		vNorm = vNorm or StormFox2.Wind.GetNorm()
 		local view = StormFox2.util.GetCalcView()
@@ -327,7 +377,12 @@ end
 if CLIENT then
 	local render_SetMaterial, render_DrawBeam, render_DrawSprite = render.SetMaterial, render.DrawBeam, render.DrawSprite
 
-	-- Creats a regular particle and returns it
+	---Creats a regular particle and returns it
+	---@param sMaterial Material
+	---@param vPos Vector
+	---@param bUse3D boolean
+	---@return userdata CLuaParticle
+	---@client
 	function StormFox2.DownFall.AddParticle( sMaterial, vPos, bUse3D )
 		if bUse3D then
 			return _STORMFOX_PEM["3D"]:Add( sMaterial, vPos )
@@ -398,6 +453,12 @@ if CLIENT then
 		local v = self.data or self
 		v.num = v.num - 1
 	end
+
+	---Creates a particle template.
+	---@param sMaterial Material
+	---@param bBeam boolean
+	---@param bFollow boolean
+	---@return table tTemplate
 	function StormFox2.DownFall.CreateTemplate(sMaterial, bBeam, bFollow)
 		local t = {}
 		setmetatable(t,pt_meta)
@@ -633,7 +694,16 @@ if CLIENT then
 		end
 	end
 
-	-- Adds a particle.
+	---Spawns a particle from the template.
+	---@param tTemplate table
+	---@param vEndPos Vector
+	---@param hitType number
+	---@param hitNorm Vector
+	---@param nDistance number
+	---@param vNorm Vector
+	---@param maxDistance number
+	---@return table SFParticle
+	---@client
 	function StormFox2.DownFall.AddTemplateSimple( tTemplate, vEndPos, hitType, hitNorm, nDistance, vNorm, maxDistance )
 		local part = tTemplate:CreateParticle( vEndPos, vNorm, hitType, hitNorm, maxDistance )
 		if not part then return end
@@ -658,8 +728,16 @@ if CLIENT then
 		return part
 	end
 
-	-- Tries to add a particle. Also has cache build in.
+
 	local v_d = Vector(0,0,-1)
+	---Tries to add a particle. Also has cache build in.
+	---@param tTemplate table
+	---@param nMaxDistance number
+	---@param nDistance number
+	---@param traceSize number
+	---@param vNorm Vector
+	---@return boolean success
+	---@client
 	function StormFox2.DownFall.AddTemplate( tTemplate, nMaxDistance, nDistance, traceSize, vNorm )
 		vNorm = vNorm or StormFox2.Wind.GetNorm()
 		if tTemplate._ra then -- Random angle
@@ -714,7 +792,12 @@ if CLIENT then
 	end
 
 	local sm_timer = 0.05
-	-- Returns the how many particles it should create pr 0.1 second
+	---Returns the how many particles we should create pr 0.1 second.
+	---@param tTemplate table
+	---@param nAimAmount number
+	---@return number
+	---@return number AliveTime
+	---@client
 	function StormFox2.DownFall.CalcTemplateTimer( tTemplate, nAimAmount )
 		local speed = abs( tTemplate.g * GLGravity() ) * 600
 		--	print("FT",1 / FrameTime())
@@ -727,10 +810,20 @@ if CLIENT then
 		return a * max_particles(), alive_time
 	end
 
-	-- Automaticlly spawns particles and returns a table of them.
-	-- This will spawn particles 10 times pr second
+
 	local emp_t = {}
-	function StormFox2.DownFall.SmartTemplate( tTemplate, nMinDistance, nMaxDistance, nAimAmount, traceSize, vNorm, fFunc )
+
+	--- Automaticlly spawns particles and returns a table of them.
+	--- Should be called 10 times pr second.
+	---@param tTemplate table
+	---@param nMinDistance number
+	---@param nMaxDistance number
+	---@param nAimAmount number
+	---@param traceSize number
+	---@param vNorm Vector
+	---@return table
+	---@client
+	function StormFox2.DownFall.SmartTemplate( tTemplate, nMinDistance, nMaxDistance, nAimAmount, traceSize, vNorm )
 		if tTemplate.Think then
 			tTemplate:Think()
 		end
@@ -770,6 +863,9 @@ if CLIENT then
 		ParticleRender() -- Render sf particles
 	end)
 
+	---Returns the list of particles.
+	---@return table
+	---@client
 	function StormFox2.DownFall.DebugList()
 		return t_sfp
 	end
@@ -792,7 +888,7 @@ hook.Add("stormfox2.postlib", "AddDepthSetting", function()
 	StormFox2.Setting.AddSV("depthfilter",true,nil,"Effects")
 end)
 
--- 2D
+-- 2D (Not made yet)
 if CLIENT and false then
 	local meta = {}
 	AccessorFunc(meta, "_x", "X")

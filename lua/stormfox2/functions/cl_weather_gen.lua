@@ -232,10 +232,16 @@ net.Receive("StormFox2.weekweather", function(len)
 	hook.Run("StormFox2.WeatherGen.ForcastUpdate")
 end)
 
+---Returns the forecast data.
+---@return table
+---@client
 function StormFox2.WeatherGen.GetForecast()
 	return forecast
 end
 
+---Returns true if we're using unix time for the forecast.
+---@return boolean
+---@client
 function StormFox2.WeatherGen.IsUnixTime()
 	return forecast.unix_time or false
 end
@@ -345,6 +351,13 @@ local function DrawDisabled( str, w, h )
 	surface.SetMaterial(lM)
 	surface.DrawTexturedRectRotated(w / 2, h / 3 * 2, 128, 128, (CurTime() * 100)% 360)
 end
+
+---Renders the forecast.
+---@param w number
+---@param h number
+---@param bExpensive boolean
+---@param offX? number
+---@param offY? number
 function StormFox2.WeatherGen.DrawForecast(w,h,bExpensive, offX, offY)
 	offX = offX or 0
 	offY = offY or 0

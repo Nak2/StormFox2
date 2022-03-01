@@ -14,13 +14,17 @@ StormFox2.Setting.AddSV("real_time",false)
 StormFox2.Date = {}
 
 if SERVER then
-	-- Sets the yearday.
+	---Sets the yearday. [0-365]
+	---@param nDay number
+	---@server
 	function StormFox2.Date.SetYearDay( nDay )
 		StormFox2.Network.Set("day", nDay % 365)
 	end
 end
 
--- Returns the day within the year. [0 - 364]
+---Returns the day within the year. [0 - 364]
+---@return number
+---@shared
 function StormFox2.Date.GetYearDay()
 	return StormFox2.Data.Get("day",0)
 end
@@ -44,10 +48,14 @@ do
 		[5] = "Friday",
 		[6] = "Saturday"
 	}
-	-- Returns the weekday ["Monday" - "Sunday"]
+
+	---Returns the current weekday ["Monday" - "Sunday"]. Does also accept a number between 0 - 6.
+	---@param bNumbers nil|number
+	---@return string
+	---@shared
 	function StormFox2.Date.GetWeekDay( bNumbers )
 		if bNumbers then
-			return weekday
+			return t[ weekday ] or "Unknown"
 		end
 		return t[ weekday ] or "Unknown"
 	end
@@ -67,25 +75,32 @@ do
 		[11] = "November",
 		[12] = "December"
 	}
-	-- Returns the month ["January" - "December"].
+	---Returns the current month ["January" - "December"]. Also accepts a number between 1 - 12.
+	---@param bNumbers nil|number
+	---@return string
+	---@shared
 	function StormFox2.Date.GetMonth( bNumbers )
 		if bNumbers then
-			return month
+			return t[ bNumbers ] or "Unknown"
 		end
 		return t[ month ] or "Unknown"
 	end
 end
--- Returns the month in short ["Jan" - "Dec"]
-function StormFox2.Date.GetShortMonth()
-	return string.sub(StormFox2.Date.GetMonth(),0,3)
+
+---Returns the current month in short ["Jan" - "Dec"]. Also accepts a number between 1 - 12.
+---@param bNumbers nil|number
+---@return string
+---@shared
+function StormFox2.Date.GetShortMonth( bNumbers )
+	return string.sub(StormFox2.Date.GetMonth( bNumbers ),0,3)
 end
 
--- Returns the day of the month
+--- Returns the day of the month: 1 - 31.
+---@return number
+---@shared
 function StormFox2.Date.GetDay()
 	return day
 end
-
--- Returns the date in string "day / month"
 
 local country = system.GetCountry() or "UK"
 local crazy_countries = {"AS", "BT", "CN", "FM", "GU", "HU", "JP", "KP", "KR", "LT", "MH", "MN", "MP", "TW", "UM", "US", "VI"}
@@ -105,8 +120,11 @@ local function ordinal(n)
 	end
 end
 
-function StormFox2.Date.Get( bNumbers )
-	local m = StormFox2.Date.GetMonth( bNumbers )
+---Returns the current date-format: "6/11/22". Based on systems country location or clients setting.
+---@return string
+---@shared
+function StormFox2.Date.Get( )
+	local m = StormFox2.Date.GetMonth(  )
 	local d = StormFox2.Date.GetDay()
 	if bNumbers and m < 10 then
 		m = "0" .. m

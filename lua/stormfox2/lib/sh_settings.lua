@@ -61,10 +61,16 @@ StormFox2.Setting = {}
 		StormFox2.FileWrite( settingsFile, util.TableToJSON(data, true) )
 	end
 
+	---Returns faæse if we're saving to the default json file.
+	---@return boolean
+	---@shared
 	function StormFox2.Setting.IsUsingMapFile()
 		return settingsFile == mapFile
 	end
 
+	---Enable/Disable saving to map-specific file.
+	---@param bool boolean
+	---@shared
 	function StormFox2.Setting.UseMapFile( bool )
 		if bool then
 			if settingsFile == mapFile then return end
@@ -91,16 +97,26 @@ StormFox2.Setting = {}
 		end
 	end
 
+	---Forces SF2 to save the settings.
+	---@shared
 	function StormFox2.Setting.ForceSave()
 		blockSaveFile = false
 		saveToFile()
 	end
 
+	---Returns the file we're saving to.
+	---@return string
 	function StormFox2.Setting.GetSaveFile()
 		return settingsFile
 	end
 
 -- Meta Table
+
+---@class SF2Convar
+---@field SetGroup function
+---@field GetGroup function
+---@field SetDescription function
+---@field GetDescription function
 local meta = {}
 	meta.__index = meta
 	AccessorFunc(meta, "group", "Group")
@@ -286,6 +302,16 @@ local meta = {}
 
 local postSettingChace = {}
 -- Creates a setting and returns the setting-object
+
+---Creates a server-side setting. Has to be called on the client to show up in the menu.
+---@param sName string
+---@param vDefaultVar any
+---@param sDescription? string
+---@param sGroup? string
+---@param nMin? number
+---@param nMax? number
+---@return SF2Convar
+---@shared
 function StormFox2.Setting.AddSV(sName,vDefaultVar,sDescription,sGroup, nMin, nMax)
 	if settings[sName] then return settings[sName] end -- Already created
 	if StormFox2.Map then
@@ -323,6 +349,15 @@ end
 
 -- Creates a setting and returns the setting-object
 if CLIENT then
+	---Creates a client-side setting.
+	---@param sName string
+	---@param vDefaultVar any
+	---@param sDescription? string
+	---@param sGroup? string
+	---@param nMin? number
+	---@param nMax? number
+	---@return SF2Convar
+	---@client
 	function StormFox2.Setting.AddCL(sName,vDefaultVar,sDescription,sGroup, nMin, nMax)
 		if settings[sName] then return settings[sName] end -- Already added
 		local t = {}
@@ -354,27 +389,32 @@ if CLIENT then
 	end
 end
 
---[[<Shared>-----------------------------------------------------------------
-Tries to onvert to the given defaultvar to match the setting.
----------------------------------------------------------------------------]]
+---Tries to onvert to the given defaultvar to match the setting.
+---@param sName string
+---@param sString string
+---@return any
+---@shared
 function StormFox2.Setting.StringToType( sName, sString )
 	local obj = settings[sName]
 	if not obj then return sString end -- No idea
 	return StringToValue( sString, obj.type )
 end
 
---[[<Shared>-----------------------------------------------------------------
-Returns a setting and will try to convert to the given defaultvar type.
-Secondary will be true, if the setting isn't there.
----------------------------------------------------------------------------]]
+---Returns a setting and will try to convert to the given defaultvar type. Fallback to vDefaultVar if nil.
+---@param sName string
+---@param vDefaultVar? any
+---@return any
+---@shared
 function StormFox2.Setting.Get(sName,vDefaultVar)
 	local obj = settings[sName]
 	if not obj then return vDefaultVar end
 	return obj:GetValue()
 end
---[[<Shared>-----------------------------------------------------------------
-Returns hte setting object.
----------------------------------------------------------------------------]]
+
+---Returns hte setting object.
+---@param sName string
+---@return SF2Convar
+---@shared
 function StormFox2.Setting.GetObject(sName)
 	return settings[sName]
 end
@@ -399,6 +439,11 @@ local function CallBack( sName, newVar, oldVar)
 	end
 end
 
+---Tries to set a setting.
+---@param sName string
+---@param vVar any
+---@param bDontSave boolean
+---@return boolean saved
 function StormFox2.Setting.Set(sName,vVar, bDontSave)
 	-- Check if valid
 		local obj = settings[sName]
@@ -525,13 +570,14 @@ else
 		net.Send(ply)
 	end)
 end
---[[<Shared>-----------------------------------------------------------------
-Calls the function when the given setting changes.
-fFunc will be called with: vNewVariable, vOldVariable, ConVarName, sID
 
-Unlike convars, this will also be triggered on the clients too.
-Note: Variables get converted automatically 
----------------------------------------------------------------------------]]
+---Calls the function when the given setting changes.
+---fFunc will be called with: vNewVariable, vOldVariable, ConVarName, sID.
+---Unlike convars, server-setings will also be triggered on the clients too.
+---@param sName string
+---@param fFunc function
+---@param sID any
+---@shared
 function StormFox2.Setting.Callback(sName,fFunc,sID)
 	if not settingCallback[sName] then settingCallback[sName] = {} end
 	settingCallback[sName][sID or "default"] = fFunc
@@ -543,10 +589,12 @@ end
 	--	fFunc(vVar, oldVar, sName, id)
 	--end
 --end)
---[[<Shared>------------------------------------------------------------------
-Same as StormFox2.Setting.Get, however this will cache the result.
-This is faster than looking it up constantly.
----------------------------------------------------------------------------]]
+
+---Same as StormFox2.Setting.Get, however this will cache the result.
+---@param sName string
+---@param vDefaultVar any
+---@return any
+---@shared
 function StormFox2.Setting.GetCache(sName,vDefaultVar)
 	if cache[sName] then return cache[sName] end
 	local var = StormFox2.Setting.Get(sName,vDefaultVar)
@@ -554,14 +602,26 @@ function StormFox2.Setting.GetCache(sName,vDefaultVar)
 	return var
 end
 
+---Returns the default setting
+---@param sName string
+---@return any
+---@shared
 function StormFox2.Setting.GetDefault(sName)
 	local obj = settings[sName]
 	if not obj then return nil end
 	return obj:GetDefault()
 end
+
+---Returns all known settings. Clients will reitrhn both server and client settings.
+---@return table
+---@shared
 function StormFox2.Setting.GetAll()
 	return table.GetKeys( settings )
 end
+
+---Returns all server settings.
+---@return table
+---@shared
 function StormFox2.Setting.GetAllServer()
 	-- Server only has server settings
 	if SERVER then return StormFox2.Setting.GetAll() end
@@ -574,6 +634,8 @@ function StormFox2.Setting.GetAllServer()
 	return t
 end
 if CLIENT then
+	---Returns all client settings.
+	---@return table
 	function StormFox2.Setting.GetAllClient()
 		local t = {}
 		for sName,obj in pairs(settings) do
@@ -586,6 +648,11 @@ end
 
 -- Returns the valuetype of the setting. This can allow special types like tables .. ect
 local type_override = {}
+
+---Returns the settigns variable type.
+---@param sName string
+---@return string
+---@shared
 function StormFox2.Setting.GetType( sName )
 	if type_override[sName] then return type_override[sName] end
 	local obj = settings[sName]
@@ -604,6 +671,12 @@ end
 	- temp / temperature
 	- Time_toggle
 ]]
+
+---Sets setting's variable type. Can also use special types like "time".
+---@param sName string
+---@param sType string
+---@param tSortOrter table
+---@shared
 function StormFox2.Setting.SetType( sName, sType, tSortOrter )
 	if type(sType) == "nil" then -- Reset it
 		StormFox2.Warning("Can't make the setting a nil-type!")
@@ -628,6 +701,8 @@ if SERVER then
 	local obj = StormFox2.Setting.AddSV("mapfile", false)
 	obj:AddCallback(StormFox2.Setting.UseMapFile) 
 	obj:SetValue( StormFox2.Setting.IsUsingMapFile() )
+	---Returns all settings back to default.
+	---@server
 	function StormFox2.Setting.Reset()
 		blockSaveFile = true
 		for sName, obj in pairs(setting) do
@@ -644,6 +719,8 @@ else
 	local obj = StormFox2.Setting.AddCL("mapfile_cl", false)
 	obj:AddCallback(StormFox2.Setting.UseMapFile)
 	obj:SetValue( StormFox2.Setting.IsUsingMapFile() )
+	---Returns all settings back to default.
+	---@client
 	function StormFox2.Setting.Reset()
 		blockSaveFile = true
 		for _, sName in ipairs(StormFox2.Setting.GetAllClient()) do
@@ -661,6 +738,9 @@ end
 
 -- Gets and sets StormFox server setting
 if SERVER then
+	---Parses a CVS string and applies all settings to SF2.
+	---@param str string
+	---@server
 	function StormFox2.Setting.SetCVS( str )
 		local t = string.Explode(",", str)
 		blockSaveFile = true
@@ -682,6 +762,9 @@ if SERVER then
 end
 
 local exlist = {"openweathermap_real_lat", "openweathermap_real_lon", "openweathermap_key"}
+---Compiles all server-settigns into a CVS string.
+---@return string
+---@shared
 function StormFox2.Setting.GetCVS()
 	local c = ""
 	for sName, obj in pairs(settings) do
@@ -692,6 +775,9 @@ function StormFox2.Setting.GetCVS()
 	return c
 end
 
+---Compiles all default server-settings into a CVS string.
+---@return string
+---@shared
 function StormFox2.Setting.GetCVSDefault()
 	local c = ""
 	for sName, obj in pairs(settings) do
@@ -708,6 +794,10 @@ StormFox2.Setting.AddSV("allow_csenable", engine.ActiveGamemode() == "sandbox", 
 if CLIENT then
 	StormFox2.Setting.AddCL("clenable", true, nil, "Start")
 end
+
+---Returns true if SF2 is enabled.
+---@return boolean
+---@shared
 function StormFox2.Setting.SFEnabled()
 	if not StormFox2.Setting.GetCache("enable", true) then return false end
 	if SERVER or not StormFox2.Setting.GetCache("allow_csenable", false) then return true end

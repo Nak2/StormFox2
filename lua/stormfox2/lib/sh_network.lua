@@ -6,6 +6,11 @@ StormFox2.Network = {}
 StormFox_NETWORK = {}		-- Var
 
 if SERVER then
+	---Same as StormFox2.Data.Set, but networks it to all clients.
+	---@param sKey string
+	---@param zVar any
+	---@param nDelta any
+	---@server
 	function StormFox2.Network.Set( sKey, zVar, nDelta )
 		StormFox2.Data.Set(sKey, zVar, nDelta)
 		if StormFox_NETWORK[sKey] == zVar then return end
@@ -17,6 +22,12 @@ if SERVER then
 		net.Broadcast()
 		StormFox_NETWORK[sKey] = zVar
 	end
+
+	---Force-set the data, ignoring cache.
+	---@param sKey string
+	---@param zVar any
+	---@param nDelta any
+	---@server
 	function StormFox2.Network.ForceSet( sKey, zVar, nDelta )
 		StormFox2.Data.Set(sKey, zVar, nDelta)
 		net.Start(StormFox2.Net.Network)

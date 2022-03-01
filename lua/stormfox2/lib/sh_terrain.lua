@@ -23,6 +23,7 @@
 		StormFox2.terrain.footstep 	Entity 	foot[0 = left,1 = right] 	sTexture 	bTerrainTexture
 ]]
 
+---@class SF2Terrain
 local meta = {}
 meta.__index = meta
 meta.__tostring = function(self) return "SF_TerrainType[" .. (self.Name or "Unknwon") .. "]" end
@@ -34,7 +35,11 @@ end
 debug.getregistry()["SFTerrain"] = meta
 local terrains = {}
 StormFox2.Terrain = {}
--- Creates a new terrain type and stores it
+
+--- Creates a new terrain type, stores and returns it.
+---@param sName string
+---@return SF2Terrain
+---@shared
 function StormFox2.Terrain.Create( sName )
 	local t = {}
 	t.Name = sName
@@ -43,27 +48,45 @@ function StormFox2.Terrain.Create( sName )
 	t.swap = {}
 	return t
 end
--- Cur terrain
+
 local CURRENT_TERRAIN
+---Returns the current applies terrain.
+---@return SF2Terrain|nil
+---@shared
 function StormFox2.Terrain.GetCurrent()
 	return CURRENT_TERRAIN
 end
--- Returns the terrain.
+
+---Returns a terrain by name.
+---@param sName string
+---@return SF2Terrain|nil
+---@shared
 function StormFox2.Terrain.Get( sName )
 	if not sName then return end
 	return terrains[sName]
 end
 
 -- Makes the terrain stay until this function returns true or another terrain overwrites.
+---@param fFunc function
+---@shared
 function meta:LockUntil( fFunc )
 	self.lock = fFunc
 end
--- Sets the ground texture. e.i; snow
+
+---Sets the ground texture. e.i; snow texture.
+---@param iTexture string
+---@param bOnlyGround boolean
+---@shared
 function meta:SetGroundTexture( iTexture, bOnlyGround )
 	self.ground = iTexture
 	self.only_ground = bOnlyGround
 end
--- Adds a texture swap.
+
+-- Adds a texture swap for when this terrain gets applied.
+---@param mMaterial Material|string
+---@param basetexture string
+---@param basetextire2 string
+---@shared
 function meta:AddTextureSwap( mMaterial, basetexture, basetextire2 )
 	if type(mMaterial) ~= "IMaterial" then
 		mMaterial = Material(mMaterial)
@@ -71,7 +94,13 @@ function meta:AddTextureSwap( mMaterial, basetexture, basetextire2 )
 	if not basetexture and not basetextire2 then return end
 	self.swap[mMaterial] = { basetexture, basetextire2 }
 end
--- Makes footprints. Allows to overwrite footstep sounds.
+
+---Makes footprints and allows to overwrite default footstep sounds.
+---@param bool boolean
+---@param sndList? table
+---@param sndName? string
+---@param OnPrint? function
+---@shared
 function meta:MakeFootprints( bool, sndList, sndName, OnPrint )
 	self.footprints = bool
 	if sndList or sndName then
@@ -81,19 +110,30 @@ function meta:MakeFootprints( bool, sndList, sndName, OnPrint )
 	self.footstepLisen = bool or sndList or sndName or OnPrint
 end
 
--- A function that renders a window-texure. (Weather will trump this)
+---A function that renders a window-texure. (Weather will trump this)
+---@param fFunc function
+---@shared
 function meta:RenderWindow( fFunc )
 	self.windRender = fFunc
 end
--- A function that renders a window-texure. (Weather will trump this)
+
+---A function that renders a window-texure. (Weather will trump this)
+---@param fFunc function
+---@shared
 function meta:RenderWindowRefract( fFunc )
 	self.windRenderRef = fFunc
 end
--- A function that renders a window-texure. (Weather will trump this)
+
+---A function that renders a window-texure. (Weather will trump this)
+---@param fFunc function
+---@shared
 function meta:RenderWindow64x64( fFunc )
 	self.windRender64 = fFunc
 end
--- A function that renders a window-texure. (Weather will trump this)
+
+---A function that renders a window-texure. (Weather will trump this)
+---@param fFunc function
+---@shared
 function meta:RenderWindowRefract64x64( fFunc )
 	self.windRenderRef64 = fFunc
 end
@@ -115,11 +155,19 @@ local function HasChanged( self, materialTexture )
 	return _STORMFOX_TEXCHANGES[mat] and _STORMFOX_TEXCHANGES[mat][b] or false
 end
 
+---Returns true if the material has changed.
+---@param iMaterial Material
+---@return boolean
+---@shared
 function StormFox2.Terrain.HasMaterialChanged( iMaterial )
 	local mat = iMaterial:GetName() or iMaterial
-	return _STORMFOX_TEXCHANGES[mat] and _STORMFOX_TEXCHANGES[mat]
+	return _STORMFOX_TEXCHANGES[mat] and true or false
 end
 
+---Returns the original texture for said material.
+---@param iMaterial Material
+---@return stirng
+---@shared
 function StormFox2.Terrain.GetOriginalTexture( iMaterial )
 	local mat = iMaterial:GetName() or iMaterial
 	return _STORMFOX_TEXORIGINAL[mat] and _STORMFOX_TEXORIGINAL[mat][1]
@@ -190,7 +238,9 @@ local function SetMat(self, tex1, tex2)
 	end
 end
 
--- Resets the terrain to default.
+-- Resets the terrain to default. Setting bNoUpdate to true on the server, will not notify the clients or relays.
+---@param bNoUpdate boolean
+---@shared
 function StormFox2.Terrain.Reset( bNoUpdate )
 	--print("Reset")
 	if SERVER and not bNoUpdate then
@@ -212,7 +262,10 @@ function StormFox2.Terrain.Reset( bNoUpdate )
 	_STORMFOX_TEXCHANGES = {}
 end
 
--- Sets the terrain. (This should only be done serverside)
+--- Sets the terrain. (This should only be done serverside)
+---@param sName string
+---@return boolean
+---@shared
 function StormFox2.Terrain.Set( sName )
 	-- Apply terrain.
 	local t = StormFox2.Terrain.Get( sName )
@@ -228,7 +281,8 @@ function StormFox2.Terrain.Set( sName )
 	return true
 end
 
--- Reapplies the current terrain
+--- Reapplies the current terrain
+---@shared
 function StormFox2.Terrain.Update()
 	local terrain = StormFox2.Terrain.GetCurrent()
 	if not terrain then return end

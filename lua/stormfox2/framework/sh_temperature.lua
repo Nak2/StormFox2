@@ -83,6 +83,11 @@ Returns the current temperature. Valid temperatures:
 	- rømer
 ---------------------------------------------------------------------------]]
 local tempOverwrite
+
+---Returns the current temperature. sType can be "celsius" (default), "fahrenheit", "kelvin" .. ect
+---@param sType? string
+---@return Color
+---@shared
 function StormFox2.Temperature.Get(sType)
 	local n = tempOverwrite or StormFox2.Data.Get( "Temp", 20 )
 	if not sType or sType == "celsius" then return n end
@@ -102,11 +107,16 @@ Returns the list of valid temperatures.
 	- réaumur
 	- rømer
 ---------------------------------------------------------------------------]]
+
+---Returns all temperature units supported.
+---@return table
+---@shared
 function StormFox2.Temperature.GetTypes()
 	local t = table.GetKeys(convert_to)
 	table.insert(t,"celsius")
 	return t
 end
+
 --[[<Shared>-----------------------------------------------------------------
 Converts temperature between two types
 Valid temperatures:
@@ -120,6 +130,13 @@ Valid temperatures:
 	- rømer
 	- wedgwood
 ---------------------------------------------------------------------------]]
+
+---Converts temperature from one unit to another. E.g StormFox2.Temperature.Convert("celsius","fahrenheit",0) -> 32.
+---@param sTypeFrom string
+---@param sTypeTo string
+---@param nNumber number
+---@return number
+---@shared
 function StormFox2.Temperature.Convert(sTypeFrom,sTypeTo,nNumber)
 	if sTypeFrom and sTypeFrom ~= "celsius" then
 		if not convert_from[sTypeFrom] then
@@ -137,9 +154,10 @@ function StormFox2.Temperature.Convert(sTypeFrom,sTypeTo,nNumber)
 end
 
 if SERVER then
-	--[[<Server>-------------------------------------------------------------------------
-	Sets the temperature in ceilsius. Second argument is the smooth-time in seconds.
-	---------------------------------------------------------------------------]]
+	---Sets the temperature in ceilsius. Second argument is the lerp time in seconds (default: 2).
+	---@param nCelsius number
+	---@param nLerpTime? number
+	---@server
 	function StormFox2.Temperature.Set(nCelsius,nLerpTime)
 		if nCelsius < -273.15 then --  ( In space, there are 270.45 C )
 			nCelsius = -273.15
@@ -166,6 +184,11 @@ else
 		- réaumur
 		- rømer
 	---------------------------------------------------------------------------]]
+
+	---Sets the display temperature.
+	---@param sType string
+	---@return boolean success
+	---@client
 	function StormFox2.Temperature.SetDisplayType(sType)
 		StormFox2.Setting.Set("display_temperature",convert_to[sType] and sType or "celsius")
 		if convert_to[sType] then
@@ -173,30 +196,35 @@ else
 		end
 		return sType == "celsius"
 	end
-	--[[<Client>-----------------------------------------------------------------
-	Returns the display temperature type.
-	---------------------------------------------------------------------------]]
+
+	---Returns the current display temperature type.
+	---@return string
+	---@client
 	function StormFox2.Temperature.GetDisplayType()
 		return temp_type
 	end
-	--[[<Client>------------------------------------------------------------------
-	Returns the display temperature.
-	---------------------------------------------------------------------------]]
+	
+	---Converts the current (or given) temperature to the clients temperature-unit. Ideal for displays.
+	---@param nCelcius number
+	---@return number
+	---@client
 	function StormFox2.Temperature.GetDisplay(nCelcius)
 		if nCelcius then
 			return StormFox2.Temperature.Convert(nil,temp_type,nCelcius)
 		end
 		return StormFox2.Temperature.Get(temp_type)
 	end
-	--[[<Client>------------------------------------------------------------------
-	Returns the display temperature symbol. ("°C", "°F" ..)
-	---------------------------------------------------------------------------]]
+	
+	---Returns the clients temperature-unit symbol. ("°C", "°F" ..)
+	---@return string
+	---@client
 	function StormFox2.Temperature.GetDisplaySymbol()
 		return symbol[temp_type] or "°C"
 	end
-	--[[<Client>------------------------------------------------------------------
-	Returns the default temperature, based on client-country.
-	---------------------------------------------------------------------------]]
+	
+	---Returns the default temperature, based on client-country.
+	---@return string
+	---@client
 	function StormFox2.Temperature.GetDisplayDefault()
 		return default_temp
 	end
@@ -218,11 +246,11 @@ else
 
 	hook.Remove("stormfox2.postlib", "StormFox2.TemperatureSettings")
 
-	--[[<Client>
-	Local temp
-	]]
-	function StormFox2.Temperature.SetLocal( n )
-		tempOverwrite = n
+	---Sets the "local" temperature. This will override the server variable until called again with 'nil'.
+	---@param nCelcius? number
+	---@client
+	function StormFox2.Temperature.SetLocal( nCelcius )
+		tempOverwrite = nCelcius
 	end
 	
 end

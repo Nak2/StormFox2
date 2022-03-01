@@ -38,11 +38,17 @@ StormFox2.Fog = {}
 		local d = b - a
 		return a + d * p
 	end
--- Returns the start of fog.
+
+---Returns the start of the fog.
+---@return number
+---@shared
 function StormFox2.Fog.GetStart()
 	return math.max(0, _fS)
 end
--- Returns the end of fog.
+
+---Returns the end of fog.
+---@return number
+---@shared
 function StormFox2.Fog.GetEnd()
 	return _fE
 end
@@ -71,11 +77,17 @@ end
 			map_distance = math.min(map_distance, map_farZ)
 		end
 	end
--- Returns the fog-amount. 0 - 1
+
+---Returns the fog-amount. 0 - 1
+---@return number
+---@shared
 function StormFox2.Fog.GetAmount()
 	return 1 - _fE / map_distance
 end
--- Returns the fog-distance ( Same as StormFox2.Fog.GetEnd() )
+
+---Returns the fog-distance ( Same as StormFox2.Fog.GetEnd(), but uses the map as a fallback )
+---@return number
+---@shared
 function StormFox2.Fog.GetDistance()
 	return _fE or map_distance
 end
@@ -103,7 +115,11 @@ end
 
 if SERVER then
 	local loaded, data, f_FogZ = true
-	-- Sets the fogZ distance.
+	
+	---Sets the fogZ distance. Seems buggy atm, use at own rist.
+	---@param num number
+	---@param nTimer number
+	---@server
 	function StormFox2.Fog.SetZ(num, nTimer)
 		timer.Remove( "sf_fog_timer" )
 		if nTimer then
@@ -123,7 +139,10 @@ if SERVER then
 			v:SetKeyValue("farz", num)
 		end
 	end
-	-- Returns the fogz distance.
+	
+	---Returns the fogz distance.
+	---@return number
+	---@server
 	function StormFox2.Fog.GetZ()
 		if not StormFox2.Setting.Get("enable_fogz", false) then return map_farZ end
 		return f_FogZ or (StormFox2.Fog.GetDistance() + 100)
@@ -156,7 +175,10 @@ if SERVER then
 		if cWD.fogDistance then return end
 		_fE = getAimDistance(true)
 	end)
-	-- Returns the fog-color.
+	
+	---Returns the fog-color.
+	---@return Color
+	---@server
 	function StormFox2.Fog.GetColor()
 		return StormFox2.Mixer.Get("fogColor", StormFox2.Mixer.Get("bottomColor",color_white) ) or color_white
 	end

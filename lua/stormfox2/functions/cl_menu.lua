@@ -305,6 +305,8 @@ local tabs = {
 	end}
 }
 
+---Opens the client-settings.
+---@client
 function StormFox2.Menu.Open()
 	if _SFMENU and IsValid(_SFMENU) then
 		_SFMENU:Remove()

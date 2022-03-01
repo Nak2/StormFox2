@@ -19,6 +19,10 @@ StormFox2.Shadows = {}
 Shadow controls
 ---------------------------------------------------------------------------]]
 local lastP = -1
+
+---Sets the shadow angles on the map using a given pitch number.
+---@param nPitch number
+---@server
 function StormFox2.Shadows.SetAngle( nPitch )
 	if not StormFox2.Ent.shadow_controls then return end
 	local nPitch = (nPitch + 180) % 360
@@ -31,19 +35,31 @@ function StormFox2.Shadows.SetAngle( nPitch )
 	net.Start(StormFox2.Net.Shadows)
 	net.Broadcast()
 end
-function StormFox2.Shadows.SetColor( cColor )
+
+---Sets the shadow color
+---@param sColor table
+---@server
+function StormFox2.Shadows.SetColor( sColor )
 	if not StormFox2.Ent.shadow_controls then return end
-	local s = cColor.r .. " " .. cColor.g .. " " .. cColor.b
+	local s = sColor.r .. " " .. sColor.g .. " " .. sColor.b
 	for _,ent in ipairs( StormFox2.Ent.shadow_controls ) do
 		ent:SetKeyValue( "color", s )
 	end
 end
+
+---Sets the shadow distance
+---@param dis number
+---@server
 function StormFox2.Shadows.SetDistance( dis )
 	if not StormFox2.Ent.shadow_controls then return end
 	for _,ent in ipairs( StormFox2.Ent.shadow_controls ) do
 		ent:SetKeyValue( "SetDistance", dis )
 	end
 end
+
+---Disable / Enables shadows
+---@param bool boolean
+---@server
 function StormFox2.Shadows.SetDisabled( bool )
 	if not StormFox2.Ent.shadow_controls then return end
 	for _,ent in ipairs( StormFox2.Ent.shadow_controls ) do
