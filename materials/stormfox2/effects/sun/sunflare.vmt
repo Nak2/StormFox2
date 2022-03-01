@@ -4,4 +4,6 @@
 	"$vertexcolor" "1"
 	"$ignorez"     "1"
 	"$vertexalpha" 	1
+	"$nofog" 1
+	"$halflambert" 1
 }

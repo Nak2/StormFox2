@@ -5,4 +5,5 @@
 	"$vertexalpha" 	1
 	"$nolod" 		1
 	"$nofog" 1
+	"$halflambert" 1
 }
