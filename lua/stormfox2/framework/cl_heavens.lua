@@ -7,9 +7,9 @@ StormFox2.Sky = StormFox2.Sky or {}
 local sunVisible
 
 -- Pipe Dawg
-	--[[-------------------------------------------------------------------
-		Returns true if the sun is visible for the client.
-	---------------------------------------------------------------------------]]
+	---Returns an obstruction-float fot the sun.
+	---@return number sunVisible
+	---@client
 	function StormFox2.Sun.GetVisibility()
 		return sunVisible or 1
 	end
@@ -25,7 +25,11 @@ local sunVisible
 
 -- Sun overwrite
 	SF_OLD_SUNINFO = SF_OLD_SUNINFO or util.GetSunInfo() -- Just in case
-	--<Ignore>
+	
+	---Overrides util.GetSunInfo to use SF2 variables.
+	---@ignore
+	---@client
+	---@return table GetSunInfo
 	function util.GetSunInfo()
 		if not StormFox2.Loaded or not sunVisible then -- In case we mess up
 			if SF_OLD_SUNINFO then
@@ -96,9 +100,10 @@ local sunVisible
 		local SunN = -SunA:Forward()
 
 		local sun = util.GetSunInfo()
+		local viewAng = StormFox2.util.RenderAngles()
 		-- Calculate dot
-		local rawDot = ( SunA:Forward():Dot( EyeVector() ) - 0.8 ) * 5
-		if sun and sun.obstruction > 0 then
+		local rawDot = ( SunA:Forward():Dot( viewAng:Forward() ) - 0.8 ) * 5
+		if sun and sun.obstruction and sun.obstruction > 0 then
 			sunDot = rawDot
 		else
 			sunDot = 0
@@ -107,49 +112,54 @@ local sunVisible
 		local z = 1
 		local p = math.abs(math.sin(math.rad(SunA.p))) -- How far we are away from sunset
 		if p < 0.1 then
-			z = p * 10
+			z = 0.8 + p * 0.2
 		end
-		
 		local s_size = StormFox2.Sun.GetSize() / 2
-		local s_size2 = s_size * 1.5
-		local s_size3 = s_size * 10 -- * math.max(0, rawDot)
-		
+		local s_size2 = s_size * 1.2
+		local s_size3 = s_size * 3 -- * math.max(0, rawDot)
 		local c_c = StormFox2.Sun.GetColor() or color_white
 		local c = Color(c_c.r,c_c.g,c_c.b,c_c.a)
 		render.SetMaterial(sunMat)
 	--	render.DrawQuadEasy( SunN * -200, SunN, s_size, s_size, c, 0 )
-
-		render.SetMaterial(sunMat2)
-		render.DrawQuadEasy( SunN * -200, SunN, s_size2, s_size2, c, 0 )
-
-		if sunDot > 0 then
-			local a = StormFox2.Mixer.Get("skyVisibility") / 100 - 0.5
-			if a > 0 then
-				c.a = a * 255
-				render.SetMaterial(sunMat3)
-				render.DrawQuadEasy( SunN * -200, SunN, s_size3 * sunDot * z, s_size3 * sunDot, c, 0 )
+		render.SuppressEngineLighting(true)
+			render.SetMaterial(sunMat2)
+			render.DrawQuadEasy( SunN * -200, SunN, s_size2, s_size2, c, 0 )
+			if sunDot > 0 then
+				local a = (StormFox2.Mixer.Get("skyVisibility") / 100 - 0.5) * 2
+				if a > 0 then
+					c.a = a * 255
+					render.SetMaterial(sunMat3)
+					render.DrawQuadEasy( SunN * -200, SunN, s_size3 * sunDot , s_size3 * sunDot, c, 0 )
+				end
 			end
-		end
+		render.SuppressEngineLighting(false)
 	end)
-
+-- Sun and moon beams
 	local beams = StormFox2.Setting.AddCL("enable_sunbeams", true)
 	local matSunbeams = Material( "pp/sunbeams" )
 		matSunbeams:SetTexture( "$fbtexture", render.GetScreenEffectTexture() )
-	hook.Add( "RenderScreenspaceEffects", "StormFox2.Sun.beams", function()
-		if ( not render.SupportsPixelShaders_2_0() ) then return end
-		if sunDot <= 0 then return end
-		if not beams:GetValue() then return end
+
+	local function SunRender( sunAltitude )
+		if sunDot <= 0 then return false end
 		-- Check if we see the sun at all
 		local vis = StormFox2.Sun.GetVisibility()
-		if ( vis == 0 ) then return end
+		if ( vis == 0 ) then return false end
 
-		-- Get direction
+		-- Brightness multiplier
+		local bright
+		if sunAltitude > 0 and sunAltitude < 30 then
+			bright = 1
+		elseif sunAltitude >= 30 then
+			bright = 1.3 - 0.02 * sunAltitude
+		else -- Under 0
+			bright = 0.06 * sunAltitude + 1
+		end
+		if bright < 0 then return end -- Too far up in the sky
 		local direciton = StormFox2.Sun.GetAngle():Forward()
 		local beampos = EyePos() + direciton * 4096
 		-- And screenpos
 		local scrpos = beampos:ToScreen()
-		local mul = vis * sunDot
-		--print(mul)
+		local mul = vis * sunDot * bright
 		if mul >= 0 then
 			local s_size = StormFox2.Sun.GetSize()
 			render.UpdateScreenEffectTexture()
@@ -157,9 +167,59 @@ local sunVisible
 				matSunbeams:SetFloat( "$multiply",0.7 * mul)
 				matSunbeams:SetFloat( "$sunx", scrpos.x / ScrW() )
 				matSunbeams:SetFloat( "$suny", scrpos.y / ScrH() )
-				matSunbeams:SetFloat( "$sunsize", s_size / 200 )
+				matSunbeams:SetFloat( "$sunsize", s_size / 450 )
 				render.SetMaterial( matSunbeams )
 			render.DrawScreenQuad()
+		end
+		return true
+	end
+
+	local function MoonRender( sunAltitude )
+		-- Calculate brightness
+			local skyVis = StormFox2.Mixer.Get("skyVisibility") / 100
+			if skyVis <= 0 then return end
+			-- Brightness of the moon
+			local mP = StormFox2.Moon.GetPhase()
+			if mP == SF_MOON_NEW then return end -- No moon
+			-- Sun checkk
+			local mul = 1
+			if sunAltitude > -20 then
+				mul = -0.2 * sunAltitude - 3
+			end
+			-- Phase multiplier (Full moon is 1, goes down to 0.25)
+			local pmul = math.min(1, (-0.0714286 * mP^2 + 0.571429 * mP - 0.285714) * 1.17)
+			local brightness = skyVis * mul * pmul
+		if brightness <= 0 then return end
+		local viewAng = StormFox2.util.RenderAngles()
+		-- Calculate dot
+		local moonAng = StormFox2.Moon.GetAngle()
+		local rawDot = ( moonAng:Forward():Dot( viewAng:Forward() ) - 0.8 ) * 5
+		brightness = brightness * rawDot
+		if brightness <= 0 then return end
+
+		local direciton = StormFox2.Moon.GetAngle():Forward()
+		local beampos = EyePos() + direciton * 4096
+		-- And screenpos
+		local scrpos = beampos:ToScreen()
+		local s_size = StormFox2.Moon.GetSize()
+		render.UpdateScreenEffectTexture()
+			matSunbeams:SetFloat( "$darken", .5 )
+			matSunbeams:SetFloat( "$multiply",0.15 * brightness)
+			matSunbeams:SetFloat( "$sunx", scrpos.x / ScrW() )
+			matSunbeams:SetFloat( "$suny", scrpos.y / ScrH() )
+			matSunbeams:SetFloat( "$sunsize", s_size / 950 )
+			render.SetMaterial( matSunbeams )
+		render.DrawScreenQuad()
+	end
+
+	hook.Add( "RenderScreenspaceEffects", "StormFox2.Sun.beams", function()
+		if ( not render.SupportsPixelShaders_2_0() ) then return end
+		if not beams:GetValue() then return end
+		local sunAltitude = StormFox2.Sun.GetAltitude()
+		if sunAltitude > -15 then
+			SunRender(sunAltitude)
+		--else	TODO: Looks kinda aweful sadly.
+			--MoonRender(sunAltitude)
 		end
 	end )
 
@@ -276,7 +336,7 @@ local sunVisible
 		-- Render texture
 			-- currentYaw
 			RenderMoonPhase( ((moonAng.p < 270 and moonAng.p > 90) and 180 or 0),phase)
-		local c = StormFox2.Mixer.Get("moonColor",Color(205,205,205))
+		local c = StormFox2.Mixer.Get("moonColor",Color(170,170,170))
 		local a = StormFox2.Mixer.Get("skyVisibility",100) * 2
 		-- Dark moonarea
 	--	PrintTable(CurrentMoonTexture:GetKeyValues())
