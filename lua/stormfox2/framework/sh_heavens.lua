@@ -70,8 +70,12 @@ end
 	--[[-------------------------------------------------------------------------
 		Returns the sun-size. (Normal 30)
 	---------------------------------------------------------------------------]]
+
+	---Returns the sunsize.
+	---@return number
+	---@shared
 	function StormFox2.Sun.GetSize()
-		return StormFox2.Mixer.Get("sun_size",30)
+		return StormFox2.Mixer.Get("sun_size",30) or 30
 	end
 	--[[-------------------------------------------------------------------------
 		Returns the  sun-color.
@@ -137,7 +141,7 @@ end
 		local function GetsunSize()
 			if lC > CurTime() then return lCV end
 			lC = CurTime() + 2
-			local x = StormFox2.Sun.GetSize()
+			local x = StormFox2.Sun.GetSize() or 20
 			lCV = (-0.00019702 * x^2 + 0.149631 * x - 0.0429803) / 2
 			return lCV
 		end
