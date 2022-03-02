@@ -195,7 +195,7 @@ local eye_mult = -.0001
 		render.PopFilterMag()
 	render.PopFilterMin()
 	end
-	local col = Color(255,0,0,175)
+	local col = Color(255,255,255,175)
 	local v = Vector(0,0,-20)
 	local function RenderCloud(mat_id,yaw,s_size,alpha, pos)
 		local mat = side_clouds[mat_id]
