@@ -57,6 +57,7 @@ local bC = Color(tonumber(bCM[1]) or 204, tonumber(bCM[2]) or 255, tonumber(bCM[
 	clear:SetSunStamp("duskScale",0.29,						SF_SKY_DAY)
 	clear:SetSunStamp("sunSize",20,							SF_SKY_DAY)
 	clear:SetSunStamp("sunColor",Color(255, 255, 255),		SF_SKY_DAY)
+	clear:SetSunStamp("sunFade",1,							SF_SKY_DAY)
 	clear:SetSunStamp("starFade",0,							SF_SKY_DAY)
 	--clear:SetSunStamp("fogDensity",0.8,						SF_SKY_DAY)
 -- Night
@@ -68,7 +69,8 @@ local bC = Color(tonumber(bCM[1]) or 204, tonumber(bCM[2]) or 255, tonumber(bCM[
 	clear:SetSunStamp("duskScale",0,						SF_SKY_NIGHT)
 	clear:SetSunStamp("sunSize",0,							SF_SKY_NIGHT)
 	clear:SetSunStamp("starFade",100,						SF_SKY_NIGHT)
-	clear:SetSunStamp("sunColor",Color(235, 237, 234),		SF_SKY_NIGHT)
+	clear:SetSunStamp("sunColor",Color(255, 255, 255),		SF_SKY_NIGHT)
+	clear:SetSunStamp("sunFade",0,							SF_SKY_NIGHT)
 	--clear:SetSunStamp("fogDensity",1,						SF_SKY_NIGHT)
 -- Sunset
 	-- Old Color(170, 85, 43)
@@ -81,6 +83,7 @@ local bC = Color(tonumber(bCM[1]) or 204, tonumber(bCM[2]) or 255, tonumber(bCM[
 	clear:SetSunStamp("duskScale",0.3,					SF_SKY_SUNSET)
 	clear:SetSunStamp("sunSize",30,						SF_SKY_SUNSET)
 	clear:SetSunStamp("sunColor",Color(255, 255, 255),	SF_SKY_SUNSET)
+	clear:SetSunStamp("sunFade",.5,						SF_SKY_SUNSET)
 	clear:SetSunStamp("starFade",30,					SF_SKY_SUNSET)
 	--clear:SetSunStamp("fogDensity",0.8,					SF_SKY_SUNSET)
 -- Sunrise
@@ -92,7 +95,8 @@ local bC = Color(tonumber(bCM[1]) or 204, tonumber(bCM[2]) or 255, tonumber(bCM[
 	clear:SetSunStamp("duskIntensity",0.4,				SF_SKY_SUNRISE)
 	clear:SetSunStamp("duskScale",0.6,					SF_SKY_SUNRISE)
 	clear:SetSunStamp("sunSize",20,						SF_SKY_SUNRISE)
-	clear:SetSunStamp("sunColor",Color(253, 254, 212),	SF_SKY_SUNRISE)
+	clear:SetSunStamp("sunColor",Color(255, 255, 255),	SF_SKY_SUNRISE)
+	clear:SetSunStamp("sunFade",.5,						SF_SKY_SUNRISE)
 	clear:SetSunStamp("starFade",30,					SF_SKY_SUNRISE)
 	clear:SetSunStamp("fogDensity",0.8,					SF_SKY_SUNRISE)
 -- Cevil

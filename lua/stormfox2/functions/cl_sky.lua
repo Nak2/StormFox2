@@ -120,7 +120,8 @@ We overwrite the sky variables. Its much better to handle it clientside.
 
 			if StormFox2.Sun and StormFox2.Sun.GetAngle then
 				g_SkyPaint:SetSunNormal(StormFox2.Sun.GetAngle():Forward())
-				g_SkyPaint:SetSunColor(ColVec(StormFox2.Mixer.Get("sunColor"), 1550))
+				local sF = StormFox2.Mixer.Get("sunFade", 1)
+				g_SkyPaint:SetSunColor(ColVec(StormFox2.Mixer.Get("sunColor"), 1550 / sF))
 			end
 			g_SkyPaint:SetHDRScale(StormFox2.Mixer.Get("HDRScale",0.7))
 	end)
