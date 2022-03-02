@@ -7,7 +7,8 @@ StormFox2.Sky = StormFox2.Sky or {}
 local sunVisible
 
 -- Pipe Dawg
-	---Returns an obstruction-float fot the sun.
+
+	---Returns an obstruction-number between 0 - 1 fot the sun.
 	---@return number sunVisible
 	---@client
 	function StormFox2.Sun.GetVisibility()
@@ -167,7 +168,7 @@ local sunVisible
 				matSunbeams:SetFloat( "$multiply",0.7 * mul)
 				matSunbeams:SetFloat( "$sunx", scrpos.x / ScrW() )
 				matSunbeams:SetFloat( "$suny", scrpos.y / ScrH() )
-				matSunbeams:SetFloat( "$sunsize", s_size / 450 )
+				matSunbeams:SetFloat( "$sunsize", s_size / 850 )
 				render.SetMaterial( matSunbeams )
 			render.DrawScreenQuad()
 		end
