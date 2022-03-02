@@ -69,6 +69,11 @@ end
 
 StormFox2.Mixer.Blender = Blender
 
+local function vOd(a, b)
+	if a == nil then return b end
+	return a
+end
+
 ---Blends the current weather key-variables together. Will return zDefault if fail. The result will be cached, unless you set the currentP variable.
 ---Mixer allows for live-precise variables.
 ---@param sKey string
@@ -78,24 +83,31 @@ StormFox2.Mixer.Blender = Blender
 ---@shared
 function StormFox2.Mixer.Get( sKey, zDefault, currentP )
 	if not currentP and cache[sKey] ~= nil then return cache[sKey] end
-	if not StormFox2.Weather then return zDefault end
+	if not StormFox2.Weather then return zDefault end -- Not loaded yet
+	-- Get the current weather
 	local cW = StormFox2.Weather.GetCurrent()
-	if not cW or cW.Name == "Clear" then return GetVar(cW, sKey) or zDefault end
+	-- In case thw weather-type is clear, no need to calculate.
+	if not cW or cW.Name == "Clear" then return vOd( GetVar(cW, sKey), zDefault) end
+	-- Get the percent, and check if we should cache.
+	local shouldCache = not currentP
 	currentP = currentP or StormFox2.Weather.GetPercent()
-	if currentP >= 1 then
-		if not currentP then
+	if currentP >= 1 then -- No need to mix things, weather is at max.
+		if shouldCache then
 			cache[sKey] = GetVar(cW, sKey)
+			return vOd(cache[sKey], zDefault)
+		else
+			return vOd(GetVar(cW, sKey), zDefault)
 		end
-		return cache[sKey] or zDefault
 	end
+	-- Get the default weather to mix with.
 	local clearW = StormFox2.Weather.Get( "Clear" )
 	local var1 = GetVar(clearW, sKey)
 	local var2 = GetVar(cW, sKey)
-	if not currentP then
+	if shouldCache then
 		cache[sKey] = Blender(currentP, var1, var2)
-		return cache[sKey] or zDefault
+		return vOd(cache[sKey], zDefault)
 	else
-		return Blender(currentP, var1, var2)
+		return vOd(Blender(currentP, var1, var2), zDefault)
 	end
 end
 StormFox2.Mixer.Blender = Blender
