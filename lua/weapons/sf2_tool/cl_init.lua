@@ -12,14 +12,14 @@ if ( SERVER ) then
 end
 
 function SWEP:PrimaryAttack()
-	if not IsFirstTimePredicted() then return end
+	if not game.SinglePlayer() and not IsFirstTimePredicted() then return end
 	local tool = self:GetTool()
 	if not tool or not tool.LeftClick then return end
 	tool.LeftClick(tool, self:GetOwner():GetEyeTrace())
 end
 
 function SWEP:SecondaryAttack()
-	if not IsFirstTimePredicted() then return end
+	if not game.SinglePlayer() and not IsFirstTimePredicted() then return end
 	local tool = self:GetTool()
 	if not tool or not tool.RightClick then return end
 	tool.RightClick(tool, self:GetOwner():GetEyeTrace())
