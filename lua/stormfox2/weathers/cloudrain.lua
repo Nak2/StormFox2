@@ -463,8 +463,8 @@ if CLIENT then
 					v:SetAlpha(min(15 + 4 * P + L,255) * 0.2)
 				end
 			end
-			if P > (0.5 - W * 0.4) and L > 5 then -- If it is too dark, make it invis
-				local max_fog =  (90 + P * (20 + (W / 80) * 102))
+			if P > (0.7 - W * 0.4) and L > 5 then -- If it is too dark, make it invis
+				local max_fog =  (90 + P * (20 + (W / 80) * 102)) * 0.5
 				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_fog, rain_distance, rain_distance * 2 , max_fog, 200, vNorm ) or {} ) do
 					local d = v:GetDistance()
 					if not d or d < 500 then 
