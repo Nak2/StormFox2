@@ -2,7 +2,7 @@
 StormFox2.Weather = {}
 local Weathers = {}
 -- Diffrent stamps on where the sun are. (Remember, SF2 goes after sunrise/set)
----@class SF2_SKY_STAMP : number
+---@class SF_SKY_STAMP : number
 	SF_SKY_DAY = 0
 	SF_SKY_SUNRISE = 1
 	SF_SKY_SUNSET = 2
@@ -139,7 +139,7 @@ end
 --- This function inserts a variable into a table. Using the STAMP as key.
 ---@param sKey string
 ---@param zVariable any
----@param stamp SF2_SKY_STAMP
+---@param stamp SF_SKY_STAMP
 ---@shared
 function w_meta:SetSunStamp(sKey, zVariable, stamp)
 	keys[sKey] = true
@@ -149,8 +149,8 @@ function w_meta:SetSunStamp(sKey, zVariable, stamp)
 end
 
 --- Returns a copy of all variables with the given sunstamp, to another given sunstamp.
----@param from_STAMP SF2_SKY_STAMP
----@param to_STAMP SF2_SKY_STAMP
+---@param from_STAMP SF_SKY_STAMP
+---@param to_STAMP SF_SKY_STAMP
 ---@shared
 function w_meta:CopySunStamp( from_STAMP, to_STAMP )
 	for sKey,v in pairs(self.SunStamp) do
@@ -166,7 +166,7 @@ do
 	---Returns a variable. If the variable is a function, it will be called with the current stamp.
 	---Second argument will tell SF it is static and shouldn't be mixed
 	---@param sKey string
-	---@param SUNSTAMP SF2_SKY_STAMP
+	---@param SUNSTAMP SF_SKY_STAMP
 	---@return any
 	---@return boolean isStatic
 	---@shared
