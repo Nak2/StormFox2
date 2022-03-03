@@ -22,13 +22,17 @@ StormFox2 = {}
 StormFox2.WorkShopVersion = false--game.IsDedicated()
 StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443"
 --<Var> StormFox's Version number
-	StormFox2.Version = 2.49
+	StormFox2.Version = 2.50
 	StormFox2.Loaded = false
 
 --[[<Shared>-----------------------------------------------------------------
 	Prints a message in the console.
 ---------------------------------------------------------------------------]]
 	local env_color = SERVER and Color(138,223,255) or Color(230,217,111)
+
+	---Prints a message in the console with a SF2 tag.
+	---@param ... any
+	---@shared
 	function StormFox2.Msg(...)
 		local a = {...}
 		table.insert(a, 1, env_color)
@@ -56,10 +60,12 @@ StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=
 		MsgC(Color(155,155,255),"[StormFox2] ",unpack( t ))
 		MsgN()
 	end
---[[<Shared>-----------------------------------------------------------------
-	Prints a warning in the console. Can also cause an error.
----------------------------------------------------------------------------]]
 	local red = Color(255,75,75)
+
+	---Prints a warning in the console. Can also cause an error.
+	---@param sMessage string
+	---@param bError boolean
+	---@shared
 	function StormFox2.Warning( sMessage, bError )
 		MsgC(Color(155,155,255),"[StormFox2]",red," [WARNING] ",env_color,sMessage,"\n")
 		if bError then
@@ -90,9 +96,17 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 			return include(str)
 		end
 	end
-	local function HandleFolder(str)
+	-- Additional arguments are priority load list.
+	local function HandleFolder(str,...)
+		local c = {}
+		for _, fil in ipairs({...}) do
+			HandleFile(fil)
+			c[fil] = true
+		end
 		for _,fil in ipairs(file.Find(str .. "/*.lua","LUA")) do
-			HandleFile(str .. "/" .. fil)
+			if not c[str .. "/" .. fil] then
+				HandleFile(str .. "/" .. fil)
+			end
 		end
 	end
 
@@ -104,6 +118,12 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 		filObj:Close()
 		return true
 	end
+
+	---The same as file.Write, but will also create directory's and returns true if successful.
+	---@param filename string
+	---@param data string
+	---@return boolean success
+	---@shared
 	function StormFox2.FileWrite( filename, data )
 		local a = string.Explode("/", filename)
 		-- Create folders
@@ -144,9 +164,10 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 	StormFox2.Net.Network 		= "SF_N"	-- Handles Data
 	StormFox2.Net.Terrain 		= "SF_A"	-- Handles Terrain
 	StormFox2.Net.Tool 			= "SF_O"	-- Handles the SF tool
-	StormFox2.Net.Weather 		= "SF_W"	-- Handles the SF tool
-	StormFox2.Net.Permission	= "SF_P"	-- Handles the SF tool
-	StormFox2.Net.Texture		= "SF_Q"	-- Handles the SF tool
+	StormFox2.Net.Weather 		= "SF_W"	-- Handles the Weather
+	StormFox2.Net.Permission	= "SF_P"	-- Handles the Permissions
+	StormFox2.Net.Texture		= "SF_Q"	-- Handles the texture
+	StormFox2.Net.SoundScape	= "SF_C"	-- Handles the soundscape
 	if SERVER then
 		for _, str in pairs( StormFox2.Net ) do
 			util.AddNetworkString( str )
@@ -154,7 +175,7 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 	end
 
 -- Load lib. Libaries are where base functions like temperature, wind, terrain and map data are created.
-	HandleFolder("stormfox2/lib")
+	HandleFolder("stormfox2/lib", "stormfox2/lib/sh_mapglass.lua")
 	-- Check if map-data has loaded
 	if not SF_BSPDATALOADED then
 		StormFox2.Warning("unable to load mapdata!", true)
