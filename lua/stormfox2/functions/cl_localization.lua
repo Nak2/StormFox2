@@ -35,6 +35,7 @@ local str = [[
 	sf_tool.desc=Allows you to edit StormFox2 map settings.
 	sf_tool.surface_editor=Surface Editor
 	sf_tool.surface_editor.desc=Allows you to edit surface-types.
+	sf_tool.surface_editor.entertext=Write the texture path and click add.
 	sf_tool.light_editor=Light Editor
 	sf_tool.light_editor.desc=Allows you to add/remove sf-lights.
 	sf_enable_breath=Enables breath
@@ -105,7 +106,10 @@ local str = [[
 	sf_quickselect.desc=Quick select time settings.
 	sf_depthfilter=Depth Filter
 	sf_depthfilter.desc=Render 2D weather-effects on clients screen.
-	
+	sf_enable_sunbeams=Enable Sunbeams
+	sf_enable_sunbeams.desc=Enable sunbeams when the sun is low.
+	sf_edit_cubemaps=Edit Cubemaps
+	sf_edit_cubemaps.desc=Change cubemap tint of map-materials.
 	
 	#Details
 	sf_quality_target=FPS Target
@@ -240,7 +244,11 @@ local str = [[
 	sf_temp_range=Temperature range
 	sf_temp_range.desc=The min and max temperature.
 	sf_temp_acc=Temperature change.
-	sf_temp_acc.desc=The max temperature changes pr day.	
+	sf_temp_acc.desc=The max temperature changes pr day.
+	sf_weather_damage=Weather Damage
+	sf_weather_damage.desc=Allow weather to cause damage
+	sf_max_wind=Maximum wind
+	sf_max_wind.desc=The maximum generated wind in m/s.
 ]]
 
 for k, v in ipairs( string.Explode("\n", str)) do
