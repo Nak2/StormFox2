@@ -275,7 +275,7 @@ do
 
 		local function GetModelMaterials(mdl)
 			local data = util.GetModelMeshes( mdl, 0, 0 )
-			if not data then return nil end
+			if not data then return {} end
 			local t = {}
 			for i = 1, #data do
 				if not data[i]["material"] then continue end
@@ -376,7 +376,7 @@ do
 					end
 					-- Scan static models
 					for _, model in ipairs(m) do
-						for _, mat in ipairs(GetModelMaterials(model)) do
+						for _, mat in ipairs(GetModelMaterials(model) or {}) do
 							local m = Material(mat)
 							if m:IsError() then continue end
 							if not m:GetString("$envmap") then continue end
