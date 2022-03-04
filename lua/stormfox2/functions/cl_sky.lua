@@ -4,6 +4,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 -- Override skypaint- Since its set by each tick.
 	local g_SkyPaint_tab = {}
 		function g_SkyPaint_tab.IsValid() return true end
+		
 	local g_datacache = {}
 		function g_SkyPaint_tab:GetNetworkVars()
 			return g_datacache
@@ -42,6 +43,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 
 	-- Override the skypaint directly
 		local SkyPaintEnt
+		local c = false
 		if #ents.FindByClass("env_skypaint") > 0 then
 			SkyPaintEnt = ents.FindByClass("env_skypaint")[1]
 		end
@@ -51,6 +53,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 			if not StormFox2.Setting.GetCache("enable_skybox", true) or not StormFox2.Setting.SFEnabled() then
 				if SkyPaintEnt and type(g_SkyPaint) ~= "Entity" then
 					g_SkyPaint = SkyPaintEnt
+					c = false
 				end
 				return
 			end
@@ -61,6 +64,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 				-- We'll hande it from here
 				SkyPaintEnt = g_SkyPaint
 				g_SkyPaint = g_SkyPaint_tab
+				c = true
 			end
 		end)
 -- Local functions
@@ -79,6 +83,7 @@ We overwrite the sky variables. Its much better to handle it clientside.
 		if not StormFox2.Setting.SFEnabled() then return end
 		if not StormFox2.Setting.GetCache("enable_skybox", true) then return end
 		if StormFox2.Setting.GetCache("use_2dskybox",false,nil, "Effects") then return end
+		if not c then return end -- Make sure we use the table, and not the entity.
 		-- Top color + Thunder
 			local fogAm
 			if StormFox2.Fog then

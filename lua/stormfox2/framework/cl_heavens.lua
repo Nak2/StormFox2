@@ -215,7 +215,7 @@ local sunVisible
 
 	hook.Add( "RenderScreenspaceEffects", "StormFox2.Sun.beams", function()
 		if ( not render.SupportsPixelShaders_2_0() ) then return end
-		if not beams:GetValue() then return end
+		if not StormFox2.Setting.SFEnabled() or not beams:GetValue() then return end
 		local sunAltitude = StormFox2.Sun.GetAltitude()
 		if sunAltitude > -15 then
 			SunRender(sunAltitude)
