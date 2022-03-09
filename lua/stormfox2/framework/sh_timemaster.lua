@@ -223,7 +223,6 @@ StormFox2.Time = StormFox2.Time or {}
 				-- If you pause the time, we should save it if we got s_continue on. 
 				if SERVER and StormFox2.Loaded and s_continue:GetValue() then
 					cookie.Set("sf2_lasttime", tostring(snTime))
-					StormFox2.Msg("Saving time: " .. snTime)
 				end
 			elseif curType == SF_DAYONLY then
 				local p = math.Clamp(lerp1440( snTime, sunRise, sunSet ), 0, 1)
