@@ -92,6 +92,7 @@ StormFox2.Time = StormFox2.Time or {}
 		local SF_NORMAL 	= 1
 		local SF_DAYONLY 	= 2
 		local SF_NIGHTONLY 	= 3
+		local SF_REAL		= 4
 
 		local cycleLength
 		local curType -- The time-type
@@ -186,17 +187,16 @@ StormFox2.Time = StormFox2.Time or {}
 			end
 		end
 		function Get()
-			if s_real:GetValue() then
-				GetCache =( CurTime() / 60 - BASE_TIME ) % 1440
-				IsDayCache = isInDay( GetCache )
-				return GetCache
-			end
 			if not cycleLength then return 720 end -- Not loaded yet
 			local num
 			if not curType or curType == SF_NORMAL then
 				num = TimeFromSettings( )
 				GetCache = num
 				IsDayCache = isDay()
+			elseif curType == SF_REAL then
+				num = ( CurTime() / 60 - BASE_TIME ) % 1440
+				GetCache = num
+				IsDayCache = isInDay( num )
 			elseif curType == SF_PAUSE then
 				num = TimeFromPause( )
 				GetCache = num
@@ -214,17 +214,21 @@ StormFox2.Time = StormFox2.Time or {}
 			return num
 		end
 		function Set( snTime )
-			--print("SET TIME", snTime)
-			if s_real:GetValue() then
-				BASE_TIME = CurTime() / 60 - snTime
-			elseif not curType or curType == SF_NORMAL then
+			if not curType or curType == SF_NORMAL then
 				BASE_TIME = CurTime() - FinsihToCycle( snTime )
+			elseif curType == SF_REAL then
+				BASE_TIME = CurTime() / 60 - snTime
 			elseif curType == SF_PAUSE then
 				BASE_TIME = snTime
+				-- If you pause the time, we should save it if we got s_continue on. 
+				if SERVER and StormFox2.Loaded and s_continue:GetValue() then
+					cookie.Set("sf2_lasttime", tostring(snTime))
+					StormFox2.Msg("Saving time: " .. snTime)
+				end
 			elseif curType == SF_DAYONLY then
 				local p = math.Clamp(lerp1440( snTime, sunRise, sunSet ), 0, 1)
 				BASE_TIME = CurTime() - p * dayLength
-			else
+			elseif curType == SF_NIGHTONLY then
 				local p = math.Clamp(lerp1440( snTime, sunSet, sunRise ), 0, 1)
 				BASE_TIME = CurTime() - p * nightLength
 			end
@@ -234,8 +238,7 @@ StormFox2.Time = StormFox2.Time or {}
 			hook.Run("StormFox2.Time.Changed")
 		end
 		function UpdateMath(nsTime, blockSetTime)
-			--print("MATH UPDATE", nsTime, blockSetTime)
-			local nsTime = nsTime or cycleLength and Get()
+			local nsTime = nsTime or ( cycleLength and Get() )
 				sunSet = sun_set:GetValue()
 				sunRise = sun_rise:GetValue()
 				dayLength = day_length:GetValue() * 60
@@ -246,7 +249,7 @@ StormFox2.Time = StormFox2.Time or {}
 				--print(nightLength)
 				if s_real:GetValue() then -- Real time
 					cycleLength = 60 * 60 * 24 
-					curType = SF_NORMAL
+					curType = SF_REAL
 				elseif dayLength <= 0 and nightLength <= 0 or sunSet == sunRise then -- Pause type
 					curType = SF_PAUSE
 					cycleLength = 0
@@ -293,7 +296,7 @@ StormFox2.Time = StormFox2.Time or {}
 		-- Returns how far the day has progressed 0 = sunRise, 0.5 = sunSet, 1 = sunRise
 		function StormFox2.Time.GetCycleTime()
 			if CycleCache then return CycleCache end
-			if s_real:GetValue() then
+			if curType == SF_REAL then
 				local t = Get()
 				if isInDay( t ) then
 					CycleCache = lerp1440( t, sunRise, sunSet ) / 2
@@ -313,9 +316,11 @@ StormFox2.Time = StormFox2.Time or {}
 			if IsDayCache then
 				CycleCache = GetDayPercent() / 2
 				return math.Clamp(CycleCache, 0, 1)
-			else
+			elseif cycleLength then
 				CycleCache = GetNightPercent() / 2 + 0.5
 				return math.Clamp(CycleCache, 0, 1)
+			else -- Idk
+				return 0.5
 			end
 		end
 	end
@@ -360,7 +365,7 @@ StormFox2.Time = StormFox2.Time or {}
 
 	-- Update the math within Get and Set. Will also try and adjust the time
 	if SERVER then -- Server controls the time
-		local start_time = cookie.GetNumber("sf2_lasttime",-1)
+		local start_time = math.Clamp(cookie.GetNumber("sf2_lasttime",-1) or -1, -1, 1439)
 		if s_continue:GetValue() and start_time >= 0 then
 			-- Continue time from last
 		else
@@ -739,4 +744,27 @@ do
 	end)
 	-- StormFox2.weather.postchange will be called after something changed. We check the stamp in there.
 	hook.Add("StormFox2.weather.postchange", "StormFox2.time.trigger2", checkDNTrigger)
+end
+
+--[[
+	Make sure to save the time on shutdown, or when we switch to s_continue while pause is on.
+]]
+if SERVER then
+	local function onSave()
+		cookie.Set("sf2_lasttime", tostring( StormFox2.Time.Get( true ) ) )
+		StormFox2.Msg("Saved time.")
+	end
+	if s_continue:GetValue() then
+		hook.Add("ShutDown", "StormFox2.TimeSave",onSave)
+	end
+	s_continue:AddCallback(function(var)
+		if var then
+			hook.Add("ShutDown", "StormFox2.TimeSave",onSave)
+			if curType == SF_PAUSE then
+				cookie.Set("sf2_lasttime", tostring( StormFox2.Time.Get( true ) ) )
+			end
+		else
+			hook.Remove("ShutDown", "StormFox2.TimeSave",onSave)
+		end
+	end, "sf2_savetime")
 end
