@@ -53,20 +53,26 @@ if SERVER then
 		end)
 	end
 	local oldLight = 'm'
+	local has_faded = false
 	SetLightEnv = function( char)
 		if not StormFox2.Ent.light_environments then return end
 		if char == oldLight then return end
 		oldLight = char
 		for _,light in ipairs(StormFox2.Ent.light_environments) do	-- Doesn't lag
 			if not IsValid(light) then continue end
-			light:Fire("FadeToPattern", char ,0)
+			if has_faded then
+				light:Fire("FadeToPattern", char ,0)
+			else
+				light:Fire("SetPattern", char ,0)
+			end
 			if char == "a" then
 				light:Fire("TurnOff","",0)
 			else
 				light:Fire("TurnOn","",0)
 			end
 			light:Activate()
-		end	
+		end
+		has_faded = true
 	end
 else
 	local last_sv
