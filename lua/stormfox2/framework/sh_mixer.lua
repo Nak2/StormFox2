@@ -130,6 +130,7 @@ hook.Add("Think", "StormFox2.mixerreset", function()
 	-- Current Stamp
 	local nTime = StormFox2.Time.Get()
 	local stamp, percent, next_stamp, pitch_length = StormFox2.Sky.GetStamp(nTime, nil, true) -- cpercent goes from 0 - 1
+	if not pitch_length then return end
 	local pitch_left = pitch_length * (1 - percent)
 	local forward = 6
 	if pitch_left >= 6 then -- Only look 6 degrees in the furture.
