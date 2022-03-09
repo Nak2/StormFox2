@@ -69,7 +69,7 @@ local symbol = {
 	["wedgwood"] = "°W",
 	["gas_mark"] = "°G",
 	["banana"] = "°B",
-	["kelvin"] = "°K"
+	["kelvin"] = "K"
 }
 --[[<Shared>------------------------------------------------------------------
 Returns the current temperature. Valid temperatures:
