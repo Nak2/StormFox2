@@ -50,12 +50,12 @@ do
 	}
 
 	---Returns the current weekday ["Monday" - "Sunday"]. Does also accept a number between 0 - 6.
-	---@param bNumbers nil|number
+	---@param number nil|number
 	---@return string
 	---@shared
-	function StormFox2.Date.GetWeekDay( bNumbers )
-		if bNumbers then
-			return t[ bNumbers % 7 ] or "Unknown"
+	function StormFox2.Date.GetWeekDay( number )
+		if type(number) == "number" then -- FFS people
+			return t[ number % 7 ] or "Unknown"
 		end
 		return t[ weekday ] or "Unknown"
 	end
@@ -76,23 +76,23 @@ do
 		[12] = "December"
 	}
 	---Returns the current month ["January" - "December"]. Also accepts a number between 1 - 12.
-	---@param bNumbers nil|number
+	---@param number nil|number
 	---@return string
 	---@shared
-	function StormFox2.Date.GetMonth( bNumbers )
-		if bNumbers then
-			return t[ bNumbers % 13 ] or "Unknown"
+	function StormFox2.Date.GetMonth( number )
+		if type(number) == "number" then -- FFS people
+			return t[ number % 13 ] or "Unknown"
 		end
 		return t[ month ] or "Unknown"
 	end
 end
 
 ---Returns the current month in short ["Jan" - "Dec"]. Also accepts a number between 1 - 12.
----@param bNumbers nil|number
+---@param number nil|number
 ---@return string
 ---@shared
-function StormFox2.Date.GetShortMonth( bNumbers )
-	return string.sub(StormFox2.Date.GetMonth( bNumbers ),0,3)
+function StormFox2.Date.GetShortMonth( number )
+	return string.sub(StormFox2.Date.GetMonth( number ),0,3)
 end
 
 --- Returns the day of the month: 1 - 31.
