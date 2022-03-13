@@ -55,7 +55,7 @@ do
 	---@shared
 	function StormFox2.Date.GetWeekDay( bNumbers )
 		if bNumbers then
-			return t[ weekday ] or "Unknown"
+			return t[ bNumbers % 7 ] or "Unknown"
 		end
 		return t[ weekday ] or "Unknown"
 	end
@@ -81,7 +81,7 @@ do
 	---@shared
 	function StormFox2.Date.GetMonth( bNumbers )
 		if bNumbers then
-			return t[ bNumbers ] or "Unknown"
+			return t[ bNumbers % 13 ] or "Unknown"
 		end
 		return t[ month ] or "Unknown"
 	end
