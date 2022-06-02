@@ -15,6 +15,8 @@ ENT.AdminOnly		= true
 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
+ENT.DisableDuplicator = true
+
 local RENDER_DISTANCE = 3500 ^ 2
 
 hook.Add("EntityKeyValue", "StormFox2.SLightinvis", function(ent, key, val)
