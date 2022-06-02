@@ -6,6 +6,17 @@ StormFox2.Network = {}
 StormFox_NETWORK = {}		-- Var
 
 if SERVER then
+	local tickets = {}
+	-- Forces a client to recive the data
+	function StormFox2.Network.ForceUpdate( ply )
+		tickets[ply] = true
+		net.Start(StormFox2.Net.Network)
+			net.WriteBool(false)
+			net.WriteTable(StormFox_NETWORK)
+		net.Send(ply)
+		hook.Run("StormFox2.data.initspawn", ply)
+	end
+
 	---Same as StormFox2.Data.Set, but networks it to all clients.
 	---@param sKey string
 	---@param zVar any
@@ -38,7 +49,6 @@ if SERVER then
 		net.Broadcast()
 		StormFox_NETWORK[sKey] = zVar
 	end
-	local tickets = {}
 	net.Receive(StormFox2.Net.Network, function(len, ply)
 		if tickets[ply] then return end
 		tickets[ply] = true
