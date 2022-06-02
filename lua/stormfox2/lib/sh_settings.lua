@@ -705,7 +705,7 @@ if SERVER then
 	---@server
 	function StormFox2.Setting.Reset()
 		blockSaveFile = true
-		for sName, obj in pairs(setting) do
+		for sName, obj in pairs(settings) do
 			if sName == "mapfile" then continue end
 			obj:Revert()
 		end
