@@ -179,14 +179,17 @@ if StormFox2.Setting.Get("override_foliagesway", true) and CLIENT then
 			mat:SetFloat("$treeswayscrumblestrength",0)
 			mat:SetFloat("$treeswaystrength",0.05 * bendyness)
 		end
+		mat:SetFloat("treeswaystatic", 0)
 	end
 
-	for texture,data in pairs(default_foliage) do
-		if not data or #data < 1 then continue end
-		if data[1] < -1 then
-			SetFoliageData(texture,-2)
-		else
-			SetFoliageData(texture,unpack(data))
+	hook.Add("stormfox2.postinit", "stormfox2.treeswayinit", function()
+		for texture,data in pairs(default_foliage) do
+			if not data or #data < 1 then continue end
+			if data[1] < -1 then
+				SetFoliageData(texture,-2)
+			else
+				SetFoliageData(texture,unpack(data))
+			end
 		end
-	end
+	end)
 end
