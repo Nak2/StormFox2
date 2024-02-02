@@ -210,7 +210,7 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 -- Hack to stop cleanupmap deleting things.
 	STORMFOX_CLEANUPMAP = STORMFOX_CLEANUPMAP or game.CleanUpMap
 	--<Ignore>
-	function game.CleanUpMap( dontSendToClients, ExtraFilters )
+	function game.CleanUpMap( dontSendToClients, ExtraFilters, ... )
 		ExtraFilters = ExtraFilters or {}
 		table.insert(ExtraFilters,"light_environment")
 		table.insert(ExtraFilters,"env_fog_controller")
@@ -220,5 +220,5 @@ StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
 		table.insert(ExtraFilters,"env_skypaint")
 		table.insert(ExtraFilters,"sf_soundscape")
 		table.insert(ExtraFilters,"stormfox_streetlight_invisible")
-		STORMFOX_CLEANUPMAP(dontSendToClients,ExtraFilters)
+		STORMFOX_CLEANUPMAP(dontSendToClients,ExtraFilters, ...)
 	end
