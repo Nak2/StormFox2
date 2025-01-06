@@ -137,9 +137,7 @@ local tabs = {
 			p:SetPos(188,10)
 			--p:SetColor(255,0,0)
 			local t = {["cl_threaded_bone_setup"] = 1,
-			["r_threaded_client_shadow_manager"] = 1,
 			["r_threaded_particles"] = 1,
-			["r_threaded_renderables"] = 1,
 			["r_queued_ropes"] = 1,
 			["studio_queue_mode"] = 1,
 			["gmod_mcore_test"] = 1,
@@ -147,6 +145,8 @@ local tabs = {
 			local v = 0
 			local s = "\n"
 			for k,v2 in pairs(t) do
+				local convar = GetConVar(k)
+				if not convar then continue end
 				if GetConVar(k):GetInt() ~= v2 then
 					s = s .. k .. " " .. v2 .. "\n"
 					continue
