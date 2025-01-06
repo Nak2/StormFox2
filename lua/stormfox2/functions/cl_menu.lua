@@ -137,7 +137,6 @@ local tabs = {
 			p:SetPos(188,10)
 			--p:SetColor(255,0,0)
 			local t = {["cl_threaded_bone_setup"] = 1,
-			["cl_threaded_client_leaf_system"] = 1,
 			["r_threaded_client_shadow_manager"] = 1,
 			["r_threaded_particles"] = 1,
 			["r_threaded_renderables"] = 1,
