@@ -41,6 +41,59 @@ We overwrite the sky variables. Its much better to handle it clientside.
 
 		AddDataCache("HDRScale", 0.66 )
 
+	-- Setup DT variables
+		function g_SkyPaint_tab:SetDTVector() end
+		function g_SkyPaint_tab:SetDTFloat() end
+		function g_SkyPaint_tab:SetDTBool() end
+		function g_SkyPaint_tab:SetDTInt() end
+		function g_SkyPaint_tab:SetDTAngle() end
+		function g_SkyPaint_tab:SetDTString() end
+		function g_SkyPaint_tab:SetDTEntity() end
+
+		function g_SkyPaint_tab:GetDTVector(i)
+			if i == 0 then return g_datacache["TopColor"]
+			elseif i == 1 then return g_datacache["BottomColor"]
+			elseif i == 2 then return g_datacache["SunNormal"]
+			elseif i == 3 then return g_datacache["SunColor"]
+			elseif i == 4 then return g_datacache["DuskColor"]
+			end
+			return Vector(0,0,0)
+		end
+
+		function g_SkyPaint_tab:GetDTFloat(i)
+			if i == 0 then return g_datacache["FadeBias"]
+			elseif i == 1 then return g_datacache["HDRScale"]
+			elseif i == 2 then return g_datacache["DuskScale"]
+			elseif i == 3 then return g_datacache["DuskIntensity"]
+			elseif i == 4 then return g_datacache["SunSize"]
+			end
+			return 0
+		end
+
+		function g_SkyPaint_tab:GetDTBool(i)
+			if i == 0 then return g_datacache["DrawStars"]
+			end
+			return false
+		end
+
+		function g_SkyPaint_tab:GetDTInt(i)
+			if i == 0 then return g_datacache["StarLayers"]
+			end
+			return 0
+		end
+
+		function g_SkyPaint_tab:GetDTAngle(i)
+			if i == 0 then return Angle(g_datacache["StarScale"],g_datacache["StarFade"],g_datacache["StarPos"])
+			end
+			return Angle(0,0,0)
+		end
+
+		function g_SkyPaint_tab:GetDTString(i)
+			if i == 0 then return g_datacache["StarTexture"]
+			end
+			return ""
+		end
+
 	-- Override the skypaint directly
 		local SkyPaintEnt
 		local c = false
