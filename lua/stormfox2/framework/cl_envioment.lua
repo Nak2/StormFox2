@@ -954,6 +954,7 @@ Generate meshes and env-points out from the map-data.
 
 	local cor_scan = coroutine.wrap(scan)
 	local function StartGenerating()
+		if not cor_scan then return end
 		timer.Create("SF_ENV_SCAN", 0.2, 0, function()
 			if cor_scan() then
 				cor_scan = nil
@@ -964,6 +965,7 @@ Generate meshes and env-points out from the map-data.
 		hook.Remove("StormFox2.InitPostEntity", "StormFox_ENV_SCAN")
 	end
 	hook.Add("StormFox2.InitPostEntity", "StormFox_ENV_SCAN", StartGenerating)
+	
 --[[-------------------------------------------------------------------------
 Renders glass-meshes.
 ---------------------------------------------------------------------------]]

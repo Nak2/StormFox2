@@ -1,7 +1,7 @@
 
 -- Delete old skybox brushes
 if SERVER then
-	hook.Add( "InitPostEntity", "DeleteBrushNEntity", function()
+	local deleteBrush = function()
 		for i, ent in ipairs( ents.GetAll() ) do
 			if not IsValid(ent) then continue end
 			if ent:GetClass() == "func_brush" and (ent:GetName() or "") == "daynight_brush" then
@@ -10,7 +10,9 @@ if SERVER then
 				ent:SetNoDraw( true )
 			end
 		end
-	end )
+	end 
+	hook.Add( "InitPostEntity", "DeleteBrushNEntity", deleteBrush)
+	hook.Add("PostCleanupMap", "DeleteBrushNEntity", deleteBrush)
 end
 
 -- Foliage overwrite

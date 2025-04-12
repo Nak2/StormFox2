@@ -56,6 +56,7 @@ CreateConVar("sf_enable_mapsupport","1",{FCVAR_REPLICATED,FCVAR_ARCHIVE},"StormF
 	end
 -- If this is first run, wait for InitPostEntity.
 	hook.Add("StormFox2.InitPostEntity","StormFox2.Entities",findEntities)
+	hook.Add("PostCleanupMap","StormFox2.Entities",findEntities)
 -- Tell clients about explosions
 	util.AddNetworkString("StormFox2.entity.explosion")
 	hook.Add("EntityRemoved","StormFox2.Entitys.Explosion",function(ent)

@@ -147,7 +147,7 @@ local tabs = {
 			for k,v2 in pairs(t) do
 				local convar = GetConVar(k)
 				if not convar then continue end
-				if GetConVar(k):GetInt() ~= v2 then
+				if convar:GetInt() ~= v2 then
 					s = s .. k .. " " .. v2 .. "\n"
 					continue
 				end

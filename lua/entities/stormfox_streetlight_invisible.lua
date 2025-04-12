@@ -362,7 +362,7 @@ else -- Save
 		local out = util.TableToJSON( tab )
 		StormFox2.FileWrite(file_location, out)
 	end)
-	hook.Add( "InitPostEntity", "StormFox2.Streetlights.Load", function()
+	local function loadStreetLights()
 		local fil = file.Read(file_location, "DATA" )
 		if not fil then return end
 		local tab = util.JSONToTable( fil )
@@ -377,5 +377,7 @@ else -- Save
 			ent:SetLightColor(Vector(v[4].x, v[4].y, v[4].z))
 			ent:SetLightBrightness(v[5] or 1)
 		end
-	end )
+	end
+	hook.Add( "InitPostEntity", "StormFox2.Streetlights.Load", loadStreetLights )
+	hook.Add( "PostCleanupMap", "StormFox2.Streetlights.Load", loadStreetLights )
 end
