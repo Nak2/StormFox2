@@ -89,13 +89,13 @@ if SERVER then
 		if tr.AllSolid or tr.Fraction == 0 then -- This is inside solid and should instead be done in the skybox.
 			return THUNDER_MAKE_SKYBOX, SkyPos
 		end
-		SkyPos.z = math.min( SkyPos.z, tr.HitPos.z + 8000 ))
+		SkyPos.z = math.min( SkyPos.z, tr.HitPos.z + 8000 )
 		local pos = SkyPos - vector_up * 5		
 		local line = {}
 		table.insert(line,pos)
 		-- Create a line down
 		local olddir = Vector(0,0,-1)
-		local m_dis = math.max(1, ( SkyPos.z - StormFox2.Map.MinSize().z ) / 20000
+		local m_dis = math.max(1, ( SkyPos.z - StormFox2.Map.MinSize().z ) / 20000)
 		local _n = nTraceSize / 40
 		for i = 20, 1, -1 do
 			-- Random sway
