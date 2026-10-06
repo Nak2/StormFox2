@@ -221,8 +221,6 @@ local eye_mult = -.0001
 			o[2] = o[2] + y_w * ri
 		end
 	end)
-	local cloud_stamp = {}
-	local cloud_interval = 1 / 20
 
 hook.Add("StormFox2.2DSkybox.CloudLayer","StormFox2.Client.Clouds",function(eye)
 	if not StormFox2 then return end
@@ -262,11 +260,7 @@ hook.Add("StormFox2.2DSkybox.CloudLayer","StormFox2.Client.Clouds",function(eye)
 			if i == 1 then
 				cloud_amplifier = cloud_amplifier + thunder
 			end
-			local now = SysTime()
-			if (cloud_stamp[i] or 0) <= now then
-				cloud_stamp[i] = now + cloud_interval
-				UpdateCloudMaterial(i,255)
-			end
+			UpdateCloudMaterial(i,255)
 			sky_mats[i]:SetVector("$color",Vector(min(c.r * cloud_amplifier,255),min(c.g * cloud_amplifier,255),min(c.b * cloud_amplifier,255)) / 255 )
 			RenderDome(up * (z_level + 0.4 * ri) + eye * eye_mult,sky_mats[i],255)
 		end

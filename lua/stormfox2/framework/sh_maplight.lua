@@ -19,7 +19,7 @@ StormFox2.Setting.AddSV("allow_weather_lightchange",true,nil, "Weather")
 
 if CLIENT then
 	StormFox2.Setting.AddCL("extra_darkness",render.SupportsPixelShaders_2_0(),nil,"Effects",0,1)
-	StormFox2.Setting.AddCL("extra_darkness_amount",0.75,nil, "Effects",0,1)
+	StormFox2.Setting.AddCL("extra_darkness_amount",0.4,nil, "Effects",0,1)
 	StormFox2.Setting.SetType( "extra_darkness_amount", "float" )
 end
 
