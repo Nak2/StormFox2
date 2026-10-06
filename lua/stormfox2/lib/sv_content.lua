@@ -22,6 +22,6 @@ if not StormFox2.WorkShopVersion then
 	StormFox2.Msg("Added " .. i .. " content files.")
 -- Add the workshop
 else
-	resource.AddWorkshop(string.match(StormFox2.WorkShopURL, "%d+$"))
+	resource.AddWorkshop("2447774443")
 	StormFox2.Msg("Added content files from workshop.")
 end

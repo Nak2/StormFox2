@@ -7,74 +7,50 @@ local z_level = -.8
 local eye_mult = -.0001
 
 -- Generate dome mesh
-	local Render_Dome = Mesh()
+	local Render_Dome
 	local top_height = 20
 	local sc = 20
 
-	local stage = 0
 	local e_r = rad(45)
 	local t_s = 1
 	local function UVMulti(uv,mul)
 		return (uv - 0.5) * mul + 0.5
 	end
-	mesh.Begin( Render_Dome, MATERIAL_TRIANGLES, 24 )
+	local function BuildDome(mat)
+		local tris, n = {}, 0
+		local function V(pos, u, v, a)
+			n = n + 1
+			tris[n] = { pos = pos, u = u, v = v, color = Color(255, 255, 255, a) }
+		end
 		for i = 1,8 do
 			local yaw = rad(45 * i)
 			-- Generate the top
 			-- L
 			local c,s = cos(yaw),sin(yaw)
 			local L = {Vector(c * sc,s * sc,0.1 * -sc),(1 + c) / 2 * t_s,(1 + s) / 2 * t_s}
-			mesh.Position(L[1])
-			mesh.TexCoord( stage, L[2], L[3])
-			mesh.Color(255,255,255,255)
-			mesh.AdvanceVertex()
 			-- R
 			local c,s = cos(yaw + e_r),sin(yaw + e_r)
 			local R = {Vector(c * sc,s * sc,0.1 * -sc),(1 + c) / 2 * t_s,  (1 + s) / 2 * t_s}
-			mesh.Position(R[1])
-			mesh.TexCoord( stage, R[2],R[3] )
-			mesh.Color(255,255,255,255)
-			mesh.AdvanceVertex()
+			V(L[1], L[2], L[3], 255)
+			V(R[1], R[2], R[3], 255)
 			-- T
-			mesh.Position(Vector(0,0,0.1 * top_height))
-			mesh.TexCoord( stage, 0.5 * t_s,0.5 * t_s )
-			mesh.Color(255,255,255,255)
-			mesh.AdvanceVertex()
+			V(Vector(0,0,0.1 * top_height), 0.5 * t_s, 0.5 * t_s, 255)
 
 			-- Generate side1
-			mesh.Position(L[1])
-			mesh.TexCoord( stage, L[2], L[3])
-			mesh.Color(255,255,255,255)
-			mesh.AdvanceVertex()
-
 			local R2 = {R[1] * 1.4 - Vector(0,0,4),UVMulti(R[2],1.4),UVMulti(R[3],1.4)}
-			mesh.Position(R2[1])
-			mesh.TexCoord( stage, R2[2],R2[3] )
-			mesh.Color(255,255,255,0)
-			mesh.AdvanceVertex()
-
-			mesh.Position(R[1])
-			mesh.TexCoord( stage, R[2],R[3] )
-			mesh.Color(255,255,255,255)
-			mesh.AdvanceVertex()
+			V(L[1], L[2], L[3], 255)
+			V(R2[1], R2[2], R2[3], 0)
+			V(R[1], R[2], R[3], 255)
 
 			-- Generate side 2
-			mesh.Position(L[1])
-			mesh.TexCoord( stage, L[2], L[3])
-			mesh.Color(255,255,255,255)
-			mesh.AdvanceVertex()
-
-			mesh.Position(L[1] * 1.4 - Vector(0,0,4))
-			mesh.TexCoord( stage, UVMulti(L[2], 1.4), UVMulti(L[3],1.4))
-			mesh.Color(255,255,255,0)
-			mesh.AdvanceVertex()
-
-			mesh.Position(R2[1])
-			mesh.TexCoord( stage, R2[2],R2[3] )
-			mesh.Color(255,255,255,0)
-			mesh.AdvanceVertex()
+			V(L[1], L[2], L[3], 255)
+			V(L[1] * 1.4 - Vector(0,0,4), UVMulti(L[2], 1.4), UVMulti(L[3],1.4), 0)
+			V(R2[1], R2[2], R2[3], 0)
 		end
-	mesh.End()
+		local m = Mesh(mat)
+		m:BuildFromTriangles(tris)
+		return m
+	end
 -- Local functions
 	local matrix = Matrix()
 	local function RenderDome(pos,mat,alpha)
@@ -97,15 +73,6 @@ local eye_mult = -.0001
 			cam.Start2D()
 		if not blend then return end
 			render.OverrideAlphaWriteEnable( true, true )
-	end
-	local function RTMask(srcBlend,destBlend,srcBlendAlpha,destBlendAlpha)
-		local srcBlend = 		srcBlend or BLEND_ZERO
-		local destBlend = 		destBlend or BLEND_SRC_ALPHA	-- 
-		local blendFunc = 		0	-- The blend mode used for drawing the color layer 
-		local srcBlendAlpha = 	srcBlendAlpha or BLEND_DST_ALPHA	-- Determines how a rendered texture's final alpha should be calculated.
-		local destBlendAlpha = 	destBlendAlpha or BLEND_ZERO	-- 
-		local blendFuncAlpha = 	0	-- 
-		render.OverrideBlend( true, srcBlend, destBlend, blendFunc, srcBlendAlpha, destBlendAlpha, blendFuncAlpha)
 	end
 	local function RTEnd(Mat_Output)
 		render.OverrideBlend( false )
@@ -154,6 +121,7 @@ local eye_mult = -.0001
 	for i = 1,layers do
 		sky_mats[i] = CreateMaterial("StormFox_RTSKY" .. i,"UnlitGeneric",params)
 	end
+	Render_Dome = BuildDome(sky_mats[1])
 	local cloudbig = Material("stormfox2/effects/clouds/clouds_big.png","nocull noclamp smooth")
 	-- 8240
 		cloudbig:SetInt("$flags",2099250)
@@ -184,13 +152,6 @@ local eye_mult = -.0001
 			-- If we error in here, gmod will crash.
 			local b, reason = pcall(safeCall, texscale, texscale, layer)
 			if not b then ErrorNoHalt(reason) end
-		-- Mask RT tex
-		--	RTMask()
-		--		surface.SetDrawColor(Color(255,255,255,255 - cloud_alpha))
-		--		surface.SetMaterial(cloudbig)
-		--		DrawTextureRectWindow(texscale,texscale,offset[layer][1] + d_seed,offset[layer][2] + d_seed)
-
-		-- End RT tex
 			RTEnd(sky_mats[layer])
 		render.PopFilterMag()
 	render.PopFilterMin()
@@ -205,9 +166,6 @@ local eye_mult = -.0001
 		local n = Angle(pitch,yaw,0):Forward()
 		col.a = math.max(175 * alpha, 255)
 		render.DrawQuadEasy( n * -200 + pos + v, n, s_size * mat[2] , s_size, col, 180 )
-	end
-	local function LerpColor(f, col1, col2)
-		return Color( Lerp(f, col1.r, col2.r), Lerp(f, col1.g, col2.g), Lerp(f, col1.b, col2.b) )
 	end
 -- Cloud movement
 	hook.Add("PreRender","StormFox2.Client.CloudMove",function()

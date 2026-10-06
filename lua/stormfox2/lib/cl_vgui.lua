@@ -1993,10 +1993,7 @@ do
 		end
 		p_left.buttons["workshop"] = b
 		function b:DoClick()
-			gui.OpenURL( StormFox2.WorkShopURL )
-		end		
-		if not StormFox2.WorkShopURL then
-			b:SetDisabled(true)
+			gui.OpenURL( "https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443" )
 		end
 
 		do

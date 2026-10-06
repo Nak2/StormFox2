@@ -2,7 +2,7 @@
 if SERVER then
 	-- Checks the workshop page for version number.
 	local function RunCheck()
-		http.Fetch(StormFox2.WorkShopURL, function(code)
+		http.Fetch("https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443", function(code)
 			local lV = tonumber(string.match(code, "Version:(.-)<"))
 			if not lV then return end -- Unable to locate last version
 			if StormFox2.Version >= lV then return end -- Up to date
