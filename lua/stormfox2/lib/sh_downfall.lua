@@ -2,7 +2,10 @@
 	downfall_meta:GetNextParticle()
 
 ---------------------------------------------------------------------------]]
-local max,min,t_insert,abs,clamp = math.max,math.min,table.insert,math.abs,math.Clamp
+local max,min,t_insert,abs,clamp,floor = math.max,math.min,table.insert,math.abs,math.Clamp,math.floor
+local sqrt = math.sqrt
+-- Particles are placed ahead of a moving player, by half a second of their speed. This is the max speed we use for that.
+local MAX_LEAD_SPEED = 2000
 
 -- Particle emitters
 if CLIENT then
@@ -75,7 +78,8 @@ do
 		endpos = Vector(0,0,0),
 		maxs = Vector(1,1,4),
 		mins = Vector(-1,-1,0),
-		mask = mask
+		mask = mask,
+		output = {} -- Reuse the result
 	}
 	local function GetViewEntity()
 		if SERVER then return end
@@ -196,6 +200,13 @@ do
 		end
 		return m_t[ str ]
 	end
+	-- Trace used by FindSky. The table and result are reused.
+	local fs_trace = {
+		start = Vector(0,0,0),
+		endpos = Vector(0,0,0),
+		mask = MASK_SOLID_BRUSHONLY,
+		output = {}
+	}
 	local function IsMaterialEmpty( t )
 		return t.HitTexture == "TOOLS/TOOLSINVISIBLE" or t.HitTexture == "**empty**" or t.HitTexture == "TOOLS/TOOLSNODRAW"
 	end
@@ -249,11 +260,10 @@ do
 	local function FindSky(vFrom, vNormal, nTries)
 		local last,lastFakeSky
 		for i = 1,nTries do
-			local t = util.TraceLine( {
-				start = vFrom,
-				endpos = vFrom + vNormal * 262144,
-				mask = MASK_SOLID_BRUSHONLY
-			} )
+			-- The trace-table and result are reused. This is called for every particle we spawn.
+			fs_trace.start = vFrom
+			fs_trace.endpos = vFrom + vNormal * 262144
+			local t = util.TraceLine( fs_trace )
 			if not t.Hit then break end -- Just empty void from this point on
 			-- Check if we're in the void
 			if t.HitPos.z > 32768 then break end -- Max map-size is 32768^2
@@ -350,9 +360,18 @@ do
 		vNorm = vNorm or StormFox2.Wind.GetNorm()
 		local view = StormFox2.util.GetCalcView()
 		local v_vel = StormFox2.util.ViewEntity():GetVelocity() or vZ
-		local v_pos = (view.pos and Vector(view.pos.x, view.pos.y, view.pos.z) or vZ) + Vector(vNorm.x,vNorm.y,0) * -tTemplate:GetSpeed() * -200
+		local vp = view.pos
+		local sp = tTemplate:GetSpeed() * 200
+		local lead, speed2D, lead_k = 0, 0, 1 -- How far ahead of the player we place particles
+		local vx, vy, vz = vp and vp.x or 0, vp and vp.y or 0, vp and vp.z or 0
+		vx = vx + vNorm.x * sp
+		vy = vy + vNorm.y * sp
 		if not ignoreVel then
-			v_pos = v_pos + Vector(v_vel.x,v_vel.y,0) / 2
+			speed2D = sqrt(v_vel.x * v_vel.x + v_vel.y * v_vel.y)
+			lead_k = speed2D > MAX_LEAD_SPEED and MAX_LEAD_SPEED / speed2D or 1
+			lead = speed2D * lead_k / 2
+			vx = vx + v_vel.x * lead_k / 2
+			vy = vy + v_vel.y * lead_k / 2
 		end
 		for i = 1, nTries do
 			-- Get a random angle
@@ -362,13 +381,21 @@ do
 				deg = -deg
 			end
 			-- Calculate the offset
-			local yaw = rad(view.ang.y + deg)
-			local offset = v_pos + Vector(cos(yaw),sin(yaw)) * nDis
+			local yawBase = view.ang.y
+			-- When we move fast, place some of them in the direction we're moving. Not only where we look.
+			if speed2D > 150 and math.random() < min(0.7, speed2D / 600) then
+				yawBase = math.deg(math.atan2(v_vel.y, v_vel.x))
+			end
+			local yaw = rad(yawBase + deg)
+			local offset = Vector(vx + cos(yaw) * nDis, vy + sin(yaw) * nDis, vz)
 			local pos, n, hitNorm = StormFox2.DownFall.CheckDrop( offset, vNorm, nSize)
-			
-			if pos and n > -2 and pos:DistToSqr(v_pos) < 11000000 then -- TODO: Why does this happen? Position shouldn't be that waaaay away.
-				local bRandomAge = not ignoreVel and nDis > nMaxDistance - v_vel:Length2D()
-				return pos,n,offset, hitNorm, bRandomAge
+
+			if pos and n > -2 then
+				local dx, dy, dz = pos.x - vx, pos.y - vy, pos.z - vz
+				if dx * dx + dy * dy + dz * dz < 11000000 then -- TODO: Why does this happen? Position shouldn't be that waaaay away.
+					local bRandomAge = not ignoreVel and nDis > nMaxDistance - v_vel:Length2D()
+					return pos,n,offset, hitNorm, bRandomAge, lead
+				end
 			end
 		end
 	end
@@ -478,8 +505,18 @@ if CLIENT then
 	-- Particles
 	local p_meta = {}
 	debug.getregistry()["SFParticle"] = p_meta
-	p_meta.__index = function(self, key)
-		return p_meta[key] or self.data[key]
+	-- particle -> particle-functions -> template -> template-functions
+	local function GetParticleClass( tTemplate )
+		local cls = rawget(tTemplate, "_pclass")
+		if cls then return cls end
+		local methods = {}
+		for k, v in pairs( p_meta ) do
+			methods[k] = v
+		end
+		setmetatable(methods, {__index = tTemplate})
+		cls = {__index = methods}
+		tTemplate._pclass = cls
+		return cls
 	end
 	-- Creates a particle from the template. Can return nil if something happen
 	function pt_meta:CreateParticle( vEndPos, vNorm, hitType, hitNorm, maxDistance )
@@ -492,7 +529,7 @@ if CLIENT then
 		t.hitType = hitType or SF_DOWNFALL_HIT_NIL
 		t.hitNorm = hitNorm or Vector(0,0,-1)
 		--t.to = CurTime()
-		setmetatable(t, p_meta)
+		setmetatable(t, GetParticleClass(self))
 		local cG = self.g
 		if not t:GetIgnoreGravity() then
 			cG = self.g * GLGravity()
@@ -517,8 +554,11 @@ if CLIENT then
 		
 		-- Check if outside
 		local p = t:CalcPos()
-		if maxDistance and p:Distance(Vector(view.x, view.y, p.z)) > maxDistance then
-			return
+		if maxDistance then
+			local dx, dy = p.x - view.x, p.y - view.y
+			if dx * dx + dy * dy > maxDistance * maxDistance then
+				return
+			end
 		end
 		self.num = self.num + 1
 		return t, (t.r_H or 200) * 2 / abs( cG ) -- Secondary is how long we thing it will take for the particle to die. We also want this to be steady.
@@ -529,8 +569,16 @@ if CLIENT then
 	end
 	-- Calculates the current position of the particle
 	function p_meta:CalcPos()
-		self.pos = self.endpos - self:GetNorm() * self.curlength
-		return self.pos
+		local n = self:GetNorm()
+		local ep, cl = self.endpos, self.curlength
+		local pos = rawget(self, "pos")
+		if pos then
+			pos:SetUnpacked( ep.x - n.x * cl, ep.y - n.y * cl, ep.z - n.z * cl )
+		else
+			pos = Vector( ep.x - n.x * cl, ep.y - n.y * cl, ep.z - n.z * cl )
+			self.pos = pos
+		end
+		return pos
 	end
 	-- Returns the current position
 	function p_meta:GetPos()
@@ -563,44 +611,66 @@ if CLIENT then
 	function p_meta:SetMaxDistance( f )
 		self.mDis2Sqr = f ^ 2
 	end
-	-- Renders the particles
+	-- Renders the particles. This is called for every particle each frame, so it avoids creating vectors and colors.
+	local r_lastMat -- Last material set, so we don't set the same material over and over.
+	local r_frameTime = 0
+	local r_wind = Vector(0, 0, -1)
+	local r_a, r_b, r_c = Vector(0, 0, 0), Vector(0, 0, 0), Vector(0, 0, 0)
 	function p_meta:Render(viewPos)
-		local pos = self:GetPos()
+		local pos = self.pos or self:CalcPos()
 		if self.bFollow then
-			pos = pos + viewPos
+			r_c:SetUnpacked(pos.x + viewPos.x, pos.y + viewPos.y, pos.z + viewPos.z)
+			pos = r_c
 		end
-		if self._renh and self._bFIn and self._renh < 0.5 then -- We're fading out
-			self.cL = Color(self.c.r, self.c.g, self.c.b, self._renh * 2 * self.c.a)
+		-- Fade
+		local col = self.c
+		local beamCol = col
+		local renh = self._renh
+		if renh and self._bFIn and renh < 0.5 then -- We're fading out
+			beamCol = self._cLerp
+			if not beamCol then
+				beamCol = Color(0, 0, 0, 0)
+				self._cLerp = beamCol
+			end
+			beamCol.r, beamCol.g, beamCol.b, beamCol.a = col.r, col.g, col.b, renh * 2 * col.a
 		elseif self._bFIn and (self._bFInA or 0) < 1 then -- We're fading in
-			self._bFInA = min((self._bFInA or 0) + FrameTime(), 1)
-			self.cL = Color(self.c.r, self.c.g, self.c.b, self._bFInA * self.c.a)
-		else
-			self.cL = nil
+			local fIn = min((self._bFInA or 0) + r_frameTime, 1)
+			self._bFInA = fIn
+			beamCol = self._cLerp
+			if not beamCol then
+				beamCol = Color(0, 0, 0, 0)
+				self._cLerp = beamCol
+			end
+			beamCol.r, beamCol.g, beamCol.b, beamCol.a = col.r, col.g, col.b, fIn * col.a
 		end
-		render_SetMaterial(self.iMat)
+		local mat = self.iMat
+		if mat ~= r_lastMat then
+			render_SetMaterial(mat)
+			r_lastMat = mat
+		end
 		if self.bBeam then
-			if self._renh then
-				if self._renh <= 0 then return end
-				local sr = 1 - self._renh
-				local sh = self:GetNorm() * self.h * 0.91
-				render_DrawBeam(pos - sh, pos - sh * sr, self.w, 0, self._renh, self.cL or self.c)
+			local n = self.vNorm or r_wind
+			local h = self.h
+			local px, py, pz = pos.x, pos.y, pos.z
+			if renh then
+				if renh <= 0 then return end
+				local sr = 1 - renh
+				local sh = h * 0.91
+				local sx, sy, sz = n.x * sh, n.y * sh, n.z * sh
+				r_a:SetUnpacked(px - sx, py - sy, pz - sz)
+				r_b:SetUnpacked(px - sx * sr, py - sy * sr, pz - sz * sr)
+				render_DrawBeam(r_a, r_b, self.w, 0, renh, beamCol)
 			else
-				render_DrawBeam(pos - self:GetNorm() * self.h, pos, self.w, 0, 1, self.cL or self.c)
+				r_a:SetUnpacked(px - n.x * h, py - n.y * h, pz - n.z * h)
+				render_DrawBeam(r_a, pos, self.w, 0, 1, beamCol)
 			end
 		else
-			render_DrawSprite(pos, self.w, self.h, self.c)
+			render_DrawSprite(pos, self.w, self.h, col)
 		end
 	end
 	-- Checks the view
 	function p_meta:IsInsideView()
 		return self._iv == nil and true or self._iv
-	end
-
-	local function IVCheck( view, part )
-		local vN = (part:GetPos() - view.pos)
-		vN:Normalize()
-		local dot = vN:Dot(view.ang:Forward())
-		part._iv = dot > -( view.fov / 90 ) + 1
 	end
 
 	--[[
@@ -612,67 +682,101 @@ if CLIENT then
 		Creates a particle from the template. This particle can also be modified using the template functions.
 	]]
 
-	-- Moves and kills the particles
+	-- Moves and kills the particles.
+	-- This runs for every particle each frame. So it uses numbers instead of vectors, and removes the dead in one pass.
 	local t_sfp = {}
-	local e_check = 0
+	local t_die = {}
+	local sqrt = math.sqrt
+	local r_down = Vector(0, 0, -1)
 	local function ParticleTick()
-		if #t_sfp < 1 then return end
-		if e_check > #t_sfp then
-			e_check = 0
-		end
+		local n_all = #t_sfp
+		if n_all < 1 then return end
 		local view = StormFox2.util.GetCalcView()
 		local viewp = view.pos
+		local vx, vy, vz = viewp.x, viewp.y, viewp.z
 		local v_vel = StormFox2.util.ViewEntity():GetVelocity()
-		local v_l = max(v_vel.x,v_vel.y)
-			v_vel = v_vel / 4 + viewp
-		local z_view = viewp.z
+		local lead = min(sqrt(v_vel.x * v_vel.x + v_vel.y * v_vel.y), MAX_LEAD_SPEED) / 2 -- How far ahead of us particles are placed (See CalculateDrop)
+				-- View check. A particle is inside the view if the angle to it is within this limit.
+		local fwd = view.ang:Forward()
+		local fx, fy, fz = fwd.x, fwd.y, fwd.z
+		local fov_limit = -( view.fov / 90 ) + 1
 		local fr = FrameTime() * 600 -- * game.GetTimeScale()
-		local die = {}
 		local gg = GLGravity() -- Global Gravity
-		local e_check_n = e_check + 50
-		for n,t in ipairs(t_sfp) do
+		local wind = StormFox2.Wind.GetNorm() or r_down
+		local alive, dead = 0, 0
+		for n = 1, n_all do
+			local t = t_sfp[n]
 			local part = t[2]
 			-- The length it moves (Could also be negative)
 			local move = part.g
-			if not part:GetIgnoreGravity() then
-				move = part.g * gg 
+			if not part.i_G then
+				move = move * gg
 			end
-			if e_check_n < n and part.mDis2Sqr and not part.bFollow then -- Check the max-distance
-				if (part:GetPos() - v_vel):Length2DSqr() > part.mDis2Sqr + v_l then
+			-- Move
+			local cl = part.curlength - move * fr
+			part.curlength = cl
+			local ep = part.endpos
+			local nrm = part.vNorm or wind
+			local px, py, pz = ep.x - nrm.x * cl, ep.y - nrm.y * cl, ep.z - nrm.z * cl
+			part.pos:SetUnpacked(px, py, pz)
+			local isDead = false
+			local mDis = part.mDis2Sqr
+			if mDis and not part.bFollow then
+				-- Check the max-distance
+				local dx, dy = px - vx, py - vy
+				local d2 = dx * dx + dy * dy
+				-- Max-distance from us, plus how far ahead we place them. This is the same as before when we stand still.
+				if d2 > mDis and d2 > (sqrt(mDis) + lead) ^ 2 then
 					part.hitType = SF_DOWNFALL_HIT_NIL
-					die[#die + 1] = n
-					continue
+					isDead = true
+				else
+					-- Check the view
+					dx, dy = px - vx, py - vy
+					local dz = pz - vz
+					local len = sqrt(dx * dx + dy * dy + dz * dz)
+					part._iv = len > 0 and (dx * fx + dy * fy + dz * fz) / len > fov_limit
 				end
-				IVCheck( view, part)
 			end
-			part.curlength = part.curlength - move * fr
 			-- Check if it dies
-			if move > 0 then
-				local zp = part:CalcPos().z
-				if zp < part.endpos.z then
+			if isDead then
+			elseif move > 0 then
+				local epz = ep.z
+				if pz < epz then
 					-- Hit ground
-					if zp < part.endpos.z - part.h or part.h < 10 then
-						die[#die + 1] = n
+					local h = part.h
+					if pz < epz - h or h < 10 then
+						isDead = true
 					else
-						part._renh = 1 - (part.endpos.z - zp) / (part.h * 0.9)
+						part._renh = 1 - (epz - pz) / (h * 0.9)
 					end
-				elseif zp < z_view - part.r_H or zp > z_view + part.r_H2 + part.h then
+				elseif pz < vz - part.r_H or pz > vz + part.r_H2 + part.h then
 					-- Die in air
 					part.hitType = SF_DOWNFALL_HIT_NIL
-					die[#die + 1] = n
+					isDead = true
 				end
 			elseif move < 0 then -- It moves up in the sky. Should allways be hittype SF_DOWNFALL_HIT_NIL
-				if part:CalcPos().z > z_view + part.r_H then
-					-- Die
-					die[#die + 1] = n
+				if pz > vz + part.r_H then
+					isDead = true
+				end
+			end
+			if isDead then
+				dead = dead + 1
+				t_die[dead] = part
+			else
+				alive = alive + 1
+				if alive ~= n then
+					t_sfp[alive] = t
 				end
 			end
 		end
-		e_check = e_check + 50
+		-- Remove the dead from the list
+		for n = n_all, alive + 1, -1 do
+			t_sfp[n] = nil
+		end
 		-- Kill particles
-		for i = #die, 1, -1 do
-			local t = table.remove(t_sfp, die[i])
-			local part = t[2]
+		for i = dead, 1, -1 do
+			local part = t_die[i]
+			t_die[i] = nil
 			part:_REM()
 			--print("					Real Death: ", CurTime() - (part.to or 0))
 			if part.hitType ~= SF_DOWNFALL_HIT_NIL and part.OnHit then
@@ -684,12 +788,14 @@ if CLIENT then
 	local viewpos = Vector(0,0,0)
 	local function ParticleRender()
 		local v = StormFox2.util.GetCalcView().pos or EyePos()
-		viewpos.x = v.x
-		viewpos.x = v.y
-		for _,t in ipairs(t_sfp) do
-		--	render.DrawLine(t[2]:GetPos(), t[2].endpos, color_white, true)
-			if t[2]:IsInsideView() then
-				t[2]:Render(viewpos)
+		viewpos:SetUnpacked(v.x, v.y, v.z)
+		r_frameTime = FrameTime()
+		r_wind = StormFox2.Wind.GetNorm() or r_down
+		r_lastMat = nil
+		for i = 1, #t_sfp do
+			local part = t_sfp[i][2]
+			if part._iv ~= false then -- Inside the view
+				part:Render(viewpos)
 			end
 		end
 	end
@@ -711,20 +817,18 @@ if CLIENT then
 			local p = StormFox2.util.GetCalcView().pos
 			nDistance = Vector(p.x,p.y,vEndPos.z):Distance( vEndPos )
 		end
-		-- Add by distance
-		local n = #t_sfp
+		-- Add by distance. The list is sorted from far to near, so we can binary search for the spot.
 		local t = {nDistance, part}
-		if n < 1 then
-			t_insert(t_sfp, t)
-		else
-			for i=1,n do
-				if nDistance > t_sfp[i][1] then
-					t_insert(t_sfp, i, t)
-					return part
-				end
+		local lo, hi = 1, #t_sfp + 1
+		while lo < hi do
+			local mid = floor((lo + hi) / 2)
+			if nDistance > t_sfp[mid][1] then
+				hi = mid
+			else
+				lo = mid + 1
 			end
-			t_insert(t_sfp, n, t)
 		end
+		t_insert(t_sfp, lo, t)
 		return part
 	end
 
@@ -744,7 +848,7 @@ if CLIENT then
 			vNorm = Vector(vNorm.x, vNorm.y, vNorm.z) + Vector(math.Rand(-tTemplate._ra, tTemplate._ra),math.Rand(-tTemplate._ra, tTemplate._ra),0)
 			vNorm:GetNormal()
 		end
-		local vEnd, nHitType, vCenter, hitNorm, bRandomAge = StormFox2.DownFall.CalculateDrop( nDistance, traceSize, 1, vNorm, tTemplate.bFollow, nMaxDistance, tTemplate )
+		local vEnd, nHitType, vCenter, hitNorm, bRandomAge, nLead =StormFox2.DownFall.CalculateDrop( nDistance, traceSize, 1, vNorm, tTemplate.bFollow, nMaxDistance, tTemplate )
 		-- pos,n,offset, hitNorm
 		if not tTemplate.m_cache then tTemplate.m_cache = {} end
 		if not vEnd then 
@@ -769,7 +873,7 @@ if CLIENT then
 			local l = 1 - vNorm:Dot(v_d)  --* tTemplate.w * 1.1
 			vEnd = vEnd + vNorm * -l * 500
 		end
-		local part = StormFox2.DownFall.AddTemplateSimple( tTemplate, vEnd, nHitType, hitNorm, nDistance, vNorm, nMaxDistance and nMaxDistance + 50 )
+		local part = StormFox2.DownFall.AddTemplateSimple( tTemplate, vEnd, nHitType, hitNorm, nDistance, vNorm, nMaxDistance and nMaxDistance + 50 + (nLead or 0) ) -- The lead is how far ahead of us we placed the particle.
 		if not part then return false end
 		if bRandomAge or true then
 			local n = part.h / (part.r_H * 2)

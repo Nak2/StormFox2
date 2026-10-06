@@ -35,6 +35,10 @@ SWEP.UseHands = true
 
 SWEP.Selected = 1
 
+-- Seconds between each shot. The strike (left click) is fast, the rumble (right click) keeps its old cooldown.
+SWEP.PrimaryCooldown = 0.5
+SWEP.SecondaryCooldown = 1.45
+
 if ( SERVER ) then
    SWEP.AutoSwitchTo    = true
    SWEP.AutoSwitchFrom     = true
@@ -43,7 +47,8 @@ end
 function SWEP:Initialize()
    self:SetHoldType( "pistol" )
    self:SendWeaponAnim( 1 )
-   self.power = 0
+   self._cdStart = 0 -- When the cooldown started
+   self._cdLen = 0 -- How long it is
    self._bUsed = true
    self._bGlow = -1
 end
@@ -51,18 +56,16 @@ function SWEP:HasPower()
 	return self:GetPower() >= 1
 end
 function SWEP:GetPower()
-	local a = (CurTime() - self.power) / 1.2
+	local a = self._cdLen > 0 and (CurTime() - self._cdStart) / self._cdLen or 1
 	if a >= 1 then return 1 end
 	return math.max(0, a)
 end
 function SWEP:UsePower( t )
-	self.power = CurTime() + t
+	self._cdStart = CurTime()
+	self._cdLen = t
+	-- Reset the glow and animation a bit later. This is checked in Think, so a new shot can't be interrupted by an old timer.
+	self._nextIdle = CurTime() + math.min(0.5, t * 0.9)
 	self._bUsed = true
-	timer.Simple(0.5, function()
-		if not IsValid( self ) then return end
-		self._bGlow = -1
-		self:SendWeaponAnim( ACT_VM_IDLE_LOWERED )
-	end)
 end
 
 -- SF commands
@@ -95,19 +98,18 @@ function SWEP:PrimaryAttack()
 	self.Weapon:SendWeaponAnim( 186 )
 	Owner:SetAnimation( ACT_GLOCK_SHOOTEMPTY )
 	self._bGlow = CurTime() + 0.1
-	self:UsePower( ( 0.5 + CurTime()%0.5 ) )
+	self:UsePower( self.PrimaryCooldown )
 	if SERVER then
 		Strike(self, Owner:KeyDown(IN_SPEED))
 	else
 		--self:EmitSound("weapons/physcannon/energy_disintegrate4.wav", 75, 100, 0.2)
-		local hitPos = Owner:GetEyeTrace().HitPos or Owner:GetShootPos()
-	end
+			end
 end
 
 function SWEP:SecondaryAttack()
 	if not IsFirstTimePredicted() then return end
 	if not self:CanPrimaryAttack() then return end
-	self:UsePower( 0.25 )
+	self:UsePower( self.SecondaryCooldown )
 	self.Weapon:SendWeaponAnim( ACT_VM_IDLE_TO_LOWERED )  -- View model animation
 	if SERVER then
 		Rumble(self)
@@ -117,6 +119,11 @@ function SWEP:SecondaryAttack()
 end
 
 function SWEP:Think()
+	if self._nextIdle and CurTime() >= self._nextIdle then
+		self._nextIdle = nil
+		self._bGlow = -1
+		self:SendWeaponAnim( ACT_VM_IDLE_LOWERED )
+	end
 	if self._bUsed and self:HasPower() then
 		self:SendWeaponAnim( ACT_VM_IDLE_TO_LOWERED )
 		self._bUsed = false

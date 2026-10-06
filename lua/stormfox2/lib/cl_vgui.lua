@@ -9,6 +9,24 @@ local c_alpha = Color(0,0,0,20)
 
 -- Add SF Setting vgui
 local function empty() end
+local function SetTextIfChanged( pnl, text )
+	text = tostring( text )
+	if pnl:GetText() ~= text then
+		pnl:SetText( text )
+	end
+end
+local function SetCheckedIfChanged( pnl, bChecked )
+	bChecked = bChecked and true or false
+	if pnl:GetChecked() ~= bChecked then
+		pnl:SetChecked( bChecked )
+	end
+end
+local function SkipSync( pnl )
+	local now = SysTime()
+	if ( pnl._nextSync or 0 ) > now then return true end
+	pnl._nextSync = now + 0.1
+	return false
+end
 local function wrapText(sText, wide)
 	wide = wide - 10
 	local tw,th = surface.GetTextSize(language.GetPhrase(sText))
@@ -579,7 +597,7 @@ do
 		end
 		function self.check:Think()
 			if not self._sfobj then return end
-			self:SetChecked(self._sfobj:GetValue())
+			SetCheckedIfChanged(self, self._sfobj:GetValue())
 		end
 	end
 	function PANEL:SetSetting( sName, sType, Description )
@@ -646,8 +664,8 @@ do
 			else
 				text = self.slider._downvalue
 			end
-			self.text:SetText(text)
-		elseif not self.text:IsEditing() then
+			SetTextIfChanged(self.text, text)
+		elseif not self.text:IsEditing() and not SkipSync(self) then
 			local text
 			if self._flagoff and self._sfobj:GetValue() <= (self._sfobj:GetMin() or -1) then
 				text = ""
@@ -656,7 +674,7 @@ do
 			else
 				text = self._sfobj:GetValue()
 			end
-			self.text:SetText(text)
+			SetTextIfChanged(self.text, text)
 		end
 	end
 	function PANEL:SetSetting( sName, sType, Description )
@@ -715,15 +733,15 @@ do
 			else
 				text = self.slider._downvalue
 			end
-			self.text:SetText(text)
-		elseif not self.text:IsEditing() then
+			SetTextIfChanged(self.text, text)
+		elseif not self.text:IsEditing() and not SkipSync(self) then
 			local text
 			if self._isTemp then
 				text = valToTemp(self._sfobj:GetValue())
 			else
 				text = self._sfobj:GetValue()
 			end
-			self.text:SetText(text)
+			SetTextIfChanged(self.text, text)
 		end
 	end
 	function PANEL:SetSetting( sName, sType, Description )
@@ -815,7 +833,8 @@ do
 	end
 	function PANEL:Think()
 		if not self._sfobj or not self._options then return end
-		self.cbox:SetText(self._options[self._sfobj:GetValue()] or "?")
+		if SkipSync(self) then return end
+		SetTextIfChanged(self.cbox, self._options[self._sfobj:GetValue()] or "?")
 	end
 	derma.DefineControl( "SF_Setting_Enum", "", PANEL, "SF_Setting" )
 end
@@ -856,7 +875,7 @@ do
 		if not self._sfobj then return end
 		OldPanel["Think"](self)
 		local min = self._sfobj:GetMin() or -1
-		self.check:SetChecked(self._sfobj:GetValue() > min)
+		SetCheckedIfChanged(self.check, self._sfobj:GetValue() > min)
 	end
 
 	function PANEL:SetDefaultEnable( var )
@@ -935,7 +954,7 @@ end
 		if not self.hour:IsEditing() and not self.hour._SETONLOST then
 			local h = StormFox2.Time.GetHours( self.value, _12 )
 			if h < 10 then h = "0" .. h end
-			self.hour:SetText(h)
+			SetTextIfChanged(self.hour, h)
 		end
 		if not self.min:IsEditing() then
 			local m = StormFox2.Time.GetMinutes( self.value )
@@ -1309,17 +1328,17 @@ do
 	end
 
 	function PANEL:Think()
-		var = var or 0
+		if SkipSync(self) then return end
 		if not self._sfobj then return end
 		local _12 = StormFox2.Setting.Get("12h_display")
 		local var = self._sfobj:GetValue()
 		if var < 0 then
-			self.b:SetDisabled( true )
-			self.hour:SetText("00")
-			self.min:SetText("00")
-			self.ampm:SetText("AM")
+			if not self.b:GetDisabled() then self.b:SetDisabled( true ) end
+			SetTextIfChanged(self.hour, "00")
+			SetTextIfChanged(self.min, "00")
+			SetTextIfChanged(self.ampm, "AM")
 			if _12 then
-				self.ampm:SetText(StormFox2.Time.GetAMPM( self._sfobj:GetValue() ))
+				SetTextIfChanged(self.ampm, StormFox2.Time.GetAMPM( self._sfobj:GetValue() ))
 				if not self.ampm:IsVisible() then
 					self.ampm:Show()
 					self:MoveDescription(105 + self.bar_ex,4)
@@ -1331,23 +1350,23 @@ do
 				end
 			end
 		else
-			self.b:SetDisabled( false )
+			if self.b:GetDisabled() then self.b:SetDisabled( false ) end
 			if not self.hour:IsEditing() then
 				local h = StormFox2.Time.GetHours( self._sfobj:GetValue(), _12 )
 				if h < 10 then
 					h = "0" .. h
 				end
-				self.hour:SetText(h)
+				SetTextIfChanged(self.hour, h)
 			end
 			if not self.min:IsEditing() then
 				local h = StormFox2.Time.GetMinutes( self._sfobj:GetValue(), _12 )
 				if h < 10 then
 					h = "0" .. h
 				end
-				self.min:SetText(h)
+				SetTextIfChanged(self.min, h)
 			end
 			if _12 then
-				self.ampm:SetText(StormFox2.Time.GetAMPM( self._sfobj:GetValue() ))
+				SetTextIfChanged(self.ampm, StormFox2.Time.GetAMPM( self._sfobj:GetValue() ))
 				if not self.ampm:IsVisible() then
 					self.ampm:Show()
 					self:MoveDescription(105 + self.bar_ex,4)
@@ -1386,7 +1405,7 @@ do
 		OldPanel.Think(self)
 		if not self._sfobj then return end
 		local b = self._sfobj:GetValue() >= 0
-		self.check:SetChecked(b)
+		SetCheckedIfChanged(self.check, b)
 	end
 	function PANEL:SetSetting( sName, sType, Description )
 		OldPanel.SetSetting( self, sName, sType, Description )
@@ -1434,15 +1453,15 @@ do
 			else
 				text = self.slider._downvalue
 			end
-			self.text:SetText(text)
-		elseif not self.text:IsEditing() then
+			SetTextIfChanged(self.text, text)
+		elseif not self.text:IsEditing() and not SkipSync(self) then
 			local text
 			if self._isTemp then
 				text = valToTemp(self._sfobj:GetValue())
 			else
 				text = self._sfobj:GetValue()
 			end
-			self.text:SetText(text)
+			SetTextIfChanged(self.text, text)
 		end
 	end
 	function PANEL:SetSettingMin( sName, sType, Description )

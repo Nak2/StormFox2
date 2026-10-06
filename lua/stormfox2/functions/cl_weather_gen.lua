@@ -430,9 +430,14 @@ function StormFox2.WeatherGen.DrawForecast(w,h,bExpensive, offX, offY)
 					if not w_type then
 						surface.SetMaterial(nul_icon)
 					else
-						surface.SetMaterial(w_type.GetIcon( i % 1440, day.nTemp, day.nWind or 0, day.bThunder or false, day.fAmount or 0) )
+						day._icon = day._icon or w_type.GetIcon( i % 1440, day.nTemp, day.nWind or 0, day.bThunder or false, day.fAmount or 0)
+						surface.SetMaterial(day._icon)
 						surface.DrawTexturedRect(x, h * 0.25, s, s)
-						local name = w_type:GetName(i % 1440, day.nTemp, day.nWind or 0, day.bThunder or false, day.fAmount or 0)
+						local name = day._name
+						if not name then
+							name = w_type:GetName(i % 1440, day.nTemp, day.nWind or 0, day.bThunder or false, day.fAmount or 0)
+							day._name = name
+						end
 						draw.DrawText(name, "SF_Display_H2", x + s / 2, h * 0.25 + s, color_white, TEXT_ALIGN_CENTER)
 					end
 				end

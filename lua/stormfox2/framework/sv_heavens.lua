@@ -102,3 +102,21 @@ end
 StormFox2.Setting.Callback("enable", func, "disable_heavens")
 StormFox2.Setting.Callback("clenable", func, "disable_heavenscl")
 StormFox2.Setting.Callback("enable_skybox",SkyTick,"enable_skybox_call")
+
+-- Make sure the painted skybox is used.
+local function ApplyPaintedSky()
+	local enable 	= StormFox2.Setting.Get("enable")
+	local enablesky = StormFox2.Setting.Get('enable_skybox')
+	local skybox2d 	= not StormFox2.Setting.Get("use_2dskybox")
+	if not (enable and enablesky and skybox2d) then return end
+	local convar = GetConVar("sv_skyname")
+	if convar and convar:GetString() == "painted" then return end -- Already set
+	RunConsoleCommand("sv_skyname", "painted")
+end
+hook.Add("StormFox2.PostEntityScan", "stormfox2.skynameinit", function()
+	ApplyPaintedSky()
+	-- The settings are checked each time, in case they changed.
+	for _, nDelay in ipairs({0.1, 1.5, 4}) do
+		timer.Simple(nDelay, ApplyPaintedSky)
+	end
+end)

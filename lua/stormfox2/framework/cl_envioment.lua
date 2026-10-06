@@ -573,6 +573,39 @@ Generate meshes and env-points out from the map-data.
 	local ice_size = 500
 	local vec_ex = Vector(0,0,1)
 
+	local function CreateBreakableSurfWindow(ent)
+		if not StormFox2.NikNaks or not NikNaks or not NikNaks.CurrentMap then return end
+		if (NikNaks.VERSION or NikNaks.Version or 0) < 0.91 then return end -- FindByMapCreationID
+		local id = ent:MapCreationID()
+		if not id or id < 0 then return end
+		local data = NikNaks.CurrentMap:FindByMapCreationID(id)
+		if not data then return end
+		-- Positions are saved in world-space. Make them local to the entity, since they can be moved.
+		local origin = data.origin or Vector(0, 0, 0)
+		local ul, ur, ll, lr = Vector(data.upperleft), Vector(data.upperright), Vector(data.lowerleft), Vector(data.lowerright)
+		if not ul or not ur or not ll or not lr then return end
+		ul, ur, ll, lr = ul - origin, ur - origin, ll - origin, lr - origin
+		-- The corners don't always match their names. Find the top and bottom ones.
+		local list = {ul, ur, ll, lr}
+		table.sort(list, function(a, b) return a.z > b.z end)
+		local tl, tr, bl, br = list[1], list[2], list[3], list[4]
+		if tl.z - br.z < 1 then -- Flat window. Use the names.
+			tl, tr, bl, br = ul, ur, ll, lr
+		elseif tl:DistToSqr(br) < tl:DistToSqr(bl) then
+			bl, br = br, bl
+		end
+		if tl:Distance(tr) <= 0 or tl:Distance(bl) <= 0 then return end
+		local center = (tl + tr + bl + br) / 4
+		local n = (tr - tl):Cross(bl - tl):GetNormalized()
+		-- Only windows facing the outside. They are nocull, so check both sides.
+		local wCenter = ent:LocalToWorld(center)
+		if not (SkyLine(wCenter + n * -5, -n, 10, 180, ent) or SkyLine(wCenter + n * 5, n, 10, 180, ent)) then return end
+		local window = CreateWindowRef(ent, center)
+		local a, b, c, d = {pos = tl, u = 0, v = 1, normal = n}, {pos = tr, u = 1, v = 1, normal = n}, {pos = br, u = 1, v = 0, normal = n}, {pos = bl, u = 0, v = 0, normal = n}
+		window.mesh = {a, b, c, a, c, d}
+		return window
+	end
+
 	-- Scans for nearby window entities.
 	local function scan_dynamic()
 		glass_dynamic = {}
@@ -599,6 +632,13 @@ Generate meshes and env-points out from the map-data.
 				if ent._sf2_validwin == true then
 					table.insert(glass_dynamic, ent._sf2_mwindow)
 				else -- Figure out
+					local nnWindow = c == "func_breakable_surf" and CreateBreakableSurfWindow(ent)
+					if nnWindow then
+						ent._sf2_mwindow = nnWindow
+						ent._sf2_validwin = true
+						table.insert(glass_dynamic, nnWindow)
+						continue
+					end
 					local surfs = ent:GetBrushSurfaces()
 					if #surfs < 1 then -- Invalid brush
 						ent._sf2_validwin = false
@@ -1194,10 +1234,13 @@ local env_corotine = coroutine.wrap(function()
 	end
 end)
 local outsideFade = 0
+local env_dirty = true
+local env_cache
 timer.Create("stormfox2.enviroment.think", 0.25, 0, function()
 	if not StormFox2.Loaded or not _STORMFOX_POSTENTITY then return end
 	if not StormFox2.Setting.GetCache("window_enable", true) then return end
 	env_corotine()
+	env_dirty = true -- The environment might have changed
 	if is_inside then
 		outsideFade = math.Approach(outsideFade, 0, FrameTime() * 20)
 	else
@@ -1206,11 +1249,14 @@ timer.Create("stormfox2.enviroment.think", 0.25, 0, function()
 end)
 
 
----Returns a table with the current environment data.
+---Returns a table with the current environment data. The table is shared and only rebuilt when the environment changes, so don't modify it.
 ---@return table
 ---@client
 function StormFox2.Environment.Get()
+	if not env_dirty and env_cache then return env_cache end
+	env_dirty = false
 	local t = {}
+	env_cache = t
 	t.outside = not is_inside
 	t.in_water = in_water
 	t.z_distance = z_distance
@@ -1236,13 +1282,19 @@ end
 ---@param bForceUpdate boolean?
 ---@return number height
 ---@client
+local z_nextCheck = 0
 function StormFox2.Environment.GetZHeight( bForceUpdate )
+	-- This is called by render-hooks every frame. The height doesn't need to be updated that often.
+	local now = SysTime()
+	if not bForceUpdate and z_nextCheck > now then return z_distance end
+	z_nextCheck = now + 0.1
 	local tr = PlyTrace( StormFox2.util.ViewEntity())
 	if not tr.Hit then
 		z_distance = 16000
 	else
 		z_distance = tr.Fraction * 16000
 	end
+	env_dirty = true
 	return z_distance
 end
 	--[[NOTES:

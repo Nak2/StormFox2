@@ -304,7 +304,11 @@ if CLIENT then
 		local vM = (400 - windSnd) / 400
 		if vM <= 0 then return end
 		-- Main loop
-		StormFox2.Ambience.ForcePlay( "ambient/wind/wind_rooftop1.wav", math.min((wForce - 1) / 35, maxVol) * vM * 0.8, math.min(1.2, 0.9 + wForce / 100) )
+		-- The volume is negative in very light wind (under 4 m/s). That makes the ambience start and stop the sound over and over, which sounds like a short looping blip. So don't play it.
+		local loopVol = math.min((wForce - 1) / 35, maxVol) * vM * 0.8
+		if loopVol > 0 then
+			StormFox2.Ambience.ForcePlay( "ambient/wind/wind_rooftop1.wav", loopVol, math.min(1.2, 0.9 + wForce / 100) )
+		end
 		-- Wind gusts
 		for snd,data in pairs(windGusts) do
 			if data[2] <= CurTime() then

@@ -1,7 +1,7 @@
 StormFox2.Menu = StormFox2.Menu or {}
 
 local mapPoint = 0
-local maxMapPoint = 60 + 12 + 7 + 7 + 12
+local maxMapPoint = 60 + 12 + 7 + 7 + 12 + 12
 if StormFox2.Ent.light_environments then	-- Without this, the map will lag doing lightchanges
 	mapPoint = mapPoint + 60
 end
@@ -20,6 +20,11 @@ if hasMapLogic then
 	mapPoint = mapPoint + 12
 end
 
+local hasNikNaks = StormFox2.NikNaks and NikNaks and true or false
+if hasNikNaks then	-- Better map support and effects
+	mapPoint = mapPoint + 12
+end
+
 local mapPointList = {
 	{"light_environment", 		StormFox2.Ent.light_environments,		["check"] ="#sf_map.light_environment.check",["none"] = "#sf_map.light_environment.none"},
 	{"env_wind", 				StormFox2.Ent.env_winds,				["none"]  ="#sf_map.env_wind.none"},
@@ -27,6 +32,8 @@ local mapPointList = {
 	{"env_tonemap_controllers", StormFox2.Ent.env_tonemap_controllers},
 	{"logic_relay", 			hasMapLogic,							["check"] = "#sf_map.logic_relay.check", ["none"] = "#sf_map.logic_relay.none"}
 }
+
+table.insert(mapPointList, {"NikNaks", hasNikNaks, ["check"] = "StormFox 2 utilizes NikNaks for better map support and effects.", ["none"] = "Install NikNaks for better map support and effects."})
 
 local function niceName(sName)
 	if sName[1] == "#" then
@@ -38,6 +45,13 @@ local function niceName(sName)
 		str = str .. string.upper(s[1]) .. string.sub(s, 2) .. " "
 	end
 	return string.TrimRight(str, " ")
+end
+
+-- Changing the text of a panel is costly. Only do it if it changed.
+local function SetTextIfChanged( pnl, text )
+	if pnl:GetText() ~= text then
+		pnl:SetText( text )
+	end
 end
 
 local function CheckSetAPI(self, str )
@@ -96,7 +110,7 @@ local function AddOption( panel, c_option, mat )
 	local o0 = niceName(language.GetPhrase("dirt"))
 	local o1 = niceName(language.GetPhrase("rooftop"))
 	local r = niceName(language.GetPhrase("remove"))
-	local b = vgui.Create("DComboBox", dList)
+	local b = vgui.Create("DComboBox", panel)
 		b.tex = mat
 		b:SetSortItems(false)
 		b:SetText(c_option)
@@ -136,12 +150,14 @@ local function OpenMaterialPromt()
 		if #tex < 1 then return end
 		ModifyMaterial(tex, 0)
 	end
+	-- One list, that is cleared and filled again. It used to create a new list every time.
+	local dList = vgui.Create("DListView",SF_MPromt)
+	dList:Dock(FILL)
+	dList:AddColumn( niceName(language.GetPhrase("#texture")) )
+	dList:AddColumn( niceName("type") )
 	local function refresh()
-		local dList = vgui.Create("DListView",SF_MPromt)
-		dList:Dock(FILL)
-		dList:AddColumn( niceName(language.GetPhrase("#texture")) )
-		dList:AddColumn( niceName("type") )
-		for text, _t in pairs(StormFox2.Data.Get("texture_modification")) do
+		dList:Clear()
+		for text, _t in pairs(StormFox2.Data.Get("texture_modification", {})) do
 			local t = "NULL"
 			if _t == -1 then
 				t = language.GetPhrase("none")
@@ -153,16 +169,21 @@ local function OpenMaterialPromt()
 			local b = AddOption(dList, niceName(t), text)
 			local line = dList:AddLine( text, b )
 		end
-		function dList:OnRowRightClick(id, pnl)
-			local menu = DermaMenu() 
-			menu:AddOption( niceName(language.GetPhrase("copy")), function()
-				SetClipboardText( pnl:GetColumnText(1) )
-			end)
-			menu:Open()
-		end
+	end
+	function dList:OnRowRightClick(id, pnl)
+		local menu = DermaMenu()
+		menu:AddOption( niceName(language.GetPhrase("copy")), function()
+			SetClipboardText( pnl:GetColumnText(1) )
+		end)
+		menu:Open()
 	end
 	refresh()
-	hook.Add("StormFox2.data.change", SF_MPromt, refresh)
+	-- This hook is called for all data changes (like weather). Only update when the texture-data changes.
+	hook.Add("StormFox2.data.change", SF_MPromt, function(self, sKey)
+		if sKey ~= "texture_modification" then return end
+		if not IsValid(dList) then return end
+		refresh()
+	end)
 	--dList:SizeToContents()
 end
 StormFox2.Menu.OpenMaterialPromt = OpenMaterialPromt
@@ -206,7 +227,12 @@ local function ButtonRender( self, w, h )
 		cam.Start3D( -a:Forward() * 100, a, 70, x, y, w, h, 5, 4096 )
 			render.SuppressEngineLighting( true )
 				for i = 1, 6 do
-					local mat = Material("skybox/" .. self.Name .. s[i][1])
+					self._faces = self._faces or {}
+					local mat = self._faces[i]
+					if not mat then -- Cache the materials. This is called every frame while hovering.
+						mat = Material("skybox/" .. self.Name .. s[i][1])
+						self._faces[i] = mat
+					end
 					render.SetMaterial(mat)
 					local vt = mat:GetVector("$color") or v1
 					mat:SetVector("$color", v1)
@@ -278,14 +304,14 @@ local function Open2DSkybox()
 	for k, v in ipairs( file.Find("materials/skybox/*.vmt","GAME") ) do
 		if not string.match(v, "[bdflru][kntfp]%.vmt") then continue end
 		local s = string.sub(v, 0, #v - 6)
-		if Material( "skybox/" .. v ):IsError() then continue end
+		-- Loading a material for every face is slow. We only check the preview-face below.
 		t[s] = (t[s] or 0) + 1
 	end
 	-- Validate
 	local nt = {}
 	for mat, n in pairs( t ) do
 		if mat == "painted" then continue end
-		if n < 6 then continue end
+		if n < 6 or Material("skybox/" .. mat .. "up"):IsError() then continue end
 		table.insert(nt, mat)
 	end
 	-- Sort
@@ -335,7 +361,11 @@ local function wButton(self, w, h)
 	surface.SetDrawColor( col_dark )
 	surface.DrawRect(0, h - 20, w, 20)
 	--PrintTable(self.WeatherObj)
-	local text = self.WeatherObj:GetName(720, 20, 0, false, 1)
+	local text = self._wname -- The name is the same every frame, so cache it.
+	if not text then
+		text = self.WeatherObj:GetName(720, 20, 0, false, 1)
+		self._wname = text
+	end
 	text = language.GetPhrase(text) or text
 	surface.SetFont("DermaDefault")
 	if surface.GetTextSize(text) > w * 0.8 then
@@ -392,7 +422,7 @@ local function DoClickWButton( self )
 		lMin:SetValue( self.SettingTab.length_min )
 		lMin.TextArea:SetEditable( false )
 		function lMin.TextArea:Think()
-			self:SetText( StormFox2.Time.TimeToString( tonumber( lMin:GetValue() ) ) .. "h" )
+			SetTextIfChanged( self, StormFox2.Time.TimeToString( tonumber( lMin:GetValue() ) ) .. "h" )
 		end
 
 	local lMax = vgui.Create("DNumSlider", lastWClick)
@@ -403,7 +433,7 @@ local function DoClickWButton( self )
 		lMax:SetValue( self.SettingTab.length_max )
 		lMax.TextArea:SetEditable( false )
 		function lMax.TextArea:Think()
-			self:SetText( StormFox2.Time.TimeToString( tonumber( lMax:GetValue() ) ) .. "h" )
+			SetTextIfChanged( self, StormFox2.Time.TimeToString( tonumber( lMax:GetValue() ) ) .. "h" )
 		end
 	-- Start Time
 	local v = vgui.Create("DLabel", lastWClick)
@@ -419,7 +449,7 @@ local function DoClickWButton( self )
 		sMin:SetValue( self.SettingTab.start_min )
 		sMin.TextArea:SetEditable( false )
 		function sMin.TextArea:Think()
-			self:SetText( StormFox2.Time.TimeToString( tonumber( sMin:GetValue() ) , _12) )
+			SetTextIfChanged( self, StormFox2.Time.TimeToString( tonumber( sMin:GetValue() ) , _12) )
 		end
 
 	local sMax = vgui.Create("DNumSlider", lastWClick)
@@ -430,7 +460,7 @@ local function DoClickWButton( self )
 		sMax:SetValue( self.SettingTab.start_max )
 		sMax.TextArea:SetEditable( false )
 		function sMax.TextArea:Think()
-			self:SetText( StormFox2.Time.TimeToString( tonumber( sMax:GetValue() ), _12 ) )
+			SetTextIfChanged( self, StormFox2.Time.TimeToString( tonumber( sMax:GetValue() ), _12 ) )
 		end
 	-- Thunder
 		local bThunder = vgui.Create("DCheckBoxLabel", lastWClick)
@@ -477,6 +507,77 @@ local quick_time = {
 	{"Terraria" 		, 15		, 9			, "icon16/cd.png" },	-- 15 mins doing the day, 9 doing the night.
 	{"The Forest"		, 24		, 12		, "icon16/cd.png" },	-- 30 for each
 }
+-- Changelog
+	-- The Steam page is made for a big browser window, and looks broken in the menu (The game header covers the page).
+	-- So we download the page, pick out the entries and show them in our own page.
+	local CHANGELOG_URL = "https://steamcommunity.com/sharedfiles/filedetails/changelog/2447774443"
+	local changelog_html, changelog_time
+
+	local function ChangelogPage( sContent )
+		return [[<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+			body { font-family: Arial, sans-serif; font-size: 13px; color: #222; background: #fff; margin: 0; padding: 8px 18px 24px 18px; }
+			.entry { border-bottom: 1px solid #ddd; padding: 10px 0; }
+			.head { font-size: 14px; font-weight: bold; }
+			.by { color: #777; font-size: 12px; margin-bottom: 6px; }
+			p { margin: 4px 0; }
+			a { color: #2a6ebb; }
+			img { max-width: 100%; }
+		</style></head><body>]] .. sContent .. [[<p class="entry"><a href="#" onclick="sf.openURL(']] .. CHANGELOG_URL .. [[');return false;">Open the full changelog on Steam</a></p></body></html>]]
+	end
+
+	-- Makes the text from the Steam page safe to show. Removes scripts and sends links to the browser.
+	local function CleanChangelogText( sText )
+		sText = string.gsub(sText, "<[Ss][Cc][Rr][Ii][Pp][Tt].-</[Ss][Cc][Rr][Ii][Pp][Tt]>", "")
+		sText = string.gsub(sText, "<[Ii][Ff][Rr][Aa][Mm][Ee].-</[Ii][Ff][Rr][Aa][Mm][Ee]>", "")
+		sText = string.gsub(sText, '%s[Oo][Nn]%a+%s*=%s*"[^"]*"', "")
+		sText = string.gsub(sText, "%s[Oo][Nn]%a+%s*=%s*'[^']*'", "")
+		sText = string.gsub(sText, '<a%s[^>]-href="([^"]-)"[^>]->', function( sURL )
+			sURL = string.gsub(sURL, "&amp;", "&")
+			sURL = string.gsub(sURL, "'", "%%27")
+			return "<a href=\"#\" onclick=\"sf.openURL('" .. sURL .. "');return false;\">"
+		end)
+		return sText
+	end
+
+	-- Returns the changelog page, or nil if the entries couldn't be found.
+	local function BuildChangelogHTML( sBody )
+		local entries = {}
+		for block in string.gmatch( sBody, '<div class="detailBox workshopAnnouncement noFooter changeLogCtn">(.-)<div class="commentsLink changeLog">' ) do
+			local head 		= string.match( block, '<div class="changelog headline">%s*(.-)%s*</div>' ) or ""
+			local author 	= string.match( block, '<div class="changelog author">by <a[^>]*>(.-)</a>' ) or ""
+			local text 		= string.match( block, '<div style="clear: right"></div>%s*(.-)%s*$' ) or ""
+			table.insert(entries, '<div class="entry"><div class="head">' .. head .. '</div><div class="by">by ' .. author .. '</div>' .. CleanChangelogText( text ) .. '</div>')
+		end
+		if #entries < 1 then return end
+		return ChangelogPage( table.concat( entries ) )
+	end
+
+	local function LoadChangelog( pHTML )
+		pHTML:AddFunction("sf", "openURL", function( sURL )
+			if isstring( sURL ) and string.match( sURL, "^https?://" ) then
+				gui.OpenURL( sURL )
+			end
+		end)
+		-- Use the last download. It is only checked every 10 minutes.
+		if changelog_html and changelog_time and changelog_time > SysTime() - 600 then
+			pHTML:SetHTML( changelog_html )
+			return
+		end
+		pHTML:SetHTML( ChangelogPage( "<p>Loading ..</p>" ) )
+		local function failed()
+			if not IsValid( pHTML ) then return end
+			pHTML:SetHTML( ChangelogPage( "<p>Unable to load the changelog.</p>" ) )
+		end
+		http.Fetch( CHANGELOG_URL, function( sBody, _, _, nCode )
+			if not IsValid( pHTML ) then return end
+			local html = nCode == 200 and BuildChangelogHTML( sBody )
+			if not html then return failed() end
+			changelog_html = html
+			changelog_time = SysTime()
+			pHTML:SetHTML( html )
+		end, failed )
+	end
+
 local tabs = {
 	[1] = {"Start","#start",(Material("stormfox2/hud/menu/dashboard.png")),function(board)
 		board:AddTitle(language.GetPhrase("#map") .. " " .. language.GetPhrase("#support"))
@@ -927,6 +1028,8 @@ local tabs = {
 			end
 			
 			function l:Think()
+				if (self._nextThink or 0) > SysTime() then return end -- No need to update this every frame.
+				self._nextThink = SysTime() + 0.1
 				if c_auto:GetValue() then
 					lenv:SetDisabled(true)
 					colormod:SetDisabled(true)
@@ -1119,15 +1222,27 @@ local tabs = {
 	[6] = {"DLC","DLC",(Material("stormfox2/hud/menu/dlc.png")), function(board)
 		hook.Run("stormfox2.svmenu.dlc", board)
 	end},
-	[7] = {"Changelog", niceName(language.GetPhrase("#changelog")),(Material("stormfox2/hud/menu/other.png")),function(board)
-		local p = vgui.Create("DHTML", board)
+	[7] = {"NikNaks","NikNaks",(Material("stormfox2/hud/menu/dlc.png")), function(board)
+		StormFox2.Menu.AddNikNaks(board)
+	end},
+	[8] = {"Changelog", niceName(language.GetPhrase("#changelog")),(Material("stormfox2/hud/menu/other.png")),function(board)
+		-- A web-view is heavy, and it downloads the page. So we wait until the tab is shown for the first time.
+		local p
 		board.PerformLayout = function(self,w,h)
+			if not IsValid(p) then return end
 			p:SetTall(h)
 			p:SetWide(w)
 		end
-		p:SetPos(0,0)
-
-		p:OpenURL('https://steamcommunity.com/sharedfiles/filedetails/changelog/2447774443')
+		local trigger = vgui.Create("DPanel", board)
+		trigger:SetSize(1, 1)
+		trigger.Paint = function() end
+		function trigger:Think() -- Only runs while the tab is visible.
+			p = vgui.Create("DHTML", board)
+			p:SetPos(0,0)
+			p:SetSize(board:GetSize())
+			LoadChangelog( p )
+			self:Remove()
+		end
 	end}
 }
 

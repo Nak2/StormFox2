@@ -33,6 +33,8 @@ local PAVEMENT_TYPE = 3
 
 -- Generator
 local GetBSPData
+local GetNikNaksData
+local nn_bsp
 local env_stormfox2_settings = {}
 function StormFox2.Map.GetSetting( sName )
 	return env_stormfox2_settings[sName]
@@ -284,6 +286,42 @@ do
 			return t
 		end
 
+		-- Finds the materials with a cubemap, so StormFox can darken them. Needs BSP.TextureArray and BSP.Entities.
+		local function BuildTextureCube(BSP, models)
+			if not CLIENT then return end
+			BSP.TextureCube = {}
+			local function Add(sMat)
+				local mat = Material(sMat)
+				if mat:IsError() then return end
+				if not mat:GetString("$envmap") then return end
+				BSP.TextureCube[mat] = mat:GetVector("$envmaptint")
+			end
+			-- Scan the brushes on the map
+			for _, sMat in ipairs(BSP.TextureArray) do
+				Add(sMat)
+			end
+			-- Scan static models
+			for _, model in ipairs(models) do
+				for _, sMat in ipairs(GetModelMaterials(model) or {}) do
+					Add(sMat)
+				end
+			end
+			-- Scan props
+			if render.GetDXLevel() >= 95 then -- This is a little heavy for some GPUs, make sure it can
+				local aS = {}
+				for _, tab in ipairs(BSP.Entities or {}) do
+					if not tab.classname then continue end
+					if tab.classname ~= "prop_dynamic" and tab.classname ~= "prop_dynamic_override" then continue end
+					if not tab.model then continue end
+					if aS[tab.model] then continue end
+					for _, sMat in ipairs(GetModelMaterials(tab.model) or {}) do
+						Add(sMat)
+					end
+					aS[tab.model] = true
+				end
+			end
+		end
+
 	-- Load functions
 		function GetBSPData()
 			--print("Loading file")
@@ -365,43 +403,88 @@ do
 			-- Textures
 				BSP.TextureArray = BSP:GetTextures(f)
 			-- CubeTextures
-				if CLIENT then
-					BSP.TextureCube = {}
-					-- Scan the brushes on the map
-					for _, matp in ipairs(BSP.TextureArray) do
-						local m = Material(matp)
-						if m:IsError() then continue end
-						if not m:GetString("$envmap") then continue end
-						BSP.TextureCube[m] = m:GetVector("$envmaptint")
-					end
-					-- Scan static models
-					for _, model in ipairs(m) do
-						for _, mat in ipairs(GetModelMaterials(model) or {}) do
-							local m = Material(mat)
-							if m:IsError() then continue end
-							if not m:GetString("$envmap") then continue end
-							BSP.TextureCube[m] = m:GetVector("$envmaptint")
-						end
-					end
-					-- Scan props
-					if render.GetDXLevel() >= 95 then -- This is a little heavy for some GPUs, make sure it can 
-						local aS = {}
-						for _, tab in ipairs(BSP.Entities or {}) do
-							if not tab.classname then continue end
-							if tab.classname ~= "prop_dynamic" and tab.classname ~= "prop_dynamic_override" then continue end
-							if not tab.model then continue end
-							if aS[tab.model] then continue end
-							for _, mat in ipairs(GetModelMaterials(tab.model) or {}) do
-								local m = Material(mat)
-								if m:IsError() then continue end
-								if not m:GetString("$envmap") then continue end
-								BSP.TextureCube[m] = m:GetVector("$envmaptint")
-							end
-							aS[tab.model] = true
-						end
-					end
-				end
+				BuildTextureCube(BSP, m)
 			f:Close()
+			return BSP
+		end
+
+	-- NikNaks. Returns the same data as GetBSPData, but reads it from NikNaks.
+		-- NikNaks lists start at 0, keep the key-case and converts numbers. StormFox have always had 1-based lists, lowercase keys and string-values.
+		local function ConvertNikNaksEntity(data)
+			local t = {}
+			local raw
+			for sKey, v in pairs(data) do
+				if type(sKey) ~= "string" then continue end
+				-- NikNaks adds these. 'hammerId' is only an old name for mapCreationId, and would collide with the real 'hammerid' keyvalue.
+				if sKey == "hammerId" then continue end
+				if sKey == "mapCreationId" then t.mapcreationid = v continue end
+				local k = string.lower(sKey)
+				if IsColor(v) then
+					t[k] = v
+				elseif type(v) == "table" then -- Outputs can have multiple entries
+					raw = raw or {}
+					for _, val in ipairs(v) do
+						raw[#raw + 1] = '"' .. sKey .. '" "' .. tostring(val) .. '"'
+					end
+					t[k] = v[1] ~= nil and tostring(v[1]) or nil
+				elseif type(v) == "number" and k ~= "index" and k ~= "hammerid" then
+					t[k] = tostring(v)
+				else
+					t[k] = v
+				end
+			end
+			t.origin = t.origin or Vector(0, 0, 0)
+			t.angles = t.angles or Angle(0, 0, 0)
+			t.rendercolor = t.rendercolor or Color(255, 255, 255)
+			if raw then
+				t.raw = "{\n" .. table.concat(raw, "\n") .. "\n}"
+			end
+			return t
+		end
+
+		function GetNikNaksData( map )
+			local BSP = {}
+			BSP.version = map:GetVersion()
+			-- Entities
+				env_stormfox2_settings = {}
+				env_stormfox2_materials = {}
+				env_has_mat = false
+				local raw = map:GetEntities()
+				BSP.Entities = {}
+				local i = 0
+				while raw[i] do
+					local t = ConvertNikNaksEntity(raw[i])
+					if t.classname == "env_stormfox2_materials" then
+						LoadMaterialEnt(t)
+						env_has_mat = true
+					elseif t.classname == "env_stormfox2_settings" then
+						LoadSettingsEnt(t)
+					end
+					i = i + 1
+					BSP.Entities[i] = t
+				end
+			-- Textures
+				BSP.TextureArray = map:GetTextures()
+			-- Static props are heavy to parse, and only a few features need them. Load them when someone asks.
+				setmetatable(BSP, {__index = function(self, key)
+					if key ~= "StaticProps" then return end
+					local list = {}
+					local ok, props = pcall(map.GetStaticProps, map)
+					if ok and props then
+						local n = 0
+						while props[n] ~= nil do
+							list[n + 1] = props[n]
+							n = n + 1
+						end
+					end
+					rawset(self, key, list)
+					return list
+				end})
+			-- CubeTextures
+				if CLIENT then
+					local ok, models = pcall(map.GetStaticPropModels, map)
+					BuildTextureCube(BSP, ok and models or {})
+				end
 			return BSP
 		end
 end
@@ -481,6 +564,19 @@ end
 			SF_BSPDATALOADED = true
 		else
 			-- Load map ..
+			local nn_map = StormFox2.NikNaks and NikNaks.CurrentMap
+			local nn_ok, nn_data
+			if nn_map then
+				nn_ok, nn_data = pcall(GetNikNaksData, nn_map)
+				if nn_ok and nn_data then
+					StormFox2.Msg("NikNaks found. Using it to read the map.")
+					SF_BSPDATA = nn_data
+					SF_BSPDATALOADED = true
+					nn_bsp = nn_map
+					return
+				end
+				ErrorNoHalt("[StormFox2] NikNaks failed to read the map. Using the build-in reader: " .. tostring(nn_data) .. "\n")
+			end
 			if CoffeeLib and false then
 				StormFox2.Msg("Generating map cache using CoffeeLib ..")
 				local BSP = Map.ReadBSP()
@@ -637,11 +733,32 @@ end
 		return SF_BSPDATA._hasPak or false
 	end
 
-	---Gets all entities with the given class from the mapfile. 
+	-- NikNaks returns its own entity-tables. Convert them to the entries in StormFox2.Map.Entities(), which the rest of StormFox use.
+	-- NikNaks entities knows their position in the list (index). StormFox lists start at 1.
+	local function ToMapEntities( tNikNaksEntities )
+		local all = SF_BSPDATA.Entities
+		local t = {}
+		for _, v in ipairs( tNikNaksEntities ) do
+			local e = all[v.index]
+			if e then
+				t[#t + 1] = e
+			end
+		end
+		-- NikNaks doesn't promise any order. Code like FindClass("sky_camera")[1] expects the same order as the mapfile.
+		if #t > 1 then
+			table.sort(t, function(a, b) return a.index < b.index end)
+		end
+		return t
+	end
+
+	---Gets all entities with the given class from the mapfile.
 	---@param sClass string
 	---@return table
 	---@shared
 	function StormFox2.Map.FindClass(sClass)
+		if nn_bsp and nn_bsp.FindByClass then
+			return ToMapEntities( nn_bsp:FindByClass( sClass ) )
+		end
 		local t = {}
 		for k,v in pairs(SF_BSPDATA.Entities) do
 			if v.classname and string.match(v.classname,sClass) then
@@ -670,6 +787,12 @@ end
 	---@return table
 	---@shared
 	function StormFox2.Map.FindEntity(eEnt)
+		if nn_bsp and nn_bsp.FindByMapCreationID then
+			local id = eEnt:MapCreationID()
+			if not id or id < 0 then return end
+			local data = nn_bsp:FindByMapCreationID( id )
+			return data and SF_BSPDATA.Entities[data.index]
+		end
 		local c = eEnt:GetClass()
 		local h_id = eEnt:GetKeyValues().hammerid
 		if not h_id then return end
@@ -687,6 +810,9 @@ end
 	---@return table
 	---@shared
 	function StormFox2.Map.FindEntsInSphere(vPos,nRadius)
+		if nn_bsp and nn_bsp.FindInSphere then
+			return ToMapEntities( nn_bsp:FindInSphere( vPos, nRadius ) )
+		end
 		local t = {}
 		nRadius = nRadius^2
 		for i,v in ipairs(SF_BSPDATA.Entities) do
@@ -715,9 +841,18 @@ end
 	
 	---Tries to locates the entity data from the mapfile, using the hammer_id. 
 	---@param nHammerID number
-	---@return table
+	---@return table?
 	---@shared
 	function StormFox2.Map.FindHammerid(nHammerID)
+		if nn_bsp and nn_bsp.FindByKeyValue then
+			local id = tonumber(nHammerID)
+			if not id then return end
+			local data = nn_bsp:FindByKeyValue( "hammerid", id )[1]
+			if not data or not data.mapCreationId then return end
+			local ent = ents.GetMapCreatedEntity( data.mapCreationId )
+			if IsValid(ent) then return ent end
+			return
+		end
 		for k,v in pairs(ents.GetAll()) do
 			local h_id = v:GetKeyValues().hammerid
 			if not h_id then return end
@@ -953,8 +1088,8 @@ if sky_cam then
 	sky = util.StringToType( sky_cam.origin, "Vector" )
 	sky_scale = tonumber(sky_cam.scale) or 1
 end
-for _,tab in pairs(StormFox2.Map.Textures()) do
-	if string.find(tab.nameStringTableID:lower(), "snow") then
+for _,sTexture in ipairs(StormFox2.Map.AllTextures()) do
+	if string.find(sTexture, "snow", 1, true) then
 		bSnow = true
 		break
 	end

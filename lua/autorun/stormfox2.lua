@@ -3,26 +3,12 @@ if StormFox and StormFox.Version < 2 or file.Exists("autorun/stormfox_autorun.lu
 	error("StormFox 1 detected. StormFox 2 can't run.")
 	return
 end
--- While sv_skyname is fixed, I still want this to be first.
-if SERVER then
-	hook.Add("stormfox2.postfunction", "stormfox2.skynameinit", function()
-		local enable 	= StormFox2.Setting.Get("enable")
-		local enablesky = StormFox2.Setting.Get('enable_skybox')
-		local skybox2d 	= not StormFox2.Setting.Get("use_2dskybox")
-		if enable and enablesky and skybox2d then
-			RunConsoleCommand("sv_skyname", "painted")
-		end
-	end)
-end
 
---[[-------------------------------------------------------------------------
-StormFox 2.0
----------------------------------------------------------------------------]]
 StormFox2 = {}
 StormFox2.WorkShopVersion = false--game.IsDedicated()
 StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2447774443"
 --<Var> StormFox's Version number
-	StormFox2.Version = 2.58
+	StormFox2.Version = 2.70
 	StormFox2.Loaded = false
 
 --[[<Shared>-----------------------------------------------------------------
@@ -72,7 +58,14 @@ StormFox2.WorkShopURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=
 			error(sMessage)
 		end
 	end
-StormFox2.Msg("Version: V" .. StormFox2.Version .. ".")
+
+-- NikNaks is optional. If it is installed, it is used to read the mapfile. Otherwise StormFox falls back to its build-in reader.
+	StormFox2.NikNaks = false
+	if NikNaks or file.Exists("includes/modules/niknaks.lua","LUA") then
+		pcall(require,"niknaks")
+		StormFox2.NikNaks = NikNaks and true or false
+	end
+StormFox2.Msg("Version: V" .. StormFox2.Version .. (StormFox2.NikNaks and " (NikNaks detected!)" or "."))
 
 -- Local functions
 	local function HandleFile(str)

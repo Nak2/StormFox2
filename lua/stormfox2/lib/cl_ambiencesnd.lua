@@ -159,8 +159,13 @@ function StormFox2.Ambience.ForcePlay( snd, nVolume, playbackSpeed )
 	fP[snd] = nVolume
 	p_br[snd] = playbackSpeed or 1
 end
+local amb_next = 0
 hook.Add("Think", "StormFox2.Ambiences.Logic", function()
 	if not StormFox2 or not StormFox2.Weather or not StormFox2.Weather.GetCurrent then return end
+	-- The environment is only scanned a few times pr second, and the volume is smoothed above. No need to run this every frame.
+	local now = SysTime()
+	if amb_next > now then return end
+	amb_next = now + 0.1
 	local c = StormFox2.Weather.GetCurrent()
 	local v_pos = StormFox2.util.GetCalcView().pos
 	local env = StormFox2.Environment.Get()

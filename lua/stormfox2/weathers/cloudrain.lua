@@ -516,7 +516,10 @@ if CLIENT then
 				local snow_speed = 0.15 * d * force_multi
 				StormFox2.Misc.snow_template:SetSpeed( mult_speed )
 				for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.snow_template_multi, 500, snow_distance / 1, max_multi, s, vNorm ) or {} ) do
-					v:SetSize(  snow_size, snow_size )
+					-- Large billboards look odd when they are close. The closer they are, the smaller and more transparent they are.
+					local f = clamp(((v:GetDistance() or 500) - 200) / 500, 0.25, 1)
+					v:SetSize(  snow_size * f, snow_size * f )
+					v:SetAlpha( 255 * f )
 					v:SetSpeed( math.Rand(1, 2) * snow_speed)
 					v:SetRoll( math.Rand(0, 360))
 					if random(0,1) == 0 then
@@ -525,7 +528,7 @@ if CLIENT then
 				end
 			end
 			local max_fog =  (90 + P * (20 + (W / 80) * 102))
-			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_fog, snow_distance, snow_distance * 2 , max_fog, 200, vNorm ) or {} ) do
+			for _,v in ipairs( StormFox2.DownFall.SmartTemplate( StormFox2.Misc.rain_template_fog, max(snow_distance, 450), max(snow_distance, 450) * 2 , max_fog, 200, vNorm ) or {} ) do
 				local d = v:GetDistance()
 				if not d or d < 500 then 
 					v:SetSize(  225, 500 )

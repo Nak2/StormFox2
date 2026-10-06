@@ -13,10 +13,9 @@ local function LoadSettings()
 	if not targetname then return end -- This tonemap can't have any settings
 	-- Search for logic_auto
 	local tab = {}
-	for k, v in ipairs( StormFox2.Map.FindClass("logic_auto") ) do
-		if not v.onmapspawn then continue end -- No setting?
-		if not string.match(v.onmapspawn, "^" .. targetname .. ",") then continue end -- This targets tonemap.
-		for s in string.gmatch(v.raw, '"OnMapSpawn"%s?"' .. targetname .. ',(.-)"') do
+	for _, v in ipairs( StormFox2.Map.FindClass("logic_auto") ) do
+		if not v.raw then continue end -- No outputs?
+		for s in string.gmatch(v.raw,'"OnMapSpawn"%s?"' .. targetname .. ',(.-)"') do
 			local t = string.Explode(",", s)
 			tab[t[1]] = t[2]
 		end

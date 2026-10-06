@@ -451,6 +451,7 @@ else
 
 	-- Render Strikes
 	local tex = {(Material("stormfox2/effects/lightning"))}
+	local mat_lightning_light = Material("stormfox2/effects/lightning_light")
 	local texend = {(Material("stormfox2/effects/lightning_end")),(Material("stormfox2/effects/lightning_end2"))}
 	for k, v in ipairs( texend ) do
 		v:SetFloat("$nofog",1)
@@ -514,7 +515,7 @@ else
 				local vc2 = Vector(vc.x,vc.y,v1.z)
 				local a = math.max(0, 1 - life - 0.2)
 					col.a = a * 1275
-				render.SetMaterial(Material("stormfox2/effects/lightning_light"))
+				render.SetMaterial(mat_lightning_light)
 				render.DrawBeam(vc, vc2, 24400, 0.3 , 0.7, col)
 			end
 		end

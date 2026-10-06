@@ -13,6 +13,19 @@ local m_noise = Material("particle/particle_noisesphere")
 local m_fog = Material("particle/smokesprites_0014")
 
 -- Hit particles
+local hit_chance, mist_chance, hit_next = 1 / 3, 1, 0
+local function UpdateHitChance()
+	local now = SysTime()
+	if hit_next > now then return end
+	hit_next = now + 0.5
+	local q = StormFox2.Client.GetQualityNumber()
+	hit_chance = math.min(1 / 3, q / 21)
+	mist_chance = math.min(1, q / 7)
+end
+local function ShouldSplash()
+	UpdateHitChance()
+	return math.random() < hit_chance
+end
 local function MakeRing( vPos, vNormal, L )
 	local p = StormFox2.DownFall.AddParticle( rainsplash_w, vPos, true )
 		p:SetAngles(vNormal:Angle())
@@ -42,8 +55,14 @@ local function MakeSnowflake( vPos, vNormal, L, Part )
 		p:SetStartAlpha(math.min(255, 10 + L))
 end
 
+local lum_frame, lum_n = -1, 0
 local pT = function(self)
-	local n = math.min(15, StormFox2.Weather.GetLuminance() * 0.75)
+	local fn = FrameNumber()
+	if lum_frame ~= fn then
+		lum_frame = fn
+		lum_n = math.min(15, StormFox2.Weather.GetLuminance() * 0.75)
+	end
+	local n = lum_n
 	if self:GetLifeTime() < self:GetDieTime() * .25 then
 		self:SetStartAlpha(0)
 		self:SetEndAlpha( n * 8 )
@@ -54,7 +73,7 @@ local pT = function(self)
 		self:SetStartAlpha(n * 2)
 		self:SetEndAlpha( 0 )
 	end
-	self:SetNextThink( CurTime() )
+	self:SetNextThink( CurTime() + 0.1 )
 end
 
 local LM = 0
@@ -62,6 +81,9 @@ local vector_zero = Vector(0,0,0)
 local function MakeMist( vPos, L, Part)
 	if LM > CurTime() then return end
 	--LM = CurTime() + 0.1
+	-- Mist is large and collides. Skip some on low quality.
+	UpdateHitChance()
+	if mist_chance < 1 and math.random() > mist_chance then return end
 	local w = StormFox2.Wind.GetVector()
 	local v = Vector(w.x * 8 + math.Rand(-10, 10), w.y * 8 + math.Rand(-10, 10) ,math.Rand(0, 10))
 	local ss = math.Rand(75,180)
@@ -95,7 +117,7 @@ local init = function()
 	--fog_template:SetSpeed(0.1)
 	fog_template:SetSize(250, 250)
 	function fog_template:OnHit( vPos, vNormal, nHitType, zPart )
-		if math.random(3) > 1 then return end -- 33% chance to spawn a splash
+		if not ShouldSplash() then return end -- 33% chance to spawn a splash (Less on low quality)
 		local L = StormFox2.Weather.GetLuminance() - 10
 		if nHitType == SF_DOWNFALL_HIT_WATER then
 			MakeRing( vPos, vNormal, L )
@@ -176,7 +198,7 @@ local init = function()
 
 	-- Particle Hit
 	function snow_template:OnHit( vPos, vNormal, nHitType, zPart )
-		if math.random(3) > 1 then return end -- 33% chance to spawn a splash
+		if not ShouldSplash() then return end -- 33% chance to spawn a splash (Less on low quality)
 		local L = StormFox2.Weather.GetLuminance() - 10
 		if nHitType == SF_DOWNFALL_HIT_WATER then
 			MakeRing( vPos, vNormal, L )
@@ -185,7 +207,7 @@ local init = function()
 		end
 	end
 	function rain_template:OnHit( vPos, vNormal, nHitType, zPart )
-		if math.random(3) > 1 then return end -- 33% chance to spawn a splash
+		if not ShouldSplash() then return end -- 33% chance to spawn a splash (Less on low quality)
 		local L = StormFox2.Weather.GetLuminance() - 10
 		if nHitType == SF_DOWNFALL_HIT_WATER then
 			MakeRing( vPos, vNormal, L )
